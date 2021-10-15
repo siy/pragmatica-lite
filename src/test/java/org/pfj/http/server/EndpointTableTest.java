@@ -16,11 +16,11 @@ class EndpointTableTest {
         getText("/one2", () -> Causes.cause("one2").result()),
         getText("/on", () -> Causes.cause("on").result()),
         getText("/o", () -> Causes.cause("o").result()),
-        pos tText("/one", __ -> Causes.cause("one").result()),
-        postText("/one1", __ -> Causes.cause("one1").result()),
-        postText("/one2", __ -> Causes.cause("one2").result()),
-        postText("/on", __ -> Causes.cause("on").result()),
-        postText("/o", __ -> Causes.cause("o").result())
+        postText("/one", () -> Causes.cause("one").result()),
+        postText("/one1", () -> Causes.cause("one1").result()),
+        postText("/one2", () -> Causes.cause("one2").result()),
+        postText("/on", () -> Causes.cause("on").result()),
+        postText("/o", () -> Causes.cause("o").result())
     );
 
     @Test

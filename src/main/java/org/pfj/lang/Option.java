@@ -185,6 +185,10 @@ public sealed interface Option<T> permits Some, None {
         return fold(() -> Result.failure(cause), Result::success);
     }
 
+    default Promise<T> toPromise(Cause cause) {
+        return fold(() -> Promise.failure(cause), Promise::success);
+    }
+
     /**
      * Convert current instance to instance of {@link Optional}.
      * The present instance is converted into present instance of {@link Optional}.

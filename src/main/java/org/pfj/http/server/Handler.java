@@ -1,9 +1,8 @@
 package org.pfj.http.server;
 
-import io.netty.handler.codec.http.FullHttpRequest;
-import org.pfj.lang.Result;
+import org.pfj.lang.Promise;
 
 @FunctionalInterface
 public interface Handler<T> {
-    Result<T> handle(FullHttpRequest request);
+    Promise<T> handle(RequestContext request);
 }

@@ -6,10 +6,11 @@ import org.pfj.lang.Option;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Stream;
 
 import static org.pfj.lang.Option.option;
 
-//WARNING: dynamic route adding is not supported
+//WARNING: dynamic route configuration is not supported
 public final class EndpointTable {
     private final Map<HttpMethod, TreeMap<String, Route<?>>> routes = new HashMap<>();
 
@@ -17,12 +18,10 @@ public final class EndpointTable {
         return new EndpointTable();
     }
 
-    public static EndpointTable with(Route<?>... routes) {
+    public static EndpointTable with(RouteSource... routes) {
         var table = new EndpointTable();
 
-        for (var route : routes) {
-            table.add(route);
-        }
+        Stream.of(routes).flatMap(RouteSource::routes).forEach(table::add);
 
         return table;
     }
@@ -37,7 +36,9 @@ public final class EndpointTable {
         return this;
     }
 
-    public Option<Route<?>> findRoute(HttpMethod method, String path) {
+    public Option<Route<?>> findRoute(HttpMethod method, String inputPath) {
+        var path = inputPath + "/";
+
         return option(routes.get(method))
             .flatMap(map -> option(map.ceilingEntry(path)))
             .filter(routeEntry -> isSameOrStartOfPath(path, routeEntry.getKey()))
