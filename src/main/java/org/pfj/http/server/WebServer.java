@@ -14,129 +14,151 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.concurrent.Future;
+
 import org.pfj.lang.Cause;
+import org.pfj.lang.Causes;
+import org.pfj.lang.Promise;
+import org.pfj.lang.Result;
 
 public class WebServer {
-    private static final int DEFAULT_PORT = 8000;
+	private static final int DEFAULT_PORT = 8000;
 
-    private final EndpointTable endpointTable;
-    private final int port;
+	private final EndpointTable endpointTable;
+	private final int port;
 
-    private WebServer(int port, EndpointTable endpointTable) {
-        this.port = port;
-        this.endpointTable = endpointTable;
-    }
+	private WebServer(int port, EndpointTable endpointTable) {
+		this.port = port;
+		this.endpointTable = endpointTable;
+	}
 
-    public static WebServer create(int port, RouteSource ... routes) {
-        return new WebServer(port, EndpointTable.with(routes));
-    }
+	public static WebServer create(int port, RouteSource... routes) {
+		return new WebServer(port, EndpointTable.with(routes));
+	}
 
-    public static WebServer create(RouteSource ... routes) {
-        return new WebServer(DEFAULT_PORT, EndpointTable.with(routes));
-    }
+	public static WebServer create(RouteSource... routes) {
+		return new WebServer(DEFAULT_PORT, EndpointTable.with(routes));
+	}
 
-    public void run() throws InterruptedException {
-        EventLoopGroup bossGroup;
-        EventLoopGroup workerGroup;
-        Class<? extends ServerChannel> serverChannelClass;
+	public Promise<Void> start() throws InterruptedException {
+		EventLoopGroup bossGroup;
+		EventLoopGroup workerGroup;
+		Class<? extends ServerChannel> serverChannelClass;
 
-        if (Epoll.isAvailable()) {
-            bossGroup = new EpollEventLoopGroup(1);
-            workerGroup = new EpollEventLoopGroup();
-            serverChannelClass = EpollServerSocketChannel.class;
-        } else if (KQueue.isAvailable()) {
-            bossGroup = new KQueueEventLoopGroup(1);
-            workerGroup = new KQueueEventLoopGroup();
-            serverChannelClass = KQueueServerSocketChannel.class;
-        } else {
-            bossGroup = new NioEventLoopGroup(1);
-            workerGroup = new NioEventLoopGroup();
-            serverChannelClass = NioServerSocketChannel.class;
-        }
+		if (Epoll.isAvailable()) {
+			bossGroup = new EpollEventLoopGroup(1);
+			workerGroup = new EpollEventLoopGroup();
+			serverChannelClass = EpollServerSocketChannel.class;
+		} else if (KQueue.isAvailable()) {
+			bossGroup = new KQueueEventLoopGroup(1);
+			workerGroup = new KQueueEventLoopGroup();
+			serverChannelClass = KQueueServerSocketChannel.class;
+		} else {
+			bossGroup = new NioEventLoopGroup(1);
+			workerGroup = new NioEventLoopGroup();
+			serverChannelClass = NioServerSocketChannel.class;
+		}
 
-        try {
-            new ServerBootstrap()
-                .group(bossGroup, workerGroup)
-                .channel(serverChannelClass)
-                .childOption(ChannelOption.SO_SNDBUF, 1024 * 1024)
-                .childOption(ChannelOption.SO_RCVBUF, 32 * 1024)
-                .handler(new LoggingHandler(LogLevel.INFO))
-                .childHandler(new WebServerInitializer())
-                .bind(port)
-                .sync()
-                .channel()
-                .closeFuture()
-                .sync();
-        } finally {
-            bossGroup.shutdownGracefully();
-            workerGroup.shutdownGracefully();
-        }
-    }
+		var promise = Promise.<Void>promise();
 
-    private class WebServerInitializer extends ChannelInitializer<SocketChannel> {
-        public static final int MAX_CONTENT_LENGTH = 10 * 1024 * 1024;
+		try {
+			new ServerBootstrap()
+				.group(bossGroup, workerGroup)
+				.channel(serverChannelClass)
+				.childOption(ChannelOption.SO_SNDBUF, 1024 * 1024)
+				.childOption(ChannelOption.SO_RCVBUF, 32 * 1024)
+				.handler(new LoggingHandler(LogLevel.INFO))
+				.childHandler(new WebServerInitializer())
+				.bind(port)
+				.sync()
+				.channel()
+				.closeFuture()
+				.addListener(future -> decode(promise, future));
+		} finally {
+			promise.onResult(__ -> {
+				bossGroup.shutdownGracefully();
+				workerGroup.shutdownGracefully();
+			});
+		}
 
-        @Override
-        public void initChannel(SocketChannel ch) throws Exception {
-            ch.pipeline()
-                .addLast("decoder", new HttpRequestDecoder())
-                .addLast("aggregator", new HttpObjectAggregator(MAX_CONTENT_LENGTH))
-                .addLast("encoder", new HttpResponseEncoder())
-                .addLast("handler", new WebServerHandler());
-        }
-    }
+		return promise;
+	}
 
-    private class WebServerHandler extends SimpleChannelInboundHandler<Object> {
-        /**
-         * Handles a new message.
-         *
-         * @param ctx The channel context.
-         * @param msg The HTTP request message.
-         */
-        @Override
-        public void channelRead0(final ChannelHandlerContext ctx, final Object msg) {
-            if (!(msg instanceof final FullHttpRequest request)) {
-                return;
-            }
+	private Promise<Void> decode(Promise<Void> promise, Future<? super Void> future) {
+		return promise.resolve(future.isSuccess()
+							   ? Result.success(null)
+							   : Causes.fromThrowable(future.cause()).result());
+	}
 
-            if (HttpUtil.is100ContinueExpected(request)) {
-                ctx.write(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE));
-            }
+	private class WebServerInitializer extends ChannelInitializer<SocketChannel> {
+		public static final int MAX_CONTENT_LENGTH = 10 * 1024 * 1024;
 
-            var context = RequestContext.from(ctx, request);
+		@Override
+		public void initChannel(SocketChannel ch) throws Exception {
+			ch.pipeline()
+				.addLast("decoder", new HttpRequestDecoder())
+				.addLast("aggregator", new HttpObjectAggregator(MAX_CONTENT_LENGTH))
+				.addLast("encoder", new HttpResponseEncoder())
+				.addLast("handler", new WebServerHandler());
+		}
+	}
 
-            try {
-                endpointTable
-                    .findRoute(request.method(), request.uri())
-                    .map(route -> route.handler()
-                        .handle(context)
-                        .onResult(result -> result.fold(
-                            failure -> context.sendFailure(convertError(failure)),
-                            success -> context.sendSuccess(route.contentType(), success)
-                        ))
-                    )
-                    .whenEmpty(() -> context.sendFailure(WebError.NOT_FOUND));
-            } catch (RuntimeException ex) {
-                context.sendFailure(CompoundCause.fromThrowable(WebError.INTERNAL_SERVER_ERROR, ex));
-            }
-        }
+	private class WebServerHandler extends SimpleChannelInboundHandler<Object> {
+		/**
+		 * Handles a new message.
+		 *
+		 * @param ctx The channel context.
+		 * @param msg The HTTP request message.
+		 */
+		@Override
+		public void channelRead0(final ChannelHandlerContext ctx, final Object msg) {
+			if (!(msg instanceof final FullHttpRequest request)) {
+				return;
+			}
 
-        private CompoundCause convertError(Cause failure) {
-            if (failure instanceof CompoundCause compoundCause) {
-                return compoundCause;
-            }
+			if (HttpUtil.is100ContinueExpected(request)) {
+				ctx.write(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE));
+			}
 
-            return CompoundCause.from(WebError.INTERNAL_SERVER_ERROR.status(), failure);
-        }
+			var context = RequestContext.from(ctx, request);
 
-        @Override
-        public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
-            ctx.close();
-        }
+			endpointTable.findRoute(request.method(), request.uri())
+				.map(route -> safeCall(context, route.handler())
+					.onResult(result -> respond(context, route, result)))
+				.whenEmpty(() -> context.sendFailure(WebError.NOT_FOUND));
+		}
 
-        @Override
-        public void channelReadComplete(final ChannelHandlerContext ctx) {
-            ctx.flush();
-        }
-    }
+		private RequestContext respond(RequestContext context, Route<?> route, Result<?> result) {
+			return result.fold(
+				failure -> context.sendFailure(convertError(failure)),
+				success -> context.sendSuccess(route.contentType(), success)
+			);
+		}
+
+		private Promise<?> safeCall(RequestContext context, Handler<?> handler) {
+			try {
+				return handler.handle(context);
+			} catch (Throwable t) {
+				return Promise.failure(CompoundCause.fromThrowable(WebError.INTERNAL_SERVER_ERROR, t));
+			}
+		}
+
+		private CompoundCause convertError(Cause failure) {
+			if (failure instanceof CompoundCause compoundCause) {
+				return compoundCause;
+			}
+
+			return CompoundCause.from(WebError.INTERNAL_SERVER_ERROR.status(), failure);
+		}
+
+		@Override
+		public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
+			ctx.close();
+		}
+
+		@Override
+		public void channelReadComplete(final ChannelHandlerContext ctx) {
+			ctx.flush();
+		}
+	}
 }

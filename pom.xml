@@ -16,9 +16,9 @@
         <jsoniter.version>0.9.23</jsoniter.version>
 
         <!-- Test dependencies -->
-        <junit.version>5.7.0</junit.version>
-        <junit.params.version>5.7.0</junit.params.version>
-        <junit.platform.version>1.7.0</junit.platform.version>
+        <junit.version>5.8.1</junit.version>
+        <junit.params.version>5.8.1</junit.params.version>
+        <junit.platform.version>1.8.1</junit.platform.version>
     </properties>
 
     <build>

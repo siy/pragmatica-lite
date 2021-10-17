@@ -1,26 +1,23 @@
 package org.pfj.http.server;
 
-import io.netty.handler.codec.http.HttpMethod;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.pfj.lang.Causes;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.pfj.http.server.Route.getText;
-import static org.pfj.http.server.Route.postText;
+import io.netty.handler.codec.http.HttpMethod;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.pfj.http.server.Route.from;
 
 class EndpointTableTest {
     private EndpointTable table = EndpointTable.with(
-        getText("/one", () -> Causes.cause("one").result()),
-        getText("/one1", () -> Causes.cause("one1").result()),
-        getText("/one2", () -> Causes.cause("one2").result()),
-        getText("/on", () -> Causes.cause("on").result()),
-        getText("/o", () -> Causes.cause("o").result()),
-        postText("/one", () -> Causes.cause("one").result()),
-        postText("/one1", () -> Causes.cause("one1").result()),
-        postText("/one2", () -> Causes.cause("one2").result()),
-        postText("/on", () -> Causes.cause("on").result()),
-        postText("/o", () -> Causes.cause("o").result())
+        from("/one").get().text().with(() -> Causes.cause("one").result()),
+        from("/one1").get().text().with(() -> Causes.cause("one1").result()),
+        from("/one2").get().text().with(() -> Causes.cause("one2").result()),
+        from("/on").get().text().with(() -> Causes.cause("on").result()),
+        from("/o").get().text().with(() -> Causes.cause("o").result())
     );
 
     @Test
