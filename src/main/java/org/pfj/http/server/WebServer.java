@@ -1,8 +1,6 @@
 package org.pfj.http.server;
 
-import com.jsoniter.output.JsonStream;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -17,9 +15,6 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import org.pfj.lang.Cause;
-import org.pfj.lang.Causes;
-
-import static org.pfj.http.server.Utils.asByteBuf;
 
 public class WebServer {
     private static final int DEFAULT_PORT = 8000;
@@ -38,26 +33,6 @@ public class WebServer {
 
     public static WebServer create(RouteSource ... routes) {
         return new WebServer(DEFAULT_PORT, EndpointTable.with(routes));
-    }
-
-    public <T> WebServer getText(final String path, final Handler<T> handler) {
-        this.endpointTable.add(Route.getText(path, handler));
-        return this;
-    }
-
-    public <T> WebServer getJson(final String path, final Handler<T> handler) {
-        this.endpointTable.add(Route.getJson(path, handler));
-        return this;
-    }
-
-    public <T> WebServer postText(final String path, final Handler<T> handler) {
-        this.endpointTable.add(Route.postText(path, handler));
-        return this;
-    }
-
-    public <T> WebServer postJson(final String path, final Handler<T> handler) {
-        this.endpointTable.add(Route.postJson(path, handler));
-        return this;
     }
 
     public void run() throws InterruptedException {
@@ -136,29 +111,22 @@ public class WebServer {
                     .map(route -> route.handler()
                         .handle(context)
                         .onResult(result -> result.fold(
-                            failure -> context.sendErrorStatus(convertError(failure)),
-                            success -> context.sendResponse(HttpResponseStatus.OK, route.contentType(), serializeResponse(route.contentType(), success))
+                            failure -> context.sendFailure(convertError(failure)),
+                            success -> context.sendSuccess(route.contentType(), success)
                         ))
                     )
-                    .whenEmpty(() -> context.sendErrorStatus(WebError.NOT_FOUND));
+                    .whenEmpty(() -> context.sendFailure(WebError.NOT_FOUND));
             } catch (RuntimeException ex) {
-                context.sendErrorStatus(WebError.INTERNAL_SERVER_ERROR, Causes.fromThrowable(ex).message());
+                context.sendFailure(CompoundCause.fromThrowable(WebError.INTERNAL_SERVER_ERROR, ex));
             }
         }
 
-        private ByteBuf serializeResponse(ContentType contentType, Object success) {
-            return switch (contentType) {
-                case TEXT_PLAIN -> asByteBuf(success.toString());
-                case APPLICATION_JSON -> asByteBuf(JsonStream.serialize(success));
-            };
-        }
-
-        private HttpResponseStatus convertError(Cause failure) {
-            if (failure instanceof WebError webError) {
-                return webError.status();
+        private CompoundCause convertError(Cause failure) {
+            if (failure instanceof CompoundCause compoundCause) {
+                return compoundCause;
             }
 
-            return HttpResponseStatus.INTERNAL_SERVER_ERROR;
+            return CompoundCause.from(WebError.INTERNAL_SERVER_ERROR.status(), failure);
         }
 
         @Override

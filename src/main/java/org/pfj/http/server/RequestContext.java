@@ -1,9 +1,16 @@
 package org.pfj.http.server;
 
+import com.jsoniter.CodegenAccess;
+import com.jsoniter.JsonIteratorPool;
+import com.jsoniter.output.JsonStream;
+import com.jsoniter.spi.TypeLiteral;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
+import org.pfj.lang.Cause;
+import org.pfj.lang.Causes;
+import org.pfj.lang.Result;
 
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
@@ -30,20 +37,16 @@ public class RequestContext {
 
     //-------------------------------------------------------------------------------------------
 
-    public RequestContext sendErrorStatus(WebError error) {
-        return sendErrorStatus(error, error.message());
+    public RequestContext sendFailure(CompoundCause error) {
+        return sendResponse(error.status(), TEXT_PLAIN, asByteBuf(error.message()));
     }
 
-    public RequestContext sendErrorStatus(WebError error, String text) {
-        return sendErrorStatus(error.status(), text);
+    public RequestContext sendSuccess(ContentType contentType, Object entity) {
+        return sendResponse(HttpResponseStatus.OK, contentType, serializeResponse(contentType, entity));
     }
 
-    public RequestContext sendErrorStatus(HttpResponseStatus status) {
-        return sendErrorStatus(status, status.reasonPhrase());
-    }
-
-    public RequestContext sendErrorStatus(HttpResponseStatus status, String text) {
-        return sendResponse(status, TEXT_PLAIN, asByteBuf(text));
+    public RequestContext sendSuccess(ContentType contentType, ByteBuf entity) {
+        return sendResponse(HttpResponseStatus.OK, contentType, entity);
     }
 
     public RequestContext sendResponse(HttpResponseStatus status, ContentType contentType, ByteBuf entity) {
@@ -64,6 +67,13 @@ public class RequestContext {
         return this;
     }
 
+    private ByteBuf serializeResponse(ContentType contentType, Object success) {
+        return switch (contentType) {
+            case TEXT_PLAIN -> asByteBuf(success.toString());
+            case APPLICATION_JSON -> asByteBuf(JsonStream.serialize(success));
+        };
+    }
+
     //-------------------------------------------------------------------------------------------
 
     public ByteBuf body() {
@@ -72,5 +82,44 @@ public class RequestContext {
 
     public String bodyAsString() {
         return request.content().toString(StandardCharsets.UTF_8);
+    }
+
+    public <T> Result<T> fromJson(TypeLiteral<T> literal) {
+        return deserialize(request.content(), literal);
+    }
+
+    private static <T> Result<T> deserialize(ByteBuf entity, TypeLiteral<T> literal) {
+        var iter = JsonIteratorPool.borrowJsonIterator();
+
+        iter.reset(entity.array(), entity.arrayOffset(), entity.readableBytes());
+        try {
+            T val = iter.read(literal);
+
+            if (CodegenAccess.head(iter) != entity.readableBytes()) {
+                return WebError.UNPROCESSABLE_ENTITY.result();
+            }
+
+            return Result.success(val);
+        } catch (Exception e) {
+            return WebError.UNPROCESSABLE_ENTITY.result();
+        } finally {
+            JsonIteratorPool.returnJsonIterator(iter);
+        }
+    }
+
+    private Cause decodeException(Throwable throwable) {
+        Causes.fromThrowable(throwable);
+
+        return new CompoundCause() {
+            @Override
+            public HttpResponseStatus status() {
+                return null;
+            }
+
+            @Override
+            public String message() {
+                return null;
+            }
+        };
     }
 }

@@ -1,32 +1,31 @@
 package org.pfj.http.example;
 
-import org.pfj.http.server.Route;
 import org.pfj.http.server.WebError;
 import org.pfj.http.server.WebServer;
 import org.pfj.lang.Promise;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.pfj.http.server.Route.getText;
-import static org.pfj.http.server.Route.postText;
+import static org.pfj.http.server.Route.at;
 import static org.pfj.lang.Promise.failure;
 import static org.pfj.lang.Promise.success;
 
 public class App {
     public static void main(final String[] args) throws Exception {
         WebServer.create(
-            getText("/hello", (request) -> success("Hello world")),
-            postText("/hello", (request) -> success("Hello world: " + request.bodyAsString())),
-            getText("/boom", (request) -> {
+            at("/hello").get().text().from(request -> success("Hello world")),
+            at("/hello").get().text().from(request -> success("Hello world: " + request.bodyAsString())),
+            at("/boom").get().text().from(request -> {
                 throw new RuntimeException("Some exception message");
             }),
-            getText("/boom2", (request) -> failure(WebError.UNPROCESSABLE_ENTITY)),
-            getText("/getbody", (request) -> success("What is this? " + request.bodyAsString())),
-            getText("/delay", (request) -> delayedResponse()),
-            Route.from("/v1",
-                Route.from("/user",
-                    getText("/list", (request -> success("User list"))),
-                    getText("/manager", (request -> success("Manager list")))
+            at("/boom2").get().text().from(request -> failure(WebError.UNPROCESSABLE_ENTITY)),
+            at("/getbody").get().text().from(request -> success("What is this? " + request.bodyAsString())),
+            at("/delay").get().text().from(request -> delayedResponse()),
+            at("/v1",
+                at("/user",
+                    at("/list").get().text().from(request -> success("User list")),
+                    at("/manager").get().text().from(request -> success("Manager list")),
+                    at("/profile").get().json().from(request -> success(new UserProfile("John", "Doe", "john.doe@gmail.com")))
                 )
             )
         ).run();
@@ -38,7 +37,7 @@ public class App {
         return Promise.<Integer>promise()
             .async(promise -> {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(500);
                 } catch (InterruptedException e) {
                     //ignore
                 }

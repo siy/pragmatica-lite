@@ -1,9 +1,8 @@
 package org.pfj.http.server;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
-import org.pfj.lang.Cause;
 
-public enum WebError implements Cause {
+public enum WebError implements CompoundCause {
     BAD_REQUEST(HttpResponseStatus.BAD_REQUEST),
     UNAUTHORIZED(HttpResponseStatus.UNAUTHORIZED),
     PAYMENT_REQUIRED(HttpResponseStatus.PAYMENT_REQUIRED),
@@ -52,6 +51,7 @@ public enum WebError implements Cause {
         return status.reasonPhrase();
     }
 
+    @Override
     public HttpResponseStatus status() {
         return status;
     }
