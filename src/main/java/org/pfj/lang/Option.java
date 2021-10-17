@@ -20,6 +20,7 @@ import org.pfj.lang.Functions.*;
 import org.pfj.lang.Option.None;
 import org.pfj.lang.Option.Some;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -83,8 +84,7 @@ public sealed interface Option<T> permits Some, None {
      * @return this instance for fluent call chaining
      */
     default Option<T> whenPresent(Consumer<? super T> consumer) {
-        apply(() -> {
-        }, consumer);
+        apply(() -> {}, consumer);
         return this;
     }
 
@@ -96,8 +96,7 @@ public sealed interface Option<T> permits Some, None {
      * @return this instance for fluent call chaining
      */
     default Option<T> whenEmpty(Runnable action) {
-        apply(action, __ -> {
-        });
+        apply(action, __ -> {});
         return this;
     }
 
@@ -255,24 +254,39 @@ public sealed interface Option<T> permits Some, None {
         return new Some<>(value);
     }
 
-    record Some<T>(T value) implements Option<T> {
+    final class Some<T> implements Option<T> {
+        private final T value;
+
+        private Some(T value) {
+            this.value = value;
+        }
+
         @Override
         public <R> R fold(Supplier<? extends R> emptyMapper, FN1<? extends R, ? super T> presentMapper) {
             return presentMapper.apply(value);
         }
 
         @Override
-        public String toString() {
-            return "Some(" + value.toString() + ")";
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            return o instanceof Some<?> some && value.equals(some.value);
         }
 
         @Override
-        public T value() {
-            throw new UnsupportedOperationException("Value should not be accessed directly");
+        public int hashCode() {
+            return Objects.hash(value);
+        }
+
+        @Override
+        public String toString() {
+            return "Some(" + value.toString() + ")";
         }
     }
 
-    record None<T>() implements Option<T> {
+    final class None<T> implements Option<T> {
         @Override
         public <R> R fold(Supplier<? extends R> emptyMapper, FN1<? extends R, ? super T> presentMapper) {
             return emptyMapper.get();
@@ -415,13 +429,13 @@ public sealed interface Option<T> permits Some, None {
         Option<T5> op5, Option<T6> op6, Option<T7> op7
     ) {
         return () -> op1.flatMap(
-            v1 -> op2.flatMap(
-                v2 -> op3.flatMap(
-                    v3 -> op4.flatMap(
-                        v4 -> op5.flatMap(
-                            v5 -> op6.flatMap(
-                                v6 -> op7.flatMap(
-                                    v7 -> option(tuple(v1, v2, v3, v4, v5, v6, v7)))))))));
+                v1 -> op2.flatMap(
+                        v2 -> op3.flatMap(
+                                v3 -> op4.flatMap(
+                                        v4 -> op5.flatMap(
+                                                v5 -> op6.flatMap(
+                                                        v6 -> op7.flatMap(
+                                                                v7 -> option(tuple(v1, v2, v3, v4, v5, v6, v7)))))))));
     }
 
     /**
@@ -431,18 +445,18 @@ public sealed interface Option<T> permits Some, None {
      * @return {@link Mapper8} prepared for further transformation.
      */
     static <T1, T2, T3, T4, T5, T6, T7, T8> Mapper8<T1, T2, T3, T4, T5, T6, T7, T8> all(
-        Option<T1> op1, Option<T2> op2, Option<T3> op3, Option<T4> op4,
-        Option<T5> op5, Option<T6> op6, Option<T7> op7, Option<T8> op8
+            Option<T1> op1, Option<T2> op2, Option<T3> op3, Option<T4> op4,
+            Option<T5> op5, Option<T6> op6, Option<T7> op7, Option<T8> op8
     ) {
         return () -> op1.flatMap(
-            v1 -> op2.flatMap(
-                v2 -> op3.flatMap(
-                    v3 -> op4.flatMap(
-                        v4 -> op5.flatMap(
-                            v5 -> op6.flatMap(
-                                v6 -> op7.flatMap(
-                                    v7 -> op8.flatMap(
-                                        v8 -> option(tuple(v1, v2, v3, v4, v5, v6, v7, v8))))))))));
+                v1 -> op2.flatMap(
+                        v2 -> op3.flatMap(
+                                v3 -> op4.flatMap(
+                                        v4 -> op5.flatMap(
+                                                v5 -> op6.flatMap(
+                                                        v6 -> op7.flatMap(
+                                                                v7 -> op8.flatMap(
+                                                                        v8 -> option(tuple(v1, v2, v3, v4, v5, v6, v7, v8))))))))));
     }
 
     /**
@@ -452,19 +466,19 @@ public sealed interface Option<T> permits Some, None {
      * @return {@link Mapper9} prepared for further transformation.
      */
     static <T1, T2, T3, T4, T5, T6, T7, T8, T9> Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> all(
-        Option<T1> op1, Option<T2> op2, Option<T3> op3, Option<T4> op4, Option<T5> op5,
-        Option<T6> op6, Option<T7> op7, Option<T8> op8, Option<T9> op9
+            Option<T1> op1, Option<T2> op2, Option<T3> op3, Option<T4> op4, Option<T5> op5,
+            Option<T6> op6, Option<T7> op7, Option<T8> op8, Option<T9> op9
     ) {
         return () -> op1.flatMap(
-            v1 -> op2.flatMap(
-                v2 -> op3.flatMap(
-                    v3 -> op4.flatMap(
-                        v4 -> op5.flatMap(
-                            v5 -> op6.flatMap(
-                                v6 -> op7.flatMap(
-                                    v7 -> op8.flatMap(
-                                        v8 -> op9.flatMap(
-                                            v9 -> option(tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9)))))))))));
+                v1 -> op2.flatMap(
+                        v2 -> op3.flatMap(
+                                v3 -> op4.flatMap(
+                                        v4 -> op5.flatMap(
+                                                v5 -> op6.flatMap(
+                                                        v6 -> op7.flatMap(
+                                                                v7 -> op8.flatMap(
+                                                                        v8 -> op9.flatMap(
+                                                                                v9 -> option(tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9)))))))))));
     }
 
     /**

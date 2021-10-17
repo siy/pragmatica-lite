@@ -22,6 +22,7 @@ import org.pfj.lang.Result.Success;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -233,20 +234,35 @@ public sealed interface Result<T> permits Success, Failure {
         return new Success<>(value);
     }
 
-    record Success<T>(T value) implements Result<T> {
+    final class Success<T> implements Result<T> {
+        private final T value;
+
+        private Success(T value) {
+            this.value = value;
+        }
+
         @Override
         public <R> R fold(FN1<? extends R, ? super Cause> failureMapper, FN1<? extends R, ? super T> successMapper) {
             return successMapper.apply(value);
         }
 
         @Override
-        public String toString() {
-            return "Success(" + value.toString() + ")";
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            return o instanceof Success<?> success && value.equals(success.value);
         }
 
         @Override
-        public T value() {
-            throw new UnsupportedOperationException("Value should not be accessed directly");
+        public int hashCode() {
+            return Objects.hash(value);
+        }
+
+        @Override
+        public String toString() {
+            return "Success(" + value.toString() + ")";
         }
     }
 
@@ -261,20 +277,35 @@ public sealed interface Result<T> permits Success, Failure {
         return new Failure<>(value);
     }
 
-    record Failure<T>(Cause value) implements Result<T> {
+    final class Failure<T> implements Result<T> {
+        private final Cause value;
+
+        private Failure(Cause value) {
+            this.value = value;
+        }
+
         @Override
         public <R> R fold(FN1<? extends R, ? super Cause> failureMapper, FN1<? extends R, ? super T> successMapper) {
             return failureMapper.apply(value);
         }
 
         @Override
-        public String toString() {
-            return "Failure(" + value + ")";
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            return o instanceof Failure<?> failure && value.equals(failure.value);
         }
 
         @Override
-        public Cause value() {
-            throw new UnsupportedOperationException("Cause should not be accessed directly");
+        public int hashCode() {
+            return Objects.hash(value);
+        }
+
+        @Override
+        public String toString() {
+            return "Failure(" + value + ")";
         }
     }
 
