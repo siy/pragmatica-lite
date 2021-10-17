@@ -24,6 +24,11 @@ public record Route<T>(
 	}
 
 	@Override
+	public String toString() {
+		return "Route: " + method + ": " + path +  ", contentType=" + contentType;
+	}
+
+	@Override
 	public Stream<Route<?>> routes() {
 		return Stream.of(this);
 	}

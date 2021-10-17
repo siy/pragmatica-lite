@@ -1,5 +1,7 @@
 package org.pfj.http.server;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.pfj.lang.Cause;
 import org.pfj.lang.Causes;
 import org.pfj.lang.Promise;
@@ -39,6 +41,7 @@ public class WebServer {
 	static {
 		InternalLoggerFactory.setDefaultFactory(Log4J2LoggerFactory.INSTANCE);
 	}
+	private static final Logger log = LogManager.getLogger();
 
 	private static final int DEFAULT_PORT = 8000;
 
@@ -67,15 +70,20 @@ public class WebServer {
 			bossGroup = new EpollEventLoopGroup(1);
 			workerGroup = new EpollEventLoopGroup();
 			serverChannelClass = EpollServerSocketChannel.class;
+			log.info("Using epoll native transport");
 		} else if (KQueue.isAvailable()) {
 			bossGroup = new KQueueEventLoopGroup(1);
 			workerGroup = new KQueueEventLoopGroup();
 			serverChannelClass = KQueueServerSocketChannel.class;
+			log.info("Using kqueue native transport");
 		} else {
 			bossGroup = new NioEventLoopGroup(1);
 			workerGroup = new NioEventLoopGroup();
 			serverChannelClass = NioServerSocketChannel.class;
+			log.info("Using NIO transport");
 		}
+
+		endpointTable.print();
 
 		var promise = Promise.<Void>promise();
 

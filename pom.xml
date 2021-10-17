@@ -15,6 +15,7 @@
         <netty.version>4.1.69.Final</netty.version>
         <jsoniter.version>0.9.23</jsoniter.version>
         <log4j2.version>2.14.1</log4j2.version>
+        <disruptor.version>3.4.4</disruptor.version>
 
         <!-- Test dependencies -->
         <junit.version>5.8.1</junit.version>
@@ -72,6 +73,12 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>${log4j2.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+            <version>${disruptor.version}</version>
         </dependency>
 
         <dependency>

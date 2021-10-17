@@ -1,6 +1,9 @@
 package org.pfj.http.server;
 
 import io.netty.handler.codec.http.HttpMethod;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.pfj.lang.Option;
 
 import java.util.HashMap;
@@ -12,6 +15,8 @@ import static org.pfj.lang.Option.option;
 
 //WARNING: dynamic route configuration is not supported
 public final class EndpointTable {
+    private static final Logger log = LogManager.getLogger();
+
     private final Map<HttpMethod, TreeMap<String, Route<?>>> routes = new HashMap<>();
 
     public static EndpointTable create() {
@@ -24,6 +29,12 @@ public final class EndpointTable {
         Stream.of(routes).flatMap(RouteSource::routes).forEach(table::add);
 
         return table;
+    }
+
+    public EndpointTable print() {
+        routes.forEach((method, endpoints) ->
+                           endpoints.forEach((path, route) -> log.info("{}", route)));
+        return this;
     }
 
     public EndpointTable add(Route<?> route) {
