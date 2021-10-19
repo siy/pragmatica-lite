@@ -42,10 +42,8 @@ public class App {
 					"/v1",
 					from(
 						"/user",
-						//Full description
-						from("/list").get().json().with(request -> success("User list")),
-
-						//Shortcut with non-default content type
+						get("/list").json().with(request -> success(request.pathParams())),
+						get("/query").json().with(request -> success(request.queryParams())),
 						get("/profile").json().with(request -> success(new UserProfile("John", "Doe", "john.doe@gmail.com")))
 					)
 				)

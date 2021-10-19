@@ -51,13 +51,13 @@ public final class EndpointTable {
         var path = inputPath + "/";
 
         return option(routes.get(method))
-            .flatMap(map -> option(map.ceilingEntry(path)))
+            .flatMap(map -> option(map.floorEntry(path)))
             .filter(routeEntry -> isSameOrStartOfPath(path, routeEntry.getKey()))
             .map(Map.Entry::getValue);
     }
 
     private boolean isSameOrStartOfPath(String inputPath, String routePath) {
         return (inputPath.length() == routePath.length() && inputPath.equals(routePath))
-            || (inputPath.length() > routePath.length() && inputPath.charAt(routePath.length()) == '/');
+            || (inputPath.length() > routePath.length() && inputPath.charAt(routePath.length() - 1) == '/');
     }
 }
