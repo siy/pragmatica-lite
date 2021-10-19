@@ -17,5 +17,6 @@ target
 *.iml
 *.ipr
 
-### Spring Boot ###
 *.log
+*.log.gz
+logs/

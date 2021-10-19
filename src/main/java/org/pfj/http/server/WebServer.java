@@ -41,6 +41,7 @@ public class WebServer {
 	static {
 		InternalLoggerFactory.setDefaultFactory(Log4J2LoggerFactory.INSTANCE);
 	}
+
 	private static final Logger log = LogManager.getLogger();
 
 	private static final int DEFAULT_PORT = 8000;
@@ -58,10 +59,12 @@ public class WebServer {
 	}
 
 	public static WebServer create(RouteSource... routes) {
-		return new WebServer(DEFAULT_PORT, EndpointTable.with(routes));
+		return create(DEFAULT_PORT, routes);
 	}
 
 	public Promise<Void> start() throws InterruptedException {
+		log.info("Starting WebServer...");
+
 		EventLoopGroup bossGroup;
 		EventLoopGroup workerGroup;
 		Class<? extends ServerChannel> serverChannelClass;
