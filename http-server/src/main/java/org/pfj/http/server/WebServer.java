@@ -28,7 +28,7 @@ public class WebServer {
         InternalLoggerFactory.setDefaultFactory(Log4J2LoggerFactory.INSTANCE);
     }
 
-    private static final Logger log = LogManager.getLogger();
+    private static final Logger log = LogManager.getLogger(WebServer.class);
     private static final int DEFAULT_PORT = 8000;
 
     private final EndpointTable endpointTable;

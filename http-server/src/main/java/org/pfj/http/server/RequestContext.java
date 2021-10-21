@@ -28,7 +28,7 @@ import static org.pfj.http.server.ContentType.TEXT_PLAIN;
 import static org.pfj.http.server.Utils.*;
 
 public class RequestContext {
-    private static final Logger log = LogManager.getLogger();
+    private static final Logger log = LogManager.getLogger(RequestContext.class);
 
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
     private static final String SERVER_NAME = "PFJ Netty Server";
@@ -117,7 +117,7 @@ public class RequestContext {
             .set(HttpHeaderNames.LOCATION, URLEncoder.encode(redirect.url(), StandardCharsets.ISO_8859_1));
 
         ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
-        
+
         return this;
     }
 

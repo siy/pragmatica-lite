@@ -15,7 +15,7 @@ import static org.pfj.lang.Option.option;
 
 //WARNING: dynamic route configuration is not supported
 public final class EndpointTable {
-    private static final Logger log = LogManager.getLogger();
+    private static final Logger log = LogManager.getLogger(EndpointTable.class);
 
     private final Map<HttpMethod, TreeMap<String, Route<?>>> routes = new HashMap<>();
 

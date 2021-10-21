@@ -20,3 +20,4 @@ target
 *.log
 *.log.gz
 logs/
+dependency-reduced-pom.xml
