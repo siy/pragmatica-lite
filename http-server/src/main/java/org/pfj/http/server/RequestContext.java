@@ -1,9 +1,7 @@
 package org.pfj.http.server;
 
-import com.jsoniter.CodegenAccess;
-import com.jsoniter.JsonIteratorPool;
-import com.jsoniter.output.JsonStream;
-import com.jsoniter.spi.TypeLiteral;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
@@ -14,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 import org.pfj.lang.Promise;
 import org.pfj.lang.Result;
 
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
@@ -24,8 +23,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static io.netty.buffer.Unpooled.wrappedBuffer;
+import static org.pfj.http.server.CompoundCause.fromThrowable;
 import static org.pfj.http.server.ContentType.TEXT_PLAIN;
 import static org.pfj.http.server.Utils.*;
+import static org.pfj.lang.Promise.failure;
+import static org.pfj.lang.Promise.promise;
+import static org.pfj.lang.Result.success;
 
 public class RequestContext {
     private static final Logger log = LogManager.getLogger(RequestContext.class);
@@ -36,7 +40,7 @@ public class RequestContext {
 
     private final ChannelHandlerContext ctx;
     private final FullHttpRequest request;
-    private final CauseMapper causeMapper;
+    private final WebServer server;
     private final HttpHeaders responseHeaders = new CombinedHttpHeaders(true);
 
     private Supplier<List<String>> pathParamsSupplier = lazy(() -> pathParamsSupplier = value(initPathParams()));
@@ -44,14 +48,14 @@ public class RequestContext {
     private Supplier<Map<String, String>> headersSupplier = lazy(() -> headersSupplier = value(initHeaders()));
     private Route<?> route;
 
-    private RequestContext(ChannelHandlerContext ctx, FullHttpRequest request, CauseMapper causeMapper) {
+    private RequestContext(ChannelHandlerContext ctx, FullHttpRequest request, WebServer server) {
         this.ctx = ctx;
         this.request = request;
-        this.causeMapper = causeMapper;
+        this.server = server;
     }
 
-    public static RequestContext from(ChannelHandlerContext ctx, FullHttpRequest request, CauseMapper causeMapper) {
-        return new RequestContext(ctx, request, causeMapper);
+    public static RequestContext from(ChannelHandlerContext ctx, FullHttpRequest request, WebServer server) {
+        return new RequestContext(ctx, request, server);
     }
 
     public RequestContext setRoute(Route<?> route) {
@@ -71,7 +75,7 @@ public class RequestContext {
         return body().toString(StandardCharsets.UTF_8);
     }
 
-    public <T> Result<T> fromJson(TypeLiteral<T> literal) {
+    public <T> Result<T> fromJson(TypeReference<T> literal) {
         return deserialize(request.content(), literal);
     }
 
@@ -92,21 +96,25 @@ public class RequestContext {
     }
 
     public RequestContext sendFailure(CompoundCause error) {
-        return sendResponse(error.status(), TEXT_PLAIN, asByteBuf(error.message()));
+        return sendResponse(error.status(), TEXT_PLAIN, wrap(error.message()));
     }
 
     public void invokeAndRespond() {
-        safeCall().onResult(result -> result.fold(
-            failure -> sendFailure(causeMapper.apply(failure)),
-            success -> sendSuccess(route().contentType(), success)
-        ));
+        safeCall()
+            .flatMap(value -> promise(serializeResponse(value)))
+            .onResult(result -> result.fold(
+                failure -> sendFailure(server.causeMapper().apply(failure)),
+                success -> sendSuccess(route().contentType(), success)
+            ));
     }
 
     private RequestContext sendSuccess(ContentType contentType, Object entity) {
         if (entity instanceof Redirect redirect) {
             return sendRedirect(redirect);
+        } else if (entity instanceof ByteBuf byteBuf) {
+            return sendResponse(HttpResponseStatus.OK, contentType, byteBuf);
         } else {
-            return sendResponse(HttpResponseStatus.OK, contentType, serializeResponse(contentType, entity));
+            throw new IllegalStateException("Invalid payload type " + entity.getClass().getSimpleName());
         }
     }
 
@@ -140,11 +148,23 @@ public class RequestContext {
         return this;
     }
 
-    private ByteBuf serializeResponse(ContentType contentType, Object success) {
-        return switch (contentType) {
-            case TEXT_PLAIN -> asByteBuf(success.toString());
-            case APPLICATION_JSON -> asByteBuf(JsonStream.serialize(success));
+    private Result<Object> serializeResponse(Object value) {
+        if (value instanceof Redirect redirect) {
+            return success(redirect);
+        }
+
+        return switch (route.contentType()) {
+            case TEXT_PLAIN -> success(wrap(value));
+            case APPLICATION_JSON -> serializeJson(value);
         };
+    }
+
+    private Result<Object> serializeJson(Object success) {
+        try {
+            return success(wrappedBuffer(server.objectMapper().writeValueAsBytes(success)));
+        } catch (JsonProcessingException e) {
+            return fromThrowable(WebError.INTERNAL_SERVER_ERROR, e).result();
+        }
     }
 
     private List<String> initPathParams() {
@@ -172,7 +192,19 @@ public class RequestContext {
         try {
             return route().handler().handle(this);
         } catch (Throwable t) {
-            return Promise.failure(CompoundCause.fromThrowable(WebError.INTERNAL_SERVER_ERROR, t));
+            return failure(fromThrowable(WebError.INTERNAL_SERVER_ERROR, t));
+        }
+    }
+
+    private <T> Result<T> deserialize(ByteBuf entity, TypeReference<T> literal) {
+        try {
+            return success(server.objectMapper().readValue(
+                entity.array(),
+                entity.arrayOffset(),
+                entity.readableBytes(),
+                literal));
+        } catch (IOException e) {
+            return fromThrowable(WebError.UNPROCESSABLE_ENTITY, e).result();
         }
     }
 
@@ -180,25 +212,7 @@ public class RequestContext {
         return ZonedDateTime.now(Clock.systemUTC());
     }
 
-    private static <T> Result<T> deserialize(ByteBuf entity, TypeLiteral<T> literal) {
-        var iter = JsonIteratorPool.borrowJsonIterator();
-
-        try {
-            iter.reset(entity.array(), entity.arrayOffset(), entity.readableBytes());
-
-            T val = iter.read(literal);
-
-            if (CodegenAccess.head(iter) != entity.readableBytes()) {
-                log.warn("Request body contains garbage after JSON body");
-                return WebError.UNPROCESSABLE_ENTITY.result();
-            }
-
-            return Result.success(val);
-        } catch (Exception e) {
-            log.warn("Error while parsing JSON", e);
-            return WebError.UNPROCESSABLE_ENTITY.result();
-        } finally {
-            JsonIteratorPool.returnJsonIterator(iter);
-        }
+    private static ByteBuf wrap(Object value) {
+        return wrappedBuffer(value.toString().getBytes(StandardCharsets.UTF_8));
     }
 }

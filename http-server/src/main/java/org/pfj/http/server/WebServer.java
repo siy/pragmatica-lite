@@ -1,5 +1,6 @@
 package org.pfj.http.server;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.epoll.Epoll;
@@ -19,7 +20,9 @@ import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.netty.util.internal.logging.Log4J2LoggerFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.pfj.lang.*;
+import org.pfj.lang.Causes;
+import org.pfj.lang.Promise;
+import org.pfj.lang.Result;
 
 import static org.pfj.http.server.Utils.normalize;
 
@@ -34,6 +37,7 @@ public class WebServer {
     private final EndpointTable endpointTable;
     private final int port;
     private CauseMapper causeMapper = CauseMapper::defaultConverter;
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     private WebServer(int port, EndpointTable endpointTable) {
         this.port = port;
@@ -50,6 +54,11 @@ public class WebServer {
 
     public WebServer withCauseMapper(CauseMapper causeMapper) {
         this.causeMapper = causeMapper;
+        return this;
+    }
+
+    public WebServer withObjectMapper(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
         return this;
     }
 
@@ -104,6 +113,14 @@ public class WebServer {
         return promise;
     }
 
+    protected CauseMapper causeMapper() {
+        return causeMapper;
+    }
+
+    protected ObjectMapper objectMapper() {
+        return objectMapper;
+    }
+
     private void decode(Promise<Void> promise, Future<? super Void> future) {
         promise.resolve(future.isSuccess()
             ? Result.success(null)
@@ -131,8 +148,8 @@ public class WebServer {
          * @param msg The HTTP request message.
          */
         @Override
-        public void channelRead0(final ChannelHandlerContext ctx, final Object msg) {
-            if (!(msg instanceof final FullHttpRequest request)) {
+        public void channelRead0(ChannelHandlerContext ctx, Object msg) {
+            if (!(msg instanceof FullHttpRequest request)) {
                 return;
             }
 
@@ -140,7 +157,7 @@ public class WebServer {
                 ctx.write(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE));
             }
 
-            var context = RequestContext.from(ctx, request, causeMapper);
+            var context = RequestContext.from(ctx, request, WebServer.this);
 
             endpointTable.findRoute(request.method(), normalize(request.uri()))
                 .whenEmpty(() -> context.sendFailure(WebError.NOT_FOUND))
@@ -148,12 +165,12 @@ public class WebServer {
         }
 
         @Override
-        public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
+        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
             ctx.close();
         }
 
         @Override
-        public void channelReadComplete(final ChannelHandlerContext ctx) {
+        public void channelReadComplete(ChannelHandlerContext ctx) {
             ctx.flush();
         }
     }
