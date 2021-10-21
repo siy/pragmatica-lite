@@ -19,10 +19,7 @@ import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.netty.util.internal.logging.Log4J2LoggerFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.pfj.lang.Cause;
-import org.pfj.lang.Causes;
-import org.pfj.lang.Promise;
-import org.pfj.lang.Result;
+import org.pfj.lang.*;
 
 import static org.pfj.http.server.Utils.normalize;
 
@@ -32,11 +29,11 @@ public class WebServer {
     }
 
     private static final Logger log = LogManager.getLogger();
-
     private static final int DEFAULT_PORT = 8000;
 
     private final EndpointTable endpointTable;
     private final int port;
+    private CauseMapper causeMapper = CauseMapper::defaultConverter;
 
     private WebServer(int port, EndpointTable endpointTable) {
         this.port = port;
@@ -49,6 +46,11 @@ public class WebServer {
 
     public static WebServer create(RouteSource... routes) {
         return create(DEFAULT_PORT, routes);
+    }
+
+    public WebServer withCauseMapper(CauseMapper causeMapper) {
+        this.causeMapper = causeMapper;
+        return this;
     }
 
     public Promise<Void> start() throws InterruptedException {
@@ -138,36 +140,11 @@ public class WebServer {
                 ctx.write(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE));
             }
 
-            var context = RequestContext.from(ctx, request);
+            var context = RequestContext.from(ctx, request, causeMapper);
 
             endpointTable.findRoute(request.method(), normalize(request.uri()))
-                .whenPresent(context::setRoute)
-                .map(route -> safeCall(context, route.handler())
-                    .onResult(result -> respond(context, route, result)))
-                .whenEmpty(() -> context.sendFailure(WebError.NOT_FOUND));
-        }
-
-        private RequestContext respond(RequestContext context, Route<?> route, Result<?> result) {
-            return result.fold(
-                failure -> context.sendFailure(convertError(failure)),
-                success -> context.sendSuccess(route.contentType(), success)
-            );
-        }
-
-        private Promise<?> safeCall(RequestContext context, Handler<?> handler) {
-            try {
-                return handler.handle(context);
-            } catch (Throwable t) {
-                return Promise.failure(CompoundCause.fromThrowable(WebError.INTERNAL_SERVER_ERROR, t));
-            }
-        }
-
-        private CompoundCause convertError(Cause failure) {
-            if (failure instanceof CompoundCause compoundCause) {
-                return compoundCause;
-            }
-
-            return CompoundCause.from(WebError.INTERNAL_SERVER_ERROR.status(), failure);
+                .whenEmpty(() -> context.sendFailure(WebError.NOT_FOUND))
+                .whenPresent(route -> context.setRoute(route).invokeAndRespond());
         }
 
         @Override
