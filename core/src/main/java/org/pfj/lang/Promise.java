@@ -77,6 +77,11 @@ public class Promise<T> extends CompletableFuture<Result<T>> {
         return this;
     }
 
+    public Promise<T> onResultDo(Runnable runnable) {
+        onResult(__ -> runnable.run());
+        return this;
+    }
+
     public Promise<T> onSuccess(Consumer<T> action) {
         return onResult(result -> result.onSuccess(action));
     }

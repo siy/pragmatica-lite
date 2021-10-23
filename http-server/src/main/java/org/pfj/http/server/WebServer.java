@@ -88,7 +88,11 @@ public class WebServer {
 
         endpointTable.print();
 
-        var promise = Promise.<Void>promise();
+        var promise = Promise.<Void>promise()
+            .onResultDo(() -> {
+                bossGroup.shutdownGracefully();
+                workerGroup.shutdownGracefully();
+            });
 
         try {
             new ServerBootstrap()
@@ -103,11 +107,9 @@ public class WebServer {
                 .channel()
                 .closeFuture()
                 .addListener(future -> decode(promise, future));
-        } finally {
-            promise.onResult(__ -> {
-                bossGroup.shutdownGracefully();
-                workerGroup.shutdownGracefully();
-            });
+        } catch (InterruptedException e) {
+            //In rare cases when .sync() will be interrupted, fail with error
+            promise.resolve(WebError.SERVICE_UNAVAILABLE.result());
         }
 
         return promise;

@@ -1,18 +1,15 @@
 package org.pfj.http.server;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.pfj.lang.Promise;
 import org.pfj.lang.Result;
 
-import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
@@ -29,11 +26,10 @@ import static org.pfj.http.server.ContentType.TEXT_PLAIN;
 import static org.pfj.http.server.Utils.*;
 import static org.pfj.lang.Promise.failure;
 import static org.pfj.lang.Promise.promise;
+import static org.pfj.lang.Result.lift;
 import static org.pfj.lang.Result.success;
 
 public class RequestContext {
-    private static final Logger log = LogManager.getLogger(RequestContext.class);
-
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
     private static final String SERVER_NAME = "PFJ Netty Server";
     private static final int PATH_PARAM_LIMIT = 1024;
@@ -160,11 +156,10 @@ public class RequestContext {
     }
 
     private Result<Object> serializeJson(Object success) {
-        try {
-            return success(wrappedBuffer(server.objectMapper().writeValueAsBytes(success)));
-        } catch (JsonProcessingException e) {
-            return fromThrowable(WebError.INTERNAL_SERVER_ERROR, e).result();
-        }
+        return lift(
+            e -> fromThrowable(WebError.UNPROCESSABLE_ENTITY, e),
+            () -> wrappedBuffer(objectMapper().writeValueAsBytes(success))
+        );
     }
 
     private List<String> initPathParams() {
@@ -197,15 +192,14 @@ public class RequestContext {
     }
 
     private <T> Result<T> deserialize(ByteBuf entity, TypeReference<T> literal) {
-        try {
-            return success(server.objectMapper().readValue(
-                entity.array(),
-                entity.arrayOffset(),
-                entity.readableBytes(),
-                literal));
-        } catch (IOException e) {
-            return fromThrowable(WebError.UNPROCESSABLE_ENTITY, e).result();
-        }
+        return lift(
+            e -> fromThrowable(WebError.UNPROCESSABLE_ENTITY, e),
+            () -> objectMapper().readValue(entity.array(), entity.arrayOffset(), entity.readableBytes(), literal)
+        );
+    }
+
+    private ObjectMapper objectMapper() {
+        return server.objectMapper();
     }
 
     private static ZonedDateTime now() {
