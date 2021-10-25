@@ -17,28 +17,28 @@ public class App {
 		WebServer.with(Configuration.atDefaultPort().build())
             .and(
                 //Full description
-                from("/hello")
-					.get().text().from(request -> success("Hello world")),
+                from("/hello1")
+					.get().text().from(request -> success("Hello world! " + request.route().path())),
 
                 //Default content type (text)
-                from("/hello")
-					.get().from(request -> success("Hello world: " + request.bodyAsString())),
+                from("/hello2")
+					.get().from(request -> success("Hello world! " + request.route().path())),
 
                 //Shortcut for method, explicit content type
-                get("/getbody")
-					.text().from(request -> success("What is this? " + request.bodyAsString())),
+                get("/hello3")
+					.text().from(request -> success("Hello world! " + request.route().path())),
 
                 //Shortcut for method, default content type
-                get("/getbody")
-					.from(request -> success("What is this? " + request.bodyAsString())),
+                get("/hello4")
+					.from(request -> success("Hello world! " + request.route().path())),
 
                 //Runtime exception handling example
-                get("/boom").from(request -> {
+                get("/boom-legacy").from(request -> {
                     throw new RuntimeException("Some exception message");
                 }),
 
-                //Error handling
-                get("/boom2")
+                //Functional error handling
+                get("/boom-functional")
 					.from(request -> failure(WebError.UNPROCESSABLE_ENTITY)),
 
                 //Long-running process
