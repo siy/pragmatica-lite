@@ -1,12 +1,17 @@
 package org.pfj.http.server;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
+import org.pfj.http.server.error.CompoundCause;
+import org.pfj.http.server.error.WebError;
+import org.pfj.http.server.routing.Redirect;
+import org.pfj.http.server.routing.Route;
+import org.pfj.http.server.serialization.ContentType;
+import org.pfj.http.server.util.Either;
 import org.pfj.lang.Promise;
 import org.pfj.lang.Result;
 
@@ -20,13 +25,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+
 import static io.netty.buffer.Unpooled.wrappedBuffer;
-import static org.pfj.http.server.CompoundCause.fromThrowable;
-import static org.pfj.http.server.ContentType.TEXT_PLAIN;
-import static org.pfj.http.server.Utils.*;
+import static org.pfj.http.server.error.CompoundCause.fromThrowable;
+import static org.pfj.http.server.serialization.ContentType.TEXT_PLAIN;
+import static org.pfj.http.server.util.Utils.*;
 import static org.pfj.lang.Promise.failure;
-import static org.pfj.lang.Promise.promise;
-import static org.pfj.lang.Result.lift;
 import static org.pfj.lang.Result.success;
 
 public class RequestContext {
@@ -36,7 +40,7 @@ public class RequestContext {
 
     private final ChannelHandlerContext ctx;
     private final FullHttpRequest request;
-    private final WebServer server;
+    private final Configuration configuration;
     private final HttpHeaders responseHeaders = new CombinedHttpHeaders(true);
 
     private Supplier<List<String>> pathParamsSupplier = lazy(() -> pathParamsSupplier = value(initPathParams()));
@@ -44,14 +48,14 @@ public class RequestContext {
     private Supplier<Map<String, String>> headersSupplier = lazy(() -> headersSupplier = value(initHeaders()));
     private Route<?> route;
 
-    private RequestContext(ChannelHandlerContext ctx, FullHttpRequest request, WebServer server) {
+    private RequestContext(ChannelHandlerContext ctx, FullHttpRequest request, Configuration configuration) {
         this.ctx = ctx;
         this.request = request;
-        this.server = server;
+        this.configuration = configuration;
     }
 
-    public static RequestContext from(ChannelHandlerContext ctx, FullHttpRequest request, WebServer server) {
-        return new RequestContext(ctx, request, server);
+    public static RequestContext from(ChannelHandlerContext ctx, FullHttpRequest request, Configuration configuration) {
+        return new RequestContext(ctx, request, configuration);
     }
 
     public RequestContext setRoute(Route<?> route) {
@@ -72,7 +76,7 @@ public class RequestContext {
     }
 
     public <T> Result<T> fromJson(TypeReference<T> literal) {
-        return deserialize(request.content(), literal);
+        return configuration.serializer().deserialize(request.content(), literal);
     }
 
     public List<String> pathParams() {
@@ -97,11 +101,21 @@ public class RequestContext {
 
     public void invokeAndRespond() {
         safeCall()
-            .flatMap(value -> promise(serializeResponse(value)))
-            .onResult(result -> result.fold(
-                failure -> sendFailure(server.causeMapper().apply(failure)),
-                success -> sendSuccess(route().contentType(), success)
-            ));
+            .onResult(result -> result
+                .flatMap(this::serializeResponse)
+                .fold(
+                    failure -> sendFailure(configuration.causeMapper().apply(failure)),
+                    success -> {
+                        //TODO: replace with switch pattern matching once it will be not a preview feature
+                        if (success instanceof Either.Left<Redirect, ByteBuf> redirect) {
+                            return sendRedirect(redirect.left());
+                        } else if (success instanceof Either.Right<Redirect, ByteBuf> buffer) {
+                            return sendSuccess(route().contentType(), buffer.right());
+                        } else {
+                            throw new UnsupportedOperationException("Can't happen");
+                        }
+                    }
+                ));
     }
 
     private RequestContext sendSuccess(ContentType contentType, Object entity) {
@@ -144,22 +158,15 @@ public class RequestContext {
         return this;
     }
 
-    private Result<Object> serializeResponse(Object value) {
+    private Result<Either<Redirect, ByteBuf>> serializeResponse(Object value) {
         if (value instanceof Redirect redirect) {
-            return success(redirect);
+            return success(Either.left(redirect));
         }
 
         return switch (route.contentType()) {
-            case TEXT_PLAIN -> success(wrap(value));
-            case APPLICATION_JSON -> serializeJson(value);
+            case TEXT_PLAIN -> success(wrap(value)).map(Either::right);
+            case APPLICATION_JSON -> configuration.serializer().serialize(value).map(Either::right);
         };
-    }
-
-    private Result<Object> serializeJson(Object success) {
-        return lift(
-            e -> fromThrowable(WebError.UNPROCESSABLE_ENTITY, e),
-            () -> wrappedBuffer(objectMapper().writeValueAsBytes(success))
-        );
     }
 
     private List<String> initPathParams() {
@@ -189,17 +196,6 @@ public class RequestContext {
         } catch (Throwable t) {
             return failure(fromThrowable(WebError.INTERNAL_SERVER_ERROR, t));
         }
-    }
-
-    private <T> Result<T> deserialize(ByteBuf entity, TypeReference<T> literal) {
-        return lift(
-            e -> fromThrowable(WebError.UNPROCESSABLE_ENTITY, e),
-            () -> objectMapper().readValue(entity.array(), entity.arrayOffset(), entity.readableBytes(), literal)
-        );
-    }
-
-    private ObjectMapper objectMapper() {
-        return server.objectMapper();
     }
 
     private static ZonedDateTime now() {

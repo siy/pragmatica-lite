@@ -1,5 +1,7 @@
-package org.pfj.http.server;
+package org.pfj.http.server.routing;
 
+import org.pfj.http.server.serialization.ContentType;
+import org.pfj.http.server.Handler;
 import org.pfj.lang.Result;
 
 import java.util.function.Supplier;
@@ -7,20 +9,14 @@ import java.util.stream.Stream;
 
 import io.netty.handler.codec.http.HttpMethod;
 
-import static org.pfj.http.server.ContentType.APPLICATION_JSON;
-import static org.pfj.http.server.ContentType.TEXT_PLAIN;
-import static org.pfj.http.server.Utils.normalize;
+import static org.pfj.http.server.serialization.ContentType.APPLICATION_JSON;
+import static org.pfj.http.server.serialization.ContentType.TEXT_PLAIN;
+import static org.pfj.http.server.util.Utils.normalize;
 import static org.pfj.lang.Promise.promise;
 
-public record Route<T>(
-	HttpMethod method, String path, Handler<T> handler,
-	ContentType contentType
-) implements RouteSource {
-	public Route(HttpMethod method, String path, Handler<T> handler, ContentType contentType) {
-		this.method = method;
-		this.path = normalize(path);
-		this.handler = handler;
-		this.contentType = contentType;
+public record Route<T>(HttpMethod method, String path, Handler<T> handler, ContentType contentType) implements RouteSource {
+	public Route {
+		path = normalize(path);
 	}
 
 	@Override
@@ -131,21 +127,21 @@ public record Route<T>(
 			return new RouteBuilder2(path, method, APPLICATION_JSON);
 		}
 
-		public <T> Route<T> with(Handler<T> handler) {
+		public <T> Route<T> from(Handler<T> handler) {
 			return new Route<>(method, path, handler, TEXT_PLAIN);
 		}
 
-		public <T> Route<T> with(Supplier<Result<T>> supplier) {
+		public <T> Route<T> from(Supplier<Result<T>> supplier) {
 			return new Route<>(method, path, __ -> promise(supplier.get()), TEXT_PLAIN);
 		}
 	}
 
 	public record RouteBuilder2(String path, HttpMethod method, ContentType contentType) {
-		public <T> Route<T> with(Handler<T> handler) {
+		public <T> Route<T> from(Handler<T> handler) {
 			return new Route<>(method, path, handler, contentType);
 		}
 
-		public <T> Route<T> with(Supplier<Result<T>> supplier) {
+		public <T> Route<T> from(Supplier<Result<T>> supplier) {
 			return new Route<>(method, path, __ -> promise(supplier.get()), contentType);
 		}
 	}

@@ -1,4 +1,4 @@
-package org.pfj.http.server;
+package org.pfj.http.server.error;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 

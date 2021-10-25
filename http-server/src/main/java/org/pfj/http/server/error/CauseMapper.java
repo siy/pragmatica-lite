@@ -1,4 +1,4 @@
-package org.pfj.http.server;
+package org.pfj.http.server.error;
 
 import org.pfj.lang.Cause;
 import org.pfj.lang.Functions.FN1;

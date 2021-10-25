@@ -1,7 +1,8 @@
-package org.pfj.http.server;
+package org.pfj.http.server.routing;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.pfj.http.server.routing.RoutingTable;
 import org.pfj.lang.Causes;
 
 import io.netty.handler.codec.http.HttpMethod;
@@ -9,15 +10,15 @@ import io.netty.handler.codec.http.HttpMethod;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.pfj.http.server.Route.from;
+import static org.pfj.http.server.routing.Route.from;
 
-class EndpointTableTest {
-    private EndpointTable table = EndpointTable.with(
-        from("/one").get().text().with(() -> Causes.cause("one").result()),
-        from("/one1").get().text().with(() -> Causes.cause("one1").result()),
-        from("/one2").get().text().with(() -> Causes.cause("one2").result()),
-        from("/on").get().text().with(() -> Causes.cause("on").result()),
-        from("/o").get().text().with(() -> Causes.cause("o").result())
+class RoutingTableTest {
+    private RoutingTable table = RoutingTable.with(
+        from("/one").get().text().from(() -> Causes.cause("one").result()),
+        from("/one1").get().text().from(() -> Causes.cause("one1").result()),
+        from("/one2").get().text().from(() -> Causes.cause("one2").result()),
+        from("/on").get().text().from(() -> Causes.cause("on").result()),
+        from("/o").get().text().from(() -> Causes.cause("o").result())
     );
 
     @Test

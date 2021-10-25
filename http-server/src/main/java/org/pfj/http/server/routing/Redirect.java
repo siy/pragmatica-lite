@@ -1,24 +1,8 @@
-package org.pfj.http.server;
+package org.pfj.http.server.routing;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 
-public final class Redirect {
-    private final HttpResponseStatus status;
-    private final String url;
-
-    private Redirect(HttpResponseStatus status, String url) {
-        this.status = status;
-        this.url = url;
-    }
-
-    public HttpResponseStatus status() {
-        return status;
-    }
-
-    public String url() {
-        return url;
-    }
-
+public record Redirect(HttpResponseStatus status, String url) {
     //301
     public static Redirect movedPermanently(String url) {
         return new Redirect(HttpResponseStatus.MOVED_PERMANENTLY, url);

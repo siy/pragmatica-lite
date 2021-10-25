@@ -1,4 +1,4 @@
-package org.pfj.http.server;
+package org.pfj.http.server.util;
 
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -35,7 +35,7 @@ public final class Utils {
      * Solution below is taken from https://stackoverflow.com/a/29141814/5349078
      * <br/>
      * <br/>
-     * <b>WARNING:</b> Suitable only for single thread access!
+     * <b>WARNING:</b> Suitable only for single thread access and only for field initialization!
      * <br/>
      * <br/>
      * Usage:

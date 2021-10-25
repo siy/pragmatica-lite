@@ -1,6 +1,5 @@
 package org.pfj.http.server;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.epoll.Epoll;
@@ -20,11 +19,17 @@ import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.netty.util.internal.logging.Log4J2LoggerFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.pfj.http.server.error.WebError;
+import org.pfj.http.server.routing.RoutingTable;
+import org.pfj.http.server.routing.RouteSource;
 import org.pfj.lang.Causes;
 import org.pfj.lang.Promise;
 import org.pfj.lang.Result;
 
-import static org.pfj.http.server.Utils.normalize;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.pfj.http.server.util.Utils.normalize;
 
 public class WebServer {
     static {
@@ -32,37 +37,38 @@ public class WebServer {
     }
 
     private static final Logger log = LogManager.getLogger(WebServer.class);
-    private static final int DEFAULT_PORT = 8000;
 
-    private final EndpointTable endpointTable;
-    private final int port;
-    private CauseMapper causeMapper = CauseMapper::defaultConverter;
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private final RoutingTable routingTable;
+    private final Configuration configuration;
 
-    private WebServer(int port, EndpointTable endpointTable) {
-        this.port = port;
-        this.endpointTable = endpointTable;
+    private WebServer(Configuration configuration, RoutingTable routingTable) {
+        this.configuration = configuration;
+        this.routingTable = routingTable;
     }
 
-    public static WebServer create(int port, RouteSource... routes) {
-        return new WebServer(port, EndpointTable.with(routes));
+    public static Builder with(Configuration configuration) {
+        return new Builder(configuration);
     }
 
-    public static WebServer create(RouteSource... routes) {
-        return create(DEFAULT_PORT, routes);
+    public static class Builder {
+        private final Configuration configuration;
+        private final List<RouteSource> routes = new ArrayList<>();
+
+        private Builder(Configuration configuration) {
+            this.configuration = configuration;
+        }
+
+        public Builder and(RouteSource... routeSources) {
+            routes.addAll(List.of(routeSources));
+            return this;
+        }
+
+        public WebServer build() {
+            return new WebServer(configuration, RoutingTable.with(routes.stream()));
+        }
     }
 
-    public WebServer withCauseMapper(CauseMapper causeMapper) {
-        this.causeMapper = causeMapper;
-        return this;
-    }
-
-    public WebServer withObjectMapper(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-        return this;
-    }
-
-    public Promise<Void> start() throws InterruptedException {
+    public Promise<Void> start() {
         log.info("Starting WebServer...");
 
         EventLoopGroup bossGroup;
@@ -86,7 +92,7 @@ public class WebServer {
             log.info("Using NIO transport");
         }
 
-        endpointTable.print();
+        routingTable.print();
 
         var promise = Promise.<Void>promise()
             .onResultDo(() -> {
@@ -102,7 +108,7 @@ public class WebServer {
                 .childOption(ChannelOption.SO_RCVBUF, 32 * 1024)
                 .handler(new LoggingHandler(LogLevel.DEBUG))
                 .childHandler(new WebServerInitializer())
-                .bind(port)
+                .bind(configuration.port())
                 .sync()
                 .channel()
                 .closeFuture()
@@ -115,18 +121,14 @@ public class WebServer {
         return promise;
     }
 
-    protected CauseMapper causeMapper() {
-        return causeMapper;
-    }
-
-    protected ObjectMapper objectMapper() {
-        return objectMapper;
-    }
-
     private void decode(Promise<Void> promise, Future<? super Void> future) {
         promise.resolve(future.isSuccess()
             ? Result.success(null)
             : Causes.fromThrowable(future.cause()).result());
+    }
+
+    public Configuration config() {
+        return configuration;
     }
 
     private class WebServerInitializer extends ChannelInitializer<SocketChannel> {
@@ -159,9 +161,9 @@ public class WebServer {
                 ctx.write(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE));
             }
 
-            var context = RequestContext.from(ctx, request, WebServer.this);
+            var context = RequestContext.from(ctx, request, configuration);
 
-            endpointTable.findRoute(request.method(), normalize(request.uri()))
+            routingTable.findRoute(request.method(), normalize(request.uri()))
                 .whenEmpty(() -> context.sendFailure(WebError.NOT_FOUND))
                 .whenPresent(route -> context.setRoute(route).invokeAndRespond());
         }

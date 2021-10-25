@@ -1,4 +1,4 @@
-package org.pfj.http.server;
+package org.pfj.http.server.routing;
 
 import java.util.stream.Stream;
 
