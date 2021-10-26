@@ -1,4 +1,4 @@
-package org.pfj.http.server.serialization;
+package org.pfj.http.server.config.serialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

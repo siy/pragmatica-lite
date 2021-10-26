@@ -1,7 +1,9 @@
 package org.pfj.http.server;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.ServerChannel;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
@@ -9,27 +11,27 @@ import io.netty.channel.kqueue.KQueue;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.kqueue.KQueueServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.http.*;
-import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.netty.util.internal.logging.Log4J2LoggerFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.pfj.http.server.config.Configuration;
 import org.pfj.http.server.error.WebError;
-import org.pfj.http.server.routing.RoutingTable;
 import org.pfj.http.server.routing.RouteSource;
+import org.pfj.http.server.routing.RoutingTable;
 import org.pfj.lang.Causes;
 import org.pfj.lang.Promise;
 import org.pfj.lang.Result;
+import org.pfj.lang.Tuple;
+import org.pfj.lang.Tuple.Tuple3;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.pfj.http.server.util.Utils.normalize;
+import static org.pfj.lang.Tuple.tuple;
 
 public class WebServer {
     static {
@@ -71,43 +73,18 @@ public class WebServer {
     public Promise<Void> start() {
         log.info("Starting WebServer...");
 
-        EventLoopGroup bossGroup;
-        EventLoopGroup workerGroup;
-        Class<? extends ServerChannel> serverChannelClass;
-
-        if (Epoll.isAvailable()) {
-            bossGroup = new EpollEventLoopGroup(1);
-            workerGroup = new EpollEventLoopGroup();
-            serverChannelClass = EpollServerSocketChannel.class;
-            log.info("Using epoll native transport");
-        } else if (KQueue.isAvailable()) {
-            bossGroup = new KQueueEventLoopGroup(1);
-            workerGroup = new KQueueEventLoopGroup();
-            serverChannelClass = KQueueServerSocketChannel.class;
-            log.info("Using kqueue native transport");
-        } else {
-            bossGroup = new NioEventLoopGroup(1);
-            workerGroup = new NioEventLoopGroup();
-            serverChannelClass = NioServerSocketChannel.class;
-            log.info("Using NIO transport");
-        }
-
         routingTable.print();
 
-        var promise = Promise.<Void>promise()
-            .onResultDo(() -> {
-                bossGroup.shutdownGracefully();
-                workerGroup.shutdownGracefully();
-            });
+        var reactorConfig = configureReactor();
+
+        var promise = Promise.<Void>promise().onResultDo(() -> gracefulShutdown(reactorConfig));
 
         try {
-            new ServerBootstrap()
-                .group(bossGroup, workerGroup)
-                .channel(serverChannelClass)
-                .childOption(ChannelOption.SO_SNDBUF, 1024 * 1024)
-                .childOption(ChannelOption.SO_RCVBUF, 32 * 1024)
-                .handler(new LoggingHandler(LogLevel.DEBUG))
-                .childHandler(new WebServerInitializer())
+            configureBootstrap(reactorConfig)
+                .childOption(ChannelOption.SO_SNDBUF, configuration.sendBufferSize())
+                .childOption(ChannelOption.SO_RCVBUF, configuration.receiveBufferSize())
+                .handler(new LoggingHandler(configuration.logLevel()))
+                .childHandler(new WebServerInitializer(configuration, routingTable))
                 .bind(configuration.port())
                 .sync()
                 .channel()
@@ -121,61 +98,47 @@ public class WebServer {
         return promise;
     }
 
+    private void gracefulShutdown(ReactorConfig reactorConfig) {
+        reactorConfig.bossGroup().shutdownGracefully();
+        reactorConfig.workerGroup().shutdownGracefully();
+    }
+
+    private ServerBootstrap configureBootstrap(ReactorConfig reactorConfig) {
+        return new ServerBootstrap()
+            .group(reactorConfig.bossGroup(), reactorConfig.workerGroup())
+            .channel(reactorConfig.serverChannelClass());
+    }
+
+    private ReactorConfig configureReactor() {
+        if (Epoll.isAvailable() && configuration.enableNative()) {
+            log.info("Using epoll native transport");
+            return ReactorConfig.epoll();
+        } else if (KQueue.isAvailable()&& configuration.enableNative()) {
+            log.info("Using kqueue native transport");
+            return ReactorConfig.kqueue();
+        } else {
+            log.info("Using NIO transport");
+            return ReactorConfig.nio();
+        }
+    }
+
     private void decode(Promise<Void> promise, Future<? super Void> future) {
         promise.resolve(future.isSuccess()
             ? Result.success(null)
             : Causes.fromThrowable(future.cause()).result());
     }
 
-    public Configuration config() {
-        return configuration;
-    }
-
-    private class WebServerInitializer extends ChannelInitializer<SocketChannel> {
-        public static final int MAX_CONTENT_LENGTH = 10 * 1024 * 1024;
-
-        @Override
-        public void initChannel(SocketChannel ch) {
-            ch.pipeline()
-                .addLast("decoder", new HttpRequestDecoder())
-                .addLast("aggregator", new HttpObjectAggregator(MAX_CONTENT_LENGTH))
-                .addLast("encoder", new HttpResponseEncoder())
-                .addLast("handler", new WebServerHandler());
-        }
-    }
-
-    private class WebServerHandler extends SimpleChannelInboundHandler<Object> {
-        /**
-         * Handles a new message.
-         *
-         * @param ctx The channel context.
-         * @param msg The HTTP request message.
-         */
-        @Override
-        public void channelRead0(ChannelHandlerContext ctx, Object msg) {
-            if (!(msg instanceof FullHttpRequest request)) {
-                return;
-            }
-
-            if (HttpUtil.is100ContinueExpected(request)) {
-                ctx.write(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE));
-            }
-
-            var context = RequestContext.from(ctx, request, configuration);
-
-            routingTable.findRoute(request.method(), normalize(request.uri()))
-                .whenEmpty(() -> context.sendFailure(WebError.NOT_FOUND))
-                .whenPresent(route -> context.setRoute(route).invokeAndRespond());
+    static record ReactorConfig(EventLoopGroup bossGroup, EventLoopGroup workerGroup, Class<? extends ServerChannel> serverChannelClass) {
+        static ReactorConfig epoll() {
+            return new ReactorConfig(new EpollEventLoopGroup(1), new EpollEventLoopGroup(), EpollServerSocketChannel.class);
         }
 
-        @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-            ctx.close();
+        static ReactorConfig kqueue() {
+            return new ReactorConfig(new KQueueEventLoopGroup(1), new KQueueEventLoopGroup(), KQueueServerSocketChannel.class);
         }
 
-        @Override
-        public void channelReadComplete(ChannelHandlerContext ctx) {
-            ctx.flush();
+        public static ReactorConfig nio() {
+            return new ReactorConfig(new NioEventLoopGroup(1), new NioEventLoopGroup(), NioServerSocketChannel.class);
         }
     }
 }

@@ -1,4 +1,4 @@
-package org.pfj.http.server.serialization;
+package org.pfj.http.server.config.serialization;
 
 public enum ContentType {
     TEXT_PLAIN("text/plain; charset=UTF-8"),

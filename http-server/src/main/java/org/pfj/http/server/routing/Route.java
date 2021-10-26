@@ -1,6 +1,6 @@
 package org.pfj.http.server.routing;
 
-import org.pfj.http.server.serialization.ContentType;
+import org.pfj.http.server.config.serialization.ContentType;
 import org.pfj.http.server.Handler;
 import org.pfj.lang.Result;
 
@@ -9,8 +9,8 @@ import java.util.stream.Stream;
 
 import io.netty.handler.codec.http.HttpMethod;
 
-import static org.pfj.http.server.serialization.ContentType.APPLICATION_JSON;
-import static org.pfj.http.server.serialization.ContentType.TEXT_PLAIN;
+import static org.pfj.http.server.config.serialization.ContentType.APPLICATION_JSON;
+import static org.pfj.http.server.config.serialization.ContentType.TEXT_PLAIN;
 import static org.pfj.http.server.util.Utils.normalize;
 import static org.pfj.lang.Promise.promise;
 

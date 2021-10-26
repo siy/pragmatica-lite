@@ -1,6 +1,6 @@
 package org.pfj.http.example;
 
-import org.pfj.http.server.Configuration;
+import org.pfj.http.server.config.Configuration;
 import org.pfj.http.server.error.WebError;
 import org.pfj.http.server.WebServer;
 import org.pfj.lang.Promise;
@@ -14,23 +14,29 @@ import static org.pfj.lang.Promise.success;
 
 public class App {
     public static void main(final String[] args) {
-		WebServer.with(Configuration.atDefaultPort().build())
+		buildServer()
+            .start()
+            .join();
+    }
+
+    public static WebServer buildServer() {
+        return WebServer.with(Configuration.allDefaults())
             .and(
                 //Full description
                 from("/hello1")
-					.get().text().from(request -> success("Hello world! " + request.route().path())),
+                    .get().text().from(request -> success("Hello world! " + request.route().path())),
 
                 //Default content type (text)
                 from("/hello2")
-					.get().from(request -> success("Hello world! " + request.route().path())),
+                    .get().from(request -> success("Hello world! " + request.route().path())),
 
                 //Shortcut for method, explicit content type
                 get("/hello3")
-					.text().from(request -> success("Hello world! " + request.route().path())),
+                    .text().from(request -> success("Hello world! " + request.route().path())),
 
                 //Shortcut for method, default content type
                 get("/hello4")
-					.from(request -> success("Hello world! " + request.route().path())),
+                    .from(request -> success("Hello world! " + request.route().path())),
 
                 //Runtime exception handling example
                 get("/boom-legacy").from(request -> {
@@ -39,11 +45,11 @@ public class App {
 
                 //Functional error handling
                 get("/boom-functional")
-					.from(request -> failure(WebError.UNPROCESSABLE_ENTITY)),
+                    .from(request -> failure(WebError.UNPROCESSABLE_ENTITY)),
 
                 //Long-running process
                 get("/delay")
-					.from(request -> delayedResponse()),
+                    .from(request -> delayedResponse()),
 
                 //Nested routes
                 from(
@@ -56,9 +62,7 @@ public class App {
                     )
                 )
             )
-            .build()
-            .start()
-            .join();
+            .build();
     }
 
     private static final AtomicInteger counter = new AtomicInteger();

@@ -23,6 +23,7 @@
         <jackson.version>2.13.0</jackson.version>
         <log4j2.version>2.14.1</log4j2.version>
         <disruptor.version>3.4.4</disruptor.version>
+        <rest-assured.version>4.4.0</rest-assured.version>
 
         <!-- Test dependencies -->
         <junit.version>5.8.1</junit.version>
@@ -97,6 +98,13 @@
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
                 <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>io.rest-assured</groupId>
+                <artifactId>rest-assured</artifactId>
+                <version>${rest-assured.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
