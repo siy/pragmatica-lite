@@ -71,7 +71,7 @@ public class App {
         return Promise.<Integer>promise()
             .async(promise -> {
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep(250);
                 } catch (InterruptedException e) {
                     //ignore
                 }
