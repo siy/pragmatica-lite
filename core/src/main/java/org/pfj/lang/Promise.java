@@ -100,11 +100,14 @@ public class Promise<T> extends CompletableFuture<Result<T>> {
 
     @SuppressWarnings("unchecked")
     public <R> Promise<R> flatMap(Function<? super T, Promise<R>> mapper) {
-        var resultPromise = new Promise[1];
+        var resultPromise = Promise.<R>promise();
 
-        onResult(result -> resultPromise[0] = result.fold(failure -> this, mapper::apply));
+        onResult(result -> result.fold(
+            failure -> resultPromise.resolve((Result<R>) result),
+            success -> mapper.apply(success).onResult(resultPromise::resolve)
+        ));
 
-        return resultPromise[0];
+        return resultPromise;
     }
 
     public Promise<T> async(Consumer<Promise<T>> consumer) {
