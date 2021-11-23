@@ -1,6 +1,10 @@
 package org.pfj.resource;
 
-import java.util.function.Consumer;
+import org.pfj.lang.Cause;
+import org.pfj.lang.Functions.FN1;
+import org.pfj.lang.Result;
+
+import static org.pfj.lang.Result.lift;
 
 /**
  * The container used by {@link AsyncResource} to access shared resource.
@@ -20,23 +24,12 @@ public interface ResourceTicket<T> {
     void release();
 
     /**
-     * Convenience method which enables convenient fluent access to the resource.
+     * Convenience on-step method which performs automatic release of the ticket after applying provided transformation.
      *
-     * @param action the action to perform on the resource.
-     * @return current instance of ticket
+     * @param transformation the transformation to perform on the resource.
      */
-    default ResourceTicket<T> act(Consumer<T> action) {
-        action.accept(access());
-        return this;
-    }
-
-    /**
-     * Convenience on-step method which performs automatic release of the ticket after applying provided action.
-     *
-     * @param action the action to perform on the resource.
-     */
-    default void transact(Consumer<T> action) {
-        action.accept(access());
-        release();
+    default <R> Result<R> perform(FN1<? extends Cause, ? super Throwable> exceptionMapper, FN1<R, T> transformation) {
+        return lift(exceptionMapper, () -> transformation.apply(access()))
+            .onResultDo(this::release);
     }
 }

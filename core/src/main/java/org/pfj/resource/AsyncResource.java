@@ -4,7 +4,6 @@ import org.pfj.lang.Promise;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 /**
  * A resource, access to which can be obtained asynchronously.
@@ -17,18 +16,7 @@ import java.util.function.Consumer;
  * can be freely accessed via {@link ResourceTicket#access()} without need ot any additional locks
  * or other synchronization mechanisms. The resource is accessible until {@link ResourceTicket#release()}
  * is called. Once this method is called, no further attempts to access resource should be performed,
- * as behavior of such access is undefined. It is highly recommended using provided
- * {@link ResourceTicket#transact(Consumer)} method, which performs automatic release of resource
- * after applying provided action.
- *
- * <pre> {@code
- * var map = new HashMap<String, Object>();
- * var resource = AsyncResource.asyncResource(map);
- * ...
- *
- * resource.request()
- *     .onSuccess(ticket -> ticket.transact(map -> map.put("newKey", someValue)));
- * }</pre>
+ * as behavior of such access is undefined.
  */
 public class AsyncResource<T> {
     private final ConcurrentLinkedQueue<Promise<ResourceTicket<T>>> waitQueue = new ConcurrentLinkedQueue<>();
