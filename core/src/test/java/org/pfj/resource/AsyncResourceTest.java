@@ -1,6 +1,9 @@
 package org.pfj.resource;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.pfj.lang.Causes;
+import org.pfj.lang.Promise;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -20,7 +23,7 @@ class AsyncResourceTest {
 
         ticketPromise
             .onFailure(f -> fail(f.message()))
-            .onSuccess(ticket -> assertEquals("value", ticket.access()))
+            .onSuccess(ticket -> assertEquals("value", ticket.resource()))
             .join();
     }
 
@@ -50,20 +53,43 @@ class AsyncResourceTest {
     private void testSingleTicket(ResourceTicket<AtomicInteger> ticket, int localI,
                                   CountDownLatch latch, StringBuffer buffer) {
         try {
-            if (!ticket.access().compareAndSet(0, localI)) {
-                var message = "0 -> " + localI + " transition failed: " + ticket.access().get() + "\n";
+            if (!ticket.resource().compareAndSet(0, localI)) {
+                var message = "0 -> " + localI + " transition failed: " + ticket.resource().get() + "\n";
                 buffer.append(message);
             }
 
-            if (!ticket.access().compareAndSet(localI, 0)) {
-                var message = "" + localI + " -> 0 transition failed: " + ticket.access().get() + "\n";
+            if (!ticket.resource().compareAndSet(localI, 0)) {
+                var message = "" + localI + " -> 0 transition failed: " + ticket.resource().get() + "\n";
                 buffer.append(message);
             }
 
-            ticket.access().set(0);
+            ticket.resource().set(0);
         } finally {
             latch.countDown();
             ticket.release();
         }
+    }
+
+    @Test
+    void resourceMadeAccessibleToOneRequesterAtATime() {
+        var resource = asyncResource(new AtomicInteger(0));
+        var promise1 = resource.request();
+        var promise2 = resource.request();
+
+        assertTrue(promise1.isDone());
+        assertFalse(promise2.isDone());
+
+        promise1.onSuccess(ticket -> ticket.resource().set(1));
+
+        assertFalse(promise2.isDone());
+
+        promise1.onSuccess(ResourceTicket::release);
+        var result = promise2.join();
+
+        assertTrue(promise2.isDone());
+
+        result.flatMap(ticket -> ticket.perform(Causes::fromThrowable, res -> 1 == res.get()))
+            .onFailureDo(Assertions::fail)
+            .onSuccess(Assertions::assertTrue);
     }
 }

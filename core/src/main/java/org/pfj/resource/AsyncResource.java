@@ -6,16 +6,16 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * A resource, access to which can be obtained asynchronously.
+ * A asyncResource, access to which can be obtained asynchronously.
  * Unlike traditional synchronous locks, this tool does not block execution
- * if resource is already locked. Instead, it returns an instance of {@link Promise} with
+ * if asyncResource is already locked. Instead, it returns an instance of {@link Promise} with
  * the {@link ResourceTicket} inside. The {@link ResourceTicket} allows direct access to the locked
- * resource and releasing resource once access to it is no longer required.
+ * asyncResource and releasing asyncResource once access to it is no longer required.
  * <p>
- * It is guaranteed to only one returned {@link Promise} will be resolved at a time, so resource
- * can be freely accessed via {@link ResourceTicket#access()} without need ot any additional locks
- * or other synchronization mechanisms. The resource is accessible until {@link ResourceTicket#release()}
- * is called. Once this method is called, no further attempts to access resource should be performed,
+ * It is guaranteed to only one returned {@link Promise} will be resolved at a time, so asyncResource
+ * can be freely accessed via {@link ResourceTicket#resource()} without need ot any additional locks
+ * or other synchronization mechanisms. The asyncResource is accessible until {@link ResourceTicket#release()}
+ * is called. Once this method is called, no further attempts to access asyncResource should be performed,
  * as behavior of such access is undefined.
  */
 public class AsyncResource<T> {
@@ -32,19 +32,23 @@ public class AsyncResource<T> {
     }
 
     public Promise<ResourceTicket<T>> request() {
-        var ticket = new ResourceTicketImpl<>(this);
+        var ticket = new ResourceTicketImpl();
 
         return lock.compareAndSet(null, ticket)
             ? Promise.success(ticket)
             : Promise.promise(waitQueue::add);
     }
 
+    private T resource() {
+        return resource;
+    }
+
     private void release(ResourceTicket<T> resourceTicket) {
         var next = waitQueue.poll();
-        var nextTicket = next == null ? null : new ResourceTicketImpl<>(this);
+        var nextTicket = next == null ? null : new ResourceTicketImpl();
 
         if (!lock.compareAndSet(resourceTicket, nextTicket)) {
-            throw new IllegalStateException("Attempt to release resource not owned by current ticket");
+            throw new IllegalStateException("Attempt to release asyncResource not owned by current ticket");
         }
 
         if (next != null) {
@@ -52,15 +56,15 @@ public class AsyncResource<T> {
         }
     }
 
-    private static record ResourceTicketImpl<T>(AsyncResource<T> resource) implements ResourceTicket<T> {
+    private class ResourceTicketImpl implements ResourceTicket<T> {
         @Override
-        public T access() {
-            return resource().resource;
+        public T resource() {
+            return AsyncResource.this.resource();
         }
 
         @Override
         public void release() {
-            resource().release(this);
+            AsyncResource.this.release(this);
         }
     }
 }

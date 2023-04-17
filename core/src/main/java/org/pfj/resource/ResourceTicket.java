@@ -7,8 +7,8 @@ import org.pfj.lang.Result;
 import static org.pfj.lang.Result.lift;
 
 /**
- * The container used by {@link AsyncResource} to access shared resource.
- * The access to resource is available until {@link #release()} method is invoked.
+ * The container used by {@link AsyncResource} to access shared asyncResource.
+ * The access to asyncResource is available until {@link #release()} method is invoked.
  */
 public interface ResourceTicket<T> {
     /**
@@ -16,7 +16,7 @@ public interface ResourceTicket<T> {
      *
      * @return the resource.
      */
-    T access();
+    T resource();
 
     /**
      * Release resource and enable other requesters to get access to it.
@@ -26,10 +26,10 @@ public interface ResourceTicket<T> {
     /**
      * Convenience on-step method which performs automatic release of the ticket after applying provided transformation.
      *
-     * @param transformation the transformation to perform on the resource.
+     * @param transformation the transformation to perform on the asyncResource.
      */
     default <R> Result<R> perform(FN1<? extends Cause, ? super Throwable> exceptionMapper, FN1<R, T> transformation) {
-        return lift(exceptionMapper, () -> transformation.apply(access()))
+        return lift(exceptionMapper, () -> transformation.apply(resource()))
             .onResultDo(this::release);
     }
 }
