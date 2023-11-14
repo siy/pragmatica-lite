@@ -7,14 +7,14 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
 import org.pfj.http.server.config.Configuration;
+import org.pfj.http.server.config.serialization.ContentType;
 import org.pfj.http.server.error.CompoundCause;
 import org.pfj.http.server.error.WebError;
 import org.pfj.http.server.routing.Redirect;
 import org.pfj.http.server.routing.Route;
-import org.pfj.http.server.config.serialization.ContentType;
 import org.pfj.http.server.util.Either;
-import org.pfj.lang.Promise;
-import org.pfj.lang.Result;
+import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Result;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -26,13 +26,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-
 import static io.netty.buffer.Unpooled.wrappedBuffer;
-import static org.pfj.http.server.error.CompoundCause.fromThrowable;
 import static org.pfj.http.server.config.serialization.ContentType.TEXT_PLAIN;
+import static org.pfj.http.server.error.CompoundCause.fromThrowable;
 import static org.pfj.http.server.util.Utils.*;
-import static org.pfj.lang.Promise.failure;
-import static org.pfj.lang.Result.success;
+import static org.pragmatica.lang.Promise.failed;
+import static org.pragmatica.lang.Result.success;
 
 public class RequestContext {
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
@@ -109,9 +108,9 @@ public class RequestContext {
                     success -> {
                         //TODO: replace with switch pattern matching once it will be not a preview feature
                         if (success instanceof Either.Left<Redirect, ByteBuf> redirect) {
-                            return sendRedirect(redirect.left());
+                            return sendRedirect(redirect.value());
                         } else if (success instanceof Either.Right<Redirect, ByteBuf> buffer) {
-                            return sendSuccess(route().contentType(), buffer.right());
+                            return sendSuccess(route().contentType(), buffer.value());
                         } else {
                             throw new UnsupportedOperationException("Can't happen");
                         }
@@ -133,7 +132,7 @@ public class RequestContext {
         var response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, redirect.status(), Unpooled.EMPTY_BUFFER);
 
         response.headers()
-            .set(HttpHeaderNames.LOCATION, URLEncoder.encode(redirect.url(), StandardCharsets.ISO_8859_1));
+                .set(HttpHeaderNames.LOCATION, URLEncoder.encode(redirect.url(), StandardCharsets.ISO_8859_1));
 
         ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
 
@@ -145,11 +144,11 @@ public class RequestContext {
         var response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status, entity);
 
         response.headers()
-            .add(responseHeaders)
-            .set(HttpHeaderNames.SERVER, SERVER_NAME)
-            .set(HttpHeaderNames.DATE, now().format(DATETIME_FORMATTER))
-            .set(HttpHeaderNames.CONTENT_TYPE, contentType.text())
-            .set(HttpHeaderNames.CONTENT_LENGTH, Long.toString(entity.maxCapacity()));
+                .add(responseHeaders)
+                .set(HttpHeaderNames.SERVER, SERVER_NAME)
+                .set(HttpHeaderNames.DATE, now().format(DATETIME_FORMATTER))
+                .set(HttpHeaderNames.CONTENT_TYPE, contentType.text())
+                .set(HttpHeaderNames.CONTENT_LENGTH, Long.toString(entity.maxCapacity()));
 
         if (!keepAlive) {
             ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
@@ -176,7 +175,7 @@ public class RequestContext {
             .split("/", PATH_PARAM_LIMIT);
 
         return List.of(elements)
-            .subList(0, elements.length - 1);
+                   .subList(0, elements.length - 1);
     }
 
     private Map<String, List<String>> initQueryStringParams() {
@@ -195,7 +194,7 @@ public class RequestContext {
         try {
             return route().handler().handle(this);
         } catch (Throwable t) {
-            return failure(fromThrowable(WebError.INTERNAL_SERVER_ERROR, t));
+            return failed(fromThrowable(WebError.INTERNAL_SERVER_ERROR, t));
         }
     }
 

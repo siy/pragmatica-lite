@@ -34,14 +34,14 @@ class WebServerInitializer extends ChannelInitializer<SocketChannel> {
         var pipeline = channel.pipeline();
 
         configuration.sslContext()
-            .whenPresent(sslContext -> pipeline.addLast(sslContext.newHandler(channel.alloc())));
+                     .onPresent(sslContext -> pipeline.addLast(sslContext.newHandler(channel.alloc())));
 
         return pipeline;
     }
 
     private ChannelPipeline configureCors(ChannelPipeline pipeline) {
         configuration.corsConfig()
-            .whenPresent(corsConfig -> pipeline.addLast(new CorsHandler(corsConfig)));
+                     .onPresent(corsConfig -> pipeline.addLast(new CorsHandler(corsConfig)));
 
         return pipeline;
     }

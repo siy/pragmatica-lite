@@ -37,8 +37,8 @@ class WebServerHandler extends SimpleChannelInboundHandler<Object> {
         var context = RequestContext.from(ctx, request, configuration);
 
         routingTable.findRoute(request.method(), normalize(request.uri()))
-            .whenEmpty(() -> context.sendFailure(WebError.NOT_FOUND))
-            .whenPresent(route -> context.setRoute(route).invokeAndRespond());
+                    .onEmpty(() -> context.sendFailure(WebError.NOT_FOUND))
+                    .onPresent(route -> context.setRoute(route).invokeAndRespond());
     }
 
     @Override

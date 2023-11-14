@@ -1,6 +1,6 @@
 package org.pfj.http.server;
 
-import org.pfj.lang.Promise;
+import org.pragmatica.lang.Promise;
 
 @FunctionalInterface
 public interface Handler<T> {

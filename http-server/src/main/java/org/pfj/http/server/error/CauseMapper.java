@@ -1,10 +1,10 @@
 package org.pfj.http.server.error;
 
-import org.pfj.lang.Cause;
-import org.pfj.lang.Functions.FN1;
+import org.pragmatica.lang.Functions.Fn1;
+import org.pragmatica.lang.Result.Cause;
 
 @FunctionalInterface
-public interface CauseMapper extends FN1<CompoundCause, Cause> {
+public interface CauseMapper extends Fn1<CompoundCause, Cause> {
     static CompoundCause defaultConverter(Cause failure) {
         if (failure instanceof CompoundCause compoundCause) {
             return compoundCause;

@@ -1,18 +1,17 @@
 package org.pfj.http.server.routing;
 
-import org.pfj.http.server.config.serialization.ContentType;
+import io.netty.handler.codec.http.HttpMethod;
 import org.pfj.http.server.Handler;
-import org.pfj.lang.Result;
+import org.pfj.http.server.config.serialization.ContentType;
+import org.pragmatica.lang.Result;
 
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import io.netty.handler.codec.http.HttpMethod;
-
 import static org.pfj.http.server.config.serialization.ContentType.APPLICATION_JSON;
 import static org.pfj.http.server.config.serialization.ContentType.TEXT_PLAIN;
 import static org.pfj.http.server.util.Utils.normalize;
-import static org.pfj.lang.Promise.promise;
+import static org.pragmatica.lang.Promise.resolved;
 
 public record Route<T>(HttpMethod method, String path, Handler<T> handler, ContentType contentType) implements RouteSource {
 	public Route {
@@ -31,7 +30,7 @@ public record Route<T>(HttpMethod method, String path, Handler<T> handler, Conte
 
 	@Override
 	public RouteSource withPrefix(String prefix) {
-		return new Route<T>(method, normalize(prefix + path), handler, contentType);
+		return new Route<>(method, normalize(prefix + path), handler, contentType);
 	}
 
 	public static RouteSource from(String basePath, RouteSource... routes) {
@@ -127,22 +126,22 @@ public record Route<T>(HttpMethod method, String path, Handler<T> handler, Conte
 			return new RouteBuilder2(path, method, APPLICATION_JSON);
 		}
 
-		public <T> Route<T> from(Handler<T> handler) {
+		public <T> Route<T> with(Handler<T> handler) {
 			return new Route<>(method, path, handler, TEXT_PLAIN);
 		}
 
-		public <T> Route<T> from(Supplier<Result<T>> supplier) {
-			return new Route<>(method, path, __ -> promise(supplier.get()), TEXT_PLAIN);
+		public <T> Route<T> with(Supplier<Result<T>> supplier) {
+			return new Route<>(method, path, _ -> resolved(supplier.get()), TEXT_PLAIN);
 		}
 	}
 
 	public record RouteBuilder2(String path, HttpMethod method, ContentType contentType) {
-		public <T> Route<T> from(Handler<T> handler) {
+		public <T> Route<T> with(Handler<T> handler) {
 			return new Route<>(method, path, handler, contentType);
 		}
 
-		public <T> Route<T> from(Supplier<Result<T>> supplier) {
-			return new Route<>(method, path, __ -> promise(supplier.get()), contentType);
+		public <T> Route<T> with(Supplier<Result<T>> supplier) {
+			return new Route<>(method, path, _ -> resolved(supplier.get()), contentType);
 		}
 	}
 }

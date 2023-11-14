@@ -2,9 +2,7 @@ package org.pfj.http.server.error;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.junit.jupiter.api.Test;
-import org.pfj.http.server.error.CauseMapper;
-import org.pfj.http.server.error.CompoundCause;
-import org.pfj.lang.Causes;
+import org.pragmatica.lang.utils.Causes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;

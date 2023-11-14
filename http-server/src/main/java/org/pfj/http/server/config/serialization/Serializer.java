@@ -2,7 +2,7 @@ package org.pfj.http.server.config.serialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.netty.buffer.ByteBuf;
-import org.pfj.lang.Result;
+import org.pragmatica.lang.Result;
 
 public interface Serializer {
     Result<ByteBuf> serialize(Object success);

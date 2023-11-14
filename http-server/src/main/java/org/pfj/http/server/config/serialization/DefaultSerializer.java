@@ -4,11 +4,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
 import org.pfj.http.server.error.WebError;
-import org.pfj.lang.Result;
+import org.pragmatica.lang.Result;
 
 import static io.netty.buffer.Unpooled.wrappedBuffer;
 import static org.pfj.http.server.error.CompoundCause.fromThrowable;
-import static org.pfj.lang.Result.lift;
+import static org.pragmatica.lang.Result.lift;
 
 public final class DefaultSerializer implements Serializer {
     private final ObjectMapper objectMapper;

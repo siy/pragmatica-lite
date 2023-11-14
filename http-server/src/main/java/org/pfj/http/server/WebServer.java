@@ -22,16 +22,12 @@ import org.pfj.http.server.config.Configuration;
 import org.pfj.http.server.error.WebError;
 import org.pfj.http.server.routing.RouteSource;
 import org.pfj.http.server.routing.RoutingTable;
-import org.pfj.lang.Causes;
-import org.pfj.lang.Promise;
-import org.pfj.lang.Result;
-import org.pfj.lang.Tuple;
-import org.pfj.lang.Tuple.Tuple3;
+import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Result;
+import org.pragmatica.lang.utils.Causes;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.pfj.lang.Tuple.tuple;
 
 public class WebServer {
     static {
@@ -128,7 +124,7 @@ public class WebServer {
             : Causes.fromThrowable(future.cause()).result());
     }
 
-    static record ReactorConfig(EventLoopGroup bossGroup, EventLoopGroup workerGroup, Class<? extends ServerChannel> serverChannelClass) {
+    record ReactorConfig(EventLoopGroup bossGroup, EventLoopGroup workerGroup, Class<? extends ServerChannel> serverChannelClass) {
         static ReactorConfig epoll() {
             return new ReactorConfig(new EpollEventLoopGroup(1), new EpollEventLoopGroup(), EpollServerSocketChannel.class);
         }

@@ -3,8 +3,8 @@ package org.pfj.http.example;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.pfj.http.server.WebServer;
-import org.pfj.lang.Promise;
-import org.pfj.lang.Result;
+import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Result;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.core.IsEqual.equalTo;

@@ -1,24 +1,20 @@
 package org.pfj.http.server.routing;
 
+import io.netty.handler.codec.http.HttpMethod;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.pfj.http.server.routing.RoutingTable;
-import org.pfj.lang.Causes;
+import org.pragmatica.lang.utils.Causes;
 
-import io.netty.handler.codec.http.HttpMethod;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.pfj.http.server.routing.Route.from;
 
 class RoutingTableTest {
-    private RoutingTable table = RoutingTable.with(
-        from("/one").get().text().from(() -> Causes.cause("one").result()),
-        from("/one1").get().text().from(() -> Causes.cause("one1").result()),
-        from("/one2").get().text().from(() -> Causes.cause("one2").result()),
-        from("/on").get().text().from(() -> Causes.cause("on").result()),
-        from("/o").get().text().from(() -> Causes.cause("o").result())
+    private final RoutingTable table = RoutingTable.with(
+        from("/one").get().text().with(() -> Causes.cause("one").result()),
+        from("/one1").get().text().with(() -> Causes.cause("one1").result()),
+        from("/one2").get().text().with(() -> Causes.cause("one2").result()),
+        from("/on").get().text().with(() -> Causes.cause("on").result()),
+        from("/o").get().text().with(() -> Causes.cause("o").result())
     );
 
     @Test
@@ -40,9 +36,9 @@ class RoutingTableTest {
 
     private void checkSingle(String path) {
         table.findRoute(HttpMethod.GET, path)
-            .whenEmpty(Assertions::fail)
-            .whenPresent(route -> route.handler().handle(null)
+            .onEmpty(Assertions::fail)
+            .onPresent(route -> route.handler().handle(null)
                 .onFailure(cause -> assertEquals(path, "/" + cause.message()))
-                .onSuccess(__ -> fail()));
+                .onSuccess(_ -> fail()));
     }
 }
