@@ -1,22 +1,19 @@
-package org.pfj.resource;
+package org.pragmatica.async.resource;
 
-import org.pfj.lang.Promise;
+import org.pragmatica.lang.Promise;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * A asyncResource, access to which can be obtained asynchronously.
- * Unlike traditional synchronous locks, this tool does not block execution
- * if asyncResource is already locked. Instead, it returns an instance of {@link Promise} with
- * the {@link ResourceTicket} inside. The {@link ResourceTicket} allows direct access to the locked
- * asyncResource and releasing asyncResource once access to it is no longer required.
+ * A asyncResource, access to which can be obtained asynchronously. Unlike traditional synchronous locks, this tool does not block execution if
+ * asyncResource is already locked. Instead, it returns an instance of {@link Promise} with the {@link ResourceTicket} inside. The
+ * {@link ResourceTicket} allows direct access to the locked asyncResource and releasing asyncResource once access to it is no longer required.
  * <p>
- * It is guaranteed to only one returned {@link Promise} will be resolved at a time, so asyncResource
- * can be freely accessed via {@link ResourceTicket#resource()} without need ot any additional locks
- * or other synchronization mechanisms. The asyncResource is accessible until {@link ResourceTicket#release()}
- * is called. Once this method is called, no further attempts to access asyncResource should be performed,
- * as behavior of such access is undefined.
+ * It is guaranteed to only one returned {@link Promise} will be resolved at a time, so asyncResource can be freely accessed via
+ * {@link ResourceTicket#resource()} without need of any additional locks or other synchronization mechanisms. The asyncResource is accessible until
+ * {@link ResourceTicket#release()} is called. Once this method is called, no further attempts to access asyncResource should be performed, as
+ * behavior of such access is undefined.
  */
 public class AsyncResource<T> {
     private final ConcurrentLinkedQueue<Promise<ResourceTicket<T>>> waitQueue = new ConcurrentLinkedQueue<>();
@@ -35,8 +32,8 @@ public class AsyncResource<T> {
         var ticket = new ResourceTicketImpl();
 
         return lock.compareAndSet(null, ticket)
-            ? Promise.success(ticket)
-            : Promise.promise(waitQueue::add);
+               ? Promise.successful(ticket)
+               : Promise.promise(waitQueue::add);
     }
 
     private T resource() {
@@ -52,7 +49,7 @@ public class AsyncResource<T> {
         }
 
         if (next != null) {
-            next.async(promise -> promise.succeed(nextTicket));
+            next.async(promise -> promise.success(nextTicket));
         }
     }
 

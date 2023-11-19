@@ -1,10 +1,10 @@
-package org.pfj.resource;
+package org.pragmatica.async.resource;
 
-import org.pfj.lang.Cause;
-import org.pfj.lang.Functions.FN1;
-import org.pfj.lang.Result;
+import org.pragmatica.lang.Result.Cause;
+import org.pragmatica.lang.Functions.Fn1;
+import org.pragmatica.lang.Result;
 
-import static org.pfj.lang.Result.lift;
+import static org.pragmatica.lang.Result.lift;
 
 /**
  * The container used by {@link AsyncResource} to access shared asyncResource.
@@ -28,7 +28,7 @@ public interface ResourceTicket<T> {
      *
      * @param transformation the transformation to perform on the asyncResource.
      */
-    default <R> Result<R> perform(FN1<? extends Cause, ? super Throwable> exceptionMapper, FN1<R, T> transformation) {
+    default <R> Result<R> perform(Fn1<? extends Cause, ? super Throwable> exceptionMapper, Fn1<R, T> transformation) {
         return lift(exceptionMapper, () -> transformation.apply(resource()))
             .onResultDo(this::release);
     }
