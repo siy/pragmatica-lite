@@ -28,6 +28,7 @@ import static org.pragmatica.lang.Option.some;
 import static org.pragmatica.lang.Promise.failed;
 import static org.pragmatica.lang.Result.success;
 
+//TODO: support structured error responses. See https://www.rfc-editor.org/rfc/rfc7807 for more details
 @SuppressWarnings("unused")
 public class RequestContext {
     private static final int PATH_PARAM_LIMIT = 1024;
