@@ -1,19 +1,18 @@
-# Pragmatica Lite - Functional Style Micro Web Framework
+package org.pragmatica.http.example;
 
-Minimalistic web framework for Java 21+ with minimal dependencies.
+import org.pragmatica.http.protocol.HttpStatus;
+import org.pragmatica.http.server.WebServer;
+import org.pragmatica.http.server.config.Configuration;
+import org.pragmatica.http.server.error.WebError;
+import org.pragmatica.lang.Promise;
 
-## Features
-* Functional style - no NPE, no exceptions. Consistent Option/Result/Promise monads.
-* Minimalistic - no annotations, no reflection, no code generation.
-* Minimal dependencies - only slf4j-api and jackson-databind (for now, later expected some DB-related dependencies).
-* Minimalistic API - only 4 main elements: WebServer, WebClient (WIP), Async resolver (WIP) and DB access layer (WIP).
-* Provides type safety as much as possible
-* Minimal package size (example app jar is about 6.5MB with all dependencies included). 
+import java.util.concurrent.atomic.AtomicInteger;
 
-## Example 
-Test app which demonstrates available routing configuration options. (WARNING: Subject to change!)
+import static org.pragmatica.http.server.routing.Route.from;
+import static org.pragmatica.http.server.routing.Route.get;
+import static org.pragmatica.lang.Promise.failed;
+import static org.pragmatica.lang.Promise.successful;
 
-```java
 public class App {
     public static void main(final String[] args) {
         buildServer()
@@ -91,4 +90,3 @@ public class App {
                       });
     }
 }
-```

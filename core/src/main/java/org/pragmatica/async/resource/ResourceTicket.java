@@ -1,8 +1,8 @@
 package org.pragmatica.async.resource;
 
-import org.pragmatica.lang.Result.Cause;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Result.Cause;
 
 import static org.pragmatica.lang.Result.lift;
 

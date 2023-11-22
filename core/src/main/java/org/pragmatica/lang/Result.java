@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.pragmatica.lang.Tuple.*;
+import static org.pragmatica.lang.Unit.unitResult;
 
 
 /**
@@ -66,6 +67,10 @@ public sealed interface Result<T> permits Success, Failure {
 
     default Result<T> mapError(Fn1<Cause, ? super Cause> mapper) {
         return fold(cause -> mapper.apply(cause).result(), _ -> this);
+    }
+
+    default Result<T> recover(Fn1<T, ? super Cause> mapper) {
+        return fold(cause -> success(mapper.apply(cause)), _ -> this);
     }
 
     /**
@@ -429,8 +434,21 @@ public sealed interface Result<T> permits Success, Failure {
         }
     }
 
+    static Result<Unit> lift(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingRunnable runnable) {
+        try {
+            runnable.run();
+            return unitResult();
+        } catch (Throwable e) {
+            return failure(exceptionMapper.apply(e));
+        }
+    }
+
     static <R> Result<R> lift(Cause cause, ThrowingFn0<R> supplier) {
         return lift(_ -> cause, supplier);
+    }
+
+    static Result<Unit> lift(Cause cause, ThrowingRunnable runnable) {
+        return lift(_ -> cause, runnable);
     }
 
     /**
@@ -504,7 +522,7 @@ public sealed interface Result<T> permits Success, Failure {
                 return value;
             }
         }
-        return Unit.unitResult();
+        return unitResult();
     }
 
     /**

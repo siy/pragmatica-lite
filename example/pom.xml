@@ -3,13 +3,17 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>pragmatica-rest-example</artifactId>
-        <groupId>org.pfj</groupId>
+        <artifactId>pragmatica-lite</artifactId>
+        <groupId>org.pragmatica.lite</groupId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>example</artifactId>
+
+    <properties>
+        <tinylog.version>2.6.2</tinylog.version>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -25,9 +29,38 @@
         </dependency>
 
         <dependency>
+            <groupId>org.tinylog</groupId>
+            <artifactId>slf4j-tinylog</artifactId>
+            <version>${tinylog.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.tinylog</groupId>
+            <artifactId>tinylog-impl</artifactId>
+            <version>${tinylog.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.tinylog</groupId>
+            <artifactId>jsl-tinylog</artifactId>
+            <version>${tinylog.version}</version>
+        </dependency>
+
+        <!-- TODO: temporary fix for vulnerable commons-codec:commons-codec -->
+        <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
+            </exclusions>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.15</version>
         </dependency>
     </dependencies>
 
@@ -47,7 +80,7 @@
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>org.pfj.http.example.App</mainClass>
+                                    <mainClass>org.pragmatica.http.example.App</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
