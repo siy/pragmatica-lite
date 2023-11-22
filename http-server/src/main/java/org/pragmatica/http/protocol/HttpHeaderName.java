@@ -1,5 +1,6 @@
 package org.pragmatica.http.protocol;
 
+@SuppressWarnings("unused")
 public enum HttpHeaderName {
     ACCEPT("accept"),
     ACCEPT_CHARSET("accept-charset"),
@@ -60,7 +61,7 @@ public enum HttpHeaderName {
     TRANSFER_ENCODING("transfer-encoding"),
     USER_AGENT("user-agent"),
     WWW_AUTHENTICATE("www-authenticate"),
-    REQUEST_ID("request-id-chain"),
+    REQUEST_ID("request-id"),
     REQUEST_ID_CHAIN("request-id-chain");
     private final String headerName;
 

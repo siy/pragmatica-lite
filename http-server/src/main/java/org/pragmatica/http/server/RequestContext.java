@@ -11,8 +11,10 @@ import org.pragmatica.http.server.impl.DataContainer;
 import org.pragmatica.http.server.routing.Redirect;
 import org.pragmatica.http.server.routing.Route;
 import org.pragmatica.http.util.Utils;
+import org.pragmatica.http.util.ulid.ULID;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
+import org.slf4j.MDC;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -22,9 +24,11 @@ import java.util.function.Supplier;
 
 import static org.pragmatica.http.util.Utils.lazy;
 import static org.pragmatica.http.util.Utils.value;
+import static org.pragmatica.lang.Option.some;
 import static org.pragmatica.lang.Promise.failed;
 import static org.pragmatica.lang.Result.success;
 
+@SuppressWarnings("unused")
 public class RequestContext {
     private static final int PATH_PARAM_LIMIT = 1024;
 
@@ -33,6 +37,7 @@ public class RequestContext {
     private final Configuration configuration;
     private final HttpHeaders responseHeaders = new CombinedHttpHeaders(true);
     private final Route<?> route;
+    private final String requestId;
 
     private Supplier<List<String>> pathParamsSupplier = lazy(() -> pathParamsSupplier = value(initPathParams()));
     private Supplier<Map<String, List<String>>> queryStringParamsSupplier = lazy(() -> queryStringParamsSupplier = value(initQueryStringParams()));
@@ -44,6 +49,7 @@ public class RequestContext {
         this.request = request;
         this.route = route;
         this.configuration = configuration;
+        this.requestId = ULID.randomULID().encoded();
     }
 
     public static void handle(ChannelHandlerContext ctx, FullHttpRequest request, Route<?> route, Configuration configuration) {
@@ -52,6 +58,10 @@ public class RequestContext {
 
     public Route<?> route() {
         return route;
+    }
+
+    public String requestId() {
+        return requestId;
     }
 
     public ByteBuf body() {
@@ -99,7 +109,7 @@ public class RequestContext {
     }
 
     private void sendResponse(DataContainer dataContainer) {
-        WebServerHandler.sendResponse(ctx, dataContainer, route.contentType(), keepAlive);
+        WebServerHandler.sendResponse(ctx, dataContainer, route.contentType(), keepAlive, some(requestId));
     }
 
     private Result<DataContainer> serializeResponse(Object value) {
@@ -142,9 +152,12 @@ public class RequestContext {
 
     private Promise<?> safeCall() {
         try {
+            MDC.put("requestId", requestId);
             return route().handler().handle(this);
         } catch (Throwable t) {
             return failed(WebError.fromThrowable(HttpStatus.INTERNAL_SERVER_ERROR, t));
+        } finally {
+            MDC.remove("requestId");
         }
     }
 }
