@@ -1,9 +1,9 @@
 package org.pragmatica.http.server.routing;
 
-import io.netty.handler.codec.http.HttpMethod;
+import org.pragmatica.http.protocol.HttpMethod;
 import org.pragmatica.http.server.Handler;
 import org.pragmatica.http.server.config.serialization.ContentType;
-import org.pragmatica.http.server.util.Utils;
+import org.pragmatica.http.util.Utils;
 import org.pragmatica.lang.Result;
 
 import java.util.function.Supplier;
@@ -11,6 +11,8 @@ import java.util.stream.Stream;
 
 import static org.pragmatica.lang.Promise.resolved;
 
+//TODO: rework API
+//TODO: better support for path parameter extraction
 public record Route<T>(HttpMethod method, String path, Handler<T> handler, ContentType contentType) implements RouteSource {
 	public Route {
 		path = Utils.normalize(path);
@@ -78,40 +80,43 @@ public record Route<T>(HttpMethod method, String path, Handler<T> handler, Conte
 	}
 
 	public record RouteBuilder0(String path) {
+		private RouteBuilder1 with(HttpMethod method) {
+			return new RouteBuilder1(path, method);
+		}
 		public RouteBuilder1 options() {
-			return new RouteBuilder1(path, HttpMethod.OPTIONS);
+			return with(HttpMethod.OPTIONS);
 		}
 
 		public RouteBuilder1 get() {
-			return new RouteBuilder1(path, HttpMethod.GET);
+			return with(HttpMethod.GET);
 		}
 
 		public RouteBuilder1 head() {
-			return new RouteBuilder1(path, HttpMethod.HEAD);
+			return with(HttpMethod.HEAD);
 		}
 
 		public RouteBuilder1 post() {
-			return new RouteBuilder1(path, HttpMethod.POST);
+			return with(HttpMethod.POST);
 		}
 
 		public RouteBuilder1 put() {
-			return new RouteBuilder1(path, HttpMethod.PUT);
+			return with(HttpMethod.PUT);
 		}
 
 		public RouteBuilder1 patch() {
-			return new RouteBuilder1(path, HttpMethod.PATCH);
+			return with(HttpMethod.PATCH);
 		}
 
 		public RouteBuilder1 delete() {
-			return new RouteBuilder1(path, HttpMethod.DELETE);
+			return with(HttpMethod.DELETE);
 		}
 
 		public RouteBuilder1 trace() {
-			return new RouteBuilder1(path, HttpMethod.TRACE);
+			return with(HttpMethod.TRACE);
 		}
 
 		public RouteBuilder1 connect() {
-			return new RouteBuilder1(path, HttpMethod.CONNECT);
+			return with(HttpMethod.CONNECT);
 		}
 	}
 
@@ -124,22 +129,22 @@ public record Route<T>(HttpMethod method, String path, Handler<T> handler, Conte
 			return new RouteBuilder2(path, method, ContentType.APPLICATION_JSON);
 		}
 
-		public <T> Route<T> with(Handler<T> handler) {
-			return new Route<>(method, path, handler, ContentType.TEXT_PLAIN);
+		public <T> Route<T> then(Handler<T> handler) {
+			return text().then(handler);
 		}
 
-		public <T> Route<T> with(Supplier<Result<T>> supplier) {
-			return new Route<>(method, path, _ -> resolved(supplier.get()), ContentType.TEXT_PLAIN);
+		public <T> Route<T> then(Supplier<Result<T>> supplier) {
+			return text().then(supplier);
 		}
 	}
 
 	public record RouteBuilder2(String path, HttpMethod method, ContentType contentType) {
-		public <T> Route<T> with(Handler<T> handler) {
+		public <T> Route<T> then(Handler<T> handler) {
 			return new Route<>(method, path, handler, contentType);
 		}
 
-		public <T> Route<T> with(Supplier<Result<T>> supplier) {
-			return new Route<>(method, path, _ -> resolved(supplier.get()), contentType);
+		public <T> Route<T> then(Supplier<Result<T>> supplier) {
+			return then(_ -> resolved(supplier.get()));
 		}
 	}
 }

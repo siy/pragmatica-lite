@@ -1,4 +1,4 @@
-package org.pragmatica.http.server.util;
+package org.pragmatica.http.util;
 
 import java.util.function.Supplier;
 import java.util.regex.Pattern;

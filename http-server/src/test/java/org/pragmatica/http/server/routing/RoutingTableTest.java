@@ -1,20 +1,20 @@
 package org.pragmatica.http.server.routing;
 
-import io.netty.handler.codec.http.HttpMethod;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.pragmatica.http.protocol.HttpMethod;
 import org.pragmatica.lang.utils.Causes;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.pragmatica.http.server.routing.Route.from;
 
-class RoutingTableTest {
-    private final RoutingTable table = RoutingTable.with(
-        from("/one").get().text().with(() -> Causes.cause("one").result()),
-        from("/one1").get().text().with(() -> Causes.cause("one1").result()),
-        from("/one2").get().text().with(() -> Causes.cause("one2").result()),
-        from("/on").get().text().with(() -> Causes.cause("on").result()),
-        from("/o").get().text().with(() -> Causes.cause("o").result())
+class RequestRouterTest {
+    private final RequestRouter table = RequestRouter.with(
+        from("/one").get().text().then(() -> Causes.cause("one").result()),
+        from("/one1").get().text().then(() -> Causes.cause("one1").result()),
+        from("/one2").get().text().then(() -> Causes.cause("one2").result()),
+        from("/on").get().text().then(() -> Causes.cause("on").result()),
+        from("/o").get().text().then(() -> Causes.cause("o").result())
     );
 
     @Test

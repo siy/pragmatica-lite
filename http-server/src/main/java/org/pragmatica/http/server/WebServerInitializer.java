@@ -8,15 +8,15 @@ import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.codec.http.cors.CorsHandler;
 import org.pragmatica.http.server.config.Configuration;
-import org.pragmatica.http.server.routing.RoutingTable;
+import org.pragmatica.http.server.routing.RequestRouter;
 
 class WebServerInitializer extends ChannelInitializer<SocketChannel> {
     private final Configuration configuration;
-    private final RoutingTable routingTable;
+    private final RequestRouter requestRouter;
 
-    WebServerInitializer(Configuration configuration, RoutingTable routingTable) {
+    WebServerInitializer(Configuration configuration, RequestRouter requestRouter) {
         this.configuration = configuration;
-        this.routingTable = routingTable;
+        this.requestRouter = requestRouter;
     }
 
     @Override
@@ -27,7 +27,7 @@ class WebServerInitializer extends ChannelInitializer<SocketChannel> {
             .addLast(new HttpObjectAggregator(configuration.maxContentLen()));
 
         configureCors(pipeline)
-            .addLast(new WebServerHandler(configuration, routingTable));
+            .addLast(new WebServerHandler(configuration, requestRouter));
     }
 
     private ChannelPipeline configureSsl(SocketChannel channel) {

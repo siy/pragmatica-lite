@@ -1,153 +1,120 @@
 package org.pragmatica.http.server.config;
 
 import io.netty.handler.codec.http.cors.CorsConfig;
-import io.netty.handler.logging.LogLevel;
 import io.netty.handler.ssl.SslContext;
-import org.pragmatica.http.server.config.serialization.DefaultSerializer;
+import org.pragmatica.http.server.config.serialization.ObjectMapperSerializer;
 import org.pragmatica.http.server.config.serialization.Serializer;
-import org.pragmatica.http.server.error.CauseMapper;
 import org.pragmatica.lang.Option;
 
-import static org.pragmatica.lang.Option.option;
+import java.net.InetAddress;
 
-public class Configuration {
-    private final int port;
-    private final Serializer serializer;
-    private final CauseMapper causeMapper;
-    private final int sendBufferSize;
-    private final int receiveBufferSize;
-    private final int maxContentLen;
-    private final LogLevel logLevel;
-    private final boolean enableNative;
-    private final Option<SslContext> sslContext;
-    private final Option<CorsConfig> corsConfig;
+import static org.pragmatica.lang.Option.none;
+import static org.pragmatica.lang.Option.some;
 
-    private Configuration(Builder builder) {
-        this.port = builder.port;
-        this.serializer = builder.serializer;
-        this.causeMapper = builder.causeMapper;
-        this.sendBufferSize = builder.sendBufferSize;
-        this.receiveBufferSize = builder.receiveBufferSize;
-        this.maxContentLen = builder.maxContentLen;
-        this.logLevel = builder.logLevel;
-        this.enableNative = builder.enableNative;
-        this.sslContext = option(builder.sslContext);
-        this.corsConfig = option(builder.corsConfig);
-    }
+public interface Configuration {
+    int DEFAULT_PORT = 8000;
+    int DEFAULT_RECEIVE_BUFFER_SIZE = 32768; // 32KB
+    int DEFAULT_SEND_BUFFER_SIZE = 1048576; // 1MB
+    int DEFAULT_MAX_CONTENT_LEN = 2097152; // 2MB
+    boolean DEFAULT_NATIVE_TRANSPORT = true;
 
-    public static Configuration allDefaults() {
-        return new Builder().build();
-    }
+    static Configuration allDefaults() {
+        record configuration(int port, Option<InetAddress> bindAddress, int sendBufferSize, int receiveBufferSize,
+                             int maxContentLen, boolean nativeTransport, Serializer serializer,
+                             Option<SslContext> sslContext, Option<CorsConfig> corsConfig) implements Configuration {
+            @Override
+            public Configuration withPort(int port) {
+                return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
+                                         serializer, sslContext, corsConfig);
+            }
 
-    public static Builder builder() {
-        return new Builder();
-    }
+            @Override
+            public Configuration withBindAddress(InetAddress host) {
+                return new configuration(port, some(host), sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
+                                         serializer, sslContext, corsConfig);
+            }
 
-    public Serializer serializer() {
-        return serializer;
-    }
+            @Override
+            public Configuration withSendBufferSize(int sendBufferSize) {
+                return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
+                                         serializer, sslContext, corsConfig);
+            }
 
-    public int port() {
-        return port;
-    }
+            @Override
+            public Configuration withReceiveBufferSize(int receiveBufferSize) {
+                return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
+                                         serializer, sslContext, corsConfig);
+            }
 
-    public CauseMapper causeMapper() {
-        return causeMapper;
-    }
+            @Override
+            public Configuration withMaxContentLen(int maxContentLen) {
+                return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
+                                         serializer, sslContext, corsConfig);
+            }
 
-    public int sendBufferSize() {
-        return sendBufferSize;
-    }
+            @Override
+            public Configuration withNativeTransport(boolean nativeTransport) {
+                return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
+                                         serializer, sslContext, corsConfig);
+            }
 
-    public int receiveBufferSize() {
-        return receiveBufferSize;
-    }
+            @Override
+            public Configuration withSerializer(Serializer serializer) {
+                return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
+                                         serializer, sslContext, corsConfig);
+            }
 
-    public int maxContentLen() {
-        return maxContentLen;
-    }
+            @Override
+            public Configuration withSslContext(SslContext sslContext) {
+                return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
+                                         serializer, some(sslContext), corsConfig);
+            }
 
-    public LogLevel logLevel() {
-        return logLevel;
-    }
-
-    public boolean enableNative() {
-        return enableNative;
-    }
-
-    public Option<SslContext> sslContext() {
-        return sslContext;
-    }
-
-    public Option<CorsConfig> corsConfig() {
-        return corsConfig;
-    }
-
-    public static final class Builder {
-        private static final int KB = 1024;
-        private static final int MB = KB * KB;
-
-        private int port = 8000;
-        private boolean enableNative = true;
-        private int sendBufferSize = MB;
-        private int receiveBufferSize = 32 * KB;
-        private int maxContentLen = 10 * MB;
-        private Serializer serializer = DefaultSerializer.withDefault();
-        private CauseMapper causeMapper = CauseMapper::defaultConverter;
-        private LogLevel logLevel = LogLevel.DEBUG;
-        private SslContext sslContext = null;
-        private CorsConfig corsConfig = null;
-
-        private Builder() {
+            @Override
+            public Configuration withCorsConfig(CorsConfig corsConfig) {
+                return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
+                                         serializer, sslContext, some(corsConfig));
+            }
         }
 
-        public Builder withPort(int port) {
-            this.port = port;
-            return this;
-        }
-
-        public Builder with(CauseMapper causeMapper) {
-            this.causeMapper = causeMapper;
-            return this;
-        }
-
-        public Builder with(Serializer serializer) {
-            this.serializer = serializer;
-            return this;
-        }
-
-        public Builder withSendBufferSize(int size) {
-            this.sendBufferSize = size;
-            return this;
-        }
-
-        public Builder withReceiveBufferSize(int size) {
-            this.receiveBufferSize = size;
-            return this;
-        }
-
-        public Builder withLogLevel(LogLevel level) {
-            this.logLevel = level;
-            return this;
-        }
-
-        public Builder withNativeTransport(boolean enable) {
-            this.enableNative = enable;
-            return this;
-        }
-
-        public Builder withSsl(SslContext context) {
-            this.sslContext = context;
-            return this;
-        }
-
-        public Builder withCors(CorsConfig corsConfig) {
-            this.corsConfig = corsConfig;
-            return this;
-        }
-
-        public Configuration build() {
-            return new Configuration(this);
-        }
+        return new configuration(DEFAULT_PORT, none(), DEFAULT_SEND_BUFFER_SIZE, DEFAULT_RECEIVE_BUFFER_SIZE,
+                                 DEFAULT_MAX_CONTENT_LEN, DEFAULT_NATIVE_TRANSPORT, ObjectMapperSerializer.withDefault(),
+                                 none(), none());
     }
+
+    int port();
+
+    Option<InetAddress> bindAddress();
+
+    int sendBufferSize();
+
+    int receiveBufferSize();
+
+    int maxContentLen();
+
+    boolean nativeTransport();
+
+    Serializer serializer();
+
+    Option<SslContext> sslContext();
+
+    Option<CorsConfig> corsConfig();
+
+    Configuration withPort(int port);
+
+    Configuration withBindAddress(InetAddress host);
+
+    Configuration withSendBufferSize(int sendBufferSize);
+
+    Configuration withReceiveBufferSize(int receiveBufferSize);
+
+    Configuration withMaxContentLen(int maxContentLen);
+
+    Configuration withNativeTransport(boolean nativeTransport);
+
+    Configuration withSerializer(Serializer serializer);
+
+    Configuration withSslContext(SslContext sslContext);
+
+    Configuration withCorsConfig(CorsConfig corsConfig);
 }

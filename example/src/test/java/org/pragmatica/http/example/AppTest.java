@@ -4,22 +4,23 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.http.server.WebServer;
 import org.pragmatica.lang.Promise;
-import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Unit;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringStartsWith.startsWith;
+import static org.pragmatica.lang.Unit.unitResult;
 
 /**
  * Unit test for simple App.
  */
 public class AppTest {
     private static final WebServer server = App.buildServer();
-    private static final Promise<Void> serverPromise = server.start();
+    private static final Promise<Unit> serverPromise = server.start();
 
     @AfterAll
     static void waitServer() {
-        serverPromise.async(promise -> promise.resolve(Result.success(null))).join();
+        serverPromise.async(promise -> promise.resolve(unitResult())).join();
     }
 
     @Test
@@ -29,7 +30,7 @@ public class AppTest {
             .then()
             .statusCode(200)
             .contentType("text/plain; charset=UTF-8")
-            .body(equalTo("Hello world! /hello1/"));
+            .body(equalTo("Hello world! at /hello1/"));
     }
 
     @Test
@@ -39,7 +40,7 @@ public class AppTest {
             .then()
             .statusCode(200)
             .contentType("text/plain; charset=UTF-8")
-            .body(equalTo("Hello world! /hello2/"));
+            .body(equalTo("Hello world! at /hello2/"));
     }
 
     @Test
@@ -49,7 +50,7 @@ public class AppTest {
             .then()
             .statusCode(200)
             .contentType("text/plain; charset=UTF-8")
-            .body(equalTo("Hello world! /hello3/"));
+            .body(equalTo("Hello world! at /hello3/"));
     }
 
     @Test
@@ -59,7 +60,7 @@ public class AppTest {
             .then()
             .statusCode(200)
             .contentType("text/plain; charset=UTF-8")
-            .body(equalTo("Hello world! /hello4/"));
+            .body(equalTo("Hello world! at /hello4/"));
     }
 
     @Test
@@ -69,7 +70,7 @@ public class AppTest {
             .then()
             .statusCode(422)
             .contentType("text/plain; charset=UTF-8")
-            .body(equalTo("Unprocessable Entity"));
+            .body(equalTo("Unprocessable Entity: Test error"));
     }
 
     @Test
@@ -79,7 +80,7 @@ public class AppTest {
             .then()
             .statusCode(500)
             .contentType("text/plain; charset=UTF-8")
-            .body(startsWith("java.lang.RuntimeException: Some exception message"));
+            .body(startsWith("Internal Server Error: java.lang.RuntimeException: Some exception message"));
     }
 
     @Test
@@ -110,9 +111,4 @@ public class AppTest {
             .body("last", equalTo("Doe"))
             .body("email", equalTo("john.doe@gmail.com"));
     }
-
-    /*
-# 2021-10-26T11:11:31,954 [INFO/RoutingTable/main] - Route: GET: /v1/user/list/, contentType=APPLICATION_JSON
-# 2021-10-26T11:11:31,954 [INFO/RoutingTable/main] - Route: GET: /v1/user/query/, contentType=APPLICATION_JSON
-     */
 }

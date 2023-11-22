@@ -1,4 +1,4 @@
-package org.pragmatica.http.server.util;
+package org.pragmatica.http.util;
 
 import org.junit.jupiter.api.Test;
 
@@ -6,12 +6,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.pragmatica.http.server.util.Utils.lazy;
-import static org.pragmatica.http.server.util.Utils.value;
 
 class UtilsTest {
     private final AtomicInteger marker = new AtomicInteger(0);
-    private Supplier<String> stringSupplier = lazy(() -> stringSupplier = value(getStringValue()));
+    private Supplier<String> stringSupplier = Utils.lazy(() -> stringSupplier = Utils.value(getStringValue()));
 
     private String getStringValue() {
         marker.incrementAndGet();

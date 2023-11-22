@@ -119,6 +119,11 @@ public interface Functions {
         return value;
     }
 
+    @FunctionalInterface
+    interface ThrowingRunnable {
+        void run() throws Throwable;
+    }
+
     /**
      * Supplier which can throw an exception.
      */

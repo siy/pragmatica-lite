@@ -1,9 +1,9 @@
 package org.pragmatica.http.server.routing;
 
-import io.netty.handler.codec.http.HttpMethod;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.pragmatica.http.protocol.HttpMethod;
 import org.pragmatica.lang.Option;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,25 +12,25 @@ import java.util.stream.Stream;
 
 import static org.pragmatica.lang.Option.option;
 
-public final class RoutingTable {
-    private static final Logger log = LogManager.getLogger(RoutingTable.class);
+public final class RequestRouter {
+    private static final Logger log = LoggerFactory.getLogger(RequestRouter.class);
 
     private final Map<HttpMethod, TreeMap<String, Route<?>>> routes;
 
-    private RoutingTable(Map<HttpMethod, TreeMap<String, Route<?>>> routes) {
+    private RequestRouter(Map<HttpMethod, TreeMap<String, Route<?>>> routes) {
         this.routes = routes;
     }
 
-    public static RoutingTable with(RouteSource... routes) {
+    public static RequestRouter with(RouteSource... routes) {
         return with(Stream.of(routes));
     }
 
-    public static RoutingTable with(Stream<RouteSource> routeStream) {
+    public static RequestRouter with(Stream<RouteSource> routeStream) {
         var routes = new HashMap<HttpMethod, TreeMap<String, Route<?>>>();
 
         routeStream.flatMap(RouteSource::routes)
             .forEach(route -> routes.compute(route.method(), (_, pathMap) -> collectRoutes(route, pathMap)));
-        return new RoutingTable(routes);
+        return new RequestRouter(routes);
     }
 
     private static TreeMap<String, Route<?>> collectRoutes(Route<?> route, TreeMap<String, Route<?>> pathMap) {
@@ -43,9 +43,9 @@ public final class RoutingTable {
         return map;
     }
 
-    public RoutingTable print() {
+    public RequestRouter print() {
         routes.forEach((_, endpoints) ->
-            endpoints.forEach((_, route) -> log.info("{}", route)));
+            endpoints.forEach((_, route) -> log.debug("{}", route)));
         return this;
     }
 

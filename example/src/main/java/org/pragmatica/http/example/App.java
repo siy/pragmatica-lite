@@ -1,5 +1,6 @@
 package org.pragmatica.http.example;
 
+import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.http.server.WebServer;
 import org.pragmatica.http.server.config.Configuration;
 import org.pragmatica.http.server.error.WebError;
@@ -20,59 +21,59 @@ public class App {
     }
 
     public static WebServer buildServer() {
-        return WebServer.with(Configuration.allDefaults())
-                        .and(
-                            //Full description
-                            from("/hello1")
-                                .get()
-                                .text()
-                                .with(request -> successful("Hello world! " + request.route().path())),
+        return WebServer
+            .with(Configuration.allDefaults())
+            .serve(
+                //Full description
+                from("/hello1")
+                    .get()
+                    .text()
+                    .then(request -> successful("Hello world! at " + request.route().path())),
 
-                            //Default content type (text)
-                            from("/hello2")
-                                .get()
-                                .with(request -> successful("Hello world! " + request.route().path())),
+                //Default content type (text)
+                from("/hello2")
+                    .get()
+                    .then(request -> successful("Hello world! at " + request.route().path())),
 
-                            //Shortcut for method, explicit content type
-                            get("/hello3")
-                                .text()
-                                .with(request -> successful("Hello world! " + request.route().path())),
+                //Shortcut for method, explicit content type
+                get("/hello3")
+                    .text()
+                    .then(request -> successful("Hello world! at " + request.route().path())),
 
-                            //Shortcut for method, default content type
-                            get("/hello4")
-                                .with(request -> successful("Hello world! " + request.route().path())),
+                //Shortcut for method, default content type
+                get("/hello4")
+                    .then(request -> successful("Hello world! at " + request.route().path())),
 
-                            //Runtime exception handling example
-                            get("/boom-legacy").with(_ -> {
-                                throw new RuntimeException("Some exception message");
-                            }),
+                //Runtime exception handling example
+                get("/boom-legacy").then(_ -> {
+                    throw new RuntimeException("Some exception message");
+                }),
 
-                            //Functional error handling
-                            get("/boom-functional")
-                                .with(_ -> failed(WebError.UNPROCESSABLE_ENTITY)),
+                //Functional error handling
+                get("/boom-functional")
+                    .then(_ -> failed(WebError.from(HttpStatus.UNPROCESSABLE_ENTITY, "Test error"))),
 
-                            //Long-running process
-                            get("/delay")
-                                .with(_ -> delayedResponse()),
+                //Long-running process
+                get("/delay")
+                    .then(_ -> delayedResponse()),
 
-                            //Nested routes
-                            from(
-                                "/v1",
-                                from(
-                                    "/user",
-                                    get("/list")
-                                        .json()
-                                        .with(request -> successful(request.pathParams())),
-                                    get("/query")
-                                        .json()
-                                        .with(request -> successful(request.queryParams())),
-                                    get("/profile")
-                                        .json()
-                                        .with(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com")))
-                                )
-                            )
-                        )
-                        .build();
+                //Nested routes
+                from(
+                    "/v1",
+                    from(
+                        "/user",
+                        get("/list")
+                            .json()
+                            .then(request -> successful(request.pathParams())),
+                        get("/query")
+                            .json()
+                            .then(request -> successful(request.queryParams())),
+                        get("/profile")
+                            .json()
+                            .then(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com")))
+                    )
+                )
+            );
     }
 
     private static final AtomicInteger counter = new AtomicInteger();

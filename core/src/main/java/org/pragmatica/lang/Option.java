@@ -236,6 +236,10 @@ public sealed interface Option<T> permits Some, None {
         return fold(cause::result, Result::success);
     }
 
+    default Result<T> toResult(Fn0<Result> resultSupplier) {
+        return fold(resultSupplier::apply, Result::success);
+    }
+
     /**
      * Convert current instance to instance of {@link Optional}. The present instance is converted into present instance of {@link Optional}. The
      * empty instance is converted into empty instance of {@link Optional}.

@@ -12,88 +12,83 @@ import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.kqueue.KQueueServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.internal.logging.InternalLoggerFactory;
-import io.netty.util.internal.logging.Log4J2LoggerFactory;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import io.netty.util.internal.logging.Slf4JLoggerFactory;
+import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.http.server.config.Configuration;
 import org.pragmatica.http.server.error.WebError;
+import org.pragmatica.http.server.routing.RequestRouter;
 import org.pragmatica.http.server.routing.RouteSource;
-import org.pragmatica.http.server.routing.RoutingTable;
 import org.pragmatica.lang.Promise;
-import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.utils.Causes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.net.InetSocketAddress;
+
+import static org.pragmatica.lang.Unit.unitResult;
 
 public class WebServer {
     static {
-        InternalLoggerFactory.setDefaultFactory(Log4J2LoggerFactory.INSTANCE);
+        InternalLoggerFactory.setDefaultFactory(Slf4JLoggerFactory.INSTANCE);
     }
 
-    private static final Logger log = LogManager.getLogger(WebServer.class);
-
-    private final RoutingTable routingTable;
+    private static final Logger log = LoggerFactory.getLogger(WebServer.class);
+    private final RequestRouter requestRouter;
     private final Configuration configuration;
 
-    private WebServer(Configuration configuration, RoutingTable routingTable) {
+    private WebServer(Configuration configuration, RequestRouter requestRouter) {
         this.configuration = configuration;
-        this.routingTable = routingTable;
+        this.requestRouter = requestRouter;
+    }
+
+    @FunctionalInterface
+    public interface Builder {
+        WebServer serve(RouteSource... routeSources);
     }
 
     public static Builder with(Configuration configuration) {
-        return new Builder(configuration);
+        return (RouteSource... routeSources) -> new WebServer(configuration, RequestRouter.with(routeSources));
     }
 
-    public static class Builder {
-        private final Configuration configuration;
-        private final List<RouteSource> routes = new ArrayList<>();
-
-        private Builder(Configuration configuration) {
-            this.configuration = configuration;
-        }
-
-        public Builder and(RouteSource... routeSources) {
-            routes.addAll(List.of(routeSources));
-            return this;
-        }
-
-        public WebServer build() {
-            return new WebServer(configuration, RoutingTable.with(routes.stream()));
-        }
-    }
-
-    public Promise<Void> start() {
-        log.info("Starting WebServer...");
-
-        routingTable.print();
-
+    public Promise<Unit> start() {
         var reactorConfig = configureReactor();
 
-        var promise = Promise.<Void>promise().onResultDo(() -> gracefulShutdown(reactorConfig));
+        var promise = Promise.<Unit>promise().onResultDo(() -> gracefulShutdown(reactorConfig));
 
         try {
+            var bindAddress = configuration.bindAddress()
+                                           .map(address -> new InetSocketAddress(address, configuration.port()))
+                                           .or(() -> new InetSocketAddress(configuration.port()));
+
+            log.info("Starting WebServer on {}", bindAddress);
+
+            if (log.isDebugEnabled()) {
+                requestRouter.print();
+            }
+
             configureBootstrap(reactorConfig)
                 .childOption(ChannelOption.SO_SNDBUF, configuration.sendBufferSize())
                 .childOption(ChannelOption.SO_RCVBUF, configuration.receiveBufferSize())
-                .handler(new LoggingHandler(configuration.logLevel()))
-                .childHandler(new WebServerInitializer(configuration, routingTable))
-                .bind(configuration.port())
+                .childHandler(new WebServerInitializer(configuration, requestRouter))
+                .bind(bindAddress)
                 .sync()
                 .channel()
                 .closeFuture()
                 .addListener(future -> decode(promise, future));
+            log.info("WebServer started on port {}", configuration.port());
         } catch (InterruptedException e) {
             //In rare cases when .sync() will be interrupted, fail with error
-            promise.resolve(WebError.SERVICE_UNAVAILABLE.result());
+            log.error("Failed to start WebServer", e);
+            promise.resolve(WebError.fromThrowable(HttpStatus.SERVICE_UNAVAILABLE, e).result());
         }
 
         return promise;
     }
 
+    @SuppressWarnings("resource")
     private void gracefulShutdown(ReactorConfig reactorConfig) {
         reactorConfig.bossGroup().shutdownGracefully();
         reactorConfig.workerGroup().shutdownGracefully();
@@ -106,10 +101,10 @@ public class WebServer {
     }
 
     private ReactorConfig configureReactor() {
-        if (Epoll.isAvailable() && configuration.enableNative()) {
+        if (Epoll.isAvailable() && configuration.nativeTransport()) {
             log.info("Using epoll native transport");
             return ReactorConfig.epoll();
-        } else if (KQueue.isAvailable()&& configuration.enableNative()) {
+        } else if (KQueue.isAvailable() && configuration.nativeTransport()) {
             log.info("Using kqueue native transport");
             return ReactorConfig.kqueue();
         } else {
@@ -118,10 +113,10 @@ public class WebServer {
         }
     }
 
-    private void decode(Promise<Void> promise, Future<? super Void> future) {
+    private void decode(Promise<Unit> promise, Future<? super Void> future) {
         promise.resolve(future.isSuccess()
-            ? Result.success(null)
-            : Causes.fromThrowable(future.cause()).result());
+                        ? unitResult()
+                        : Causes.fromThrowable(future.cause()).result());
     }
 
     record ReactorConfig(EventLoopGroup bossGroup, EventLoopGroup workerGroup, Class<? extends ServerChannel> serverChannelClass) {

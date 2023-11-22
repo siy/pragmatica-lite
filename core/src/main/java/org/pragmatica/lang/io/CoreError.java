@@ -23,6 +23,7 @@ public sealed interface CoreError extends Result.Cause {
     record Cancelled(String message) implements CoreError {}
     record Timeout(String message) implements CoreError {}
     record Fault(String message) implements CoreError {}
+    record InvalidInput(String message) implements CoreError {}
     record Exception(String message, Throwable cause) implements CoreError {
         public Exception(Throwable cause) {
             this(cause.getMessage(), cause);
