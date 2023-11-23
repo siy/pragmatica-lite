@@ -14,138 +14,128 @@ import static org.pragmatica.lang.Promise.resolved;
 //TODO: rework API
 //TODO: better support for path parameter extraction
 @SuppressWarnings("unused")
-public record Route<T>(HttpMethod method, String path, Handler<T> handler, ContentType contentType) implements RouteSource {
-	public Route {
-		path = Utils.normalize(path);
-	}
+public interface Route<T> extends RouteSource {
+    HttpMethod method();
 
-	@Override
-	public String toString() {
-		return "Route: " + method + ": " + path +  ", contentType=" + contentType;
-	}
+    String path();
 
-	@Override
-	public Stream<Route<?>> routes() {
-		return Stream.of(this);
-	}
+    Handler<T> handler();
 
-	@Override
-	public RouteSource withPrefix(String prefix) {
-		return new Route<>(method, Utils.normalize(prefix + path), handler, contentType);
-	}
+    ContentType contentType();
 
-	public static RouteSource from(String basePath, RouteSource... routes) {
-		return () -> Stream.of(routes)
-			.map(route -> route.withPrefix(basePath))
-			.flatMap(RouteSource::routes);
-	}
+    @Override
+    default Stream<Route<?>> routes() {
+        return Stream.of(this);
+    }
 
-	public static RouteBuilder0 from(String path) {
-		return new RouteBuilder0(path);
-	}
+    @Override
+    RouteSource withPrefix(String prefix);
 
-	public static RouteBuilder1 options(String path) {
-		return new RouteBuilder1(path, HttpMethod.OPTIONS);
-	}
+    static <T> Route<T> route(HttpMethod method, String path, Handler<T> handler, ContentType contentType) {
+        record route<T>(HttpMethod method, String path, Handler<T> handler, ContentType contentType) implements Route<T> {
+            @Override
+            public RouteSource withPrefix(String prefix) {
+                return new route<>(method, Utils.normalize(prefix + path), handler, contentType);
+            }
 
-	public static RouteBuilder1 get(String path) {
-		return new RouteBuilder1(path, HttpMethod.GET);
-	}
+            @Override
+            public String toString() {
+                return STR. "Route: \{ method } \{ path }, \{ contentType }" ;
+            }
+        }
 
-	public static RouteBuilder1 head(String path) {
-		return new RouteBuilder1(path, HttpMethod.HEAD);
-	}
+        return new route<>(method, Utils.normalize(path), handler, contentType);
+    }
 
-	public static RouteBuilder1 post(String path) {
-		return new RouteBuilder1(path, HttpMethod.POST);
-	}
+    static RouteBuilder0 in(String path) {
+        return RouteBuilder0.builder0(path);
+    }
 
-	public static RouteBuilder1 put(String path) {
-		return new RouteBuilder1(path, HttpMethod.PUT);
-	}
+    interface RouteBuilder0 {
+        String path();
 
-	public static RouteBuilder1 patch(String path) {
-		return new RouteBuilder1(path, HttpMethod.PATCH);
-	}
+        static RouteBuilder0 builder0(String path) {
+            record routeBuilder0(String path) implements RouteBuilder0 {}
 
-	public static RouteBuilder1 delete(String path) {
-		return new RouteBuilder1(path, HttpMethod.DELETE);
-	}
+            return new routeBuilder0(path);
+        }
 
-	public static RouteBuilder1 trace(String path) {
-		return new RouteBuilder1(path, HttpMethod.TRACE);
-	}
+        default RouteSource serve(RouteSource... subroutes) {
+            return () -> Stream.of(subroutes)
+                               .map(route -> route.withPrefix(path()))
+                               .flatMap(RouteSource::routes);
+        }
+    }
 
-	public static RouteBuilder1 connect(String path) {
-		return new RouteBuilder1(path, HttpMethod.CONNECT);
-	}
+    static RouteBuilder1 options(String path) {
+        return RouteBuilder1.builder1(path, HttpMethod.OPTIONS);
+    }
 
-	public record RouteBuilder0(String path) {
-		private RouteBuilder1 with(HttpMethod method) {
-			return new RouteBuilder1(path, method);
-		}
-		public RouteBuilder1 options() {
-			return with(HttpMethod.OPTIONS);
-		}
+    static RouteBuilder1 get(String path) {
+        return RouteBuilder1.builder1(path, HttpMethod.GET);
+    }
 
-		public RouteBuilder1 get() {
-			return with(HttpMethod.GET);
-		}
+    static RouteBuilder1 head(String path) {
+        return RouteBuilder1.builder1(path, HttpMethod.HEAD);
+    }
 
-		public RouteBuilder1 head() {
-			return with(HttpMethod.HEAD);
-		}
+    static RouteBuilder1 post(String path) {
+        return RouteBuilder1.builder1(path, HttpMethod.POST);
+    }
 
-		public RouteBuilder1 post() {
-			return with(HttpMethod.POST);
-		}
+    static RouteBuilder1 put(String path) {
+        return RouteBuilder1.builder1(path, HttpMethod.PUT);
+    }
 
-		public RouteBuilder1 put() {
-			return with(HttpMethod.PUT);
-		}
+    static RouteBuilder1 patch(String path) {
+        return RouteBuilder1.builder1(path, HttpMethod.PATCH);
+    }
 
-		public RouteBuilder1 patch() {
-			return with(HttpMethod.PATCH);
-		}
+    static RouteBuilder1 delete(String path) {
+        return RouteBuilder1.builder1(path, HttpMethod.DELETE);
+    }
 
-		public RouteBuilder1 delete() {
-			return with(HttpMethod.DELETE);
-		}
+    static RouteBuilder1 trace(String path) {
+        return RouteBuilder1.builder1(path, HttpMethod.TRACE);
+    }
 
-		public RouteBuilder1 trace() {
-			return with(HttpMethod.TRACE);
-		}
+    static RouteBuilder1 connect(String path) {
+        return RouteBuilder1.builder1(path, HttpMethod.CONNECT);
+    }
 
-		public RouteBuilder1 connect() {
-			return with(HttpMethod.CONNECT);
-		}
-	}
+    interface RouteBuilder1 {
+        String path();
 
-	public record RouteBuilder1(String path, HttpMethod method) {
-		public RouteBuilder2 text() {
-			return new RouteBuilder2(path, method, ContentType.TEXT_PLAIN);
-		}
+        HttpMethod method();
 
-		public RouteBuilder2 json() {
-			return new RouteBuilder2(path, method, ContentType.APPLICATION_JSON);
-		}
+        static RouteBuilder1 builder1(String path, HttpMethod method) {
+            record routeBuilder1(String path, HttpMethod method) implements RouteBuilder1 {}
 
-		public <T> Route<T> then(Handler<T> handler) {
-			return text().then(handler);
-		}
+            return new routeBuilder1(path, method);
+        }
 
-		public <T> Route<T> then(Supplier<Result<T>> supplier) {
-			return text().then(supplier);
-		}
-	}
+        default <T> Route<T> with(Handler<T> handler) {
+            return textWith(handler);
+        }
 
-	public record RouteBuilder2(String path, HttpMethod method, ContentType contentType) {
-		public <T> Route<T> then(Handler<T> handler) {
-			return new Route<>(method, path, handler, contentType);
-		}
+        default <T> Route<T> with(Supplier<Result<T>> supplier) {
+            return with(_ -> resolved(supplier.get()));
+        }
 
-		public <T> Route<T> then(Supplier<Result<T>> supplier) {
-			return then(_ -> resolved(supplier.get()));
-		}
-	}
+        default <T> Route<T> textWith(Handler<T> handler) {
+            return route(method(), path(), handler, ContentType.TEXT_PLAIN);
+        }
+
+        default <T> Route<T> textWith(Supplier<Result<T>> supplier) {
+            return textWith(_ -> resolved(supplier.get()));
+        }
+
+        default <T> Route<T> jsonWith(Handler<T> handler) {
+            return route(method(), path(), handler, ContentType.APPLICATION_JSON);
+        }
+
+        default <T> Route<T> jsonWith(Supplier<Result<T>> supplier) {
+            return jsonWith(_ -> resolved(supplier.get()));
+        }
+    }
 }

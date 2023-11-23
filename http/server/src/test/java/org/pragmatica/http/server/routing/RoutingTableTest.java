@@ -6,15 +6,14 @@ import org.pragmatica.http.protocol.HttpMethod;
 import org.pragmatica.lang.utils.Causes;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.pragmatica.http.server.routing.Route.from;
 
 class RequestRouterTest {
     private final RequestRouter table = RequestRouter.with(
-        from("/one").get().text().then(() -> Causes.cause("one").result()),
-        from("/one1").get().text().then(() -> Causes.cause("one1").result()),
-        from("/one2").get().text().then(() -> Causes.cause("one2").result()),
-        from("/on").get().text().then(() -> Causes.cause("on").result()),
-        from("/o").get().text().then(() -> Causes.cause("o").result())
+        Route.get("/one").textWith(() -> Causes.cause("one").result()),
+        Route.get("/one1").textWith(() -> Causes.cause("one1").result()),
+        Route.get("/one2").textWith(() -> Causes.cause("one2").result()),
+        Route.get("/on").textWith(() -> Causes.cause("on").result()),
+        Route.get("/o").textWith(() -> Causes.cause("o").result())
     );
 
     @Test

@@ -8,8 +8,7 @@ import org.pragmatica.lang.Promise;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.pragmatica.http.server.routing.Route.from;
-import static org.pragmatica.http.server.routing.Route.get;
+import static org.pragmatica.http.server.routing.Route.*;
 import static org.pragmatica.lang.Promise.failed;
 import static org.pragmatica.lang.Promise.successful;
 
@@ -17,7 +16,7 @@ public class App {
     public static void main(final String[] args) {
         buildServer()
             .start()
-            .join();
+            .await();
     }
 
     public static WebServer buildServer() {
@@ -25,54 +24,40 @@ public class App {
             .with(Configuration.allDefaults())
             .serve(
                 //Full description
-                from("/hello1")
-                    .get()
-                    .text()
-                    .then(request -> successful("Hello world! at " + request.route().path())),
+                get("/hello1")
+                    .textWith(request -> successful("Hello world! at " + request.route().path())),
 
                 //Default content type (text)
-                from("/hello2")
-                    .get()
-                    .then(request -> successful("Hello world! at " + request.route().path())),
-
-                //Shortcut for method, explicit content type
-                get("/hello3")
-                    .text()
-                    .then(request -> successful("Hello world! at " + request.route().path())),
-
-                //Shortcut for method, default content type
-                get("/hello4")
-                    .then(request -> successful("Hello world! at " + request.route().path())),
+                get("/hello2")
+                    .with(request -> successful("Hello world! at " + request.route().path())),
 
                 //Runtime exception handling example
-                get("/boom-legacy").then(_ -> {
-                    throw new RuntimeException("Some exception message");
-                }),
+                get("/boom-legacy")
+                    .with(_ -> {
+                        throw new RuntimeException("Some exception message");
+                    }),
 
                 //Functional error handling
                 get("/boom-functional")
-                    .then(_ -> failed(WebError.from(HttpStatus.UNPROCESSABLE_ENTITY, "Test error"))),
+                    .with(_ -> failed(WebError.from(HttpStatus.UNPROCESSABLE_ENTITY, "Test error"))),
 
                 //Long-running process
                 get("/delay")
-                    .then(_ -> delayedResponse()),
+                    .with(_ -> delayedResponse()),
 
                 //Nested routes
-                from(
-                    "/v1",
-                    from(
-                        "/user",
-                        get("/list")
-                            .json()
-                            .then(request -> successful(request.pathParams())),
-                        get("/query")
-                            .json()
-                            .then(request -> successful(request.queryParams())),
-                        get("/profile")
-                            .json()
-                            .then(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com")))
+                in("/v1")
+                    .serve(
+                        in("/user")
+                            .serve(
+                                get("/list")
+                                    .jsonWith(request -> successful(request.pathParams())),
+                                get("/query")
+                                    .jsonWith(request -> successful(request.queryParams())),
+                                get("/profile")
+                                    .jsonWith(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com")))
+                            )
                     )
-                )
             );
     }
 

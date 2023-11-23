@@ -36,6 +36,7 @@ import static org.pragmatica.lang.utils.ResultCollector.resultCollector;
 /**
  * The (perhaps not yet available) result of the asynchronous operation.
  */
+@SuppressWarnings("unused")
 public interface Promise<T> {
     /**
      * Resolve current instance. This action can be performed only once, all subsequent attempts will be ignored and state of the promise will remain
@@ -105,8 +106,6 @@ public interface Promise<T> {
      * General purpose method to start new virtual thread.
      *
      * @param runnable The {@link Runnable} to run
-     *
-     * @return created and started thread
      */
     static void runAsync(Runnable runnable) {
         AsyncExecutor.INSTANCE.runAsync(runnable);
@@ -135,7 +134,7 @@ public interface Promise<T> {
      *
      * @return Value of the Promise
      */
-    Result<T> join();
+    Result<T> await();
 
     /**
      * Wait for completion of the Promise and all attached actions. The waiting time is limited to specified timeout. If timeout expires before
@@ -147,7 +146,7 @@ public interface Promise<T> {
      *
      * @return Value of the Promise or timeout error.
      */
-    Result<T> join(Timeout timeout);
+    Result<T> await(Timeout timeout);
 
     /**
      * Attach a side effect action which will be executed upon resolution of the current instance. If promise is already resolved by the time of
@@ -867,7 +866,7 @@ public interface Promise<T> {
 
 
         @Override
-        public Result<T> join() {
+        public Result<T> await() {
             CompletionAction<T> action;
 
             while ((action = processed) == null) {
@@ -876,7 +875,7 @@ public interface Promise<T> {
             }
 
             while (action != NOP) {
-                action.dependency.join();
+                action.dependency.await();
                 action = action.next;
             }
 
@@ -884,8 +883,8 @@ public interface Promise<T> {
         }
 
         @Override
-        public Result<T> join(Timeout timeout) {
-            return join(timeout.nanoseconds());
+        public Result<T> await(Timeout timeout) {
+            return await(timeout.nanoseconds());
         }
 
         @Override
@@ -914,7 +913,7 @@ public interface Promise<T> {
             this.processed = processed;
         }
 
-        private Result<T> join(long delayNanos) {
+        private Result<T> await(long delayNanos) {
             var start = System.nanoTime();
 
             CompletionAction<T> action;
@@ -934,7 +933,7 @@ public interface Promise<T> {
                     return new CoreError.Timeout("Result.join(timeout) expired while waiting for completion of dependencies").result();
                 }
 
-                action.dependency.join(currentNanoTime - start);
+                action.dependency.await(currentNanoTime - start);
                 action = action.next;
             }
 

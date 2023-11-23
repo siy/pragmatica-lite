@@ -42,7 +42,7 @@ public class PromiseTest {
         promise.resolve(Result.success(1));
         promise.onSuccess(ref::set);
 
-        promise.join().onSuccess(v -> assertEquals(1, v));
+        promise.await().onSuccess(v -> assertEquals(1, v));
 
         assertEquals(1, ref.get());
     }
@@ -58,7 +58,7 @@ public class PromiseTest {
     void promiseCanBeCancelled() {
         var promise = Promise.<Integer>promise();
 
-        promise.cancel().join()
+        promise.cancel().await()
                .onFailure(this::assertIsCancelled)
                .onSuccess(_ -> fail("Promise should be cancelled"));
     }
@@ -74,7 +74,7 @@ public class PromiseTest {
         assertEquals(0, ref1.get());
         assertFalse(ref2.get());
 
-        promise.resolve(Result.success(1)).join();
+        promise.resolve(Result.success(1)).await();
 
         assertEquals(1, ref1.get());
         assertTrue(ref2.get());
@@ -91,7 +91,7 @@ public class PromiseTest {
         assertEquals(0, ref1.get());
         assertFalse(ref2.get());
 
-        promise.resolve(FAULT).join();
+        promise.resolve(FAULT).await();
 
         assertEquals(0, ref1.get());
         assertFalse(ref2.get());
@@ -108,7 +108,7 @@ public class PromiseTest {
         assertNull(ref1.get());
         assertFalse(ref2.get());
 
-        promise.resolve(FAULT).join();
+        promise.resolve(FAULT).await();
 
         assertIsFault(ref1.get());
         assertTrue(ref2.get());
@@ -125,7 +125,7 @@ public class PromiseTest {
         assertNull(ref1.get());
         assertFalse(ref2.get());
 
-        promise.resolve(Result.success(1)).join();
+        promise.resolve(Result.success(1)).await();
 
         assertNull(ref1.get());
         assertFalse(ref2.get());
@@ -142,7 +142,7 @@ public class PromiseTest {
         assertNull(ref1.get());
         assertFalse(ref2.get());
 
-        promise.resolve(Result.success(1)).join();
+        promise.resolve(Result.success(1)).await();
 
         assertEquals(Result.success(1), ref1.get());
         assertTrue(ref2.get());
@@ -159,7 +159,7 @@ public class PromiseTest {
         assertNull(ref1.get());
         assertFalse(ref2.get());
 
-        promise.resolve(FAULT).join();
+        promise.resolve(FAULT).await();
 
         ref1.get()
             .onFailure(this::assertIsFault)
@@ -178,7 +178,7 @@ public class PromiseTest {
         assertNull(ref1.get());
         assertFalse(ref2.get());
 
-        promise.join(Timeout.timeout(10).millis())
+        promise.await(Timeout.timeout(10).millis())
                .onFailure(this::assertIsTimeout)
                .onSuccess(_ -> fail("Timeout is expected"));
 
@@ -199,7 +199,7 @@ public class PromiseTest {
                                   .onResultDo(() -> ref3.set(System.nanoTime()));
                              });
 
-        promise.join();
+        promise.await();
 
         //For informational purposes
         System.out.printf("From start of promise creation to start of async execution: %.2fms\n", (ref2.get() - ref1.get()) / 1e6);
@@ -239,7 +239,7 @@ public class PromiseTest {
         assertNull(ref2.get());
         assertNull(ref3.get());
 
-        promise.resolve(Result.success(1)).join();
+        promise.resolve(Result.success(1)).await();
 
         assertEquals(1, ref1.get());
         assertEquals("1", ref2.get());
@@ -257,7 +257,7 @@ public class PromiseTest {
 
         promise1.success(1);
 
-        allPromise.join()
+        allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1), tuple))
                   .onFailureDo(Assertions::fail);
     }
@@ -274,7 +274,7 @@ public class PromiseTest {
         promise1.success(1);
         promise2.success(2);
 
-        allPromise.join()
+        allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2), tuple))
                   .onFailureDo(Assertions::fail);
     }
@@ -293,7 +293,7 @@ public class PromiseTest {
         promise2.success(2);
         promise3.success(3);
 
-        allPromise.join()
+        allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3), tuple))
                   .onFailureDo(Assertions::fail);
     }
@@ -315,7 +315,7 @@ public class PromiseTest {
         promise3.success(3);
         promise4.success(4);
 
-        allPromise.join()
+        allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4), tuple))
                   .onFailureDo(Assertions::fail);
     }
@@ -339,7 +339,7 @@ public class PromiseTest {
         promise4.success(4);
         promise5.success(5);
 
-        allPromise.join()
+        allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5), tuple))
                   .onFailureDo(Assertions::fail);
     }
@@ -365,7 +365,7 @@ public class PromiseTest {
         promise5.success(5);
         promise6.success(6);
 
-        allPromise.join()
+        allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5, 6), tuple))
                   .onFailureDo(Assertions::fail);
     }
@@ -393,7 +393,7 @@ public class PromiseTest {
         promise6.success(6);
         promise7.success(7);
 
-        allPromise.join()
+        allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5, 6, 7), tuple))
                   .onFailureDo(Assertions::fail);
     }
@@ -424,7 +424,7 @@ public class PromiseTest {
         promise7.success(7);
         promise8.success(8);
 
-        allPromise.join()
+        allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5, 6, 7, 8), tuple))
                   .onFailureDo(Assertions::fail);
     }
@@ -457,7 +457,7 @@ public class PromiseTest {
         promise8.success(8);
         promise9.success(9);
 
-        allPromise.join()
+        allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5, 6, 7, 8, 9), tuple))
                   .onFailureDo(Assertions::fail);
     }

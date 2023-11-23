@@ -12,6 +12,7 @@ import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.kqueue.KQueueServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.Future;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.netty.util.internal.logging.Slf4JLoggerFactory;
@@ -34,6 +35,11 @@ import static org.pragmatica.lang.Unit.unitResult;
 public class WebServer {
     static {
         InternalLoggerFactory.setDefaultFactory(Slf4JLoggerFactory.INSTANCE);
+
+        if (System.getProperty("io.netty.leakDetection.level") == null &&
+            System.getProperty("io.netty.leakDetectionLevel") == null) {
+            ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
+        }
     }
 
     private static final Logger log = LoggerFactory.getLogger(WebServer.class);
@@ -66,9 +72,7 @@ public class WebServer {
 
             log.info("Starting WebServer on {}", bindAddress);
 
-            if (log.isDebugEnabled()) {
-                requestRouter.print();
-            }
+            requestRouter.print();
 
             configureBootstrap(reactorConfig)
                 .childOption(ChannelOption.SO_SNDBUF, configuration.sendBufferSize())

@@ -44,8 +44,11 @@ public final class RequestRouter {
     }
 
     public void print() {
+        if (!log.isInfoEnabled()) {
+            return;
+        }
         routes.forEach((_, endpoints) ->
-                           endpoints.forEach((_, route) -> log.debug("{}", route)));
+                           endpoints.forEach((_, route) -> log.info("{}", route)));
     }
 
     public Option<Route<?>> findRoute(HttpMethod method, String inputPath) {

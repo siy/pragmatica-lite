@@ -20,95 +20,95 @@ public class AppTest {
 
     @AfterAll
     static void waitServer() {
-        serverPromise.async(promise -> promise.resolve(unitResult())).join();
+        serverPromise.async(promise -> promise.resolve(unitResult())).await();
     }
 
     @Test
     void hello1EndpointIsWorking() {
         given().baseUri("http://localhost:8000")
-            .get("/hello1")
-            .then()
-            .statusCode(200)
-            .contentType("text/plain; charset=UTF-8")
-            .body(equalTo("Hello world! at /hello1/"));
+               .get("/hello1")
+               .then()
+               .statusCode(200)
+               .contentType("text/plain; charset=UTF-8")
+               .body(equalTo("Hello world! at /hello1/"));
     }
 
     @Test
     void hello2EndpointIsWorking() {
         given().baseUri("http://localhost:8000")
-            .get("/hello2")
-            .then()
-            .statusCode(200)
-            .contentType("text/plain; charset=UTF-8")
-            .body(equalTo("Hello world! at /hello2/"));
-    }
-
-    @Test
-    void hello3EndpointIsWorking() {
-        given().baseUri("http://localhost:8000")
-            .get("/hello3")
-            .then()
-            .statusCode(200)
-            .contentType("text/plain; charset=UTF-8")
-            .body(equalTo("Hello world! at /hello3/"));
-    }
-
-    @Test
-    void hello4EndpointIsWorking() {
-        given().baseUri("http://localhost:8000")
-            .get("/hello4")
-            .then()
-            .statusCode(200)
-            .contentType("text/plain; charset=UTF-8")
-            .body(equalTo("Hello world! at /hello4/"));
+               .get("/hello2")
+               .then()
+               .statusCode(200)
+               .contentType("text/plain; charset=UTF-8")
+               .body(equalTo("Hello world! at /hello2/"));
     }
 
     @Test
     void boomFunctionalEndpointIsWorking() {
         given().baseUri("http://localhost:8000")
-            .get("/boom-functional")
-            .then()
-            .statusCode(422)
-            .contentType("text/plain; charset=UTF-8")
-            .body(equalTo("Unprocessable Entity: Test error"));
+               .get("/boom-functional")
+               .then()
+               .statusCode(422)
+               .contentType("text/plain; charset=UTF-8")
+               .body(equalTo("Unprocessable Entity: Test error"));
     }
 
     @Test
     void boomLegacyEndpointIsWorking() {
         given().baseUri("http://localhost:8000")
-            .get("/boom-legacy")
-            .then()
-            .statusCode(500)
-            .contentType("text/plain; charset=UTF-8")
-            .body(startsWith("Internal Server Error: java.lang.RuntimeException: Some exception message"));
+               .get("/boom-legacy")
+               .then()
+               .statusCode(500)
+               .contentType("text/plain; charset=UTF-8")
+               .body(startsWith("Internal Server Error: java.lang.RuntimeException: Some exception message"));
     }
 
     @Test
     void delayEndpointIsWorking() {
         given().baseUri("http://localhost:8000")
-            .get("/delay")
-            .then()
-            .statusCode(200)
-            .contentType("text/plain; charset=UTF-8")
-            .body(equalTo("1"));
+               .get("/delay")
+               .then()
+               .statusCode(200)
+               .contentType("text/plain; charset=UTF-8")
+               .body(equalTo("1"));
 
         given().baseUri("http://localhost:8000")
-            .get("/delay")
-            .then()
-            .statusCode(200)
-            .contentType("text/plain; charset=UTF-8")
-            .body(equalTo("2"));
+               .get("/delay")
+               .then()
+               .statusCode(200)
+               .contentType("text/plain; charset=UTF-8")
+               .body(equalTo("2"));
     }
 
     @Test
     void userProfileEndpointIsWorking() {
         given().baseUri("http://localhost:8000")
-            .get("/v1/user/profile")
-            .then()
-            .statusCode(200)
-            .contentType("application/json; charset=UTF-8")
-            .body("first", equalTo("John"))
-            .body("last", equalTo("Doe"))
-            .body("email", equalTo("john.doe@gmail.com"));
+               .get("/v1/user/profile")
+               .then()
+               .statusCode(200)
+               .contentType("application/json; charset=UTF-8")
+               .body("first", equalTo("John"))
+               .body("last", equalTo("Doe"))
+               .body("email", equalTo("john.doe@gmail.com"));
+    }
+
+    @Test
+    void userListEndpointIsWorking() {
+        given().baseUri("http://localhost:8000")
+               .get("/v1/user/list/one/two/three")
+               .then()
+               .statusCode(200)
+               .contentType("application/json; charset=UTF-8")
+               .body(equalTo("[\"one\",\"two\",\"three\"]"));
+    }
+
+    @Test
+    void userQueryEndpointIsWorking() {
+        given().baseUri("http://localhost:8000")
+               .get("/v1/user/query?one=1&two=2&three=3&three=4")
+               .then()
+               .statusCode(200)
+               .contentType("application/json; charset=UTF-8")
+               .body(equalTo("{\"one\":[\"1\"],\"two\":[\"2\"],\"three\":[\"3\",\"4\"]}"));
     }
 }
