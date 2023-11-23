@@ -1,3 +1,5 @@
+The purpose of this branch is to preserve async resource sharing code. 
+
 # Pragmatica Lite - Functional Style Micro Web Framework
 
 Minimalistic web framework for Java 21+ with minimal dependencies.
