@@ -11,6 +11,7 @@ import java.net.InetAddress;
 import static org.pragmatica.lang.Option.none;
 import static org.pragmatica.lang.Option.some;
 
+//TODO: support for HTTP/2, compression,
 @SuppressWarnings("unused")
 public interface Configuration {
     int DEFAULT_PORT = 8000;
