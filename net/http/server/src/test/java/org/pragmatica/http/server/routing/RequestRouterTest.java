@@ -3,17 +3,16 @@ package org.pragmatica.http.server.routing;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.http.protocol.HttpMethod;
-import org.pragmatica.lang.utils.Causes;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class RequestRouterTest {
     private final RequestRouter table = RequestRouter.with(
-        Route.get("/one").textWith(() -> Causes.cause("one").result()),
-        Route.get("/one1").textWith(() -> Causes.cause("one1").result()),
-        Route.get("/one2").textWith(() -> Causes.cause("one2").result()),
-        Route.get("/on").textWith(() -> Causes.cause("on").result()),
-        Route.get("/o").textWith(() -> Causes.cause("o").result())
+        Route.get("/one").textWith(() -> "one"),
+        Route.get("/one1").textWith(() -> "one1"),
+        Route.get("/one2").textWith(() -> "one2"),
+        Route.get("/on").textWith(() -> "on"),
+        Route.get("/o").textWith(() -> "o")
     );
 
     @Test
@@ -37,7 +36,7 @@ class RequestRouterTest {
         table.findRoute(HttpMethod.GET, path)
             .onEmpty(Assertions::fail)
             .onPresent(route -> route.handler().handle(null)
-                .onFailure(cause -> assertEquals(path, "/" + cause.message()))
-                .onSuccess(_ -> fail()));
+                .onSuccess(value -> assertEquals(path, "/" + value))
+                .onFailure(_ -> fail()));
     }
 }
