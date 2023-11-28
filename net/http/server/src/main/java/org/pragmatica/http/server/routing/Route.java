@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.pragmatica.lang.Promise.resolved;
+import static org.pragmatica.lang.Promise.successful;
 
 //TODO: rework API
 //TODO: better support for path parameter extraction
@@ -126,16 +127,16 @@ public interface Route<T> extends RouteSource {
             return route(method(), path(), handler, ContentType.TEXT_PLAIN);
         }
 
-        default <T> Route<T> textWith(Supplier<Result<T>> supplier) {
-            return textWith(_ -> resolved(supplier.get()));
+        default <T> Route<T> textWith(Supplier<T> supplier) {
+            return textWith(_ -> successful(supplier.get()));
         }
 
         default <T> Route<T> jsonWith(Handler<T> handler) {
             return route(method(), path(), handler, ContentType.APPLICATION_JSON);
         }
 
-        default <T> Route<T> jsonWith(Supplier<Result<T>> supplier) {
-            return jsonWith(_ -> resolved(supplier.get()));
+        default <T> Route<T> jsonWith(Supplier<T> supplier) {
+            return jsonWith(_ -> successful(supplier.get()));
         }
     }
 }

@@ -1,17 +1,6 @@
 package org.pragmatica.http.server;
 
-import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.ServerChannel;
-import io.netty.channel.epoll.Epoll;
-import io.netty.channel.epoll.EpollEventLoopGroup;
-import io.netty.channel.epoll.EpollServerSocketChannel;
-import io.netty.channel.kqueue.KQueue;
-import io.netty.channel.kqueue.KQueueEventLoopGroup;
-import io.netty.channel.kqueue.KQueueServerSocketChannel;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.Future;
 import io.netty.util.internal.logging.InternalLoggerFactory;
@@ -24,12 +13,14 @@ import org.pragmatica.http.server.routing.RouteSource;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.utils.Causes;
+import org.pragmatica.net.transport.api.ReactorConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 
 import static org.pragmatica.lang.Unit.unitResult;
+import static org.pragmatica.net.transport.api.ReactorConfiguration.reactorConfiguration;
 
 //TODO: Support for HTTP/2
 public class WebServer {
@@ -61,20 +52,21 @@ public class WebServer {
     }
 
     public Promise<Unit> start() {
-        var reactorConfig = configureReactor();
-
-        var promise = Promise.<Unit>promise().onResultDo(() -> gracefulShutdown(reactorConfig));
+        var reactorConfig = reactorConfiguration();
+        var promise = Promise.<Unit>promise()
+                             .onResultDo(() -> gracefulShutdown(reactorConfig));
 
         try {
             var bindAddress = configuration.bindAddress()
                                            .map(address -> new InetSocketAddress(address, configuration.port()))
                                            .or(() -> new InetSocketAddress(configuration.port()));
 
-            log.info("Starting WebServer on {}", bindAddress);
+            log.info("Starting WebServer on {} using {} transport", bindAddress, reactorConfig.name());
 
             requestRouter.print();
 
-            configureBootstrap(reactorConfig)
+            reactorConfig
+                .serverBootstrap()
                 .childOption(ChannelOption.SO_RCVBUF, configuration.receiveBufferSize())
                 .childOption(ChannelOption.SO_SNDBUF, configuration.sendBufferSize())
                 .childHandler(new WebServerInitializer(configuration, requestRouter))
@@ -83,6 +75,7 @@ public class WebServer {
                 .channel()
                 .closeFuture()
                 .addListener(future -> decode(promise, future));
+
             log.info("WebServer started on port {}", configuration.port());
         } catch (InterruptedException e) {
             //In rare cases when .sync() will be interrupted, fail with error
@@ -94,47 +87,14 @@ public class WebServer {
     }
 
     @SuppressWarnings("resource")
-    private void gracefulShutdown(ReactorConfig reactorConfig) {
+    private void gracefulShutdown(ReactorConfiguration reactorConfig) {
         reactorConfig.bossGroup().shutdownGracefully();
         reactorConfig.workerGroup().shutdownGracefully();
-    }
-
-    private ServerBootstrap configureBootstrap(ReactorConfig reactorConfig) {
-        return new ServerBootstrap()
-            .group(reactorConfig.bossGroup(), reactorConfig.workerGroup())
-            .channel(reactorConfig.serverChannelClass());
-    }
-
-    private ReactorConfig configureReactor() {
-        if (Epoll.isAvailable() && configuration.nativeTransport()) {
-            log.info("Using epoll native transport");
-            return ReactorConfig.epoll();
-        } else if (KQueue.isAvailable() && configuration.nativeTransport()) {
-            log.info("Using kqueue native transport");
-            return ReactorConfig.kqueue();
-        } else {
-            log.info("Using NIO transport");
-            return ReactorConfig.nio();
-        }
     }
 
     private void decode(Promise<Unit> promise, Future<? super Void> future) {
         promise.resolve(future.isSuccess()
                         ? unitResult()
                         : Causes.fromThrowable(future.cause()).result());
-    }
-
-    record ReactorConfig(EventLoopGroup bossGroup, EventLoopGroup workerGroup, Class<? extends ServerChannel> serverChannelClass) {
-        static ReactorConfig epoll() {
-            return new ReactorConfig(new EpollEventLoopGroup(1), new EpollEventLoopGroup(), EpollServerSocketChannel.class);
-        }
-
-        static ReactorConfig kqueue() {
-            return new ReactorConfig(new KQueueEventLoopGroup(1), new KQueueEventLoopGroup(), KQueueServerSocketChannel.class);
-        }
-
-        public static ReactorConfig nio() {
-            return new ReactorConfig(new NioEventLoopGroup(1), new NioEventLoopGroup(), NioServerSocketChannel.class);
-        }
     }
 }

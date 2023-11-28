@@ -13,7 +13,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>${project.parent.groupId}</groupId>
+            <groupId>org.pragmatica.lite</groupId>
             <artifactId>http-server</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
