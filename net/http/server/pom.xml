@@ -14,7 +14,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>${project.parent.groupId}</groupId>
+            <groupId>org.pragmatica.lite</groupId>
             <artifactId>core</artifactId>
         </dependency>
 

@@ -11,4 +11,21 @@
 
     <artifactId>transport-io_uring</artifactId>
     <packaging>jar</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.pragmatica.lite</groupId>
+            <artifactId>transport-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.auto.service</groupId>
+            <artifactId>auto-service</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty.incubator</groupId>
+            <artifactId>netty-incubator-transport-native-io_uring</artifactId>
+        </dependency>
+    </dependencies>
 </project>
