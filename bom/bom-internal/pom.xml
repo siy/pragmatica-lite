@@ -35,6 +35,7 @@
                 <groupId>com.google.auto.service</groupId>
                 <artifactId>auto-service</artifactId>
                 <version>${auto-service.version}</version>
+                <scope>provided</scope>
             </dependency>
 
             <dependency>
