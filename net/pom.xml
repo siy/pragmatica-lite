@@ -14,6 +14,7 @@
 
     <modules>
         <module>http</module>
+        <module>dns</module>
         <module>transport</module>
     </modules>
 
