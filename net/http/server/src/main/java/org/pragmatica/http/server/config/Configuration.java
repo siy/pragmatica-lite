@@ -2,8 +2,6 @@ package org.pragmatica.http.server.config;
 
 import io.netty.handler.codec.http.cors.CorsConfig;
 import io.netty.handler.ssl.SslContext;
-import org.pragmatica.http.server.config.serialization.ObjectMapperSerializer;
-import org.pragmatica.http.server.config.serialization.Serializer;
 import org.pragmatica.lang.Option;
 
 import java.net.InetAddress;
