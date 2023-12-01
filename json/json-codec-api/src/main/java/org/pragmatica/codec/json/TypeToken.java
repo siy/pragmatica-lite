@@ -13,7 +13,7 @@ import java.lang.reflect.Type;
  * Then this instance can be used to retrieve complete generic type of the created instance. Note that this implementation is rudimentary and does not
  * provide any extras, but it's good fit to purposes of capturing parameter type.
  * <p>
- * See http://gafter.blogspot.com/2006/12/super-type-tokens.html for more details.
+ * See <a href="http://gafter.blogspot.com/2006/12/super-type-tokens.html">this article</a> for more details.
  */
 public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
     private final Type token;

@@ -11,7 +11,7 @@ import org.pragmatica.lang.Result;
 import static io.netty.buffer.Unpooled.wrappedBuffer;
 import static org.pragmatica.lang.Result.lift;
 
-public interface JacksonJsonCodec extends JsonCodec<JacksonJsonCodecConfiguration> {
+public interface JacksonJsonCodec extends JsonCodec {
     static JacksonJsonCodec forMapper(ObjectMapper objectMapper) {
         record jacksonJsonCodec(ObjectMapper objectMapper) implements JacksonJsonCodec {
             @Override

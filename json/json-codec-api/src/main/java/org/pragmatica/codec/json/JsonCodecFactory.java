@@ -4,12 +4,11 @@ import org.pragmatica.lang.Option;
 
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public interface JsonCodecFactory<C extends JsonCodecConfiguration> {
-    JsonCodec<C> forConfiguration(C config);
-    JsonCodec<C> withDefaultConfiguration();
+    <T extends JsonCodec> T forConfiguration(C config);
+    <T extends JsonCodec> T withDefaultConfiguration();
     Class<C> configClass();
 
     static JsonCodecFactory<?> defaultFactory() {

@@ -23,7 +23,7 @@ public interface Configuration {
     static Configuration allDefaults() {
         record configuration(int port, Option<InetAddress> bindAddress, int sendBufferSize,
                              int receiveBufferSize, int maxContentLen, boolean nativeTransport,
-                             JsonCodec<?> jsonCodec, Option<SslContext> sslContext, Option<CorsConfig> corsConfig) implements Configuration {
+                             JsonCodec jsonCodec, Option<SslContext> sslContext, Option<CorsConfig> corsConfig) implements Configuration {
             @Override
             public Configuration withPort(int port) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
@@ -96,7 +96,7 @@ public interface Configuration {
 
     boolean nativeTransport();
 
-    JsonCodec<?> jsonCodec();
+    JsonCodec jsonCodec();
 
     Option<SslContext> sslContext();
 

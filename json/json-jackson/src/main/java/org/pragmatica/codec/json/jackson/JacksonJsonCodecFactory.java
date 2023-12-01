@@ -2,10 +2,7 @@ package org.pragmatica.codec.json.jackson;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auto.service.AutoService;
-import org.pragmatica.codec.json.*;
-
-import static io.netty.buffer.Unpooled.wrappedBuffer;
-import static org.pragmatica.lang.Result.lift;
+import org.pragmatica.codec.json.JsonCodecFactory;
 
 @AutoService(JsonCodecFactory.class)
 public final class JacksonJsonCodecFactory implements JsonCodecFactory<JacksonJsonCodecConfiguration> {
