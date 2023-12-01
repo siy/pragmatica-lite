@@ -1,9 +1,9 @@
 package org.pragmatica.http.server;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
+import org.pragmatica.codec.json.TypeToken;
 import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.http.server.config.Configuration;
 import org.pragmatica.http.server.error.WebError;
@@ -74,8 +74,8 @@ public class RequestContext {
         return body().toString(StandardCharsets.UTF_8);
     }
 
-    public <T> Result<T> fromJson(TypeReference<T> literal) {
-        return configuration.serializer().deserialize(request.content(), literal);
+    public <T> Result<T> fromJson(TypeToken<T> literal) {
+        return configuration.jsonCodec().deserialize(request.content(), literal);
     }
 
     public List<String> pathParams() {
@@ -125,7 +125,7 @@ public class RequestContext {
             default -> switch (route.contentType()) {
                 case TEXT_PLAIN -> success(value).map(Object::toString)
                                                  .map(DataContainer.StringData::from);
-                case APPLICATION_JSON -> configuration.serializer().serialize(value)
+                case APPLICATION_JSON -> configuration.jsonCodec().serialize(value)
                                                       .map(DataContainer.ByteBufData::from);
             };
         };

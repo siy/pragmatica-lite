@@ -48,6 +48,11 @@
             <artifactId>transport-epoll</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.pragmatica.lite</groupId>
+            <artifactId>json-jackson</artifactId>
+        </dependency>
+
         <!-- TODO: temporary fix for vulnerable commons-codec:commons-codec -->
         <dependency>
             <groupId>io.rest-assured</groupId>

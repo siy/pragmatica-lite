@@ -19,6 +19,7 @@
     <properties>
         <!-- Code dependencies -->
         <jackson.version>2.16.0</jackson.version>
+        <jsoniter.version>0.9.19</jsoniter.version>
         <netty.version>4.1.100.Final</netty.version>
         <netty.io_uring.version>0.0.24.Final</netty.io_uring.version>
 

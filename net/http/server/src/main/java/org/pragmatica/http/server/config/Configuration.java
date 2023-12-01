@@ -2,6 +2,8 @@ package org.pragmatica.http.server.config;
 
 import io.netty.handler.codec.http.cors.CorsConfig;
 import io.netty.handler.ssl.SslContext;
+import org.pragmatica.codec.json.JsonCodec;
+import org.pragmatica.codec.json.JsonCodecFactory;
 import org.pragmatica.lang.Option;
 
 import java.net.InetAddress;
@@ -19,47 +21,47 @@ public interface Configuration {
     boolean DEFAULT_NATIVE_TRANSPORT = true;
 
     static Configuration allDefaults() {
-        record configuration(int port, Option<InetAddress> bindAddress, int sendBufferSize, int receiveBufferSize,
-                             int maxContentLen, boolean nativeTransport, Serializer serializer,
-                             Option<SslContext> sslContext, Option<CorsConfig> corsConfig) implements Configuration {
+        record configuration(int port, Option<InetAddress> bindAddress, int sendBufferSize,
+                             int receiveBufferSize, int maxContentLen, boolean nativeTransport,
+                             JsonCodec<?> jsonCodec, Option<SslContext> sslContext, Option<CorsConfig> corsConfig) implements Configuration {
             @Override
             public Configuration withPort(int port) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
-                                         serializer, sslContext, corsConfig);
+                                         jsonCodec, sslContext, corsConfig);
             }
 
             @Override
             public Configuration withBindAddress(InetAddress host) {
                 return new configuration(port, some(host), sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
-                                         serializer, sslContext, corsConfig);
+                                         jsonCodec, sslContext, corsConfig);
             }
 
             @Override
             public Configuration withSendBufferSize(int sendBufferSize) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
-                                         serializer, sslContext, corsConfig);
+                                         jsonCodec, sslContext, corsConfig);
             }
 
             @Override
             public Configuration withReceiveBufferSize(int receiveBufferSize) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
-                                         serializer, sslContext, corsConfig);
+                                         jsonCodec, sslContext, corsConfig);
             }
 
             @Override
             public Configuration withMaxContentLen(int maxContentLen) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
-                                         serializer, sslContext, corsConfig);
+                                         jsonCodec, sslContext, corsConfig);
             }
 
             @Override
             public Configuration withNativeTransport(boolean nativeTransport) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
-                                         serializer, sslContext, corsConfig);
+                                         jsonCodec, sslContext, corsConfig);
             }
 
             @Override
-            public Configuration withSerializer(Serializer serializer) {
+            public Configuration withSerializer(JsonCodec serializer) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
                                          serializer, sslContext, corsConfig);
             }
@@ -67,19 +69,19 @@ public interface Configuration {
             @Override
             public Configuration withSslContext(SslContext sslContext) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
-                                         serializer, some(sslContext), corsConfig);
+                                         jsonCodec, some(sslContext), corsConfig);
             }
 
             @Override
             public Configuration withCorsConfig(CorsConfig corsConfig) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
-                                         serializer, sslContext, some(corsConfig));
+                                         jsonCodec, sslContext, some(corsConfig));
             }
         }
 
         return new configuration(DEFAULT_PORT, none(), DEFAULT_SEND_BUFFER_SIZE, DEFAULT_RECEIVE_BUFFER_SIZE,
-                                 DEFAULT_MAX_CONTENT_LEN, DEFAULT_NATIVE_TRANSPORT, ObjectMapperSerializer.withDefault(),
-                                 none(), none());
+                                 DEFAULT_MAX_CONTENT_LEN, DEFAULT_NATIVE_TRANSPORT,
+                                 JsonCodecFactory.defaultFactory().withDefaultConfiguration(), none(), none());
     }
 
     int port();
@@ -94,7 +96,7 @@ public interface Configuration {
 
     boolean nativeTransport();
 
-    Serializer serializer();
+    JsonCodec<?> jsonCodec();
 
     Option<SslContext> sslContext();
 
@@ -112,7 +114,7 @@ public interface Configuration {
 
     Configuration withNativeTransport(boolean nativeTransport);
 
-    Configuration withSerializer(Serializer serializer);
+    Configuration withSerializer(JsonCodec jsonCodec);
 
     Configuration withSslContext(SslContext sslContext);
 
