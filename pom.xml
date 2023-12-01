@@ -10,7 +10,7 @@
         <module>examples</module>
         <module>net</module>
         <module>bom</module>
-        <module>codec</module>
+        <module>json</module>
     </modules>
     <packaging>pom</packaging>
 
