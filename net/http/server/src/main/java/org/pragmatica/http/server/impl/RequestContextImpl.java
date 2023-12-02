@@ -98,6 +98,7 @@ public class RequestContextImpl implements RequestContext {
         safeCall().onResult(this::sendResponse);
     }
 
+    //TODO: automatic adjustment of the response code
     private void sendResponse(Result<?> result) {
         result
             .flatMap(this::serializeResponse)

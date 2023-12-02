@@ -23,6 +23,8 @@ import java.net.InetSocketAddress;
 import static org.pragmatica.lang.Unit.unitResult;
 import static org.pragmatica.net.transport.api.ReactorConfiguration.reactorConfiguration;
 
+//TODO: injection of routes via SPI (metrics, health, etc.)
+//TODO: structured error responses. See https://www.rfc-editor.org/rfc/rfc7807 for more details
 //TODO: Support for HTTP/2
 public class WebServer {
     static {
