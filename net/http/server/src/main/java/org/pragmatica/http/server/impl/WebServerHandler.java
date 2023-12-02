@@ -1,16 +1,15 @@
-package org.pragmatica.http.server;
+package org.pragmatica.http.server.impl;
 
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
+import org.pragmatica.http.content.ContentType;
+import org.pragmatica.http.error.WebError;
 import org.pragmatica.http.protocol.HttpHeaderName;
 import org.pragmatica.http.protocol.HttpMethod;
 import org.pragmatica.http.protocol.HttpStatus;
-import org.pragmatica.http.server.config.Configuration;
-import org.pragmatica.http.server.config.serialization.ContentType;
-import org.pragmatica.http.server.error.WebError;
-import org.pragmatica.http.server.impl.DataContainer;
+import org.pragmatica.http.server.config.WebServerConfiguration;
 import org.pragmatica.http.server.routing.RequestRouter;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
@@ -27,10 +26,10 @@ class WebServerHandler extends SimpleChannelInboundHandler<Object> {
     private static final Supplier<String> dateTimeNow = () -> ZonedDateTime.now(Clock.systemUTC())
                                                                    .format(DateTimeFormatter.RFC_1123_DATE_TIME);
 
-    private final Configuration configuration;
+    private final WebServerConfiguration configuration;
     private final RequestRouter routingTable;
 
-    WebServerHandler(Configuration configuration, RequestRouter routingTable) {
+    WebServerHandler(WebServerConfiguration configuration, RequestRouter routingTable) {
         this.configuration = configuration;
         this.routingTable = routingTable;
     }
@@ -56,7 +55,7 @@ class WebServerHandler extends SimpleChannelInboundHandler<Object> {
         routingTable.findRoute(HttpMethod.from(request.method()), path)
                     .toResult(() -> WebError.from(HttpStatus.NOT_FOUND, path).result())
                     .onFailure(cause -> sendErrorResponse(ctx, cause))
-                    .onSuccess(route -> RequestContext.handle(ctx, request, route, configuration));
+                    .onSuccess(route -> RequestContextImpl.handle(ctx, request, route, configuration));
     }
 
     private void sendErrorResponse(ChannelHandlerContext ctx, Result.Cause cause) {

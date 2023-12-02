@@ -1,8 +1,7 @@
 package org.pragmatica.http.server.routing;
 
+import org.pragmatica.http.content.ContentType;
 import org.pragmatica.http.protocol.HttpMethod;
-import org.pragmatica.http.server.Handler;
-import org.pragmatica.http.server.config.serialization.ContentType;
 import org.pragmatica.http.util.Utils;
 import org.pragmatica.lang.Result;
 

@@ -3,7 +3,7 @@ package org.pragmatica.http.server;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.pragmatica.http.server.config.Configuration;
+import org.pragmatica.http.server.config.WebServerConfiguration;
 import org.pragmatica.http.server.routing.Route;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
@@ -16,7 +16,7 @@ import static org.pragmatica.lang.Unit.unitResult;
 
 class WebServerTest {
     private static final Logger log = LoggerFactory.getLogger(WebServerTest.class);
-    private static final WebServer server = WebServer.with(Configuration.allDefaults().withPort(8000))
+    private static final WebServer server = WebServer.with(WebServerConfiguration.allDefaults().withPort(8000))
                                                      .serve(Route.get("/one").textWith(() -> "one"),
                                                             Route.get("/two").textWith(() -> "two"),
                                                             Route.get("/three").textWith(() -> "three"));

@@ -13,67 +13,67 @@ import static org.pragmatica.lang.Option.some;
 
 //TODO: support for HTTP/2, compression,
 @SuppressWarnings("unused")
-public interface Configuration {
+public interface WebServerConfiguration {
     int DEFAULT_PORT = 8000;
     int DEFAULT_RECEIVE_BUFFER_SIZE = 32768; // 32KB
     int DEFAULT_SEND_BUFFER_SIZE = 1048576; // 1MB
     int DEFAULT_MAX_CONTENT_LEN = 2097152; // 2MB
     boolean DEFAULT_NATIVE_TRANSPORT = true;
 
-    static Configuration allDefaults() {
+    static WebServerConfiguration allDefaults() {
         record configuration(int port, Option<InetAddress> bindAddress, int sendBufferSize,
                              int receiveBufferSize, int maxContentLen, boolean nativeTransport,
-                             JsonCodec jsonCodec, Option<SslContext> sslContext, Option<CorsConfig> corsConfig) implements Configuration {
+                             JsonCodec jsonCodec, Option<SslContext> sslContext, Option<CorsConfig> corsConfig) implements WebServerConfiguration {
             @Override
-            public Configuration withPort(int port) {
+            public WebServerConfiguration withPort(int port) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
                                          jsonCodec, sslContext, corsConfig);
             }
 
             @Override
-            public Configuration withBindAddress(InetAddress host) {
+            public WebServerConfiguration withBindAddress(InetAddress host) {
                 return new configuration(port, some(host), sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
                                          jsonCodec, sslContext, corsConfig);
             }
 
             @Override
-            public Configuration withSendBufferSize(int sendBufferSize) {
+            public WebServerConfiguration withSendBufferSize(int sendBufferSize) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
                                          jsonCodec, sslContext, corsConfig);
             }
 
             @Override
-            public Configuration withReceiveBufferSize(int receiveBufferSize) {
+            public WebServerConfiguration withReceiveBufferSize(int receiveBufferSize) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
                                          jsonCodec, sslContext, corsConfig);
             }
 
             @Override
-            public Configuration withMaxContentLen(int maxContentLen) {
+            public WebServerConfiguration withMaxContentLen(int maxContentLen) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
                                          jsonCodec, sslContext, corsConfig);
             }
 
             @Override
-            public Configuration withNativeTransport(boolean nativeTransport) {
+            public WebServerConfiguration withNativeTransport(boolean nativeTransport) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
                                          jsonCodec, sslContext, corsConfig);
             }
 
             @Override
-            public Configuration withSerializer(JsonCodec serializer) {
+            public WebServerConfiguration withSerializer(JsonCodec serializer) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
                                          serializer, sslContext, corsConfig);
             }
 
             @Override
-            public Configuration withSslContext(SslContext sslContext) {
+            public WebServerConfiguration withSslContext(SslContext sslContext) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
                                          jsonCodec, some(sslContext), corsConfig);
             }
 
             @Override
-            public Configuration withCorsConfig(CorsConfig corsConfig) {
+            public WebServerConfiguration withCorsConfig(CorsConfig corsConfig) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
                                          jsonCodec, sslContext, some(corsConfig));
             }
@@ -102,21 +102,21 @@ public interface Configuration {
 
     Option<CorsConfig> corsConfig();
 
-    Configuration withPort(int port);
+    WebServerConfiguration withPort(int port);
 
-    Configuration withBindAddress(InetAddress host);
+    WebServerConfiguration withBindAddress(InetAddress host);
 
-    Configuration withSendBufferSize(int sendBufferSize);
+    WebServerConfiguration withSendBufferSize(int sendBufferSize);
 
-    Configuration withReceiveBufferSize(int receiveBufferSize);
+    WebServerConfiguration withReceiveBufferSize(int receiveBufferSize);
 
-    Configuration withMaxContentLen(int maxContentLen);
+    WebServerConfiguration withMaxContentLen(int maxContentLen);
 
-    Configuration withNativeTransport(boolean nativeTransport);
+    WebServerConfiguration withNativeTransport(boolean nativeTransport);
 
-    Configuration withSerializer(JsonCodec jsonCodec);
+    WebServerConfiguration withSerializer(JsonCodec jsonCodec);
 
-    Configuration withSslContext(SslContext sslContext);
+    WebServerConfiguration withSslContext(SslContext sslContext);
 
-    Configuration withCorsConfig(CorsConfig corsConfig);
+    WebServerConfiguration withCorsConfig(CorsConfig corsConfig);
 }

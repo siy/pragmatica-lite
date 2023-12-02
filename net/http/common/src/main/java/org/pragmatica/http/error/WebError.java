@@ -1,4 +1,4 @@
-package org.pragmatica.http.server.error;
+package org.pragmatica.http.error;
 
 import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.lang.Option;

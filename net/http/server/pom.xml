@@ -25,12 +25,12 @@
 
         <dependency>
             <groupId>org.pragmatica.lite</groupId>
-            <artifactId>json-codec-api</artifactId>
+            <artifactId>routing-api</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-codec-http</artifactId>
+            <groupId>org.pragmatica.lite</groupId>
+            <artifactId>json-codec-api</artifactId>
         </dependency>
 
         <dependency>

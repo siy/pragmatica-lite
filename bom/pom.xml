@@ -56,6 +56,18 @@
 
             <dependency>
                 <groupId>org.pragmatica.lite</groupId>
+                <artifactId>http-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.pragmatica.lite</groupId>
+                <artifactId>routing-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.pragmatica.lite</groupId>
                 <artifactId>transport-api</artifactId>
                 <version>${project.version}</version>
             </dependency>

@@ -1,4 +1,4 @@
-package org.pragmatica.http.server;
+package org.pragmatica.http.server.impl;
 
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -7,14 +7,14 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.codec.http.cors.CorsHandler;
-import org.pragmatica.http.server.config.Configuration;
+import org.pragmatica.http.server.config.WebServerConfiguration;
 import org.pragmatica.http.server.routing.RequestRouter;
 
-class WebServerInitializer extends ChannelInitializer<SocketChannel> {
-    private final Configuration configuration;
+public class WebServerInitializer extends ChannelInitializer<SocketChannel> {
+    private final WebServerConfiguration configuration;
     private final RequestRouter requestRouter;
 
-    WebServerInitializer(Configuration configuration, RequestRouter requestRouter) {
+    public WebServerInitializer(WebServerConfiguration configuration, RequestRouter requestRouter) {
         this.configuration = configuration;
         this.requestRouter = requestRouter;
     }

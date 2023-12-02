@@ -9,13 +9,23 @@
         <version>0.0.2</version>
     </parent>
 
-    <artifactId>http-client</artifactId>
+    <artifactId>routing-api</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
             <groupId>org.pragmatica.lite</groupId>
             <artifactId>http-common</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.pragmatica.lite</groupId>
+            <artifactId>json-codec-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
 
         <dependency>

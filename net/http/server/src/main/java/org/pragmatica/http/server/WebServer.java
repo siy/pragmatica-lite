@@ -5,9 +5,10 @@ import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.Future;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.netty.util.internal.logging.Slf4JLoggerFactory;
+import org.pragmatica.http.error.WebError;
 import org.pragmatica.http.protocol.HttpStatus;
-import org.pragmatica.http.server.config.Configuration;
-import org.pragmatica.http.server.error.WebError;
+import org.pragmatica.http.server.config.WebServerConfiguration;
+import org.pragmatica.http.server.impl.WebServerInitializer;
 import org.pragmatica.http.server.routing.RequestRouter;
 import org.pragmatica.http.server.routing.RouteSource;
 import org.pragmatica.lang.Promise;
@@ -35,9 +36,9 @@ public class WebServer {
 
     private static final Logger log = LoggerFactory.getLogger(WebServer.class);
     private final RequestRouter requestRouter;
-    private final Configuration configuration;
+    private final WebServerConfiguration configuration;
 
-    private WebServer(Configuration configuration, RequestRouter requestRouter) {
+    private WebServer(WebServerConfiguration configuration, RequestRouter requestRouter) {
         this.configuration = configuration;
         this.requestRouter = requestRouter;
     }
@@ -47,7 +48,7 @@ public class WebServer {
         WebServer serve(RouteSource... routeSources);
     }
 
-    public static Builder with(Configuration configuration) {
+    public static Builder with(WebServerConfiguration configuration) {
         return (RouteSource... routeSources) -> new WebServer(configuration, RequestRouter.with(routeSources));
     }
 

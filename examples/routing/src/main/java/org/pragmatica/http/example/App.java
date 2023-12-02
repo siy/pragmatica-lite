@@ -1,14 +1,15 @@
 package org.pragmatica.http.example;
 
+import org.pragmatica.http.error.WebError;
 import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.http.server.WebServer;
-import org.pragmatica.http.server.config.Configuration;
-import org.pragmatica.http.server.error.WebError;
+import org.pragmatica.http.server.config.WebServerConfiguration;
 import org.pragmatica.lang.Promise;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.pragmatica.http.server.routing.Route.*;
+import static org.pragmatica.http.server.routing.Route.get;
+import static org.pragmatica.http.server.routing.Route.in;
 import static org.pragmatica.lang.Promise.failed;
 import static org.pragmatica.lang.Promise.successful;
 
@@ -21,7 +22,7 @@ public class App {
 
     public static WebServer buildServer() {
         return WebServer
-            .with(Configuration.allDefaults().withPort(8000))
+            .with(WebServerConfiguration.allDefaults().withPort(8000))
             .serve(
                 //Full description
                 get("/hello1")

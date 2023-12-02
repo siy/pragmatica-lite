@@ -1,4 +1,4 @@
-package org.pragmatica.http.server.config.serialization;
+package org.pragmatica.http.content;
 
 public enum ContentType {
     TEXT_PLAIN("text/plain; charset=UTF-8"),

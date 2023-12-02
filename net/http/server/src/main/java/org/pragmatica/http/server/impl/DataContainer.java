@@ -1,9 +1,9 @@
 package org.pragmatica.http.server.impl;
 
 import io.netty.buffer.ByteBuf;
+import org.pragmatica.http.error.WebError;
 import org.pragmatica.http.protocol.HttpHeaderName;
 import org.pragmatica.http.protocol.HttpStatus;
-import org.pragmatica.http.server.error.WebError;
 import org.pragmatica.http.server.routing.Redirect;
 import org.pragmatica.lang.Result.Cause;
 import org.pragmatica.lang.Tuple.Tuple2;

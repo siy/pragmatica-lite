@@ -1,14 +1,14 @@
-package org.pragmatica.http.server;
+package org.pragmatica.http.server.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
 import org.pragmatica.codec.json.TypeToken;
+import org.pragmatica.http.error.WebError;
 import org.pragmatica.http.protocol.HttpStatus;
-import org.pragmatica.http.server.config.Configuration;
-import org.pragmatica.http.server.error.WebError;
-import org.pragmatica.http.server.impl.DataContainer;
+import org.pragmatica.http.server.config.WebServerConfiguration;
 import org.pragmatica.http.server.routing.Redirect;
+import org.pragmatica.http.server.routing.RequestContext;
 import org.pragmatica.http.server.routing.Route;
 import org.pragmatica.http.util.Utils;
 import org.pragmatica.http.util.ulid.ULID;
@@ -31,12 +31,12 @@ import static org.pragmatica.lang.Result.success;
 //TODO: support structured error responses. See https://www.rfc-editor.org/rfc/rfc7807 for more details
 //TODO: support cookies
 @SuppressWarnings("unused")
-public class RequestContext {
+public class RequestContextImpl implements RequestContext {
     private static final int PATH_PARAM_LIMIT = 1024;
 
     private final ChannelHandlerContext ctx;
     private final FullHttpRequest request;
-    private final Configuration configuration;
+    private final WebServerConfiguration configuration;
     private final HttpHeaders responseHeaders = new CombinedHttpHeaders(true);
     private final Route<?> route;
     private final String requestId;
@@ -46,7 +46,7 @@ public class RequestContext {
     private Supplier<Map<String, String>> headersSupplier = lazy(() -> headersSupplier = value(initHeaders()));
     private boolean keepAlive = false;
 
-    private RequestContext(ChannelHandlerContext ctx, FullHttpRequest request, Route<?> route, Configuration configuration) {
+    private RequestContextImpl(ChannelHandlerContext ctx, FullHttpRequest request, Route<?> route, WebServerConfiguration configuration) {
         this.ctx = ctx;
         this.request = request;
         this.route = route;
@@ -54,43 +54,43 @@ public class RequestContext {
         this.requestId = ULID.randomULID().encoded();
     }
 
-    public static void handle(ChannelHandlerContext ctx, FullHttpRequest request, Route<?> route, Configuration configuration) {
-        new RequestContext(ctx, request, route, configuration).invokeAndRespond();
+    public static void handle(ChannelHandlerContext ctx, FullHttpRequest request, Route<?> route, WebServerConfiguration configuration) {
+        new RequestContextImpl(ctx, request, route, configuration).invokeAndRespond();
     }
 
-    public Route<?> route() {
+    @Override public Route<?> route() {
         return route;
     }
 
-    public String requestId() {
+    @Override public String requestId() {
         return requestId;
     }
 
-    public ByteBuf body() {
+    @Override public ByteBuf body() {
         return request.content();
     }
 
-    public String bodyAsString() {
+    @Override public String bodyAsString() {
         return body().toString(StandardCharsets.UTF_8);
     }
 
-    public <T> Result<T> fromJson(TypeToken<T> literal) {
+    @Override public <T> Result<T> fromJson(TypeToken<T> literal) {
         return configuration.jsonCodec().deserialize(request.content(), literal);
     }
 
-    public List<String> pathParams() {
+    @Override public List<String> pathParams() {
         return pathParamsSupplier.get();
     }
 
-    public Map<String, List<String>> queryParams() {
+    @Override public Map<String, List<String>> queryParams() {
         return queryStringParamsSupplier.get();
     }
 
-    public Map<String, String> requestHeaders() {
+    @Override public Map<String, String> requestHeaders() {
         return headersSupplier.get();
     }
 
-    public HttpHeaders responseHeaders() {
+    @Override public HttpHeaders responseHeaders() {
         return responseHeaders;
     }
 

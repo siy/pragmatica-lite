@@ -9,13 +9,18 @@
         <version>0.0.2</version>
     </parent>
 
-    <artifactId>http-client</artifactId>
+    <artifactId>http-common</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
             <groupId>org.pragmatica.lite</groupId>
-            <artifactId>http-common</artifactId>
+            <artifactId>core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-codec-http</artifactId>
         </dependency>
 
         <dependency>

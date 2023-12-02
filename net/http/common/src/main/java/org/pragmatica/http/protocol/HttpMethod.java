@@ -1,6 +1,6 @@
 package org.pragmatica.http.protocol;
 
-import org.pragmatica.http.server.error.WebError;
+import org.pragmatica.http.error.WebError;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.utils.Causes;
 
