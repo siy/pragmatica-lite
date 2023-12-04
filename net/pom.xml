@@ -14,7 +14,7 @@
 
     <modules>
         <module>http</module>
-        <module>dns</module>
+        <module>dns-client</module>
         <module>transport</module>
     </modules>
 

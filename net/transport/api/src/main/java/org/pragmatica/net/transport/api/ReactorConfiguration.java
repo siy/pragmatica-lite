@@ -1,5 +1,6 @@
 package org.pragmatica.net.transport.api;
 
+import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -30,6 +31,11 @@ public interface ReactorConfiguration {
     default ServerBootstrap serverBootstrap() {
         return new ServerBootstrap().group(bossGroup(), workerGroup())
                                     .channel(serverChannelClass());
+    }
+
+    default Bootstrap clientBootstrap() {
+        return new Bootstrap().group(workerGroup())
+                              .channel(clientChannelClass());
     }
 
     enum TransportHolder {
