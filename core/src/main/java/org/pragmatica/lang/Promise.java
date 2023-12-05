@@ -112,6 +112,23 @@ public interface Promise<T> {
     }
 
     /**
+     * General purpose method to run provided {@link Runnable} after specified timeout.
+     *
+     * @param timeout  The timeout
+     * @param runnable The {@link Runnable} to run
+     */
+    static void runAsync(Timeout timeout, Runnable runnable) {
+        runAsync(() -> {
+            try {
+                Thread.sleep(timeout.duration());
+            } catch (InterruptedException e) {
+                // ignore
+            }
+            runnable.run();
+        });
+    }
+
+    /**
      * Run asynchronous task. The task will receive current instance of Promise as a parameter.
      *
      * @param action The task to run
@@ -853,14 +870,7 @@ public interface Promise<T> {
         }
 
         public Promise<T> async(Timeout timeout, Consumer<Promise<T>> action) {
-            runAsync(() -> {
-                try {
-                    Thread.sleep(timeout.duration());
-                } catch (InterruptedException e) {
-                    // ignore
-                }
-                action.accept(this);
-            });
+            runAsync(timeout, () -> action.accept(this));
             return this;
         }
 

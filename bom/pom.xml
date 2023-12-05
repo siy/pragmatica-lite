@@ -282,6 +282,7 @@
                 <artifactId>tinylog-impl</artifactId>
                 <version>${tinylog.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>org.tinylog</groupId>
                 <artifactId>jsl-tinylog</artifactId>

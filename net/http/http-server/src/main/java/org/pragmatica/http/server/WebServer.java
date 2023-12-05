@@ -14,14 +14,14 @@ import org.pragmatica.http.server.routing.RouteSource;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.utils.Causes;
-import org.pragmatica.net.transport.api.ReactorConfiguration;
+import org.pragmatica.net.transport.api.TransportConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 
 import static org.pragmatica.lang.Unit.unitResult;
-import static org.pragmatica.net.transport.api.ReactorConfiguration.reactorConfiguration;
+import static org.pragmatica.net.transport.api.TransportConfiguration.transportConfiguration;
 
 //TODO: injection of routes via SPI (metrics, health, etc.)
 //TODO: structured error responses. See https://www.rfc-editor.org/rfc/rfc7807 for more details
@@ -55,7 +55,7 @@ public class WebServer {
     }
 
     public Promise<Unit> start() {
-        var reactorConfig = reactorConfiguration();
+        var reactorConfig = transportConfiguration();
         var promise = Promise.<Unit>promise()
                              .onResultDo(() -> gracefulShutdown(reactorConfig));
 
@@ -90,7 +90,7 @@ public class WebServer {
     }
 
     @SuppressWarnings("resource")
-    private void gracefulShutdown(ReactorConfiguration reactorConfig) {
+    private void gracefulShutdown(TransportConfiguration reactorConfig) {
         reactorConfig.bossGroup().shutdownGracefully();
         reactorConfig.workerGroup().shutdownGracefully();
     }

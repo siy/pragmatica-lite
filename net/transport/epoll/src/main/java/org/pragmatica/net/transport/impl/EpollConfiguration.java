@@ -3,16 +3,14 @@ package org.pragmatica.net.transport.impl;
 
 import com.google.auto.service.AutoService;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.epoll.Epoll;
-import io.netty.channel.epoll.EpollEventLoopGroup;
-import io.netty.channel.epoll.EpollServerSocketChannel;
-import io.netty.channel.epoll.EpollSocketChannel;
+import io.netty.channel.epoll.*;
+import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
-import org.pragmatica.net.transport.api.ReactorConfiguration;
+import org.pragmatica.net.transport.api.TransportConfiguration;
 
-@AutoService(ReactorConfiguration.class)
-public class EpollConfiguration implements ReactorConfiguration {
+@AutoService(TransportConfiguration.class)
+public class EpollConfiguration implements TransportConfiguration {
     @Override
     public String name() {
         return "epoll";
@@ -41,5 +39,10 @@ public class EpollConfiguration implements ReactorConfiguration {
     @Override
     public Class<? extends SocketChannel> clientChannelClass() {
         return EpollSocketChannel.class;
+    }
+
+    @Override
+    public Class<? extends DatagramChannel> datagramChannelClass() {
+        return EpollDatagramChannel.class;
     }
 }

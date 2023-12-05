@@ -4,14 +4,16 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.util.ServiceLoader;
 
-public interface ReactorConfiguration {
+public interface TransportConfiguration {
     String name();
 
     boolean isAvailable();
@@ -23,8 +25,9 @@ public interface ReactorConfiguration {
     Class<? extends ServerSocketChannel> serverChannelClass();
 
     Class<? extends SocketChannel> clientChannelClass();
+    Class<? extends DatagramChannel> datagramChannelClass();
 
-    static ReactorConfiguration reactorConfiguration() {
+    static TransportConfiguration transportConfiguration() {
         return TransportHolder.INSTANCE.transport;
     }
 
@@ -38,26 +41,34 @@ public interface ReactorConfiguration {
                               .channel(clientChannelClass());
     }
 
+    default Bootstrap datagramBootstrap() {
+        return new Bootstrap().group(workerGroup())
+                              .channel(datagramChannelClass());
+    }
+
     enum TransportHolder {
         INSTANCE;
-        private final ReactorConfiguration transport;
+        private final TransportConfiguration transport;
 
         TransportHolder() {
             record nioConfiguration(String name, boolean isAvailable, EventLoopGroup bossGroup, EventLoopGroup workerGroup,
-                                    Class<? extends ServerSocketChannel> serverChannelClass, Class<? extends SocketChannel> clientChannelClass)
-                implements ReactorConfiguration {}
+                                    Class<? extends ServerSocketChannel> serverChannelClass,
+                                    Class<? extends SocketChannel> clientChannelClass,
+                                    Class<? extends DatagramChannel> datagramChannelClass)
+                implements TransportConfiguration {}
 
-            transport = ServiceLoader.load(ReactorConfiguration.class)
+            transport = ServiceLoader.load(TransportConfiguration.class)
                                      .stream()
                                      .map(ServiceLoader.Provider::get)
-                                     .filter(ReactorConfiguration::isAvailable)
+                                     .filter(TransportConfiguration::isAvailable)
                                      .findFirst()
                                      .orElseGet(() -> new nioConfiguration("NIO",
                                                                            true,
                                                                            new NioEventLoopGroup(1),
                                                                            new NioEventLoopGroup(),
                                                                            NioServerSocketChannel.class,
-                                                                           NioSocketChannel.class));
+                                                                           NioSocketChannel.class,
+                                                                           NioDatagramChannel.class));
 
         }
     }

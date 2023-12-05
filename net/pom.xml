@@ -14,7 +14,7 @@
 
     <modules>
         <module>http</module>
-        <module>dns-client</module>
+        <module>name-resolver</module>
         <module>transport</module>
     </modules>
 

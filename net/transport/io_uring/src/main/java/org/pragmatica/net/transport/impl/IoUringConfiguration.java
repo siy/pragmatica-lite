@@ -3,16 +3,14 @@ package org.pragmatica.net.transport.impl;
 
 import com.google.auto.service.AutoService;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.incubator.channel.uring.IOUring;
-import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
-import io.netty.incubator.channel.uring.IOUringServerSocketChannel;
-import io.netty.incubator.channel.uring.IOUringSocketChannel;
-import org.pragmatica.net.transport.api.ReactorConfiguration;
+import io.netty.incubator.channel.uring.*;
+import org.pragmatica.net.transport.api.TransportConfiguration;
 
-@AutoService(ReactorConfiguration.class)
-public class IoUringConfiguration implements ReactorConfiguration {
+@AutoService(TransportConfiguration.class)
+public class IoUringConfiguration implements TransportConfiguration {
     @Override
     public String name() {
         return "io_uring";
@@ -41,5 +39,10 @@ public class IoUringConfiguration implements ReactorConfiguration {
     @Override
     public Class<? extends SocketChannel> clientChannelClass() {
         return IOUringSocketChannel.class;
+    }
+
+    @Override
+    public Class<? extends DatagramChannel> datagramChannelClass() {
+        return IOUringDatagramChannel.class;
     }
 }

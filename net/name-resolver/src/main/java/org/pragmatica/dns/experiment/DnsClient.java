@@ -1,19 +1,50 @@
-package org.pragmatica.dns.client;
-
-import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBufUtil;
-import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.handler.codec.dns.*;
+/*
+ * Copyright 2020 The Netty Project
+ *
+ * The Netty Project licenses this file to you under the Apache License,
+ * version 2.0 (the "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at:
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+package org.pragmatica.dns.experiment;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 
+import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBufUtil;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.DatagramChannel;
+import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.handler.codec.dns.DatagramDnsQuery;
+import io.netty.handler.codec.dns.DatagramDnsQueryEncoder;
+import io.netty.handler.codec.dns.DatagramDnsResponse;
+import io.netty.handler.codec.dns.DatagramDnsResponseDecoder;
+import io.netty.handler.codec.dns.DefaultDnsQuestion;
+import io.netty.handler.codec.dns.DnsQuery;
+import io.netty.handler.codec.dns.DnsQuestion;
+import io.netty.handler.codec.dns.DnsRawRecord;
+import io.netty.handler.codec.dns.DnsRecord;
+import io.netty.handler.codec.dns.DnsRecordType;
+import io.netty.handler.codec.dns.DnsSection;
+import io.netty.util.NetUtil;
+
 public final class DnsClient {
 
-    private static final String QUERY_DOMAIN = "www.example.com";
+    private static final String QUERY_DOMAIN = "example.com";
     private static final int DNS_SERVER_PORT = 53;
     private static final String DNS_SERVER_HOST = "8.8.8.8";
 
@@ -24,8 +55,10 @@ public final class DnsClient {
             DnsQuestion question = msg.recordAt(DnsSection.QUESTION, 0);
             System.out.printf("name: %s%n", question.name());
         }
+        System.out.printf("content: %s%n", msg.content());
         for (int i = 0, count = msg.count(DnsSection.ANSWER); i < count; i++) {
             DnsRecord record = msg.recordAt(DnsSection.ANSWER, i);
+            System.out.printf("record: %s%n", record.toString());
             if (record.type() == DnsRecordType.A) {
                 //just print the IP after query
                 DnsRawRecord raw = (DnsRawRecord) record;
