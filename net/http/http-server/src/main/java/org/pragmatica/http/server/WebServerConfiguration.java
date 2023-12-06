@@ -1,4 +1,4 @@
-package org.pragmatica.http.server.config;
+package org.pragmatica.http.server;
 
 import io.netty.handler.codec.http.cors.CorsConfig;
 import io.netty.handler.ssl.SslContext;

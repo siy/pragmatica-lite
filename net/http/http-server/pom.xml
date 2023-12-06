@@ -15,27 +15,12 @@
     <dependencies>
         <dependency>
             <groupId>org.pragmatica.lite</groupId>
-            <artifactId>core</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.pragmatica.lite</groupId>
-            <artifactId>transport-api</artifactId>
+            <artifactId>http-common</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.pragmatica.lite</groupId>
             <artifactId>routing-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.pragmatica.lite</groupId>
-            <artifactId>json-codec-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
         </dependency>
 
         <dependency>

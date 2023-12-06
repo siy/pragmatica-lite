@@ -6,7 +6,7 @@ import io.netty.handler.codec.http.*;
 import org.pragmatica.codec.json.TypeToken;
 import org.pragmatica.http.error.WebError;
 import org.pragmatica.http.protocol.HttpStatus;
-import org.pragmatica.http.server.config.WebServerConfiguration;
+import org.pragmatica.http.server.WebServerConfiguration;
 import org.pragmatica.http.server.routing.Redirect;
 import org.pragmatica.http.server.routing.RequestContext;
 import org.pragmatica.http.server.routing.Route;

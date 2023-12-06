@@ -9,7 +9,7 @@ import org.pragmatica.http.error.WebError;
 import org.pragmatica.http.protocol.HttpHeaderName;
 import org.pragmatica.http.protocol.HttpMethod;
 import org.pragmatica.http.protocol.HttpStatus;
-import org.pragmatica.http.server.config.WebServerConfiguration;
+import org.pragmatica.http.server.WebServerConfiguration;
 import org.pragmatica.http.server.routing.RequestRouter;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;

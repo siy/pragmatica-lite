@@ -19,11 +19,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.pragmatica.lite</groupId>
-            <artifactId>json-codec-api</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>

@@ -3,7 +3,7 @@ package org.pragmatica.http.example;
 import org.pragmatica.http.error.WebError;
 import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.http.server.WebServer;
-import org.pragmatica.http.server.config.WebServerConfiguration;
+import org.pragmatica.http.server.WebServerConfiguration;
 import org.pragmatica.lang.Promise;
 
 import java.util.concurrent.atomic.AtomicInteger;

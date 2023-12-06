@@ -7,7 +7,6 @@ import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.netty.util.internal.logging.Slf4JLoggerFactory;
 import org.pragmatica.http.error.WebError;
 import org.pragmatica.http.protocol.HttpStatus;
-import org.pragmatica.http.server.config.WebServerConfiguration;
 import org.pragmatica.http.server.impl.WebServerInitializer;
 import org.pragmatica.http.server.routing.RequestRouter;
 import org.pragmatica.http.server.routing.RouteSource;
@@ -55,20 +54,20 @@ public class WebServer {
     }
 
     public Promise<Unit> start() {
-        var reactorConfig = transportConfiguration();
+        var transportConfiguration = transportConfiguration();
         var promise = Promise.<Unit>promise()
-                             .onResultDo(() -> gracefulShutdown(reactorConfig));
+                             .onResultDo(() -> gracefulShutdown(transportConfiguration));
 
         try {
             var bindAddress = configuration.bindAddress()
                                            .map(address -> new InetSocketAddress(address, configuration.port()))
                                            .or(() -> new InetSocketAddress(configuration.port()));
 
-            log.info("Starting WebServer on {} using {} transport", bindAddress, reactorConfig.name());
+            log.info("Starting WebServer on {} using {} transport", bindAddress, transportConfiguration.name());
 
             requestRouter.print();
 
-            reactorConfig
+            transportConfiguration
                 .serverBootstrap()
                 .childOption(ChannelOption.SO_RCVBUF, configuration.receiveBufferSize())
                 .childOption(ChannelOption.SO_SNDBUF, configuration.sendBufferSize())

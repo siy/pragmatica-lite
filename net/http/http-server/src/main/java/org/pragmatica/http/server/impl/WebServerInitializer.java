@@ -7,7 +7,7 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.codec.http.cors.CorsHandler;
-import org.pragmatica.http.server.config.WebServerConfiguration;
+import org.pragmatica.http.server.WebServerConfiguration;
 import org.pragmatica.http.server.routing.RequestRouter;
 
 public class WebServerInitializer extends ChannelInitializer<SocketChannel> {

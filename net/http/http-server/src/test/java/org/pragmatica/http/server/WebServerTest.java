@@ -3,7 +3,6 @@ package org.pragmatica.http.server;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.pragmatica.http.server.config.WebServerConfiguration;
 import org.pragmatica.http.server.routing.Route;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
