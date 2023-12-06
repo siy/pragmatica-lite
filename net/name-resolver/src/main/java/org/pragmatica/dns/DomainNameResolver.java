@@ -1,4 +1,4 @@
 package org.pragmatica.dns;
 
-public class DomainNameResolver {
+public interface DomainNameResolver {
 }
