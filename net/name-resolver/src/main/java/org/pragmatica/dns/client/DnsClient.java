@@ -126,14 +126,26 @@ record DnsClientImpl(Bootstrap bootstrap, ConcurrentHashMap<Integer, Request> re
             return;
         }
 
+        // Take record with minimal TTL
+        // This is less efficient in regard to number of requests, but enables
+        // faster propagation of DNS changes.
+        extractAddresses(request, msg)
+            .stream()
+            .min(Comparator.comparing(DomainAddress::ttl))
+            .ifPresentOrElse(address -> request.promise().success(address),
+                             () -> request.promise().failure(new ServerError("No address provided by server")));
+    }
+
+    private static ArrayList<DomainAddress> extractAddresses(Request request, DatagramDnsResponse msg) {
         var addresses = new ArrayList<DomainAddress>();
+
         for (int i = 0, count = msg.count(DnsSection.ANSWER); i < count; i++) {
             var record = msg.recordAt(DnsSection.ANSWER, i);
 
             if (record.type() == DnsRecordType.A) {
                 var raw = (DnsRawRecord) record;
 
-                log.info("record {}, ttl {}", raw, raw.timeToLive());
+                log.debug("record {}, ttl {}", raw, raw.timeToLive());
 
                 InetUtils.forBytes(ByteBufUtil.getBytes(raw.content()))
                          .map(inetAddress -> DomainAddress.domainAddress(request.domainName(), inetAddress,
@@ -142,11 +154,7 @@ record DnsClientImpl(Bootstrap bootstrap, ConcurrentHashMap<Integer, Request> re
                          .onFailureDo(() -> log.warn("Response for {} contains incorrectly formatted IP address", request.domainName()));
             }
         }
-
-        addresses.stream()
-                 .min(Comparator.comparing(DomainAddress::ttl))
-                 .ifPresentOrElse(address -> request.promise().success(address),
-                                  () -> request.promise().failure(new ServerError("No address provided by server")));
+        return addresses;
     }
 
     private void fireRequest(Promise<DomainAddress> promise, DomainName domainName, InetSocketAddress serverAddress) {

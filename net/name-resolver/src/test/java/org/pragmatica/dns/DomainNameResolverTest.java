@@ -1,13 +1,13 @@
 package org.pragmatica.dns;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.dns.ResolverErrors.UnknownDomain;
 
-import java.time.Duration;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.pragmatica.lang.Promise.all;
 import static org.pragmatica.lang.io.Timeout.timeout;
 
@@ -26,11 +26,10 @@ class DomainNameResolverTest {
          .onFailureDo(Assertions::fail);
     }
 
-    //TODO: tag as SLOW
+    @Tag("Slow")
     @SuppressWarnings("deprecation")
     @Test
     void resultIsCachedAndTtlIsObserver() throws InterruptedException {
-        //WARNING: test relies on the known TTL of the "www.ibm.com" domain (4 seconds), but this may change without notice
         resolver.resolve("www.ibm.com")
                 .await(timeout(15).seconds())
                 .onFailureDo(Assertions::fail);
@@ -42,6 +41,7 @@ class DomainNameResolverTest {
                           .map(DomainAddress::ttl)
                           .unwrap();
 
+        // Ensure record is removed from cache after TTL is expired
         Thread.sleep(ttl.toMillis() + 200);
 
         // After TTL is expired, request for cached value should fail with UnknownDomain error

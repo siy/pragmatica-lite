@@ -57,10 +57,9 @@ public interface DomainNameResolver extends AsyncCloseable {
                 // Do not cache failed requests and observe TTL for successful ones
                 return promise.onFailureDo(() -> cache.remove(name))
                               .onSuccess(domainAddress -> {
-                                  log.info("TTL for {} is {}", domainAddress.name(), domainAddress.ttl());
-                                  log.info("Timeout: {}", Timeout.fromDuration(domainAddress.ttl()));
+                                  log.debug("TTL for {} is {}", domainAddress.name(), domainAddress.ttl());
                                   promise.async(Timeout.fromDuration(domainAddress.ttl()),
-                                                _ -> log.info("Removed {} from cache", cache.remove(domainAddress.name())));
+                                                _ -> log.debug("TTL expired, removing {} from cache", cache.remove(domainAddress.name())));
                               });
             }
 

@@ -14,8 +14,25 @@
     </modules>
     <packaging>pom</packaging>
 
-    <!-- TODO: add modules https://github.com/moditect/moditect -->
+    <name>Pragmatica Lite</name>
+    <description>Pragmatica Lite - Functional Style Micro Web Framework</description>
 
+    <scm>
+        <url>https://github.com/siy/pragmatica-lite.git</url>
+        <connection>scm:git:ssh://git@github.com/siy/pragmatica-lite.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/siy/pragmatica-lite.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <!-- TODO: add modules https://github.com/moditect/moditect -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.release>21</java.release>
@@ -35,8 +52,6 @@
                         <source>${java.release}</source>
                         <target>${java.release}</target>
                         <compilerArgs>
-<!--                            <arg>-g:none-->
-<!--                            </arg> &lt;!&ndash; enables use of "_" as a variable/parameter name, fixed in Java 21.0.1 &ndash;&gt;-->
                             <arg>${java.enable-preview}</arg>
                         </compilerArgs>
                     </configuration>
@@ -46,7 +61,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.2.2</version>
                     <configuration>
-                        <excludedGroups>Infinite, Benchmark</excludedGroups>
+                        <excludedGroups>Infinite, Slow, Benchmark</excludedGroups>
                         <argLine>${java.enable-preview}</argLine>
                     </configuration>
                 </plugin>
