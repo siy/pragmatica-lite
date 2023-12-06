@@ -11,7 +11,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.pragmatica.lang.Promise.all;
 import static org.pragmatica.lang.io.Timeout.timeout;
 
-//TODO: tests for proper observing of TTL
 class DomainNameResolverTest {
     private final DomainNameResolver resolver = DomainNameResolver.defaultResolver();
 
@@ -27,6 +26,7 @@ class DomainNameResolverTest {
          .onFailureDo(Assertions::fail);
     }
 
+    //TODO: tag as SLOW
     @SuppressWarnings("deprecation")
     @Test
     void resultIsCachedAndTtlIsObserver() throws InterruptedException {
