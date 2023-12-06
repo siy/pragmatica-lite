@@ -13,28 +13,30 @@ import org.pragmatica.dns.ResolverErrors.InvalidResponse;
 import org.pragmatica.dns.ResolverErrors.RequestTimeout;
 import org.pragmatica.dns.ResolverErrors.ServerError;
 import org.pragmatica.dns.inet.InetUtils;
+import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Unit;
+import org.pragmatica.lang.io.AsyncCloseable;
 import org.pragmatica.lang.io.Timeout;
 import org.pragmatica.net.transport.api.TransportConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.pragmatica.dns.DomainName.domainName;
+import static org.pragmatica.lang.Option.none;
 import static org.pragmatica.lang.Option.option;
+import static org.pragmatica.lang.Unit.unitResult;
 import static org.pragmatica.lang.io.Timeout.timeout;
 
-public interface DnsClient {
+public interface DnsClient extends AsyncCloseable {
     Logger log = LoggerFactory.getLogger(DnsClient.class);
-
-    default Promise<DomainAddress> resolve(String domainName, InetAddress serverAddress, int serverPort) {
-        return resolve(domainName(domainName), new InetSocketAddress(serverAddress, serverPort));
-    }
 
     Promise<DomainAddress> resolve(DomainName domainName, InetSocketAddress serverAddress);
 
@@ -94,6 +96,14 @@ record DnsClientImpl(Bootstrap bootstrap, ConcurrentHashMap<Integer, Request> re
         return Promise.promise(promise -> fireRequest(promise, domainName, serverAddress));
     }
 
+    @SuppressWarnings("resource")
+    @Override
+    public Promise<Unit> close() {
+        return Promise.promise(promise -> bootstrap().config().group()
+                                                     .shutdownGracefully()
+                                                     .addListener(_ -> promise.resolve(unitResult())));
+    }
+
     void handleDatagram(DatagramDnsResponse msg) {
         var requestId = msg.id();
 
@@ -116,21 +126,27 @@ record DnsClientImpl(Bootstrap bootstrap, ConcurrentHashMap<Integer, Request> re
             return;
         }
 
+        var addresses = new ArrayList<DomainAddress>();
         for (int i = 0, count = msg.count(DnsSection.ANSWER); i < count; i++) {
             var record = msg.recordAt(DnsSection.ANSWER, i);
 
             if (record.type() == DnsRecordType.A) {
                 var raw = (DnsRawRecord) record;
 
-                var address = InetUtils.forBytes(ByteBufUtil.getBytes(raw.content()))
-                                       .map(inetAddress -> DomainAddress.domainAddress(request.domainName(), inetAddress,
-                                                                                       Duration.ofSeconds(raw.timeToLive())))
-                                       .mapError(_ -> new InvalidResponse("IP address provided by server is invalid"));
-                request.promise()
-                       .resolve(address);
-                return;
+                log.info("record {}, ttl {}", raw, raw.timeToLive());
+
+                InetUtils.forBytes(ByteBufUtil.getBytes(raw.content()))
+                         .map(inetAddress -> DomainAddress.domainAddress(request.domainName(), inetAddress,
+                                                                         Duration.ofSeconds(raw.timeToLive())))
+                         .onSuccess(addresses::add)
+                         .onFailureDo(() -> log.warn("Response for {} contains incorrectly formatted IP address", request.domainName()));
             }
         }
+
+        addresses.stream()
+                 .min(Comparator.comparing(DomainAddress::ttl))
+                 .ifPresentOrElse(address -> request.promise().success(address),
+                                  () -> request.promise().failure(new ServerError("No address provided by server")));
     }
 
     private void fireRequest(Promise<DomainAddress> promise, DomainName domainName, InetSocketAddress serverAddress) {

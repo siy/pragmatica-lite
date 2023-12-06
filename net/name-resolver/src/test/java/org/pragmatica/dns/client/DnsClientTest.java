@@ -21,7 +21,6 @@ class DnsClientTest {
         var serverAddress = new InetSocketAddress(serverIp, 53);
 
         var ibm = client.resolve(domainName("www.ibm.com"), serverAddress);
-
         var google = client.resolve(domainName("www.google.com"), serverAddress);
         var github = client.resolve(domainName("www.github.com"), serverAddress);
         var twitter = client.resolve(domainName("www.twitter.com"), serverAddress);

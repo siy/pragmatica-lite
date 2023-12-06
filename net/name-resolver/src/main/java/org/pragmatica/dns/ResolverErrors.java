@@ -8,4 +8,5 @@ public sealed interface ResolverErrors extends Result.Cause {
     record ServerError(String message) implements ResolverErrors {}
     record RequestTimeout(String message) implements ResolverErrors {}
     record UnknownError(String message) implements Result.Cause {}
+    record UnknownDomain(String message) implements Result.Cause {}
 }

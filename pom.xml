@@ -35,8 +35,8 @@
                         <source>${java.release}</source>
                         <target>${java.release}</target>
                         <compilerArgs>
-                            <arg>-g:none
-                            </arg> <!-- enables use of "_" as a variable/parameter name, fixed in Java 21.0.1 -->
+<!--                            <arg>-g:none-->
+<!--                            </arg> &lt;!&ndash; enables use of "_" as a variable/parameter name, fixed in Java 21.0.1 &ndash;&gt;-->
                             <arg>${java.enable-preview}</arg>
                         </compilerArgs>
                     </configuration>
