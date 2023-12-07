@@ -757,7 +757,7 @@ public interface Promise<T> {
         @SuppressWarnings("rawtypes")
         private static final CompletionAction NOP = new CompletionAction<>(Functions::unitFn, null);
 
-        @SuppressWarnings({"unchecked", "FieldMayBeFinal"})
+        @SuppressWarnings({"unchecked", "FieldMayBeFinal", "CanBeFinal"})
         private volatile CompletionAction<T> head = NOP;
         private volatile CompletionAction<T> processed;
         @SuppressWarnings("FieldMayBeFinal")

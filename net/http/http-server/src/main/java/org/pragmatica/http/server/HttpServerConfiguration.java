@@ -2,7 +2,8 @@ package org.pragmatica.http.server;
 
 import io.netty.handler.codec.http.cors.CorsConfig;
 import io.netty.handler.ssl.SslContext;
-import org.pragmatica.codec.json.JsonCodec;
+import org.pragmatica.http.codec.CustomCodec;
+import org.pragmatica.http.codec.JsonCodec;
 import org.pragmatica.codec.json.JsonCodecFactory;
 import org.pragmatica.lang.Option;
 
@@ -13,75 +14,77 @@ import static org.pragmatica.lang.Option.some;
 
 //TODO: support for HTTP/2, compression,
 @SuppressWarnings("unused")
-public interface WebServerConfiguration {
+public interface HttpServerConfiguration {
     int DEFAULT_PORT = 8000;
     int DEFAULT_RECEIVE_BUFFER_SIZE = 32768; // 32KB
     int DEFAULT_SEND_BUFFER_SIZE = 1048576; // 1MB
     int DEFAULT_MAX_CONTENT_LEN = 2097152; // 2MB
     boolean DEFAULT_NATIVE_TRANSPORT = true;
 
-    static WebServerConfiguration allDefaults() {
+    static HttpServerConfiguration allDefaults() {
         record configuration(int port, Option<InetAddress> bindAddress, int sendBufferSize,
                              int receiveBufferSize, int maxContentLen, boolean nativeTransport,
-                             JsonCodec jsonCodec, Option<SslContext> sslContext, Option<CorsConfig> corsConfig) implements WebServerConfiguration {
+                             Option<CustomCodec> customCodec,
+                             JsonCodec jsonCodec,
+                             Option<SslContext> sslContext, Option<CorsConfig> corsConfig) implements HttpServerConfiguration {
             @Override
-            public WebServerConfiguration withPort(int port) {
+            public HttpServerConfiguration withPort(int port) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
-                                         jsonCodec, sslContext, corsConfig);
+                                         customCodec, jsonCodec, sslContext, corsConfig);
             }
 
             @Override
-            public WebServerConfiguration withBindAddress(InetAddress host) {
+            public HttpServerConfiguration withBindAddress(InetAddress host) {
                 return new configuration(port, some(host), sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
-                                         jsonCodec, sslContext, corsConfig);
+                                         customCodec, jsonCodec, sslContext, corsConfig);
             }
 
             @Override
-            public WebServerConfiguration withSendBufferSize(int sendBufferSize) {
+            public HttpServerConfiguration withSendBufferSize(int sendBufferSize) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
-                                         jsonCodec, sslContext, corsConfig);
+                                         customCodec, jsonCodec, sslContext, corsConfig);
             }
 
             @Override
-            public WebServerConfiguration withReceiveBufferSize(int receiveBufferSize) {
+            public HttpServerConfiguration withReceiveBufferSize(int receiveBufferSize) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
-                                         jsonCodec, sslContext, corsConfig);
+                                         customCodec, jsonCodec, sslContext, corsConfig);
             }
 
             @Override
-            public WebServerConfiguration withMaxContentLen(int maxContentLen) {
+            public HttpServerConfiguration withMaxContentLen(int maxContentLen) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
-                                         jsonCodec, sslContext, corsConfig);
+                                         customCodec, jsonCodec, sslContext, corsConfig);
             }
 
             @Override
-            public WebServerConfiguration withNativeTransport(boolean nativeTransport) {
+            public HttpServerConfiguration withNativeTransport(boolean nativeTransport) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
-                                         jsonCodec, sslContext, corsConfig);
+                                         customCodec, jsonCodec, sslContext, corsConfig);
             }
 
             @Override
-            public WebServerConfiguration withSerializer(JsonCodec serializer) {
+            public HttpServerConfiguration withSerializer(JsonCodec serializer) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
-                                         serializer, sslContext, corsConfig);
+                                         customCodec, serializer, sslContext, corsConfig);
             }
 
             @Override
-            public WebServerConfiguration withSslContext(SslContext sslContext) {
+            public HttpServerConfiguration withSslContext(SslContext sslContext) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
-                                         jsonCodec, some(sslContext), corsConfig);
+                                         customCodec, jsonCodec, some(sslContext), corsConfig);
             }
 
             @Override
-            public WebServerConfiguration withCorsConfig(CorsConfig corsConfig) {
+            public HttpServerConfiguration withCorsConfig(CorsConfig corsConfig) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
-                                         jsonCodec, sslContext, some(corsConfig));
+                                         customCodec, jsonCodec, sslContext, some(corsConfig));
             }
         }
 
         return new configuration(DEFAULT_PORT, none(), DEFAULT_SEND_BUFFER_SIZE, DEFAULT_RECEIVE_BUFFER_SIZE,
                                  DEFAULT_MAX_CONTENT_LEN, DEFAULT_NATIVE_TRANSPORT,
-                                 JsonCodecFactory.defaultFactory().withDefaultConfiguration(), none(), none());
+                                 none(), JsonCodecFactory.defaultFactory().withDefaultConfiguration(), none(), none());
     }
 
     int port();
@@ -98,25 +101,27 @@ public interface WebServerConfiguration {
 
     JsonCodec jsonCodec();
 
+    Option<CustomCodec> customCodec();
+
     Option<SslContext> sslContext();
 
     Option<CorsConfig> corsConfig();
 
-    WebServerConfiguration withPort(int port);
+    HttpServerConfiguration withPort(int port);
 
-    WebServerConfiguration withBindAddress(InetAddress host);
+    HttpServerConfiguration withBindAddress(InetAddress host);
 
-    WebServerConfiguration withSendBufferSize(int sendBufferSize);
+    HttpServerConfiguration withSendBufferSize(int sendBufferSize);
 
-    WebServerConfiguration withReceiveBufferSize(int receiveBufferSize);
+    HttpServerConfiguration withReceiveBufferSize(int receiveBufferSize);
 
-    WebServerConfiguration withMaxContentLen(int maxContentLen);
+    HttpServerConfiguration withMaxContentLen(int maxContentLen);
 
-    WebServerConfiguration withNativeTransport(boolean nativeTransport);
+    HttpServerConfiguration withNativeTransport(boolean nativeTransport);
 
-    WebServerConfiguration withSerializer(JsonCodec jsonCodec);
+    HttpServerConfiguration withSerializer(JsonCodec jsonCodec);
 
-    WebServerConfiguration withSslContext(SslContext sslContext);
+    HttpServerConfiguration withSslContext(SslContext sslContext);
 
-    WebServerConfiguration withCorsConfig(CorsConfig corsConfig);
+    HttpServerConfiguration withCorsConfig(CorsConfig corsConfig);
 }

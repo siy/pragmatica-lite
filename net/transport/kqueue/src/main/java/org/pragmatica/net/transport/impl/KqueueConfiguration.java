@@ -9,6 +9,7 @@ import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 import org.pragmatica.net.transport.api.TransportConfiguration;
 
+@SuppressWarnings("unused")
 @AutoService(TransportConfiguration.class)
 public class KqueueConfiguration implements TransportConfiguration {
     @Override

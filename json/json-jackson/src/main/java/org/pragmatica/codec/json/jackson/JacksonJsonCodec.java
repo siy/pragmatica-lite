@@ -3,22 +3,23 @@ package org.pragmatica.codec.json.jackson;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
-import org.pragmatica.codec.json.CodecError;
-import org.pragmatica.codec.json.JsonCodec;
-import org.pragmatica.codec.json.TypeToken;
+import org.pragmatica.http.codec.CodecError;
+import org.pragmatica.http.codec.JsonCodec;
+import org.pragmatica.http.codec.TypeToken;
 import org.pragmatica.lang.Result;
 
 import static io.netty.buffer.Unpooled.wrappedBuffer;
 import static org.pragmatica.lang.Result.lift;
 
+@SuppressWarnings("unused")
 public interface JacksonJsonCodec extends JsonCodec {
     static JacksonJsonCodec forMapper(ObjectMapper objectMapper) {
         record jacksonJsonCodec(ObjectMapper objectMapper) implements JacksonJsonCodec {
             @Override
-            public Result<ByteBuf> serialize(Object success) {
+            public Result<ByteBuf> serialize(Object value) {
                 return lift(
                     CodecError::fromCodingThrowable,
-                    () -> wrappedBuffer(objectMapper.writeValueAsBytes(success))
+                    () -> wrappedBuffer(objectMapper.writeValueAsBytes(value))
                 );
             }
 

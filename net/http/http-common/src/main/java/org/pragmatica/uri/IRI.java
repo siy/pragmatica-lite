@@ -16,21 +16,27 @@
  */
 package org.pragmatica.uri;
 
+import org.pragmatica.dns.DomainName;
 import org.pragmatica.lang.Option;
 import org.pragmatica.net.InetPort;
 import org.pragmatica.uri.util.Decoder;
 import org.pragmatica.uri.util.Encoder;
-import org.pragmatica.uri.util.QueryParameters;
+import org.pragmatica.http.protocol.QueryParameters;
 
 import java.util.regex.Pattern;
 
-import static org.pragmatica.lang.Option.empty;
-import static org.pragmatica.lang.Option.option;
+import static org.pragmatica.dns.DomainName.domainName;
+import static org.pragmatica.lang.Option.*;
 
+/**
+ * The implementation of the IRI (Internationalized Resource Identifier) as defined in RFC 3987.
+ * See <a href="https://cr.openjdk.org/~dfuchs/writeups/updating-uri/">article</a> for motivation.
+ */
+@SuppressWarnings("unused")
 public record IRI(
     Option<String> scheme,
     Option<UserInfo> userInfo,
-    Option<String> hostName,
+    Option<DomainName> domain,
     Option<InetPort> port,
     Option<String> path,
     QueryParameters queryParameters,
@@ -40,9 +46,12 @@ public record IRI(
     private static final Pattern AUTHORITY_PATTERN = Pattern.compile("((.*)@)?([^:]*)(:(\\d+))?");
     private static final IRI EMPTY = new IRI(empty(), empty(), empty(), empty(), empty(), QueryParameters.parameters(), empty());
 
-    public static IRI iri(Option<String> scheme, Option<UserInfo> userInfo, Option<String> hostName, Option<InetPort> port,
+    private static final String HTTP = "http";
+    private static final String HTTPS = "http";
+
+    public static IRI iri(Option<String> scheme, Option<UserInfo> userInfo, Option<DomainName> domain, Option<InetPort> port,
                           Option<String> path, Option<QueryParameters> queryParameters, Option<String> fragment) {
-        return new IRI(scheme, userInfo, hostName, port, path, queryParameters.or(QueryParameters::parameters), fragment);
+        return new IRI(scheme, userInfo, domain, port, path, queryParameters.or(QueryParameters::parameters), fragment);
     }
 
     public static IRI fromString(String url) {
@@ -57,7 +66,7 @@ public record IRI(
         }
 
         var userInfo = Option.<UserInfo>empty();
-        var hostName = Option.<String>empty();
+        var domain = Option.<DomainName>empty();
         var port = Option.<InetPort>empty();
         var scheme = option(matcher.group(2));
 
@@ -66,13 +75,13 @@ public record IRI(
 
             if (n.find()) {
                 userInfo = option(n.group(2)).map(Decoder::decodeUserInfo);
-                //hostName = option(n.group(3)).map(IDN::toUnicode);
-                hostName = option(n.group(3));
+                //domain = option(n.group(3)).map(IDN::toUnicode);
+                domain = option(domainName(n.group(3)));
                 port = option(n.group(5)).flatMap(Decoder::parsePort);
             }
         }
 
-        return new IRI(scheme, userInfo, hostName, port,
+        return new IRI(scheme, userInfo, domain, port,
                        option(matcher.group(5)).map(Decoder::decodePath),
                        option(matcher.group(7)).map(Decoder::parseQueryString).or(QueryParameters::parameters),
                        option(matcher.group(9)).map(Decoder::decodeFragment));
@@ -80,16 +89,16 @@ public record IRI(
 
     public StringBuilder toString(StringBuilder out) {
         scheme.onPresent(scheme -> out.append(scheme).append(':'));
-        hostName.onPresent(hostName -> {
+        domain.onPresent(hostName -> {
             out.append("//");
             userInfo.onPresent(userInfo -> out.append(Encoder.encodeUserInfo(userInfo)).append('@'));
-            //out.append(IDN.toASCII(hostName));
-            out.append(hostName);
+            //out.append(IDN.toASCII(domain));
+            out.append(hostName.name());
         });
 
         port.onPresent(port -> out.append(':').append(port));
         path.onPresent(path -> {
-            if (hostName.isPresent() && path.length() > 0 && path.charAt(0) != '/') {
+            if (domain.isPresent() && !path.isEmpty() && path.charAt(0) != '/') {
                 /* RFC 3986 section 3.3: If a URI contains an authority component, then the path component
                    must either be empty or begin with a slash ("/") character. */
                 out.append('/');
@@ -102,38 +111,56 @@ public record IRI(
         return out;
     }
 
+    public boolean isAbsolute() {
+        return scheme.isPresent() && domain.isPresent();
+    }
+
+    public boolean isSecure() {
+        return scheme.filter(HTTPS::equals).isPresent();
+    }
+
+    public boolean isHttp() {
+        return Option.any(scheme.filter(HTTP::equals),
+                          scheme.filter(HTTPS::equals))
+                     .isPresent();
+    }
+
     @Override
     public String toString() {
         return toString(new StringBuilder()).toString();
     }
 
+    public IRI rawPath() {
+        return new IRI(none(), none(), none(), none(), path, queryParameters, fragment);
+    }
+
     public IRI withScheme(String scheme) {
-        return new IRI(option(scheme), userInfo, hostName, port, path, queryParameters, fragment);
+        return new IRI(option(scheme), userInfo, domain, port, path, queryParameters, fragment);
     }
 
     public IRI withUserInfo(String userInfo) {
-        return new IRI(scheme, option(userInfo).map(Decoder::decodeUserInfo), hostName, port, path, queryParameters, fragment);
+        return new IRI(scheme, option(userInfo).map(Decoder::decodeUserInfo), domain, port, path, queryParameters, fragment);
     }
 
-    public IRI withHost(String name) {
+    public IRI withDomain(DomainName domain) {
         //return new IRI(scheme, userInfo, option(IDN.toUnicode(name)), port, path, queryParameters, fragment);
-        return new IRI(scheme, userInfo, option(name), port, path, queryParameters, fragment);
+        return new IRI(scheme, userInfo, option(domain), port, path, queryParameters, fragment);
     }
 
     public IRI withPort(InetPort port) {
-        return new IRI(scheme, userInfo, hostName, option(port), path, queryParameters, fragment);
+        return new IRI(scheme, userInfo, domain, option(port), path, queryParameters, fragment);
     }
 
     public IRI withPath(String path) {
-        return new IRI(scheme, userInfo, hostName, port, option(path), queryParameters, fragment);
+        return new IRI(scheme, userInfo, domain, port, option(path), queryParameters, fragment);
     }
 
     public IRI withQuery(QueryParameters query) {
-        return new IRI(scheme, userInfo, hostName, port, path, option(query).or(QueryParameters.parameters()), fragment);
+        return new IRI(scheme, userInfo, domain, port, path, option(query).or(QueryParameters.parameters()), fragment);
     }
 
     public IRI withQuery(String query) {
-        return new IRI(scheme, userInfo, hostName, port, path, Decoder.parseQueryString(query), fragment);
+        return new IRI(scheme, userInfo, domain, port, path, Decoder.parseQueryString(query), fragment);
     }
 
     public IRI withParameters(QueryParameters parameters) {
@@ -141,23 +168,23 @@ public record IRI(
     }
 
     public IRI addParameter(String key, String value) {
-        return new IRI(scheme, userInfo, hostName, port, path, queryParameters.deepCopy().add(key, value), fragment);
+        return new IRI(scheme, userInfo, domain, port, path, queryParameters.deepCopy().add(key, value), fragment);
     }
 
     public IRI setParameter(String key, String value) {
-        return new IRI(scheme, userInfo, hostName, port, path, queryParameters.deepCopy().replace(key, value), fragment);
+        return new IRI(scheme, userInfo, domain, port, path, queryParameters.deepCopy().replace(key, value), fragment);
     }
 
     public IRI removeParameter(String key, String value) {
-        return new IRI(scheme, userInfo, hostName, port, path, queryParameters.deepCopy().remove(key, value), fragment);
+        return new IRI(scheme, userInfo, domain, port, path, queryParameters.deepCopy().remove(key, value), fragment);
     }
 
     public IRI removeParameters(String key) {
-        return new IRI(scheme, userInfo, hostName, port, path, queryParameters.deepCopy().remove(key), fragment);
+        return new IRI(scheme, userInfo, domain, port, path, queryParameters.deepCopy().remove(key), fragment);
     }
 
     public IRI withFragment(String fragment) {
-        return new IRI(scheme, userInfo, hostName, port, path, queryParameters, option(fragment));
+        return new IRI(scheme, userInfo, domain, port, path, queryParameters, option(fragment));
     }
 
     public IRI addPathSegments(String... pathSegments) {
@@ -179,6 +206,6 @@ public record IRI(
             }
         }
 
-        return new IRI(scheme, userInfo, hostName, port, option(sb.toString()), queryParameters, fragment);
+        return new IRI(scheme, userInfo, domain, port, option(sb.toString()), queryParameters, fragment);
     }
 }

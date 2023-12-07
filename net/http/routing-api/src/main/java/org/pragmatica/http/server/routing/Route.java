@@ -1,6 +1,7 @@
 package org.pragmatica.http.server.routing;
 
-import org.pragmatica.http.content.ContentType;
+import org.pragmatica.http.CommonContentTypes;
+import org.pragmatica.http.ContentType;
 import org.pragmatica.http.protocol.HttpMethod;
 import org.pragmatica.http.util.Utils;
 import org.pragmatica.lang.Result;
@@ -114,16 +115,16 @@ public interface Route<T> extends RouteSource {
             return new routeBuilder1(path, method);
         }
 
-        default <T> Route<T> with(Handler<T> handler) {
-            return textWith(handler);
+        default <T> RouteBuilder2<T> with(Handler<T> handler) {
+            return contentType -> route(method(), path(), handler, contentType);
         }
 
-        default <T> Route<T> with(Supplier<Result<T>> supplier) {
+        default <T> RouteBuilder2<T> with(Supplier<Result<T>> supplier) {
             return with(_ -> resolved(supplier.get()));
         }
 
         default <T> Route<T> textWith(Handler<T> handler) {
-            return route(method(), path(), handler, ContentType.TEXT_PLAIN);
+            return with(handler).as(CommonContentTypes.TEXT_PLAIN);
         }
 
         default <T> Route<T> textWith(Supplier<T> supplier) {
@@ -131,11 +132,21 @@ public interface Route<T> extends RouteSource {
         }
 
         default <T> Route<T> jsonWith(Handler<T> handler) {
-            return route(method(), path(), handler, ContentType.APPLICATION_JSON);
+            return with(handler).as(CommonContentTypes.APPLICATION_JSON);
         }
 
         default <T> Route<T> jsonWith(Supplier<T> supplier) {
             return jsonWith(_ -> successful(supplier.get()));
+        }
+    }
+
+    interface RouteBuilder2<T> {
+        Route<T> as(ContentType contentType);
+        default Route<T> asText() {
+            return as(CommonContentTypes.TEXT_PLAIN);
+        }
+        default Route<T> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
         }
     }
 }

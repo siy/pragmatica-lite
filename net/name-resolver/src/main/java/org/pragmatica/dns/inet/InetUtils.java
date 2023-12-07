@@ -1,7 +1,9 @@
 package org.pragmatica.dns.inet;
 
-import org.pragmatica.dns.ResolverErrors;
+import org.pragmatica.dns.ResolverErrors.InvalidIpAddress;
+import org.pragmatica.dns.ResolverErrors.UnknownError;
 import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Result.Cause;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -31,11 +33,11 @@ public final class InetUtils {
         return Result.lift(InetUtils::exceptionMapper, () -> InetAddress.getByAddress(address));
     }
 
-    static Result.Cause exceptionMapper(Throwable throwable) {
-        return switch (throwable) {
-            case UnknownHostException unknownHostException -> new ResolverErrors.InvalidIpAddress(unknownHostException.getMessage());
-            default -> new ResolverErrors.UnknownError(throwable.getMessage());
-        };
+    static Cause exceptionMapper(Throwable throwable) {
+        if (throwable instanceof UnknownHostException) {
+            return new InvalidIpAddress(throwable.getMessage());
+        }
+        return new UnknownError(throwable.getMessage());
     }
 
     private InetUtils() {}

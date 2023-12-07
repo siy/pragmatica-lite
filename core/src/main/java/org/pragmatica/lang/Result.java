@@ -38,6 +38,7 @@ import static org.pragmatica.lang.Unit.unitResult;
  *
  * @param <T> Type of value in case of success.
  */
+@SuppressWarnings("unused")
 public sealed interface Result<T> permits Success, Failure {
     /**
      * Transform operation result value into value of other type and wrap new value into {@link Result}. Transformation takes place if current
@@ -337,9 +338,10 @@ public sealed interface Result<T> permits Success, Failure {
      *
      * @return value stored inside present instance.
      */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     default T unwrap() {
-        return fold(v -> {throw new IllegalStateException("Unwrap error: " + v.message());}, Functions::id);
+        return fold(v -> {throw new IllegalStateException(STR."Unwrap error: \{v.message()}");}, Functions::id);
     }
 
     /**
@@ -387,7 +389,7 @@ public sealed interface Result<T> permits Success, Failure {
 
         @Override
         public String toString() {
-            return "Success(" + value.toString() + ")";
+            return STR."Success(\{value.toString()})";
         }
     }
 
@@ -414,7 +416,7 @@ public sealed interface Result<T> permits Success, Failure {
 
         @Override
         public String toString() {
-            return "Failure(" + cause + ")";
+            return STR."Failure(\{cause})";
         }
     }
 

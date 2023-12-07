@@ -20,6 +20,7 @@ package org.pragmatica.uri;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.pragmatica.dns.DomainName.domainName;
 import static org.pragmatica.lang.Option.option;
 
 class IRITest {
@@ -44,7 +45,7 @@ class IRITest {
         var iri1 = IRI.fromString("https://bob:passwd@example.com/secure");
         assertEquals("https://bob:passwd@example.com/secure", iri1.toString());
         assertEquals(option("bob:passwd"), iri1.userInfo().map(UserInfo::forIRI));
-        assertEquals(option("example.com"), iri1.hostName());
+        assertEquals(option(domainName("example.com")), iri1.domain());
 
         var iri2 = IRI.fromString("https://bobby%20droptables:passwd@example.com/secure");
         assertEquals("https://bobby%20droptables:passwd@example.com/secure", iri2.toString());

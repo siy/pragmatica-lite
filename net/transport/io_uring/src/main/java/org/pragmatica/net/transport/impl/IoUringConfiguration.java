@@ -9,6 +9,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.incubator.channel.uring.*;
 import org.pragmatica.net.transport.api.TransportConfiguration;
 
+@SuppressWarnings("unused")
 @AutoService(TransportConfiguration.class)
 public class IoUringConfiguration implements TransportConfiguration {
     @Override

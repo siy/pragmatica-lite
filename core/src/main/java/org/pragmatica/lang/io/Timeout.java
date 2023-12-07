@@ -27,6 +27,7 @@ import static org.pragmatica.lang.Tuple.tuple;
 /**
  * Representation of timeout value.
  */
+@SuppressWarnings("unused")
 public sealed interface Timeout extends Comparable<Timeout> {
     /**
      * Timeout value represented as number of nanoseconds.

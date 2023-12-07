@@ -3,10 +3,11 @@ package org.pragmatica.http.server.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
-import org.pragmatica.codec.json.TypeToken;
-import org.pragmatica.http.error.WebError;
+import org.pragmatica.http.codec.CustomCodec;
+import org.pragmatica.http.codec.TypeToken;
+import org.pragmatica.http.HttpError;
 import org.pragmatica.http.protocol.HttpStatus;
-import org.pragmatica.http.server.WebServerConfiguration;
+import org.pragmatica.http.server.HttpServerConfiguration;
 import org.pragmatica.http.server.routing.Redirect;
 import org.pragmatica.http.server.routing.RequestContext;
 import org.pragmatica.http.server.routing.Route;
@@ -33,10 +34,13 @@ import static org.pragmatica.lang.Result.success;
 @SuppressWarnings("unused")
 public class RequestContextImpl implements RequestContext {
     private static final int PATH_PARAM_LIMIT = 1024;
+    private static final Result<DataContainer> MISSING_CUSTOM_CODEC_ERROR = HttpError.httpError(HttpStatus.INTERNAL_SERVER_ERROR,
+                                                                                                "Custom codec is missing in server configuration")
+                                                                                     .result();
 
     private final ChannelHandlerContext ctx;
     private final FullHttpRequest request;
-    private final WebServerConfiguration configuration;
+    private final HttpServerConfiguration configuration;
     private final HttpHeaders responseHeaders = new CombinedHttpHeaders(true);
     private final Route<?> route;
     private final String requestId;
@@ -46,7 +50,7 @@ public class RequestContextImpl implements RequestContext {
     private Supplier<Map<String, String>> headersSupplier = lazy(() -> headersSupplier = value(initHeaders()));
     private boolean keepAlive = false;
 
-    private RequestContextImpl(ChannelHandlerContext ctx, FullHttpRequest request, Route<?> route, WebServerConfiguration configuration) {
+    private RequestContextImpl(ChannelHandlerContext ctx, FullHttpRequest request, Route<?> route, HttpServerConfiguration configuration) {
         this.ctx = ctx;
         this.request = request;
         this.route = route;
@@ -54,43 +58,52 @@ public class RequestContextImpl implements RequestContext {
         this.requestId = ULID.randomULID().encoded();
     }
 
-    public static void handle(ChannelHandlerContext ctx, FullHttpRequest request, Route<?> route, WebServerConfiguration configuration) {
+    public static void handle(ChannelHandlerContext ctx, FullHttpRequest request, Route<?> route, HttpServerConfiguration configuration) {
         new RequestContextImpl(ctx, request, route, configuration).invokeAndRespond();
     }
 
-    @Override public Route<?> route() {
+    @Override
+    public Route<?> route() {
         return route;
     }
 
-    @Override public String requestId() {
+    @Override
+    public String requestId() {
         return requestId;
     }
 
-    @Override public ByteBuf body() {
+    @Override
+    public ByteBuf body() {
         return request.content();
     }
 
-    @Override public String bodyAsString() {
+    @Override
+    public String bodyAsString() {
         return body().toString(StandardCharsets.UTF_8);
     }
 
-    @Override public <T> Result<T> fromJson(TypeToken<T> literal) {
+    @Override
+    public <T> Result<T> fromJson(TypeToken<T> literal) {
         return configuration.jsonCodec().deserialize(request.content(), literal);
     }
 
-    @Override public List<String> pathParams() {
+    @Override
+    public List<String> pathParams() {
         return pathParamsSupplier.get();
     }
 
-    @Override public Map<String, List<String>> queryParams() {
+    @Override
+    public Map<String, List<String>> queryParams() {
         return queryStringParamsSupplier.get();
     }
 
-    @Override public Map<String, String> requestHeaders() {
+    @Override
+    public Map<String, String> requestHeaders() {
         return headersSupplier.get();
     }
 
-    @Override public HttpHeaders responseHeaders() {
+    @Override
+    public HttpHeaders responseHeaders() {
         return responseHeaders;
     }
 
@@ -103,7 +116,7 @@ public class RequestContextImpl implements RequestContext {
         result
             .flatMap(this::serializeResponse)
             .onSuccessDo(this::setKeepAlive)        // Set keepAlive only for successful responses
-            .recover(WebServerHandler::decodeError)
+            .recover(HttpServerHandler::decodeError)
             .onSuccess(this::sendResponse);
     }
 
@@ -112,24 +125,34 @@ public class RequestContextImpl implements RequestContext {
     }
 
     private void sendResponse(DataContainer dataContainer) {
-        WebServerHandler.sendResponse(ctx, dataContainer, route.contentType(), keepAlive, some(requestId));
+        HttpServerHandler.sendResponse(ctx, dataContainer, route.contentType(), keepAlive, some(requestId));
     }
 
     private Result<DataContainer> serializeResponse(Object value) {
         return switch (value) {
             case DataContainer dataContainer -> success(dataContainer);
             case Redirect redirect -> success(redirect).map(DataContainer.RedirectData::from);
-            case WebError webError -> success(webError).map(DataContainer.StringData::from);
+            case HttpError httpError -> success(httpError).map(DataContainer.StringData::from);
             case String string -> success(string).map(DataContainer.StringData::from);
             case byte[] bytes -> success(bytes).map(DataContainer.BinaryData::from);
 
-            default -> switch (route.contentType()) {
-                case TEXT_PLAIN -> success(value).map(Object::toString)
+            default -> switch (route.contentType().category()) {
+                case PLAIN_TEXT -> success(value).map(Object::toString)
                                                  .map(DataContainer.StringData::from);
-                case APPLICATION_JSON -> configuration.jsonCodec().serialize(value)
-                                                      .map(DataContainer.ByteBufData::from);
+                case JSON -> configuration.jsonCodec()
+                                          .serialize(value)
+                                          .map(DataContainer.ByteBufData::from);
+                case CUSTOM -> configuration.customCodec()
+                                            .map(codec -> serializeCustom(value, codec))
+                                            .or(MISSING_CUSTOM_CODEC_ERROR);
+
             };
         };
+    }
+
+    private Result<DataContainer> serializeCustom(Object value, CustomCodec codec) {
+        return codec.serialize(value, route.contentType())
+                    .map(DataContainer.ByteBufData::from);
     }
 
     private List<String> initPathParams() {
@@ -158,7 +181,7 @@ public class RequestContextImpl implements RequestContext {
             MDC.put("requestId", requestId);
             return route().handler().handle(this);
         } catch (Throwable t) {
-            return failed(WebError.fromThrowable(HttpStatus.INTERNAL_SERVER_ERROR, t));
+            return failed(HttpError.httpError(HttpStatus.INTERNAL_SERVER_ERROR, t));
         } finally {
             MDC.remove("requestId");
         }

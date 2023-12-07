@@ -17,29 +17,24 @@
 
 package org.pragmatica.uri;
 
-import org.pragmatica.lang.Functions;
 import org.pragmatica.lang.Option;
 
 import static org.pragmatica.lang.Option.empty;
+import static org.pragmatica.lang.Option.option;
 
 public record UserInfo(Option<String> userName, Option<String> password) {
     public static final UserInfo EMPTY = new UserInfo(empty(), empty());
 
-    public boolean isEmpty() {
-        return userName.isEmpty() && password.isEmpty();
+    public static UserInfo userInfo(String userName, String password) {
+        return userInfo(option(userName), option(password));
+    }
+
+    public static UserInfo userInfo(Option<String> userName, Option<String> password) {
+        return new UserInfo(userName, password);
     }
 
     public String forIRI() {
-        if (userName.isEmpty()) {
-            return "";
-        }
-
-        if (password.isEmpty()) {
-            return userName.fold(() -> "", Functions::id);
-        }
-
-        return Option.all(userName, password)
-                     .id()
-                     .fold(() -> "", tuple -> tuple.map((name, pass) -> name + ':' + pass));
+        return userName.map(name -> password.map(pass -> name + ":" + pass).or(name))
+                .or("");
     }
 }

@@ -33,6 +33,7 @@ import org.pragmatica.lang.io.CoreError;
  * some of its functions, but because its carrier set is empty, it has some limitations.
  * </blockquote>
  */
+@SuppressWarnings("unused")
 public final class Unit implements Tuple.Tuple0 {
     private Unit() {}
 
@@ -101,7 +102,7 @@ public final class Unit implements Tuple.Tuple0 {
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return 0;   // There is only one instance of Unit
     }
 
     @Override

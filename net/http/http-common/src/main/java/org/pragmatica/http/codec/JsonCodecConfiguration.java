@@ -1,4 +1,4 @@
-package org.pragmatica.codec.json;
+package org.pragmatica.http.codec;
 
 /**
  * Marker interface. Implementations provide specific interface for the underlying library.

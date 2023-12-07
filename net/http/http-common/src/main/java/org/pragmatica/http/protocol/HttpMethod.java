@@ -1,6 +1,6 @@
 package org.pragmatica.http.protocol;
 
-import org.pragmatica.http.error.WebError;
+import org.pragmatica.http.HttpError;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.utils.Causes;
 
@@ -18,7 +18,7 @@ public enum HttpMethod {
     TRACE,
     ;
 
-    private static final Result<HttpMethod> NOT_ALLOWED = WebError.from(HttpStatus.METHOD_NOT_ALLOWED, Causes.cause("Method not allowed")).result();
+    private static final Result<HttpMethod> NOT_ALLOWED = HttpError.httpError(HttpStatus.METHOD_NOT_ALLOWED, Causes.cause("Method not allowed")).result();
 
     public static Result<HttpMethod> fromString(String method) {
         int length = method.length();

@@ -27,6 +27,7 @@ import java.util.function.Consumer;
  * Note that this is fairly low level class and for performance reasons it omits most checks. In particular, it's the caller responsibility that each
  * expected event assign its own result (i.e. uses correct index value).
  */
+@SuppressWarnings("unused")
 public record ResultCollector(Object[] results, AtomicInteger counter, Consumer<Object[]> action) {
     /**
      * Create an instance configured for threshold and action.

@@ -27,7 +27,6 @@ import java.util.StringTokenizer;
  * Percent-encoding according to the URI and URL standards.
  */
 public final class Encoder {
-
     private static final boolean IS_PATH = true;
 
     private static final boolean IS_NOT_PATH = false;

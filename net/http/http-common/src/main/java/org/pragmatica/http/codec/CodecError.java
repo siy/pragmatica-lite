@@ -1,4 +1,4 @@
-package org.pragmatica.codec.json;
+package org.pragmatica.http.codec;
 
 import org.pragmatica.lang.Result;
 

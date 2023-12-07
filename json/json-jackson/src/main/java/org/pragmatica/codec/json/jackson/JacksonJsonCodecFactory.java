@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auto.service.AutoService;
 import org.pragmatica.codec.json.JsonCodecFactory;
 
+@SuppressWarnings("unchecked")
 @AutoService(JsonCodecFactory.class)
 public final class JacksonJsonCodecFactory implements JsonCodecFactory<JacksonJsonCodecConfiguration> {
     @Override

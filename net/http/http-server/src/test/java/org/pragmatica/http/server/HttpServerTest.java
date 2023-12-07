@@ -13,10 +13,10 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.pragmatica.lang.Unit.unitResult;
 
-class WebServerTest {
-    private static final Logger log = LoggerFactory.getLogger(WebServerTest.class);
-    private static final WebServer server = WebServer.with(WebServerConfiguration.allDefaults().withPort(8000))
-                                                     .serve(Route.get("/one").textWith(() -> "one"),
+class HttpServerTest {
+    private static final Logger log = LoggerFactory.getLogger(HttpServerTest.class);
+    private static final HttpServer server = HttpServer.with(HttpServerConfiguration.allDefaults().withPort(8000))
+                                                       .serve(Route.get("/one").textWith(() -> "one"),
                                                             Route.get("/two").textWith(() -> "two"),
                                                             Route.get("/three").textWith(() -> "three"));
 

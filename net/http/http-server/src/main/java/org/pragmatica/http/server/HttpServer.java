@@ -5,9 +5,9 @@ import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.Future;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.netty.util.internal.logging.Slf4JLoggerFactory;
-import org.pragmatica.http.error.WebError;
+import org.pragmatica.http.HttpError;
 import org.pragmatica.http.protocol.HttpStatus;
-import org.pragmatica.http.server.impl.WebServerInitializer;
+import org.pragmatica.http.server.impl.HttpServerInitializer;
 import org.pragmatica.http.server.routing.RequestRouter;
 import org.pragmatica.http.server.routing.RouteSource;
 import org.pragmatica.lang.Promise;
@@ -25,7 +25,7 @@ import static org.pragmatica.net.transport.api.TransportConfiguration.transportC
 //TODO: injection of routes via SPI (metrics, health, etc.)
 //TODO: structured error responses. See https://www.rfc-editor.org/rfc/rfc7807 for more details
 //TODO: Support for HTTP/2
-public class WebServer {
+public class HttpServer {
     static {
         InternalLoggerFactory.setDefaultFactory(Slf4JLoggerFactory.INSTANCE);
 
@@ -35,22 +35,22 @@ public class WebServer {
         }
     }
 
-    private static final Logger log = LoggerFactory.getLogger(WebServer.class);
+    private static final Logger log = LoggerFactory.getLogger(HttpServer.class);
     private final RequestRouter requestRouter;
-    private final WebServerConfiguration configuration;
+    private final HttpServerConfiguration configuration;
 
-    private WebServer(WebServerConfiguration configuration, RequestRouter requestRouter) {
+    private HttpServer(HttpServerConfiguration configuration, RequestRouter requestRouter) {
         this.configuration = configuration;
         this.requestRouter = requestRouter;
     }
 
     @FunctionalInterface
     public interface Builder {
-        WebServer serve(RouteSource... routeSources);
+        HttpServer serve(RouteSource... routeSources);
     }
 
-    public static Builder with(WebServerConfiguration configuration) {
-        return (RouteSource... routeSources) -> new WebServer(configuration, RequestRouter.with(routeSources));
+    public static Builder with(HttpServerConfiguration configuration) {
+        return (RouteSource... routeSources) -> new HttpServer(configuration, RequestRouter.with(routeSources));
     }
 
     public Promise<Unit> start() {
@@ -63,7 +63,7 @@ public class WebServer {
                                            .map(address -> new InetSocketAddress(address, configuration.port()))
                                            .or(() -> new InetSocketAddress(configuration.port()));
 
-            log.info("Starting WebServer on {} using {} transport", bindAddress, transportConfiguration.name());
+            log.info("Starting server on {} using {} transport", bindAddress, transportConfiguration.name());
 
             requestRouter.print();
 
@@ -71,18 +71,18 @@ public class WebServer {
                 .serverBootstrap()
                 .childOption(ChannelOption.SO_RCVBUF, configuration.receiveBufferSize())
                 .childOption(ChannelOption.SO_SNDBUF, configuration.sendBufferSize())
-                .childHandler(new WebServerInitializer(configuration, requestRouter))
+                .childHandler(new HttpServerInitializer(configuration, requestRouter))
                 .bind(bindAddress)
                 .sync()
                 .channel()
                 .closeFuture()
                 .addListener(future -> decode(promise, future));
 
-            log.info("WebServer started on port {}", configuration.port());
+            log.info("Server started on port {}", configuration.port());
         } catch (InterruptedException e) {
             //In rare cases when .sync() will be interrupted, fail with error
-            log.error("Failed to start WebServer", e);
-            promise.resolve(WebError.fromThrowable(HttpStatus.SERVICE_UNAVAILABLE, e).result());
+            log.error("Failed to start server", e);
+            promise.resolve(HttpError.httpError(HttpStatus.SERVICE_UNAVAILABLE, e).result());
         }
 
         return promise;

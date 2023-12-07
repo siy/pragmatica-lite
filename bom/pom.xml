@@ -62,6 +62,12 @@
 
             <dependency>
                 <groupId>org.pragmatica.lite</groupId>
+                <artifactId>name-resolver</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.pragmatica.lite</groupId>
                 <artifactId>routing-api</artifactId>
                 <version>${project.version}</version>
             </dependency>

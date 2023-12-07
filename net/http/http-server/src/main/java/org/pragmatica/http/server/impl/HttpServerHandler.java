@@ -4,15 +4,16 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
-import org.pragmatica.http.content.ContentType;
-import org.pragmatica.http.error.WebError;
-import org.pragmatica.http.protocol.HttpHeaderName;
+import org.pragmatica.http.CommonContentTypes;
+import org.pragmatica.http.ContentType;
+import org.pragmatica.http.HttpError;
+import org.pragmatica.http.protocol.CommonHeaders;
 import org.pragmatica.http.protocol.HttpMethod;
 import org.pragmatica.http.protocol.HttpStatus;
-import org.pragmatica.http.server.WebServerConfiguration;
+import org.pragmatica.http.server.HttpServerConfiguration;
 import org.pragmatica.http.server.routing.RequestRouter;
 import org.pragmatica.lang.Option;
-import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Result.Cause;
 
 import java.time.Clock;
 import java.time.ZonedDateTime;
@@ -21,15 +22,15 @@ import java.util.function.Supplier;
 
 import static org.pragmatica.http.util.Utils.normalize;
 
-class WebServerHandler extends SimpleChannelInboundHandler<Object> {
+class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
     private static final String SERVER_NAME = "Pragmatica Web Server";
     private static final Supplier<String> dateTimeNow = () -> ZonedDateTime.now(Clock.systemUTC())
                                                                    .format(DateTimeFormatter.RFC_1123_DATE_TIME);
 
-    private final WebServerConfiguration configuration;
+    private final HttpServerConfiguration configuration;
     private final RequestRouter routingTable;
 
-    WebServerHandler(WebServerConfiguration configuration, RequestRouter routingTable) {
+    HttpServerHandler(HttpServerConfiguration configuration, RequestRouter routingTable) {
         this.configuration = configuration;
         this.routingTable = routingTable;
     }
@@ -53,13 +54,13 @@ class WebServerHandler extends SimpleChannelInboundHandler<Object> {
         var path = normalize(request.uri());
 
         routingTable.findRoute(HttpMethod.from(request.method()), path)
-                    .toResult(() -> WebError.from(HttpStatus.NOT_FOUND, path).result())
+                    .toResult(() -> HttpError.httpError(HttpStatus.NOT_FOUND, path).result())
                     .onFailure(cause -> sendErrorResponse(ctx, cause))
                     .onSuccess(route -> RequestContextImpl.handle(ctx, request, route, configuration));
     }
 
-    private void sendErrorResponse(ChannelHandlerContext ctx, Result.Cause cause) {
-        sendResponse(ctx, decodeError(cause), ContentType.TEXT_PLAIN, false, Option.none());
+    private void sendErrorResponse(ChannelHandlerContext ctx, Cause cause) {
+        sendResponse(ctx, decodeError(cause), CommonContentTypes.TEXT_PLAIN, false, Option.none());
     }
 
     @Override
@@ -73,9 +74,9 @@ class WebServerHandler extends SimpleChannelInboundHandler<Object> {
     }
 
 
-    public static DataContainer decodeError(Result.Cause cause) {
-        return cause instanceof WebError webError
-               ? DataContainer.StringData.from(webError)
+    public static DataContainer decodeError(Cause cause) {
+        return cause instanceof HttpError httpError
+               ? DataContainer.StringData.from(httpError)
                : DataContainer.StringData.from(HttpStatus.INTERNAL_SERVER_ERROR, cause);
     }
 
@@ -84,13 +85,13 @@ class WebServerHandler extends SimpleChannelInboundHandler<Object> {
         var response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, dataContainer.status().toInternal(), content);
 
         response.headers()
-                .set(HttpHeaderName.SERVER.headerName(), SERVER_NAME)
-                .set(HttpHeaderName.DATE.headerName(), dateTimeNow.get())
-                .set(HttpHeaderName.CONTENT_TYPE.headerName(), contentType.text())
-                .set(HttpHeaderName.CONTENT_LENGTH.headerName(), Long.toString(content.readableBytes()));
+                .set(CommonHeaders.SERVER.asString(), SERVER_NAME)
+                .set(CommonHeaders.DATE.asString(), dateTimeNow.get())
+                .set(CommonHeaders.CONTENT_TYPE.asString(), contentType.headerText())
+                .set(CommonHeaders.CONTENT_LENGTH.asString(), Long.toString(content.readableBytes()));
         dataContainer.responseHeaders()
-                     .forEach(header -> response.headers().set(header.first().headerName(), header.last()));
-        requestId.onPresent(id -> response.headers().set(HttpHeaderName.REQUEST_ID.headerName(), id));
+                     .forEach(header -> response.headers().set(header.first().asString(), header.last()));
+        requestId.onPresent(id -> response.headers().set(CommonHeaders.REQUEST_ID.asString(), id));
 
         if (!keepAlive) {
             ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);

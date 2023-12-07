@@ -2,12 +2,13 @@ package org.pragmatica.http.server.routing;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaders;
-import org.pragmatica.codec.json.TypeToken;
+import org.pragmatica.http.codec.TypeToken;
 import org.pragmatica.lang.Result;
 
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings("unused")
 public interface RequestContext {
     Route<?> route();
 

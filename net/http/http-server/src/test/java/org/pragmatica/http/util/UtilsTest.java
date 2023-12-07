@@ -11,6 +11,7 @@ class UtilsTest {
     private final AtomicInteger marker = new AtomicInteger(0);
     private Supplier<String> stringSupplier = Utils.lazy(() -> stringSupplier = Utils.value(getStringValue()));
 
+    @SuppressWarnings("SameReturnValue")    // This is not test
     private String getStringValue() {
         marker.incrementAndGet();
         return "Text";

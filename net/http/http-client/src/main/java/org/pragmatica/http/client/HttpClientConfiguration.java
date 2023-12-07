@@ -2,70 +2,69 @@ package org.pragmatica.http.client;
 
 import io.netty.handler.codec.http.cors.CorsConfig;
 import io.netty.handler.ssl.SslContext;
-import org.pragmatica.codec.json.JsonCodec;
+import org.pragmatica.http.codec.JsonCodec;
 import org.pragmatica.codec.json.JsonCodecFactory;
 import org.pragmatica.lang.Option;
-
-import java.net.InetAddress;
 
 import static org.pragmatica.lang.Option.none;
 import static org.pragmatica.lang.Option.some;
 
-public interface WebClientConfiguration {
+//TODO: add customisation for name resolver
+public interface HttpClientConfiguration {
     int DEFAULT_PORT = 8000;
     int DEFAULT_RECEIVE_BUFFER_SIZE = 32768; // 32KB
     int DEFAULT_SEND_BUFFER_SIZE = 1048576; // 1MB
     int DEFAULT_MAX_CONTENT_LEN = 2097152; // 2MB
     boolean DEFAULT_NATIVE_TRANSPORT = true;
 
-    static WebClientConfiguration allDefaults() {
+    static HttpClientConfiguration allDefaults() {
         record configuration(int port, int sendBufferSize,
                              int receiveBufferSize, int maxContentLen, boolean nativeTransport,
-                             JsonCodec jsonCodec, Option<SslContext> sslContext, Option<CorsConfig> corsConfig) implements WebClientConfiguration {
+                             JsonCodec jsonCodec, Option<SslContext> sslContext, Option<CorsConfig> corsConfig) implements HttpClientConfiguration {
             @Override
-            public WebClientConfiguration withPort(int port) {
+            public HttpClientConfiguration withPort(int port) {
                 return new configuration(port, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
                                          jsonCodec, sslContext, corsConfig);
             }
 
             @Override
-            public WebClientConfiguration withSendBufferSize(int sendBufferSize) {
+            public HttpClientConfiguration withSendBufferSize(int sendBufferSize) {
                 return new configuration(port, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
                                          jsonCodec, sslContext, corsConfig);
             }
 
             @Override
-            public WebClientConfiguration withReceiveBufferSize(int receiveBufferSize) {
+            public HttpClientConfiguration withReceiveBufferSize(int receiveBufferSize) {
                 return new configuration(port, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
                                          jsonCodec, sslContext, corsConfig);
             }
 
             @Override
-            public WebClientConfiguration withMaxContentLen(int maxContentLen) {
+            public HttpClientConfiguration withMaxContentLen(int maxContentLen) {
                 return new configuration(port, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
                                          jsonCodec, sslContext, corsConfig);
             }
 
             @Override
-            public WebClientConfiguration withNativeTransport(boolean nativeTransport) {
+            public HttpClientConfiguration withNativeTransport(boolean nativeTransport) {
                 return new configuration(port, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
                                          jsonCodec, sslContext, corsConfig);
             }
 
             @Override
-            public WebClientConfiguration withSerializer(JsonCodec serializer) {
+            public HttpClientConfiguration withSerializer(JsonCodec serializer) {
                 return new configuration(port, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
                                          serializer, sslContext, corsConfig);
             }
 
             @Override
-            public WebClientConfiguration withSslContext(SslContext sslContext) {
+            public HttpClientConfiguration withSslContext(SslContext sslContext) {
                 return new configuration(port, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
                                          jsonCodec, some(sslContext), corsConfig);
             }
 
             @Override
-            public WebClientConfiguration withCorsConfig(CorsConfig corsConfig) {
+            public HttpClientConfiguration withCorsConfig(CorsConfig corsConfig) {
                 return new configuration(port, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
                                          jsonCodec, sslContext, some(corsConfig));
             }
@@ -92,19 +91,19 @@ public interface WebClientConfiguration {
 
     Option<CorsConfig> corsConfig();
 
-    WebClientConfiguration withPort(int port);
+    HttpClientConfiguration withPort(int port);
 
-    WebClientConfiguration withSendBufferSize(int sendBufferSize);
+    HttpClientConfiguration withSendBufferSize(int sendBufferSize);
 
-    WebClientConfiguration withReceiveBufferSize(int receiveBufferSize);
+    HttpClientConfiguration withReceiveBufferSize(int receiveBufferSize);
 
-    WebClientConfiguration withMaxContentLen(int maxContentLen);
+    HttpClientConfiguration withMaxContentLen(int maxContentLen);
 
-    WebClientConfiguration withNativeTransport(boolean nativeTransport);
+    HttpClientConfiguration withNativeTransport(boolean nativeTransport);
 
-    WebClientConfiguration withSerializer(JsonCodec jsonCodec);
+    HttpClientConfiguration withSerializer(JsonCodec jsonCodec);
 
-    WebClientConfiguration withSslContext(SslContext sslContext);
+    HttpClientConfiguration withSslContext(SslContext sslContext);
 
-    WebClientConfiguration withCorsConfig(CorsConfig corsConfig);
+    HttpClientConfiguration withCorsConfig(CorsConfig corsConfig);
 }

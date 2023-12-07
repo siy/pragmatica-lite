@@ -22,6 +22,7 @@ import org.pragmatica.lang.io.CoreError;
 /**
  * Tuples of various size (0-9).
  */
+@SuppressWarnings("unused")
 public interface Tuple {
     int size();
 

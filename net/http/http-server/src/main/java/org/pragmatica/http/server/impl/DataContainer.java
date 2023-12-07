@@ -1,8 +1,8 @@
 package org.pragmatica.http.server.impl;
 
 import io.netty.buffer.ByteBuf;
-import org.pragmatica.http.error.WebError;
-import org.pragmatica.http.protocol.HttpHeaderName;
+import org.pragmatica.http.HttpError;
+import org.pragmatica.http.protocol.CommonHeaders;
 import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.http.server.routing.Redirect;
 import org.pragmatica.lang.Result.Cause;
@@ -19,7 +19,7 @@ import static org.pragmatica.lang.Tuple.tuple;
 public sealed interface DataContainer {
     HttpStatus status();
     ByteBuf responseBody();
-    default List<Tuple2<HttpHeaderName, String>> responseHeaders() {
+    default List<Tuple2<CommonHeaders, String>> responseHeaders() {
         return List.of();
     }
 
@@ -33,16 +33,12 @@ public sealed interface DataContainer {
             return new StringData(HttpStatus.OK, value);
         }
 
-        public static StringData from(WebError value) {
+        public static StringData from(HttpError value) {
             return new StringData(value.status(), value.message());
         }
 
         public static StringData from(HttpStatus status, Cause cause) {
             return new StringData(status, cause.message());
-        }
-
-        public static StringData from(Redirect redirect) {
-            return new StringData(redirect.status(), redirect.url());
         }
     }
 
@@ -70,8 +66,8 @@ public sealed interface DataContainer {
         }
 
         @Override
-        public List<Tuple2<HttpHeaderName, String>> responseHeaders() {
-            return List.of(tuple(HttpHeaderName.LOCATION, redirectUrl));
+        public List<Tuple2<CommonHeaders, String>> responseHeaders() {
+            return List.of(tuple(CommonHeaders.LOCATION, redirectUrl));
         }
 
         public static RedirectData from(Redirect redirect) {

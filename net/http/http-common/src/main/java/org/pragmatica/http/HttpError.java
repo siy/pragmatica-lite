@@ -1,23 +1,23 @@
-package org.pragmatica.http.error;
+package org.pragmatica.http;
 
 import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result.Cause;
 import org.pragmatica.lang.utils.Causes;
 
-public interface WebError extends Cause {
+public interface HttpError extends Cause {
     HttpStatus status();
 
-    static WebError fromThrowable(HttpStatus error, Throwable throwable) {
-        return from(error, Causes.fromThrowable(throwable));
+    static HttpError httpError(HttpStatus error, Throwable throwable) {
+        return httpError(error, Causes.fromThrowable(throwable));
     }
 
-    static WebError from(HttpStatus status, String message) {
-        return from(status, Causes.cause(message));
+    static HttpError httpError(HttpStatus status, String message) {
+        return httpError(status, Causes.cause(message));
     }
 
-    static WebError from(HttpStatus status, Cause source) {
-        record webError(HttpStatus status, Cause origin) implements WebError {
+    static HttpError httpError(HttpStatus status, Cause source) {
+        record httpError(HttpStatus status, Cause origin) implements HttpError {
             @Override
             public String message() {
                 return STR."\{status().message()}: \{origin().message()}";
@@ -34,6 +34,6 @@ public interface WebError extends Cause {
             }
         }
 
-        return new webError(status, source);
+        return new httpError(status, source);
     }
 }

@@ -1,11 +1,14 @@
 package org.pragmatica.codec.json;
 
+import org.pragmatica.http.codec.JsonCodec;
+import org.pragmatica.http.codec.JsonCodecConfiguration;
 import org.pragmatica.lang.Option;
 
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("unused")
 public interface JsonCodecFactory<C extends JsonCodecConfiguration> {
     <T extends JsonCodec> T forConfiguration(C config);
     <T extends JsonCodec> T withDefaultConfiguration();

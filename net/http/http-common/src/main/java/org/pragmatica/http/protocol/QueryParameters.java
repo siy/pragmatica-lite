@@ -14,7 +14,9 @@
  *  limitations under the License.
  *
  */
-package org.pragmatica.uri.util;
+package org.pragmatica.http.protocol;
+
+import org.pragmatica.uri.util.Encoder;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,6 +25,7 @@ import java.util.Map;
 
 import static org.pragmatica.lang.Option.option;
 
+@SuppressWarnings("unused")
 public class QueryParameters {
     private final Map<String, List<String>> data = new HashMap<>();
 

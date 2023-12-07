@@ -15,6 +15,11 @@
     <dependencies>
         <dependency>
             <groupId>org.pragmatica.lite</groupId>
+            <artifactId>json-codec-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.pragmatica.lite</groupId>
             <artifactId>http-common</artifactId>
         </dependency>
 

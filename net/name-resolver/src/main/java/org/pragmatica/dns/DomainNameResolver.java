@@ -37,7 +37,7 @@ public interface DomainNameResolver extends AsyncCloseable {
     Promise<DomainAddress> resolveCached(DomainName name);
 
     static DomainNameResolver defaultResolver() {
-        return forServers(DEFAULT_DNS_SERVERS);
+        return DefaultResolverHolder.INSTANCE.resolver();
     }
 
     static DomainNameResolver forServers(List<InetAddress> serverList) {
@@ -81,5 +81,15 @@ public interface DomainNameResolver extends AsyncCloseable {
                                 .toList();
 
         return new Resolver(DnsClient.create(), servers, new ConcurrentHashMap<>());
+    }
+}
+
+enum DefaultResolverHolder {
+    INSTANCE;
+
+    private final DomainNameResolver resolver = DomainNameResolver.forServers(DEFAULT_DNS_SERVERS);
+
+    public DomainNameResolver resolver() {
+        return resolver;
     }
 }

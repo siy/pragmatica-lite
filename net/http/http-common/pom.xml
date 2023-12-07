@@ -20,12 +20,12 @@
 
         <dependency>
             <groupId>org.pragmatica.lite</groupId>
-            <artifactId>transport-api</artifactId>
+            <artifactId>name-resolver</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.pragmatica.lite</groupId>
-            <artifactId>json-codec-api</artifactId>
+            <artifactId>transport-api</artifactId>
         </dependency>
 
         <dependency>

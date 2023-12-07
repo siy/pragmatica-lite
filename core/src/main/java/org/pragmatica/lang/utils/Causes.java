@@ -20,6 +20,7 @@ package org.pragmatica.lang.utils;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Result.Cause;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -30,16 +31,17 @@ import static org.pragmatica.lang.Option.none;
 import static org.pragmatica.lang.Option.some;
 
 /**
- * Frequently used variants of {@link Result.Cause}.
+ * Frequently used variants of {@link Cause}.
  */
+@SuppressWarnings("unused")
 public final class Causes {
     private Causes() {
     }
 
     /**
-     * Simplest possible variant of {@link Result.Cause} which contains only message describing the cause
+     * Simplest possible variant of {@link Cause} which contains only message describing the cause
      */
-    record SimpleCause(String message, Option<Result.Cause> source) implements Result.Cause {
+    record SimpleCause(String message, Option<Cause> source) implements Cause {
     }
 
     /**
@@ -49,11 +51,11 @@ public final class Causes {
      *
      * @return created instance
      */
-    public static Result.Cause cause(String message) {
+    public static Cause cause(String message) {
         return new SimpleCause(message, none());
     }
 
-    public static Result.Cause cause(String message, Result.Cause source) {
+    public static Cause cause(String message, Cause source) {
         return new SimpleCause(message, some(source));
     }
 
@@ -64,7 +66,7 @@ public final class Causes {
      *
      * @return created instance
      */
-    public static Result.Cause fromThrowable(Throwable throwable) {
+    public static Cause fromThrowable(Throwable throwable) {
         var sw = new StringWriter();
         throwable.printStackTrace(new PrintWriter(sw));
 
@@ -82,7 +84,7 @@ public final class Causes {
      *
      * @return created mapping function
      */
-    public static <T> Fn1<Result.Cause, T> with1(String template) {
+    public static <T> Fn1<Cause, T> with1(String template) {
         return (T input) -> cause(MessageFormat.format(template, input));
     }
 }

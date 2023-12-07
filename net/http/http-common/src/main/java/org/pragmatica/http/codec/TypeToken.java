@@ -1,4 +1,4 @@
-package org.pragmatica.codec.json;
+package org.pragmatica.http.codec;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

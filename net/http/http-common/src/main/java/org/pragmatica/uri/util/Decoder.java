@@ -16,6 +16,7 @@
  */
 package org.pragmatica.uri.util;
 
+import org.pragmatica.http.protocol.QueryParameters;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.utils.Causes;
@@ -61,18 +62,15 @@ public final class Decoder {
 
     public static QueryParameters parseQueryString(String query) {
         var ret = QueryParameters.parameters();
+
         if (query == null || query.isEmpty()) {
             return ret;
         }
         for (String part : query.split("&")) {
-            String[] kvp = part.split("=", 2);
-            String key, value;
-            key = urlDecode(kvp[0], DECODE_PLUS_AS_SPACE);
-            if (kvp.length == 2) {
-                value = urlDecode(kvp[1], DECODE_PLUS_AS_SPACE);
-            } else {
-                value = null;
-            }
+            var kvp = part.split("=", 2);
+            var key = urlDecode(kvp[0], DECODE_PLUS_AS_SPACE);
+            var value = (kvp.length == 2) ? urlDecode(kvp[1], DECODE_PLUS_AS_SPACE) : null;
+
             ret.add(key, value);
         }
         return ret;
@@ -82,8 +80,10 @@ public final class Decoder {
         int len = input.length();
         byte[] data = new byte[len];
         int j = 0;
+
         for (int i = position; i < len; i++) {
             char c0 = input.charAt(i);
+
             if (c0 != '%' || (len < i + 3)) {
                 return Arrays.copyOfRange(data, 0, j);
             } else {
@@ -99,12 +99,12 @@ public final class Decoder {
             return "";
         }
 
-        StringBuilder sb = new StringBuilder();
-        boolean RETURN_DELIMETERS = true;
-        StringTokenizer st = new StringTokenizer(input, "/", RETURN_DELIMETERS);
+        var sb = new StringBuilder();
+        var st = new StringTokenizer(input, "/", true);
 
         while (st.hasMoreElements()) {
-            String element = st.nextToken();
+            var element = st.nextToken();
+
             if ("/".equals(element)) {
                 sb.append(element);
             } else if (!element.isEmpty()) {
@@ -119,21 +119,23 @@ public final class Decoder {
             return input;
         }
 
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
         int len = input.length();
+
         for (int i = 0; i < len; i++) {
             char c0 = input.charAt(i);
+
             if (c0 == '+' && decodePlusAsSpace) {
                 sb.append(' ');
             } else if (c0 != '%') {
                 sb.append(c0);
             } else if (len < i + 3) {
                 // the string will end before we will be able to read a sequence
-                int endIndex = Math.min(input.length(), i + 2);
+                var endIndex = Math.min(input.length(), i + 2);
                 sb.append(input, i, endIndex);
                 i += 3;
             } else {
-                byte[] bytes = nextDecodeableSequence(input, i);
+                var bytes = nextDecodeableSequence(input, i);
                 sb.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(bytes)));
                 i += bytes.length * 3 - 1;
             }
@@ -142,7 +144,8 @@ public final class Decoder {
     }
 
     public static Option<InetPort> parsePort(String input) {
-        return Result.lift(Causes::fromThrowable, () -> Integer.parseInt(input))
+        return Result.lift(Causes::fromThrowable,
+                           () -> Integer.parseInt(input))
                      .map(InetPort::inetPort)
                      .toOption();
     }

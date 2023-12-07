@@ -1,9 +1,10 @@
 package org.pragmatica.http.example;
 
-import org.pragmatica.http.error.WebError;
+import org.pragmatica.http.CommonContentTypes;
+import org.pragmatica.http.HttpError;
 import org.pragmatica.http.protocol.HttpStatus;
-import org.pragmatica.http.server.WebServer;
-import org.pragmatica.http.server.WebServerConfiguration;
+import org.pragmatica.http.server.HttpServer;
+import org.pragmatica.http.server.HttpServerConfiguration;
 import org.pragmatica.lang.Promise;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -20,31 +21,36 @@ public class App {
             .await();
     }
 
-    public static WebServer buildServer() {
-        return WebServer
-            .with(WebServerConfiguration.allDefaults().withPort(8000))
+    public static HttpServer buildServer() {
+        return HttpServer
+            .with(HttpServerConfiguration.allDefaults().withPort(8000))
             .serve(
                 //Full description
                 get("/hello1")
-                    .textWith(request -> successful("Hello world! at " + request.route().path())),
+                    .with(request -> successful(STR."Hello world! at \{request.route().path()}"))
+                    .as(CommonContentTypes.TEXT_PLAIN),
 
-                //Default content type (text)
+                //Short content type (text)
                 get("/hello2")
-                    .with(request -> successful("Hello world! at " + request.route().path())),
+                    .with(request -> successful(STR."Hello world! at \{request.route().path()}"))
+                    .asText(),
 
                 //Runtime exception handling example
                 get("/boom-legacy")
                     .with(_ -> {
                         throw new RuntimeException("Some exception message");
-                    }),
+                    })
+                    .asText(),
 
                 //Functional error handling
                 get("/boom-functional")
-                    .with(_ -> failed(WebError.from(HttpStatus.UNPROCESSABLE_ENTITY, "Test error"))),
+                    .with(_ -> failed(HttpError.httpError(HttpStatus.UNPROCESSABLE_ENTITY, "Test error")))
+                    .asText(),
 
                 //Long-running process
                 get("/delay")
-                    .with(_ -> delayedResponse()),
+                    .with(_ -> delayedResponse())
+                    .asText(),
 
                 //Nested routes
                 in("/v1")
@@ -52,11 +58,14 @@ public class App {
                         in("/user")
                             .serve(
                                 get("/list")
-                                    .jsonWith(request -> successful(request.pathParams())),
+                                    .with(request -> successful(request.pathParams()))
+                                    .asJson(),
                                 get("/query")
-                                    .jsonWith(request -> successful(request.queryParams())),
+                                    .with(request -> successful(request.queryParams()))
+                                    .asJson(),
                                 get("/profile")
-                                    .jsonWith(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com")))
+                                    .with(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com")))
+                                    .asJson()
                             )
                     )
             );

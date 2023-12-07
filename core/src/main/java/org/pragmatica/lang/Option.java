@@ -33,6 +33,7 @@ import java.util.stream.Stream;
  *
  * @param <T> Type of contained value
  */
+@SuppressWarnings("unused")
 public sealed interface Option<T> permits Some, None {
     /**
      * Convert instance into other instance of different type using provided mapping function.
@@ -236,7 +237,7 @@ public sealed interface Option<T> permits Some, None {
         return fold(cause::result, Result::success);
     }
 
-    default Result<T> toResult(Fn0<Result> resultSupplier) {
+    default Result<T> toResult(Fn0<Result<T>> resultSupplier) {
         return fold(resultSupplier::apply, Result::success);
     }
 
@@ -334,7 +335,7 @@ public sealed interface Option<T> permits Some, None {
 
         @Override
         public String toString() {
-            return "Some(" + value + ")";
+            return STR."Some(\{value})";
         }
     }
 
