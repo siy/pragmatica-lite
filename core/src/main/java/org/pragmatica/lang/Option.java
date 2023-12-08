@@ -28,6 +28,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static org.pragmatica.lang.Tuple.tuple;
+
 /**
  * Implementation of basic immutable container for value which may or may not be present.
  *
@@ -440,7 +442,7 @@ public sealed interface Option<T> permits Some, None {
      * @return {@link Mapper1} prepared for further transformation.
      */
     static <T1> Mapper1<T1> all(Option<T1> op1) {
-        return () -> op1.flatMap(v1 -> option(Tuple.tuple(v1)));
+        return () -> op1.flatMap(v1 -> some(tuple(v1)));
     }
 
     /**
@@ -450,7 +452,7 @@ public sealed interface Option<T> permits Some, None {
      * @return {@link Mapper2} prepared for further transformation.
      */
     static <T1, T2> Mapper2<T1, T2> all(Option<T1> op1, Option<T2> op2) {
-        return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> option(Tuple.tuple(v1, v2))));
+        return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> some(tuple(v1, v2))));
     }
 
     /**
@@ -460,7 +462,7 @@ public sealed interface Option<T> permits Some, None {
      * @return {@link Mapper3} prepared for further transformation.
      */
     static <T1, T2, T3> Mapper3<T1, T2, T3> all(Option<T1> op1, Option<T2> op2, Option<T3> op3) {
-        return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> op3.flatMap(v3 -> option(Tuple.tuple(v1, v2, v3)))));
+        return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> op3.flatMap(v3 -> some(tuple(v1, v2, v3)))));
     }
 
     /**
@@ -476,7 +478,7 @@ public sealed interface Option<T> permits Some, None {
             v1 -> op2.flatMap(
                 v2 -> op3.flatMap(
                     v3 -> op4.flatMap(
-                        v4 -> Option.option(Tuple.tuple(v1, v2, v3, v4))))));
+                        v4 -> some(tuple(v1, v2, v3, v4))))));
     }
 
     /**
@@ -493,7 +495,7 @@ public sealed interface Option<T> permits Some, None {
                 v2 -> op3.flatMap(
                     v3 -> op4.flatMap(
                         v4 -> op5.flatMap(
-                            v5 -> option(Tuple.tuple(v1, v2, v3, v4, v5)))))));
+                            v5 -> some(tuple(v1, v2, v3, v4, v5)))))));
     }
 
     /**
@@ -512,7 +514,7 @@ public sealed interface Option<T> permits Some, None {
                     v3 -> op4.flatMap(
                         v4 -> op5.flatMap(
                             v5 -> op6.flatMap(
-                                v6 -> option(Tuple.tuple(v1, v2, v3, v4, v5, v6))))))));
+                                v6 -> some(tuple(v1, v2, v3, v4, v5, v6))))))));
     }
 
     /**
@@ -532,7 +534,7 @@ public sealed interface Option<T> permits Some, None {
                         v4 -> op5.flatMap(
                             v5 -> op6.flatMap(
                                 v6 -> op7.flatMap(
-                                    v7 -> option(Tuple.tuple(v1, v2, v3, v4, v5, v6, v7)))))))));
+                                    v7 -> some(tuple(v1, v2, v3, v4, v5, v6, v7)))))))));
     }
 
     /**
@@ -553,7 +555,7 @@ public sealed interface Option<T> permits Some, None {
                             v5 -> op6.flatMap(
                                 v6 -> op7.flatMap(
                                     v7 -> op8.flatMap(
-                                        v8 -> option(Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8))))))))));
+                                        v8 -> some(tuple(v1, v2, v3, v4, v5, v6, v7, v8))))))))));
     }
 
     /**
@@ -575,7 +577,7 @@ public sealed interface Option<T> permits Some, None {
                                 v6 -> op7.flatMap(
                                     v7 -> op8.flatMap(
                                         v8 -> op9.flatMap(
-                                            v9 -> option(Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9)))))))))));
+                                            v9 -> some(tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9)))))))))));
     }
 
     /**

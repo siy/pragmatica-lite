@@ -2,6 +2,7 @@ package org.pragmatica.http.client;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.*;
@@ -12,6 +13,7 @@ import org.pragmatica.dns.DomainAddress;
 import org.pragmatica.dns.DomainName;
 import org.pragmatica.dns.DomainNameResolver;
 import org.pragmatica.http.HttpError;
+import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
@@ -20,9 +22,14 @@ import org.pragmatica.net.InetPort;
 import org.pragmatica.net.transport.api.TransportConfiguration;
 import org.pragmatica.uri.IRI;
 
+import java.nio.charset.StandardCharsets;
+
 import static org.pragmatica.dns.DomainName.*;
 import static org.pragmatica.http.HttpError.httpError;
 import static org.pragmatica.http.protocol.HttpStatus.NOT_IMPLEMENTED;
+import static org.pragmatica.lang.Promise.resolved;
+import static org.pragmatica.lang.Result.failure;
+import static org.pragmatica.lang.Result.success;
 import static org.pragmatica.lang.Unit.unit;
 import static org.pragmatica.lang.Unit.unitResult;
 
@@ -57,6 +64,7 @@ public interface HttpClient {
 record HttpClientImpl(HttpClientConfiguration configuration, Bootstrap bootstrap) implements HttpClient {
     private static final HttpError ONLY_HTTP_IS_SUPPORTED = httpError(NOT_IMPLEMENTED, "Only HTTP is supported");
     private static final HttpError ONLY_ABSOLUTE_IRI_IS_SUPPORTED = httpError(NOT_IMPLEMENTED, "Only HTTP is supported");
+    private static final HttpError MISSING_CUSTOM_CODEC_ERROR = HttpError.httpError(NOT_IMPLEMENTED, "Custom codec is missing in configuration");
     private static final DomainName LOCALHOST = domainName("localhost");
 
     @Override
@@ -75,12 +83,12 @@ record HttpClientImpl(HttpClientConfiguration configuration, Bootstrap bootstrap
 
         return DomainNameResolver.defaultResolver()
                                  .resolve(domain)
-                                 .flatMap(address -> setupRequest(request, address));
+                                 .flatMap(address -> setupRequest(request, address, domain));
     }
 
-    private <T> Promise<HttpClientResponse> setupRequest(HttpClientRequest<T> request, DomainAddress address) {
+    private <T> Promise<HttpClientResponse> setupRequest(HttpClientRequest<T> request, DomainAddress address, DomainName domain) {
         return connect(address, calculatePort(request.iri()))
-            .flatMap(channel -> sendRequest(channel, request));
+            .flatMap(channel -> sendRequest(channel, request, domain));
     }
 
     Promise<Channel> connect(DomainAddress address, int port) {
@@ -109,13 +117,16 @@ record HttpClientImpl(HttpClientConfiguration configuration, Bootstrap bootstrap
                                                   .build());
     }
 
-    private <T> Promise<HttpClientResponse> sendRequest(Channel channel, HttpClientRequest<T> request) {
-        return Promise.resolved(configureConnection(channel, request.iri().isSecure()))
-                      .flatMap(_ -> Promise.promise(promise -> {
-                          channel.pipeline()
-                                 .addLast(new ContextHandler<>(promise, request));
-                          channel.write(serializeRequest(request));
-                      }));
+    private <T> Promise<HttpClientResponse> sendRequest(Channel channel, HttpClientRequest<T> request, DomainName domain) {
+        var serializedRequest = configureConnection(channel, request.iri().isSecure())
+            .flatMap(_ -> serializeRequest(request, domain));
+
+        return resolved(serializedRequest)
+            .flatMap(requestContent -> Promise.promise(promise -> {
+                channel.pipeline()
+                       .addLast(new ContextHandler<>(promise, request, configuration));
+                channel.write(requestContent);
+            }));
     }
 
     private Result<Unit> configureConnection(Channel channel, boolean secure) {
@@ -134,27 +145,65 @@ record HttpClientImpl(HttpClientConfiguration configuration, Bootstrap bootstrap
             .map(Unit::unit);
     }
 
-    private static ChannelPipeline addSslHandler(Channel channel, SslContext sslContext) {
-        return channel.pipeline()
-                      .addFirst(sslContext.newHandler(channel.alloc()));
+    private static void addSslHandler(Channel channel, SslContext sslContext) {
+        channel.pipeline()
+               .addFirst(sslContext.newHandler(channel.alloc()));
     }
 
-    private <T> ByteBuf serializeRequest(HttpClientRequest<T> request) {
-        throw new UnsupportedOperationException();
+    private <T> Result<HttpRequest> serializeRequest(HttpClientRequest<T> request, DomainName domain) {
+        var uri = request.parameters()
+                         .map(params -> request.iri().withQuery(params))
+                         .or(request::iri)
+                         .pathAndQuery()
+                         .toString();
+
+        return request.body()
+                      .map(value -> serializeBody(request, value))
+                      .or(success(Unpooled.EMPTY_BUFFER))
+                      .map(body -> new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, request.method().into(), uri, body))
+                      .map(content -> appendHeaders(content, request, domain));
+    }
+
+    private static <T> HttpRequest appendHeaders(HttpRequest content, HttpClientRequest<T> request,
+                                                 DomainName domain) {
+        var requestHeaders = content.headers();
+
+        requestHeaders
+            .set(HttpHeaderNames.HOST, domain.name())
+            .set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE); //TODO: add support for keep-alive
+        request.headers()
+               .expanded()
+               .forEach(pair -> pair.map((name, value) -> requestHeaders.add(name.asString(), value)));
+
+        return content;
+    }
+
+    private <T> Result<ByteBuf> serializeBody(HttpClientRequest<T> request, T value) {
+        return switch (request.contentType().category()) {
+            case PLAIN_TEXT -> success(Unpooled.wrappedBuffer(value.toString().getBytes(StandardCharsets.UTF_8)));
+            case JSON -> configuration().jsonCodec().serialize(value);
+            case CUSTOM -> configuration().customCodec()
+                                          .map(codec -> codec.serialize(value, request.contentType()))
+                                          .or(() -> failure(MISSING_CUSTOM_CODEC_ERROR));
+        };
     }
 }
 
 class ContextHandler<T> extends SimpleChannelInboundHandler<FullHttpResponse> {
     private final Promise<HttpClientResponse> promise;
     private final HttpClientRequest<T> request;
+    private final HttpClientConfiguration configuration;
 
-    public ContextHandler(Promise<HttpClientResponse> promise, HttpClientRequest<T> request) {
+    public ContextHandler(Promise<HttpClientResponse> promise, HttpClientRequest<T> request, HttpClientConfiguration configuration) {
         this.promise = promise;
         this.request = request;
+        this.configuration = configuration;
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) throws Exception {
-        throw new UnsupportedOperationException();
+        var response = HttpClientResponse.httpClientResponse(msg, configuration);
+        promise.success(response);
+        ctx.close();    //TODO: add support for keep-alive
     }
 }

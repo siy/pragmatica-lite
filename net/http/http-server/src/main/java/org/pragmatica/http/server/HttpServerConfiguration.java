@@ -64,9 +64,15 @@ public interface HttpServerConfiguration {
             }
 
             @Override
-            public HttpServerConfiguration withSerializer(JsonCodec serializer) {
+            public HttpServerConfiguration withJsonCodec(JsonCodec jsonCodec) {
                 return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
-                                         customCodec, serializer, sslContext, corsConfig);
+                                         customCodec, jsonCodec, sslContext, corsConfig);
+            }
+
+            @Override
+            public HttpServerConfiguration withCustomCodec(CustomCodec customCodec) {
+                return new configuration(port, bindAddress, sendBufferSize, receiveBufferSize, maxContentLen, nativeTransport,
+                                         some(customCodec), configuration.this.jsonCodec, sslContext, corsConfig);
             }
 
             @Override
@@ -119,7 +125,9 @@ public interface HttpServerConfiguration {
 
     HttpServerConfiguration withNativeTransport(boolean nativeTransport);
 
-    HttpServerConfiguration withSerializer(JsonCodec jsonCodec);
+    HttpServerConfiguration withJsonCodec(JsonCodec jsonCodec);
+
+    HttpServerConfiguration withCustomCodec(CustomCodec customCodec);
 
     HttpServerConfiguration withSslContext(SslContext sslContext);
 

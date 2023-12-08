@@ -19,6 +19,8 @@ package org.pragmatica.lang;
 import org.pragmatica.lang.Functions.*;
 import org.pragmatica.lang.io.CoreError;
 
+import java.util.Map;
+
 /**
  * Tuples of various size (0-9).
  */
@@ -178,6 +180,10 @@ public interface Tuple {
         }
 
         return new tuple2<>(param1, param2);
+    }
+
+    static <T1, T2> Tuple2<T1, T2> fomEntry(Map.Entry<T1, T2> entry) {
+        return tuple(entry.getKey(), entry.getValue());
     }
 
     static <T1, T2, T3> Tuple3<T1, T2, T3> tuple(T1 param1, T2 param2, T3 param3) {

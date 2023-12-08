@@ -7,16 +7,26 @@ import org.pragmatica.lang.utils.Causes;
 import java.util.IdentityHashMap;
 
 public enum HttpMethod {
-    CONNECT,
-    DELETE,
-    GET,
-    HEAD,
-    OPTIONS,
-    PATCH,
-    POST,
-    PUT,
-    TRACE,
+    CONNECT(io.netty.handler.codec.http.HttpMethod.CONNECT),
+    DELETE(io.netty.handler.codec.http.HttpMethod.DELETE),
+    GET(io.netty.handler.codec.http.HttpMethod.GET),
+    HEAD(io.netty.handler.codec.http.HttpMethod.HEAD),
+    OPTIONS(io.netty.handler.codec.http.HttpMethod.OPTIONS),
+    PATCH(io.netty.handler.codec.http.HttpMethod.PATCH),
+    POST(io.netty.handler.codec.http.HttpMethod.POST),
+    PUT(io.netty.handler.codec.http.HttpMethod.PUT),
+    TRACE(io.netty.handler.codec.http.HttpMethod.TRACE),
     ;
+
+    private final io.netty.handler.codec.http.HttpMethod method;
+
+    HttpMethod(io.netty.handler.codec.http.HttpMethod method) {
+        this.method = method;
+    }
+
+    public io.netty.handler.codec.http.HttpMethod into() {
+        return method;
+    }
 
     private static final Result<HttpMethod> NOT_ALLOWED = HttpError.httpError(HttpStatus.METHOD_NOT_ALLOWED, Causes.cause("Method not allowed")).result();
 

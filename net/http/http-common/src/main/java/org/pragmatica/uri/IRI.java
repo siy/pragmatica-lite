@@ -130,7 +130,7 @@ public record IRI(
         return toString(new StringBuilder()).toString();
     }
 
-    public IRI rawPath() {
+    public IRI pathAndQuery() {
         return new IRI(none(), none(), none(), none(), path, queryParameters, fragment);
     }
 
