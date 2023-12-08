@@ -94,7 +94,9 @@ public sealed interface Option<T> permits Some, None {
      * @return current instance if it is not empty and predicate returns <code>true</code> and empty instance otherwise
      */
     default Option<T> filter(Predicate<? super T> predicate) {
-        return fold(Option::empty, v -> predicate.test(v) ? this : empty());
+        return fold(Option::empty, v -> predicate.test(v)
+                                        ? this
+                                        : empty());
     }
 
     /**

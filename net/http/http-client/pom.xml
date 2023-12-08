@@ -25,6 +25,11 @@
 
         <dependency>
             <groupId>org.pragmatica.lite</groupId>
+            <artifactId>core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.pragmatica.lite</groupId>
             <artifactId>http-server</artifactId>
             <scope>test</scope>
         </dependency>
@@ -34,5 +39,29 @@
             <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.pragmatica.lite</groupId>
+            <artifactId>json-jackson</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.tinylog</groupId>
+            <artifactId>slf4j-tinylog</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.tinylog</groupId>
+            <artifactId>tinylog-impl</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.tinylog</groupId>
+            <artifactId>jsl-tinylog</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 </project>

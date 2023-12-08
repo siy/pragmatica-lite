@@ -13,7 +13,6 @@ import org.pragmatica.dns.DomainAddress;
 import org.pragmatica.dns.DomainName;
 import org.pragmatica.dns.DomainNameResolver;
 import org.pragmatica.http.HttpError;
-import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
@@ -24,13 +23,12 @@ import org.pragmatica.uri.IRI;
 
 import java.nio.charset.StandardCharsets;
 
-import static org.pragmatica.dns.DomainName.*;
+import static org.pragmatica.dns.DomainName.domainName;
 import static org.pragmatica.http.HttpError.httpError;
 import static org.pragmatica.http.protocol.HttpStatus.NOT_IMPLEMENTED;
 import static org.pragmatica.lang.Promise.resolved;
 import static org.pragmatica.lang.Result.failure;
 import static org.pragmatica.lang.Result.success;
-import static org.pragmatica.lang.Unit.unit;
 import static org.pragmatica.lang.Unit.unitResult;
 
 //TODO: add customisation for name resolver

@@ -47,7 +47,7 @@ public record IRI(
     private static final IRI EMPTY = new IRI(empty(), empty(), empty(), empty(), empty(), QueryParameters.parameters(), empty());
 
     private static final String HTTP = "http";
-    private static final String HTTPS = "http";
+    private static final String HTTPS = "https";
 
     public static IRI iri(Option<String> scheme, Option<UserInfo> userInfo, Option<DomainName> domain, Option<InetPort> port,
                           Option<String> path, Option<QueryParameters> queryParameters, Option<String> fragment) {
