@@ -11,6 +11,7 @@
         <module>net</module>
         <module>bom</module>
         <module>json</module>
+	<module>db</module>
     </modules>
     <packaging>pom</packaging>
 
