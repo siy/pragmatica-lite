@@ -18,6 +18,12 @@
             <version>${project.parent.version}</version>
         </dependency>
 
+        <!-- TODO: cleanup experiment -->
+        <dependency>
+            <groupId>org.pragmatica.lite</groupId>
+            <artifactId>postgres-async</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
@@ -71,13 +77,6 @@
             <artifactId>commons-codec</artifactId>
             <version>1.15</version>
         </dependency>
-
-        <!-- TODO: cleanup experiment -->
-        <dependency>
-            <groupId>org.pragmatica.lite</groupId>
-            <artifactId>postgres-async</artifactId>
-        </dependency>
-
     </dependencies>
 
     <build>

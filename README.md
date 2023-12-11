@@ -6,11 +6,9 @@ Minimalistic web framework for Java 21+ with minimal dependencies.
 * Functional style - no NPE, no exceptions, type safety, etc.
 * Consistent Option/Result/Promise monads.
 * Simple and convenient to use Promise-based asynchronous API - no low level technical details leaking into business logic.   
-* Minimalistic - no annotations, no reflection, no code generation.
-* Minimal external dependencies.
-* Minimalistic API - only 3 main components: HttpServer, HttpClient (WIP) and DB access layer (WIP).
+* Minimalistic - no annotations, no reflection, no code generation, minimal external dependencies, only 3 main components: HttpServer, HttpClient and DB access layer.
 * Fully asynchronous HTTP server and client, built-in caching domain name resolver with proper TTL handling.
-* Minimal package size (example app jar is about 6.5MB with all dependencies included). 
+* Minimal package size (example app jar is less than 7MB with all dependencies included). 
 
 ## Example 
 Test app which demonstrates available routing configuration options. (WARNING: Subject to change!)
