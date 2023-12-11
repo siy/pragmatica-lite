@@ -30,6 +30,8 @@ import com.github.pgasync.message.backend.RowDescription;
 import com.github.pgasync.message.backend.UnknownMessage;
 import com.github.pgasync.message.frontend.*;
 import com.github.pgasync.net.SqlException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
 import java.util.*;
@@ -37,8 +39,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Messages stream to Postgres backend.
@@ -46,6 +46,7 @@ import java.util.logging.Logger;
  * @author Marat Gainullin
  */
 public abstract class PgProtocolStream implements ProtocolStream {
+    private static final Logger log = LoggerFactory.getLogger(PgProtocolStream.class);
 
     protected final Executor futuresExecutor;
     protected final Charset encoding;
@@ -74,13 +75,15 @@ public abstract class PgProtocolStream implements ProtocolStream {
 
     @Override
     public CompletableFuture<Message> authenticate(String userName, String password, Authentication authRequired) {
-        if (authRequired.isSaslScramSha256()) {
-            String clientNonce = UUID.randomUUID().toString();
-            SASLInitialResponse saslInitialResponse = new SASLInitialResponse(Authentication.SUPPORTED_SASL, null, ""/*SaslPrep.asQueryString(userName) - Postgres requires an empty string here*/, clientNonce);
+        if (authRequired.saslScramSha256()) {
+            var clientNonce = UUID.randomUUID().toString();
+            var saslInitialResponse = new SASLInitialResponse(Authentication.SUPPORTED_SASL,
+                                                              null, ""/*SaslPrep.asQueryString(userName) - Postgres requires an empty string here*/,
+                                                              clientNonce);
             return send(saslInitialResponse)
                     .thenApply(message -> {
-                        if (message instanceof Authentication) {
-                            String serverFirstMessage = ((Authentication) message).saslContinueData();
+                        if (message instanceof Authentication authentication) {
+                            var serverFirstMessage = authentication.saslContinueData();
                             if (serverFirstMessage != null) {
                                 return send(SASLResponse.of(password, serverFirstMessage, clientNonce, saslInitialResponse.gs2Header(), saslInitialResponse.clientFirstMessageBare()));
                             } else {
@@ -92,7 +95,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
                     })
                     .thenCompose(Function.identity());
         } else {
-            return send(PasswordMessage.passwordMessage(userName, password, authRequired.md5Salt(), encoding));
+            return send(PasswordMessage.passwordMessage(userName, password, authRequired.md5salt(), encoding));
         }
     }
 
@@ -114,8 +117,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
         this.onColumns = onColumns;
         this.onRow = onRow;
         this.onAffected = onAffected;
-        return send(query).thenAccept(readyForQuery -> {
-        });
+        return send(query).thenAccept(_ -> {});
     }
 
     @Override
@@ -127,7 +129,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
             Execute execute;
             lastSentMessage = execute = new Execute();
             write(bind, describe, execute, FIndicators.SYNC);
-        }).thenApply(commandComplete -> ((CommandComplete) commandComplete).getAffectedRows());
+        }).thenApply(commandComplete -> ((CommandComplete) commandComplete).affectedRows());
     }
 
     @Override
@@ -139,21 +141,17 @@ public abstract class PgProtocolStream implements ProtocolStream {
             Execute execute;
             lastSentMessage = execute = new Execute();
             write(bind, execute, FIndicators.SYNC);
-        }).thenApply(commandComplete -> ((CommandComplete) commandComplete).getAffectedRows());
+        }).thenApply(commandComplete -> ((CommandComplete) commandComplete).affectedRows());
     }
 
     @Override
     public Runnable subscribe(String channel, Consumer<String> onNotification) {
         subscriptions
-                .computeIfAbsent(channel, ch -> new HashSet<>())
+                .computeIfAbsent(channel, _ -> new HashSet<>())
                 .add(onNotification);
-        return () -> subscriptions.computeIfPresent(channel, (ch, subscription) -> {
+        return () -> subscriptions.computeIfPresent(channel, (_, subscription) -> {
             subscription.remove(onNotification);
-            if (subscription.isEmpty()) {
-                return null;
-            } else {
-                return subscription;
-            }
+            return subscription.isEmpty() ? null : subscription;
         });
     }
 
@@ -164,68 +162,59 @@ public abstract class PgProtocolStream implements ProtocolStream {
         readyForQueryPendingMessage = null;
         lastSentMessage = null;
         if (onResponse != null) {
-            CompletableFuture<? super Message> uponResponse = consumeOnResponse();
+            var uponResponse = consumeOnResponse();
             futuresExecutor.execute(() -> uponResponse.completeExceptionally(th));
         }
     }
 
     protected void gotMessage(Message message) {
-        if (message instanceof NotificationResponse) {
-            publish((NotificationResponse) message);
-        } else if (message == BIndicators.BIND_COMPLETE) {
-            // op op since bulk message sequence
-        } else if (message == BIndicators.PARSE_COMPLETE || message == BIndicators.CLOSE_COMPLETE) {
-            readyForQueryPendingMessage = message;
-        } else if (message instanceof RowDescription) {
-            onColumns.accept(((RowDescription) message).getColumns());
-        } else if (message == BIndicators.NO_DATA) {
-            onColumns.accept(new RowDescription.ColumnDescription[]{});
-        } else if (message instanceof DataRow) {
-            onRow.accept((DataRow) message);
-        } else if (message instanceof ErrorResponse) {
-            if (seenReadyForQuery) {
-                readyForQueryPendingMessage = message;
-            } else {
-                gotException(toSqlException((ErrorResponse) message));
+        switch (message) {
+            case NotificationResponse notification -> publish(notification);
+            case BIndicators.BindComplete _ -> {}                 // op op since bulk message sequence
+            case BIndicators.ParseComplete _, BIndicators.CloseComplete _ -> readyForQueryPendingMessage = message;
+            case RowDescription rowDescription -> onColumns.accept(rowDescription.getColumns());
+            case BIndicators.NoData _ -> onColumns.accept(new RowDescription.ColumnDescription[]{});
+            case DataRow dataRow -> onRow.accept(dataRow);
+            case ErrorResponse errorResponse -> {
+                if (seenReadyForQuery) {
+                    readyForQueryPendingMessage = message;
+                } else {
+                    gotException(toSqlException(errorResponse));
+                }
             }
-        } else if (message instanceof CommandComplete) {
-            if (isSimpleQueryInProgress()) {
-                onAffected.accept((CommandComplete) message);
-            } else {
-                // assert !isSimpleQueryInProgress() :
-                // "During simple query message flow, CommandComplete message should be consumed only by dedicated callback,
-                // due to possibility of multiple CommandComplete messages, one per sql clause.";
-                readyForQueryPendingMessage = message;
+            case CommandComplete commandComplete -> {
+                if (isSimpleQueryInProgress()) {
+                    onAffected.accept(commandComplete);
+                } else {
+                    // assert !isSimpleQueryInProgress() :
+                    // "During simple query message flow, CommandComplete message should be consumed only by dedicated callback,
+                    // due to possibility of multiple CommandComplete messages, one per sql clause.";
+                    readyForQueryPendingMessage = message;
+                }
             }
-        } else if (message instanceof Authentication) {
-            Authentication authentication = (Authentication) message;
-            if (authentication.authenticationOk() || authentication.isSaslServerFinalResponse()) {
-                readyForQueryPendingMessage = message;
-            } else {
-                consumeOnResponse().completeAsync(() -> message, futuresExecutor);
+            case Authentication authentication -> {
+                if (authentication.authenticationOk() || authentication.saslServerFinalResponse()) {
+                    readyForQueryPendingMessage = message;
+                } else {
+                    consumeOnResponse().completeAsync(() -> message, futuresExecutor);
+                }
             }
-        } else if (message == ReadyForQuery.INSTANCE) {
-            seenReadyForQuery = true;
-            if (readyForQueryPendingMessage instanceof ErrorResponse) {
-                gotException(toSqlException((ErrorResponse) readyForQueryPendingMessage));
-            } else {
-                onColumns = null;
-                onRow = null;
-                onAffected = null;
-                Message response = readyForQueryPendingMessage != null ? readyForQueryPendingMessage : message;
-                consumeOnResponse().completeAsync(() -> response, futuresExecutor);
+            case ReadyForQuery _ -> {
+                seenReadyForQuery = true;
+                if (readyForQueryPendingMessage instanceof ErrorResponse errorResponse) {
+                    gotException(toSqlException(errorResponse));
+                } else {
+                    onColumns = null;
+                    onRow = null;
+                    onAffected = null;
+                    var response = readyForQueryPendingMessage != null ? readyForQueryPendingMessage : message;
+                    consumeOnResponse().completeAsync(() -> response, futuresExecutor);
+                }
+                readyForQueryPendingMessage = null;
             }
-            readyForQueryPendingMessage = null;
-        } else if (message instanceof ParameterStatus) {
-            Logger.getLogger(PgProtocolStream.class.getName()).log(Level.FINE, message.toString());
-        } else if (message instanceof BackendKeyData) {
-            Logger.getLogger(PgProtocolStream.class.getName()).log(Level.FINE, message.toString());
-        } else if (message instanceof NoticeResponse) {
-            Logger.getLogger(PgProtocolStream.class.getName()).log(Level.WARNING, message.toString());
-        } else if (message instanceof UnknownMessage) {
-            Logger.getLogger(PgProtocolStream.class.getName()).log(Level.FINE, message.toString());
-        } else {
-            consumeOnResponse().completeAsync(() -> message, futuresExecutor);
+            case ParameterStatus _, BackendKeyData _, UnknownMessage _ -> log.trace(message.toString());
+            case NoticeResponse _ -> log.warn(message.toString());
+            case null, default -> consumeOnResponse().completeAsync(() -> message, futuresExecutor);
         }
     }
 
@@ -268,6 +257,6 @@ public abstract class PgProtocolStream implements ProtocolStream {
     }
 
     private static SqlException toSqlException(ErrorResponse error) {
-        return new SqlException(error.getLevel(), error.getCode(), error.getMessage());
+        return new SqlException(error.level(), error.code(), error.message());
     }
 }

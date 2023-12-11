@@ -7,6 +7,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -18,6 +19,7 @@ import static org.junit.Assert.assertNull;
 /**
  * @author Antti Laisi
  */
+@Tag("Slow")
 public class ListenNotifyTest {
 
     @ClassRule

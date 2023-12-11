@@ -18,6 +18,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.nio.charset.StandardCharsets;
 import java.sql.Date;
@@ -38,6 +39,7 @@ import static org.junit.Assert.*;
  *
  * @author Antti Laisi
  */
+@Tag("Slow")
 public class ParametersBindingTest {
 
     @ClassRule

@@ -19,6 +19,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -37,6 +38,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author Antti Laisi
  */
+@Tag("Slow")
 public class ConnectionPoolingTest {
 
     @Rule

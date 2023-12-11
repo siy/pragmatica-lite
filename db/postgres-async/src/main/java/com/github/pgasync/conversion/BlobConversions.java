@@ -24,6 +24,6 @@ final class BlobConversions {
     }
 
     static String fromBytes(byte[] bytes) {
-        return (STR."\\x\{printHexBinary(bytes)}");
+        return STR."\\x\{printHexBinary(bytes)}";
     }
 }

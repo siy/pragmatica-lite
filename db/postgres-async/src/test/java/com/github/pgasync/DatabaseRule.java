@@ -5,6 +5,7 @@ import com.github.pgasync.net.ConnectibleBuilder;
 import com.github.pgasync.net.Converter;
 import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.netty.NettyConnectibleBuilder;
+import org.junit.jupiter.api.Tag;
 import org.junit.rules.ExternalResource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
@@ -16,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Antti Laisi
  */
+@Tag("Slow")
 class DatabaseRule extends ExternalResource {
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
         "postgres:15-alpine"
@@ -26,7 +28,7 @@ class DatabaseRule extends ExternalResource {
     Connectible pool;
 
     private static ConnectibleBuilder defaultBuilder() {
-        return new NettyConnectibleBuilder().ssl(true).encoding("utf-8");
+        return new NettyConnectibleBuilder().ssl(false).encoding("utf-8");
     }
 
     private DatabaseRule(final ConnectibleBuilder builder) {

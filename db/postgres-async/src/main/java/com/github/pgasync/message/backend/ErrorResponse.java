@@ -17,14 +17,4 @@ package com.github.pgasync.message.backend;
 /**
  * @author Antti Laisi
  */
-public class ErrorResponse extends LogResponse {
-
-    public ErrorResponse(String level, String code, String message) {
-        super(level, code, message);
-    }
-
-    @Override
-    public String toString() {
-        return "ErrorResponse(level=" + level + ",code=" + code + ",message=" + message + ")";
-    }
-}
+public record ErrorResponse(String level, String code, String message) implements LogResponse {}

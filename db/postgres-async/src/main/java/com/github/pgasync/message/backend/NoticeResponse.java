@@ -14,17 +14,4 @@
 
 package com.github.pgasync.message.backend;
 
-/**
- * @author Marat Gainullin
- */
-public class NoticeResponse extends LogResponse {
-
-    public NoticeResponse(String level, String code, String message) {
-        super(level, code, message);
-    }
-
-    @Override
-    public String toString() {
-        return "Postgres notice. " + level + ": SQLSTATE=" + code + ", MESSAGE=" + message;
-    }
-}
+public record NoticeResponse(String level, String code, String message) implements LogResponse {}

@@ -19,6 +19,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.stream.IntStream;
 
@@ -29,6 +30,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author Marat Gainullin
  */
+@Tag("Slow")
 public class PlainConnectionTest {
 
     @Rule

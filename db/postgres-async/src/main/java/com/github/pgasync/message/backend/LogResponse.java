@@ -19,28 +19,8 @@ import com.github.pgasync.message.Message;
 /**
  * @author Antti Laisi
  */
-public class LogResponse implements Message {
-
-    protected final String level;
-    protected final String code;
-    protected final String message;
-
-    public LogResponse(String level, String code, String message) {
-        this.level = level;
-        this.code = code;
-        this.message = message;
-    }
-
-    public String getLevel() {
-        return level;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
+public interface LogResponse extends Message {
+    String level();
+    String code();
+    String message();
 }

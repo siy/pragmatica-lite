@@ -7,10 +7,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 /**
  * @author Marat Gainullin
  */
+@Tag("Slow")
 public class PreparedStatementsCacheTest {
 
     private static final String SELECT_52 = "select 52";

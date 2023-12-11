@@ -165,17 +165,15 @@ public class SASLResponse implements Message {
                                           String hMacName,
                                           String digestName) {
         try {
-            byte[] saltedPassword = generateSaltedPassword(password,
-                                                           Base64.getDecoder().decode(salt.getBytes(StandardCharsets.UTF_8)),
-                                                           i,
-                                                           hMacName);
+            var saltedPassword = generateSaltedPassword(password,
+                                                        Base64.getDecoder().decode(salt.getBytes(StandardCharsets.UTF_8)),
+                                                        i,
+                                                        hMacName);
 
-            String authMessage = clientFirstMessageBare + "," + serverFirstMessage + "," + clientFinalMessageWithoutProof;
-
-            byte[] clientKey = computeHmac(saltedPassword, hMacName, "Client Key");
-            byte[] storedKey = MessageDigest.getInstance(digestName).digest(clientKey);
-
-            byte[] clientSignature = computeHmac(storedKey, hMacName, authMessage);
+            var authMessage = STR."\{clientFirstMessageBare},\{serverFirstMessage},\{clientFinalMessageWithoutProof}";
+            var clientKey = computeHmac(saltedPassword, hMacName, "Client Key");
+            var storedKey = MessageDigest.getInstance(digestName).digest(clientKey);
+            var clientSignature = computeHmac(storedKey, hMacName, authMessage);
 
             // clientProof here is computed in place of clientKey
             for (int j = 0; j < clientKey.length; j++) {

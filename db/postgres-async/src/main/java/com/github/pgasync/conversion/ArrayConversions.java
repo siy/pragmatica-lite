@@ -115,7 +115,8 @@ final class ArrayConversions {
     }
 
     private static int readValue(final char[] text, final int start, List<Object> result) {
-        StringBuilder str = new StringBuilder();
+        var str = new StringBuilder();
+
         for (int i = start; ; i++) {
             char c = text[i];
             if (c == ',' || c == '}' || Character.isWhitespace(c)) {
@@ -132,7 +133,8 @@ final class ArrayConversions {
     }
 
     private static int readString(final char[] text, final int start, final List<Object> result) {
-        StringBuilder str = new StringBuilder();
+        var str = new StringBuilder();
+
         for (int i = start + 1; ; ) {
             char c = text[i++];
             if (c == '"') {
@@ -148,16 +150,19 @@ final class ArrayConversions {
 
     private static Oid getElementOid(final Oid oid) {
         try {
-            return Oid.valueOf(oid.name().replaceFirst("_ARRAY", ""));
+            return Oid.valueOf(oid.name()
+                                  .replaceFirst("_ARRAY", ""));
         } catch (IllegalArgumentException e) {
             return Oid.UNSPECIFIED;
         }
     }
 
     private static <T> T[] toNestedArrays(List<Object> result, Class<?> leafElementType, Oid oid, BiFunction<Oid, String, Object> parse) {
-        Object[] arr = (Object[]) Array.newInstance(leafElementType, getNestedDimensions(result, oid));
+        var arr = (Object[]) Array.newInstance(leafElementType, getNestedDimensions(result, oid));
+
         for (int i = 0; i < result.size(); i++) {
-            Object elem = result.get(i);
+            var elem = result.get(i);
+
             if (elem == null) {
                 arr[i] = null;
             } else if (elem.getClass().equals(String.class)) {
@@ -191,7 +196,8 @@ final class ArrayConversions {
     }
 
     private static int[] toIntArray(List<Integer> list) {
-        int[] arr = new int[list.size()];
+        var arr = new int[list.size()];
+
         for (int i = 0; i < arr.length; i++) {
             arr[i] = list.get(i);
         }

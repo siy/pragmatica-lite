@@ -13,7 +13,7 @@ final class BooleanConversions {
     private static final String FALSE = "f";
 
     static boolean toBoolean(Oid oid, String value) {
-        return switch (oid) { // fallthrough
+        return switch (oid) {
             case UNSPECIFIED, BOOL -> TRUE.equals(value);
             default -> throw new SqlException(STR."Unsupported conversion \{oid.name()} -> boolean");
         };

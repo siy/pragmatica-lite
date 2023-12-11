@@ -192,7 +192,7 @@ public class PgConnection implements Connection {
             message -> onRow.accept(new PgRow(message, currentColumns.byName, currentColumns.ordered, dataConverter)),
             message -> {
                 currentColumns = null;
-                onAffected.accept(message.getAffectedRows());
+                onAffected.accept(message.affectedRows());
             }
         );
     }

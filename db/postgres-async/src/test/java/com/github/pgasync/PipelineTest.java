@@ -21,6 +21,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Deque;
 import java.util.concurrent.CompletableFuture;
@@ -40,6 +41,7 @@ import static org.junit.Assert.assertThat;
  * @author Mikko Tiihonen
  * @author Marat Gainullin
  */
+@Tag("Slow")
 public class PipelineTest {
 
     @ClassRule

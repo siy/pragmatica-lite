@@ -22,7 +22,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 /**
- * See <a href="www.postgresql.org/docs/9.3/static/protocol-message-formats.html">Postgres message formats</a>
+ * See <a href="https://www.postgresql.org/docs/11/protocol-message-formats.html">Postgres message formats</a>
  *
  * <pre>
  * Parse (F)

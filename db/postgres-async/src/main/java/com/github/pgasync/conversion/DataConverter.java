@@ -16,9 +16,11 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.github.pgasync.conversion.TemporalConversions.*;
 import static com.github.pgasync.util.HexConverter.parseHexBinary;
 
 /**
@@ -104,21 +106,24 @@ public class DataConverter {
             return null;
         }
 
-        var svalue = new String(value, encoding);
+        return ArrayConversions.toArray(arrayType, oid, new String(value, encoding), lookupParser(oid));
+    }
+
+    private BiFunction<Oid, String, Object> lookupParser(Oid oid) {
         return switch (oid) {
-            case INT2_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, NumericConversions::toShort);
-            case INT4_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, NumericConversions::toInteger);
-            case INT8_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, NumericConversions::toLong);
-            case TEXT_ARRAY, CHAR_ARRAY, BPCHAR_ARRAY, VARCHAR_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, StringConversions::toString);
-            case NUMERIC_ARRAY, FLOAT4_ARRAY, FLOAT8_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, NumericConversions::toBigDecimal);
-            case TIMESTAMP_ARRAY, TIMESTAMPTZ_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, TemporalConversions::toTimestamp);
-            case TIMETZ_ARRAY, TIME_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, TemporalConversions::toTime);
-            case DATE_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, TemporalConversions::toLocalDate);
-            case BOOL_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, BooleanConversions::toBoolean);
-            case BYTEA_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, (oide, svaluee) -> {
+            case INT2_ARRAY -> NumericConversions::toShort;
+            case INT4_ARRAY -> NumericConversions::toInteger;
+            case INT8_ARRAY -> NumericConversions::toLong;
+            case TEXT_ARRAY, CHAR_ARRAY, BPCHAR_ARRAY, VARCHAR_ARRAY -> StringConversions::toString;
+            case NUMERIC_ARRAY, FLOAT4_ARRAY, FLOAT8_ARRAY -> NumericConversions::toBigDecimal;
+            case TIMESTAMP_ARRAY, TIMESTAMPTZ_ARRAY -> TemporalConversions::toTimestamp;
+            case TIMETZ_ARRAY, TIME_ARRAY -> TemporalConversions::toTime;
+            case DATE_ARRAY -> TemporalConversions::toLocalDate;
+            case BOOL_ARRAY -> BooleanConversions::toBoolean;
+            case BYTEA_ARRAY -> (oide, svaluee) -> {
                 byte[] first = BlobConversions.toBytes(oide, svaluee.substring(2));
                 return parseHexBinary(new String(first, 1, first.length - 1, encoding));
-            });
+            };
             default -> throw new IllegalStateException(STR."Unsupported array type: \{oid}");
         };
     }
@@ -144,11 +149,11 @@ public class DataConverter {
     private String fromObject(Object o) {
         return switch (o) {
             case null -> null;
-            case Time time -> TemporalConversions.fromTime(time);
-            case Timestamp timestamp -> TemporalConversions.fromTimestamp(timestamp);
-            case LocalDate localDate -> TemporalConversions.fromLocalDate(localDate);
-            case Date date -> TemporalConversions.fromDate(date);
-            case Instant instant -> TemporalConversions.fromInstant(instant);
+            case Time time -> fromTime(time);
+            case Timestamp timestamp -> fromTimestamp(timestamp);
+            case LocalDate localDate -> fromLocalDate(localDate);
+            case Date date -> fromDate(date);
+            case Instant instant -> fromInstant(instant);
             case byte[] bytes -> BlobConversions.fromBytes(bytes);
             case Boolean bool -> BooleanConversions.fromBoolean(bool);
             case String _, Number _, Character _, UUID _ -> o.toString();
@@ -184,7 +189,7 @@ public class DataConverter {
     }
 
     public Object toObject(Oid oid, byte[] value) {
-        return switch (oid) { // fallthrough
+        return switch (oid) {
             case null -> null;
             case TEXT, CHAR, BPCHAR, VARCHAR -> toString(oid, value);
             case INT2 -> toShort(oid, value);

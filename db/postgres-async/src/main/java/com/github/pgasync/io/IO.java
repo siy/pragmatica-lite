@@ -26,7 +26,8 @@ import java.nio.charset.Charset;
 public class IO {
 
     public static String getCString(ByteBuffer buffer, Charset charset) {
-        ByteArrayOutputStream readBuffer = new ByteArrayOutputStream(255);
+        var readBuffer = new ByteArrayOutputStream(255);
+
         for (int c = buffer.get(); c != 0; c = buffer.get()) {
             readBuffer.write(c);
         }

@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -36,6 +37,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author Antti Laisi
  */
+@Tag("Slow")
 public class QueryResultTest {
 
     @ClassRule

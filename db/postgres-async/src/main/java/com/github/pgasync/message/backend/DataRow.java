@@ -19,7 +19,7 @@ import com.github.pgasync.message.Message;
 /**
  * @author  Antti Laisi
  */
-public class DataRow implements Message {
+public final class DataRow implements Message {
 
     private final byte[][] values;
 

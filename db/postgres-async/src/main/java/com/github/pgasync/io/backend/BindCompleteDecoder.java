@@ -21,7 +21,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 /**
- * See <a https://www.postgresql.org/docs/11/protocol-message-formats.html">Postgres message formats</a>
+ * See <a href="https://www.postgresql.org/docs/11/protocol-message-formats.html">Postgres message formats</a>
  *
  * <pre>
  * BindComplete (B)

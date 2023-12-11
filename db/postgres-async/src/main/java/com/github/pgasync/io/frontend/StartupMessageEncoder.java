@@ -23,7 +23,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 /**
- * See <a href="www.postgresql.org/docs/9.3/static/protocol-message-formats.html">Postgres message formats</a>
+ * See <a href="https://www.postgresql.org/docs/11/protocol-message-formats.html">Postgres message formats</a>
  *
  * <pre>
  * StartupMessage (F)

@@ -5,9 +5,11 @@ import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.SqlException;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.junit.Assert.assertEquals;
 
+@Tag("Slow")
 public class AuthenticationTest {
 
     @ClassRule
@@ -37,7 +39,7 @@ public class AuthenticationTest {
     @Test
     public void shouldGetResultOnValidCredentials() throws Exception {
         Connectible pool = dbr.builder
-                .password("async-pg")
+                .password(DatabaseRule.postgres.getPassword())
                 .pool();
         try {
             ResultSet rs = pool.completeQuery("SELECT 1").get();

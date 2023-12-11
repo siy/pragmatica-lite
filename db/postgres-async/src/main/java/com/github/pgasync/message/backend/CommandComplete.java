@@ -19,29 +19,4 @@ import com.github.pgasync.message.Message;
 /**
  * @author Antti Laisi
  */
-public class CommandComplete implements Message {
-
-    private final String tag;
-    private final int affectedRows;
-
-    public CommandComplete(String tag, int affectedRows) {
-        this.tag = tag;
-        this.affectedRows = affectedRows;
-    }
-
-    public String getTag() {
-        return tag;
-    }
-
-    public int getAffectedRows() {
-        return affectedRows;
-    }
-
-    @Override
-    public String toString() {
-        return "CommandComplete(" +
-                "tag='" + tag + '\'' +
-                ", affectedRows=" + affectedRows +
-                ')';
-    }
-}
+public record CommandComplete(String tag, int affectedRows) implements Message {}

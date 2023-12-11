@@ -5,6 +5,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
@@ -13,6 +14,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Antti Laisi
  */
+@Tag("Slow")
 public class CustomConverterTest {
 
     static class Json {

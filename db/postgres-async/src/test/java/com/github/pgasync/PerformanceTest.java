@@ -14,28 +14,34 @@
 
 package com.github.pgasync;
 
-import com.github.pgasync.net.Connection;
 import com.github.pgasync.net.Connectible;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.function.IntFunction;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 import static java.lang.System.currentTimeMillis;
 import static java.lang.System.out;
 
+@Tag("Slow")
 @RunWith(Parameterized.class)
 public class PerformanceTest {
-
-    private static DatabaseRule dbr;
+    private static final DatabaseRule dbr;
 
     static {
         System.setProperty("io.netty.eventLoopThreads", "1");
@@ -47,9 +53,11 @@ public class PerformanceTest {
 
     @Parameters(name = "{index}: maxConnections={0}, threads={1}")
     public static Iterable<Object[]> data() {
-        List<Object[]> testData = new ArrayList<>();
-        for (int poolSize = 1; poolSize <= 8; poolSize *= 2) {
-            for (int threads = 1; threads <= 8; threads *= 2) {
+        ArrayList<Object[]> testData = new ArrayList<>();
+        var numbers = List.of(1, 6, 12);
+
+        for (var poolSize : numbers) {
+            for (var threads : numbers) {
                 testData.add(new Object[]{poolSize, threads});
             }
         }
@@ -58,8 +66,8 @@ public class PerformanceTest {
 
     private static final int batchSize = 1000;
     private static final int repeats = 5;
-    private static SortedMap<Integer, SortedMap<Integer, Long>> simpleQueryResults = new TreeMap<>();
-    private static SortedMap<Integer, SortedMap<Integer, Long>> preparedStatementResults = new TreeMap<>();
+    private static final SortedMap<Integer, SortedMap<Integer, Long>> simpleQueryResults = new TreeMap<>();
+    private static final SortedMap<Integer, SortedMap<Integer, Long>> preparedStatementResults = new TreeMap<>();
 
     private final int poolSize;
     private final int numThreads;
@@ -73,9 +81,14 @@ public class PerformanceTest {
 
     @Before
     public void setup() {
+        DatabaseRule.postgres.start();
         pool = dbr.builder
-            .password("async-pg")
             .maxConnections(poolSize)
+            .port(DatabaseRule.postgres.getMappedPort(5432))
+            .hostname(DatabaseRule.postgres.getHost())
+            .password(DatabaseRule.postgres.getPassword())
+            .database(DatabaseRule.postgres.getDatabaseName())
+            .username(DatabaseRule.postgres.getUsername())
             .pool(Executors.newFixedThreadPool(numThreads));
         var connections = IntStream.range(0, poolSize)
                                    .mapToObj(i -> pool.getConnection().join()).toList();
@@ -98,18 +111,19 @@ public class PerformanceTest {
 
     private void performBatches(SortedMap<Integer, SortedMap<Integer, Long>> results, IntFunction<CompletableFuture<Long>> batchStarter) {
         double mean = LongStream.range(0, repeats)
-                                .map(i -> {
+                                .map(_ -> {
                                     try {
-                                        List<CompletableFuture<Long>> batches = IntStream.range(0, poolSize)
-                                                                                         .mapToObj(batchStarter)
-                                                                                         .collect(Collectors.toList());
+                                        var batches = IntStream.range(0, poolSize)
+                                                               .mapToObj(batchStarter)
+                                                               .toList();
                                         CompletableFuture.allOf(batches.toArray(new CompletableFuture<?>[]{})).get();
                                         return batches.stream().map(CompletableFuture::join).max(Long::compare).get();
                                     } catch (Exception ex) {
                                         throw new RuntimeException(ex);
                                     }
                                 })
-                                .average().getAsDouble();
+                                .average()
+                                .getAsDouble();
         results.computeIfAbsent(poolSize, k -> new TreeMap<>())
                .put(numThreads, Math.round(mean));
     }

@@ -16,6 +16,7 @@ package com.github.pgasync;
 
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -34,6 +35,7 @@ import static org.junit.Assert.*;
  *
  * @author Antti Laisi
  */
+@Tag("Slow")
 public class TypeConverterTest {
 
     @ClassRule

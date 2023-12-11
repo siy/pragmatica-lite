@@ -35,7 +35,7 @@ public abstract class LogResponseDecoder<M extends LogResponse> implements Decod
         String message = null;
 
         for (byte type = buffer.get(); type != 0; type = buffer.get()) {
-            String value = IO.getCString(buffer, encoding);
+            var value = IO.getCString(buffer, encoding);
             if (type == (byte) 'S') {
                 level = value;
             } else if (type == (byte) 'C') {

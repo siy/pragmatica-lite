@@ -19,6 +19,7 @@ import com.github.pgasync.net.Connection;
 import com.github.pgasync.net.SqlException;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.function.Consumer;
 
@@ -27,6 +28,7 @@ import java.util.function.Consumer;
  *
  * @author Marat Gainullin
  */
+@Tag("Slow")
 public class ValidatedConnectionTest {
 
     @Rule

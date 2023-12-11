@@ -19,11 +19,6 @@ import com.github.pgasync.message.Message;
 /**
  * @author  Antti Laisi
  */
-public enum ReadyForQuery implements Message {
-    INSTANCE;
-
-    @Override
-    public String toString() {
-        return "ReadyForQuery()";
-    }
+public record ReadyForQuery() implements Message {
+    public static final ReadyForQuery INSTANCE = new ReadyForQuery();
 }

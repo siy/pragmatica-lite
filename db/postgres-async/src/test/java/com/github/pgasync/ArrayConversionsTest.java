@@ -2,6 +2,7 @@ package com.github.pgasync;
 
 import com.github.pgasync.net.Row;
 import org.junit.*;
+import org.junit.jupiter.api.Tag;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -15,6 +16,7 @@ import java.util.List;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
+@Tag("Slow")
 public class ArrayConversionsTest {
     
     @ClassRule
