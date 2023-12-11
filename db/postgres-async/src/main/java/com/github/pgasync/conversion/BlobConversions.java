@@ -9,7 +9,8 @@ import static com.github.pgasync.util.HexConverter.printHexBinary;
 /**
  * @author Antti Laisi
  */
-class BlobConversions {
+final class BlobConversions {
+    private BlobConversions() {}
 
     static byte[] toBytes(Oid oid, String value) {
         return switch (oid) {

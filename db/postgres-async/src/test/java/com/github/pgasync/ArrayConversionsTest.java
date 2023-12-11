@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 public class ArrayConversionsTest {
     
     @ClassRule
-    public static DatabaseRule dbr = new DatabaseRule();
+    public static DatabaseRule dbr = DatabaseRule.defaultConfiguration();;
 
     @BeforeClass
     public static void create() {
@@ -38,7 +38,7 @@ public class ArrayConversionsTest {
     }
 
     private Row getRow() {
-        return dbr.query("SELECT * FROM CA_TEST").at(0);
+        return dbr.query("SELECT * FROM CA_TEST").index(0);
     }
 
     @Test
@@ -147,7 +147,7 @@ public class ArrayConversionsTest {
                 a,
                 dbr.query(
                         "SELECT INTA FROM CA_TEST WHERE INTA = $1",
-                        List.of(new Object[]{a})).at(0).getArray("inta", Integer[].class));
+                        List.of(new Object[]{a})).index(0).getArray("inta", Integer[].class));
     }
 
     @Test
@@ -158,7 +158,7 @@ public class ArrayConversionsTest {
                 a,
                 dbr.query(
                         "SELECT TEXTA FROM CA_TEST WHERE TEXTA = $1",
-                        List.of(new Object[]{a})).at(0).getArray("texta", String[].class));
+                        List.of(new Object[]{a})).index(0).getArray("texta", String[].class));
     }
 
     @Test
@@ -175,7 +175,7 @@ public class ArrayConversionsTest {
     @Test
     public void implicitGet() {
         dbr.query("INSERT INTO CA_TEST (INTA) VALUES ('{1, 2, 3}')");
-        PgRow row = (PgRow) dbr.query("SELECT * FROM CA_TEST").at(0);
+        PgRow row = (PgRow) dbr.query("SELECT * FROM CA_TEST").index(0);
         assertArrayEquals(new Integer[]{1, 2, 3}, (Object[]) row.get("inta"));
     }
 
@@ -184,7 +184,7 @@ public class ArrayConversionsTest {
         List<Timestamp[]> params = new ArrayList<>(1);
         params.add(new Timestamp[]{new Timestamp(12345679), new Timestamp(12345678)});
         dbr.query("INSERT INTO CA_TEST (TIMESTAMPA) VALUES ($1)", params);
-        Row row = dbr.query("SELECT TIMESTAMPA FROM CA_TEST WHERE TIMESTAMPA = $1", params).at(0);
+        Row row = dbr.query("SELECT TIMESTAMPA FROM CA_TEST WHERE TIMESTAMPA = $1", params).index(0);
         assertArrayEquals(params.get(0), row.getArray(0, Timestamp[].class));
     }
 
@@ -208,7 +208,7 @@ public class ArrayConversionsTest {
     public void shouldParseUnquotedStringsCorrectly() {
         String[] values = new String[]{"NotNull", "NULLA", "string", null};
         dbr.query("INSERT INTO CA_TEST (TEXTA) VALUES($1)", Collections.singletonList(values));
-        Row row = dbr.query("SELECT * FROM CA_TEST").at(0);
+        Row row = dbr.query("SELECT * FROM CA_TEST").index(0);
         assertArrayEquals(values, row.getArray("texta", String[].class));
     }
 
@@ -216,7 +216,7 @@ public class ArrayConversionsTest {
     public void shouldParseNullTextCorrectly() {
         String[] values = new String[]{"NULL", null, "string"};
         dbr.query("INSERT INTO CA_TEST (TEXTA) VALUES($1)", Collections.singletonList(values));
-        Row row = dbr.query("SELECT * FROM CA_TEST").at(0);
+        Row row = dbr.query("SELECT * FROM CA_TEST").index(0);
         assertArrayEquals(values, row.getArray("texta", String[].class));
     }
 
@@ -227,7 +227,7 @@ public class ArrayConversionsTest {
         bb[1] = "blob 1 content".getBytes(StandardCharsets.UTF_8); // UTF-8 is hard coded here only because the ascii compatible data
         bb[2] = "blob 2 content".getBytes(StandardCharsets.UTF_8); // UTF-8 is hard coded here only because the ascii compatible data
         dbr.query("INSERT INTO CA_TEST(BYTEAA) VALUES ($1)", Collections.singletonList(bb));
-        byte[][] readbb = dbr.query("SELECT BYTEAA FROM CA_TEST WHERE BYTEAA = $1", Collections.singletonList(bb)).at(0).getArray(0, byte[][].class);
+        byte[][] readbb = dbr.query("SELECT BYTEAA FROM CA_TEST WHERE BYTEAA = $1", Collections.singletonList(bb)).index(0).getArray(0, byte[][].class);
         assertEquals(bb.length, readbb.length);
         assertArrayEquals(bb[0], readbb[0]);
         assertArrayEquals(bb[1], readbb[1]);

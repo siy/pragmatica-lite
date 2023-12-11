@@ -19,21 +19,4 @@ import com.github.pgasync.message.ExtendedQueryMessage;
 /**
  * @author Antti Laisi
  */
-public class Bind implements ExtendedQueryMessage {
-
-    private final String sname;
-    private final byte[][] params;
-
-    public Bind(String sname, byte[][] params) {
-        this.sname = sname;
-        this.params = params;
-    }
-
-    public String getSname() {
-        return sname;
-    }
-
-    public byte[][] getParams() {
-        return params;
-    }
-}
+public record Bind(String sname, byte[][] params) implements ExtendedQueryMessage {}

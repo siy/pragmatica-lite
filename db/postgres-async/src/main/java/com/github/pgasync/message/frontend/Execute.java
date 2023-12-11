@@ -19,9 +19,4 @@ import com.github.pgasync.message.ExtendedQueryMessage;
 /**
  * @author Marat Gainullin
  */
-public class Execute implements ExtendedQueryMessage {
-
-    public Execute() {
-    }
-
-}
+public record Execute() implements ExtendedQueryMessage {}

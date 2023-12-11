@@ -35,21 +35,23 @@ import java.util.stream.Collectors;
  */
 public class NettyMessageEncoder extends MessageToByteEncoder<Message> {
 
-    private static final Map<Class<?>, Encoder<?>> ENCODERS = Set.of(
-            new SSLRequestEncoder(),
-            new StartupMessageEncoder(),
-            new PasswordMessageEncoder(),
-            new QueryEncoder(),
-            new ParseEncoder(),
-            new BindEncoder(),
-            new DescribeEncoder(),
-            new ExecuteEncoder(),
-            new SASLInitialResponseEncoder(),
-            new SASLResponseEncoder(),
-            new CloseEncoder(),
-            new FIndicatorsEncoder(),
-            new TerminateEncoder()
-    ).stream().collect(Collectors.toMap(Encoder::getMessageType, encoder -> encoder));
+    private static final Map<Class<?>, Encoder<?>> ENCODERS =
+        Set.of(
+               new SSLRequestEncoder(),
+               new StartupMessageEncoder(),
+               new PasswordMessageEncoder(),
+               new QueryEncoder(),
+               new ParseEncoder(),
+               new BindEncoder(),
+               new DescribeEncoder(),
+               new ExecuteEncoder(),
+               new SASLInitialResponseEncoder(),
+               new SASLResponseEncoder(),
+               new CloseEncoder(),
+               new FIndicatorsEncoder(),
+               new TerminateEncoder()
+           ).stream()
+           .collect(Collectors.toMap(Encoder::getMessageType, encoder -> encoder));
 
     private final ByteBuffer buffer = ByteBuffer.allocate(Integer.getInteger("pg.io.buffer.length", 4096));
 

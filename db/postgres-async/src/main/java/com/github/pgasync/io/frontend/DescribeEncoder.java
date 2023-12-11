@@ -42,7 +42,6 @@ import java.nio.charset.Charset;
  * @author Marat Gainullin
  */
 public class DescribeEncoder extends ExtendedQueryEncoder<Describe> {
-
     @Override
     public Class<Describe> getMessageType() {
         return Describe.class;
@@ -56,7 +55,7 @@ public class DescribeEncoder extends ExtendedQueryEncoder<Describe> {
     @Override
     public void writeBody(Describe msg, ByteBuffer buffer, Charset encoding) {
         // Describe
-        buffer.put(msg.getKind().getCode());
-        IO.putCString(buffer, msg.getName(), encoding);
+        buffer.put(msg.kind().getCode());
+        IO.putCString(buffer, msg.name(), encoding);
     }
 }

@@ -30,7 +30,7 @@ import java.util.function.Consumer;
 public class ValidatedConnectionTest {
 
     @Rule
-    public final DatabaseRule dbr = new DatabaseRule();
+    public final DatabaseRule dbr = DatabaseRule.defaultConfiguration();
 
     private void withSource(Connectible source, Consumer<Connectible> action) throws Exception {
         try {

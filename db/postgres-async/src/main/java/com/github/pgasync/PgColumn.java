@@ -19,27 +19,4 @@ package com.github.pgasync;
  *
  * @author Antti Laisi
  */
-public class PgColumn {
-
-    private final int index;
-    private final String name;
-    private final Oid type;
-
-    public PgColumn(int index, String name, Oid type) {
-        this.index = index;
-        this.name = name;
-        this.type = type;
-    }
-
-    public Oid getType() {
-        return type;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public int at() {
-        return index;
-    }
-}
+public record PgColumn(int index, String name, Oid type) {}

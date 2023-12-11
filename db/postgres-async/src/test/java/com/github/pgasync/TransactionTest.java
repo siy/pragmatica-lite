@@ -36,7 +36,7 @@ import static org.junit.Assert.assertEquals;
 public class TransactionTest {
 
     @ClassRule
-    public static DatabaseRule dbr = new DatabaseRule();
+    public static DatabaseRule dbr = DatabaseRule.defaultConfiguration();
 
     @BeforeClass
     public static void create() {
@@ -55,7 +55,7 @@ public class TransactionTest {
                 .thenApply(connection -> connection.begin()
                         .thenApply(transaction -> transaction.completeQuery("SELECT 1")
                                 .thenApply(result -> {
-                                    Assert.assertEquals(1L, result.at(0).getLong(0).longValue());
+                                    Assert.assertEquals(1L, result.index(0).getLong(0).longValue());
                                     return transaction.commit();
                                 })
                                 .thenCompose(Function.identity())
@@ -99,7 +99,7 @@ public class TransactionTest {
                 .thenCompose(Function.identity())
                 .get(5, TimeUnit.SECONDS);
 
-        Assert.assertEquals(10L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 10").at(0).getLong(0).longValue());
+        Assert.assertEquals(10L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 10").index(0).getLong(0).longValue());
     }
 
     @Test
@@ -109,7 +109,7 @@ public class TransactionTest {
                 .thenApply(connection -> connection.begin()
                         .thenApply(transaction ->
                                 transaction.completeQuery("INSERT INTO TX_TEST (ID) VALUES ($1) RETURNING ID", 35)
-                                        .thenApply(rs -> rs.at(0))
+                                        .thenApply(rs -> rs.index(0))
                                         .thenApply(row -> {
                                             Long value = row.getLong(0);
                                             return transaction.commit().thenApply(v -> value);

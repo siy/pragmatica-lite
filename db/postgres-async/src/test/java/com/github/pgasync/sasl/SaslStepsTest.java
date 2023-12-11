@@ -20,24 +20,24 @@ public class SaslStepsTest {
     @Test
     public void clientFirstMessage() {
         SASLInitialResponse saslInitialResponse = new SASLInitialResponse(Authentication.SUPPORTED_SASL, null, USER_NAME, CLIENT_NONCE);
-        assertEquals("n,,", saslInitialResponse.getGs2Header());
-        assertEquals("n,,n=" + USER_NAME + ",r=" + CLIENT_NONCE, saslInitialResponse.getClientFirstMessage());
+        assertEquals("n,,", saslInitialResponse.gs2Header());
+        assertEquals("n,,n=" + USER_NAME + ",r=" + CLIENT_NONCE, saslInitialResponse.clientFirstMessage());
         // Here should be "n,,n=<USER_NAME>,r=" + CLIENT_NONCE, but Postgres expects an empty user name because of the startup message
     }
 
     @Test
     public void clientFinalMessage() {
         SASLInitialResponse saslInitialResponse = new SASLInitialResponse(Authentication.SUPPORTED_SASL, null, USER_NAME, CLIENT_NONCE);
-        SASLResponse saslResponse = SASLResponse.of(USER_PASSWORD, SERVER_FIRST_MESSAGE, CLIENT_NONCE, saslInitialResponse.getGs2Header(), saslInitialResponse.getClientFirstMessageBare());
+        SASLResponse saslResponse = SASLResponse.of(USER_PASSWORD, SERVER_FIRST_MESSAGE, CLIENT_NONCE, saslInitialResponse.gs2Header(), saslInitialResponse.clientFirstMessageBare());
 
-        assertEquals("n,,", saslResponse.getGs2Header());
-        assertEquals(CLIENT_NONCE + SERVER_NONCE, saslResponse.getServerNonce());
-        assertEquals("n=" + USER_NAME + ",r=" + CLIENT_NONCE, saslResponse.getClientFirstMessageBare());
+        assertEquals("n,,", saslResponse.gs2Header());
+        assertEquals(CLIENT_NONCE + SERVER_NONCE, saslResponse.serverNonce());
+        assertEquals("n=" + USER_NAME + ",r=" + CLIENT_NONCE, saslResponse.clientFirstMessageBare());
         // Here should be "n,,n=<USER_NAME>,r=" + CLIENT_NONCE, but Postgres expects an empty user name because of the startup message
-        assertEquals(I, saslResponse.getI());
-        assertEquals(USER_PASSWORD, saslResponse.getPassword());
-        assertEquals(SERVER_FIRST_MESSAGE, saslResponse.getServerFirstMessage());
-        assertEquals(SERVER_SALT, saslResponse.getServerSalt());
+        assertEquals(I, saslResponse.i());
+        assertEquals(USER_PASSWORD, saslResponse.password());
+        assertEquals(SERVER_FIRST_MESSAGE, saslResponse.serverFirstMessage());
+        assertEquals(SERVER_SALT, saslResponse.serverSalt());
         assertEquals("c=biws,r=fyko+d2lbbFgONRv9qkxdawL3rfcNHYJY1ZVvWVs7j,p=v0X8v3Bz2T0CJGbJQyF0X+HI4Ts=", saslResponse.clientFinalMessage("HmacSHA1", "SHA-1"));
     }
 

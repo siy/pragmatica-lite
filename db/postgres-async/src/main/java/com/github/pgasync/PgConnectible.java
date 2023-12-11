@@ -20,13 +20,15 @@ public abstract class PgConnectible implements Connectible {
     final String username;
     final DataConverter dataConverter;
     final Executor futuresExecutor;
-     final Supplier<CompletableFuture<ProtocolStream>> obtainStream;
+    final Supplier<CompletableFuture<ProtocolStream>> obtainStream;
 
     protected final String password;
     protected final String database;
     protected final Charset encoding;
 
-    PgConnectible(ConnectibleBuilder.ConnectibleProperties properties, Supplier<CompletableFuture<ProtocolStream>> obtainStream, Executor futuresExecutor) {
+    PgConnectible(ConnectibleBuilder.ConnectibleProperties properties,
+                  Supplier<CompletableFuture<ProtocolStream>> obtainStream,
+                  Executor futuresExecutor) {
         this.username = properties.getUsername();
         this.password = properties.getPassword();
         this.database = properties.getDatabase();
@@ -38,40 +40,46 @@ public abstract class PgConnectible implements Connectible {
     }
 
     @Override
-    public CompletableFuture<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns, Consumer<Row> onRow, Consumer<Integer> onAffected, String sql) {
+    public CompletableFuture<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                          Consumer<Row> onRow,
+                                          Consumer<Integer> onAffected,
+                                          String sql) {
         return getConnection()
-                .thenApply(connection ->
-                        connection.script(onColumns, onRow, onAffected, sql)
-                                .handle((message, th) ->
-                                        connection.close()
-                                                .thenApply(v -> {
-                                                    if (th == null) {
-                                                        return message;
-                                                    } else {
-                                                        throw new RuntimeException(th);
-                                                    }
-                                                })
-                                ).thenCompose(Function.identity())
-                ).thenCompose(Function.identity());
+            .thenApply(connection ->
+                           connection.script(onColumns, onRow, onAffected, sql)
+                                     .handle((message, th) ->
+                                                 connection.close()
+                                                           .thenApply(v -> {
+                                                               if (th == null) {
+                                                                   return message;
+                                                               } else {
+                                                                   throw new RuntimeException(th);
+                                                               }
+                                                           })
+                                     ).thenCompose(Function.identity())
+            ).thenCompose(Function.identity());
     }
 
     @Override
-    public CompletableFuture<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns, Consumer<Row> onRow, String sql, Object... params) {
+    public CompletableFuture<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                            Consumer<Row> onRow,
+                                            String sql,
+                                            Object... params) {
         return getConnection()
-                .thenApply(connection ->
-                        connection.query(onColumns, onRow, sql, params)
-                                .handle((affected, th) ->
-                                        connection.close()
-                                                .thenApply(v -> {
-                                                    if (th == null) {
-                                                        return affected;
-                                                    } else {
-                                                        throw new RuntimeException(th);
-                                                    }
-                                                })
-                                ).thenCompose(Function.identity())
-                )
-                .thenCompose(Function.identity());
+            .thenApply(connection ->
+                           connection.query(onColumns, onRow, sql, params)
+                                     .handle((affected, th) ->
+                                                 connection.close()
+                                                           .thenApply(v -> {
+                                                               if (th == null) {
+                                                                   return affected;
+                                                               } else {
+                                                                   throw new RuntimeException(th);
+                                                               }
+                                                           })
+                                     ).thenCompose(Function.identity())
+            )
+            .thenCompose(Function.identity());
     }
 
 }

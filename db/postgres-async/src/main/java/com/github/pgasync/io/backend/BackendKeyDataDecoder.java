@@ -21,7 +21,6 @@ import java.nio.charset.Charset;
  *      The secret key of this backend.
  */
 public class BackendKeyDataDecoder implements Decoder<BackendKeyData> {
-
     @Override
     public byte getMessageId() {
         return 'K';

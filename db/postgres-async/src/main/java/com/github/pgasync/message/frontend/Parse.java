@@ -20,27 +20,4 @@ import com.github.pgasync.message.ExtendedQueryMessage;
 /**
  * @author Antti Laisi
  */
-public class Parse implements ExtendedQueryMessage {
-
-    private final String sql;
-    private final String sname;
-    private final Oid[] types;
-
-    public Parse(String sql, String sname, Oid[] types) {
-        this.sql = sql;
-        this.sname = sname;
-        this.types = types;
-    }
-
-    public String getQuery() {
-        return sql;
-    }
-
-    public String getSname() {
-        return sname;
-    }
-
-    public Oid[] getTypes() {
-        return types;
-    }
-}
+public record Parse(String query, String sname, Oid[] types) implements ExtendedQueryMessage {}

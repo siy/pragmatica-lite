@@ -48,7 +48,6 @@ import java.nio.charset.StandardCharsets;
  * @author Antti Laisi
  */
 public class StartupMessageEncoder implements Encoder<StartupMessage> {
-
     @Override
     public Class<StartupMessage> getMessageType() {
         return StartupMessage.class;

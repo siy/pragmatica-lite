@@ -49,7 +49,8 @@ import java.util.stream.Collectors;
  */
 class NettyMessageDecoder extends ByteToMessageDecoder {
 
-    private static final Map<Byte, Decoder<?>> DECODERS = Set.of(
+    private static final Map<Byte, Decoder<?>> DECODERS =
+        Set.of(
             new ErrorResponseDecoder(),
             new BackendKeyDataDecoder(),
             new ParameterStatusDecoder(),
@@ -64,9 +65,9 @@ class NettyMessageDecoder extends ByteToMessageDecoder {
             new DataRowDecoder(),
             new NotificationResponseDecoder(),
             new NoticeResponseDecoder()
-    ).stream().collect(
+        ).stream().collect(
             Collectors.toMap(Decoder::getMessageId, Function.identity())
-    );
+        );
 
     private final Charset encoding;
 

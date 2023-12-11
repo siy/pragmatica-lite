@@ -42,6 +42,7 @@ public class NettyConnectibleBuilder extends ConnectibleBuilder {
     private CompletableFuture<ProtocolStream> obtainStream(Executor futuresExecutor) {
         return CompletableFuture.completedFuture(new NettyPgProtocolStream(
                 group,
+                //TODO: use resolver
                 new InetSocketAddress(properties.getHostname(), properties.getPort()),
                 properties.getUseSsl(),
                 Charset.forName(properties.getEncoding()),

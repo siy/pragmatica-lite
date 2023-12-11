@@ -28,12 +28,12 @@ import java.nio.charset.Charset;
  * @author Marat Gainullin
  */
 public abstract class LogResponseDecoder<M extends LogResponse> implements Decoder<M> {
-
     @Override
     public M read(ByteBuffer buffer, int contentLength, Charset encoding) {
         String level = null;
         String code = null;
         String message = null;
+
         for (byte type = buffer.get(); type != 0; type = buffer.get()) {
             String value = IO.getCString(buffer, encoding);
             if (type == (byte) 'S') {

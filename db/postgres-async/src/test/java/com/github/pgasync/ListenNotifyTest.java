@@ -12,7 +12,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author Antti Laisi
@@ -20,7 +21,7 @@ import static org.junit.Assert.*;
 public class ListenNotifyTest {
 
     @ClassRule
-    public static DatabaseRule dbr = new DatabaseRule(DatabaseRule.createPoolBuilder(5));
+    public static DatabaseRule dbr = DatabaseRule.withMaxConnections(5);
 
     private Connectible pool;
 

@@ -26,16 +26,15 @@ import java.util.Map;
  * @author Antti Laisi
  */
 public interface ResultSet extends Iterable<Row> {
+    Map<String, PgColumn> columnsByName();
 
-    Map<String, PgColumn> getColumnsByName();
-
-    List<PgColumn> getOrderedColumns();
+    List<PgColumn> orderedColumns();
 
     /**
      * @param index Row index starting from 0
      * @return Row, never null
      */
-    Row at(int index);
+    Row index(int index);
 
     /**
      * @return Amount of result rows.
@@ -46,5 +45,4 @@ public interface ResultSet extends Iterable<Row> {
      * @return Amount of modified rows.
      */
     int affectedRows();
-
 }

@@ -49,6 +49,6 @@ public class QueryEncoder extends SkipableEncoder<Query> {
 
     @Override
     public void writeBody(Query msg, ByteBuffer buffer, Charset encoding) {
-        IO.putCString(buffer, msg.getQuery(), encoding);
+        IO.putCString(buffer, msg.query(), encoding);
     }
 }

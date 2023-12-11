@@ -17,17 +17,6 @@ package com.github.pgasync.message.frontend;
 import com.github.pgasync.message.Message;
 
 /**
- * @author  Antti Laisi
+ * @author Antti Laisi
  */
-public class Query implements Message {
-
-    private final String sql;
-
-    public Query(String sql) {
-        this.sql = sql;
-    }
-
-    public String getQuery() {
-        return sql;
-    }
-}
+public record Query(String query) implements Message {}

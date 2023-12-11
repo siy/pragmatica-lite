@@ -62,26 +62,26 @@ public class NettyPgProtocolStream extends PgProtocolStream {
         super(encoding, futuresExecutor);
         this.address = address;
         this.useSsl = useSsl; // TODO: refactor into SSLConfig with trust parameters
-        this.channelPipeline = new Bootstrap()
-                .group(group)
-                .channel(NioSocketChannel.class)
-                .handler(newProtocolInitializer());
+        this.channelPipeline = new Bootstrap()  //TODO: use transport SPI
+                                                .group(group)
+                                                .channel(NioSocketChannel.class)
+                                                .handler(newProtocolInitializer());
     }
 
     @Override
     public CompletableFuture<Message> connect(StartupMessage startup) {
         startupWith = startup;
         return offerRoundTrip(() -> channelPipeline.connect(address).addListener(outboundErrorListener), false)
-                .thenApply(this::send)
-                .thenCompose(Function.identity())
-                .thenApply(message -> {
-                    if (message == SslHandshake.INSTANCE) {
-                        return send(startup);
-                    } else {
-                        return CompletableFuture.completedFuture(message);
-                    }
-                })
-                .thenCompose(Function.identity());
+            .thenApply(this::send)
+            .thenCompose(Function.identity())
+            .thenApply(message -> {
+                if (message == SslHandshake.INSTANCE) {
+                    return send(startup);
+                } else {
+                    return CompletableFuture.completedFuture(message);
+                }
+            })
+            .thenCompose(Function.identity());
     }
 
     @Override
@@ -92,28 +92,31 @@ public class NettyPgProtocolStream extends PgProtocolStream {
     @Override
     public CompletableFuture<Void> close() {
         CompletableFuture<Void> uponClose = new CompletableFuture<>();
-        ctx.writeAndFlush(Terminate.INSTANCE).addListener(written -> {
-            if (written.isSuccess()) {
-                ctx.close().addListener(closed -> {
-                    if (closed.isSuccess()) {
-                        uponClose.completeAsync(() -> null, futuresExecutor);
-                    } else {
-                        Throwable th = closed.cause();
-                        futuresExecutor.execute(() -> uponClose.completeExceptionally(th));
-                    }
-                });
-            } else {
-                Throwable th = written.cause();
-                futuresExecutor.execute(() -> uponClose.completeExceptionally(th));
-            }
-        });
+        ctx.writeAndFlush(Terminate.INSTANCE)
+           .addListener(written -> {
+               if (written.isSuccess()) {
+                   ctx.close()
+                      .addListener(closed -> {
+                          if (closed.isSuccess()) {
+                              uponClose.completeAsync(() -> null, futuresExecutor);
+                          } else {
+                              Throwable th = closed.cause();
+                              futuresExecutor.execute(() -> uponClose.completeExceptionally(th));
+                          }
+                      });
+               } else {
+                   Throwable th = written.cause();
+                   futuresExecutor.execute(() -> uponClose.completeExceptionally(th));
+               }
+           });
         return uponClose;
     }
 
     @Override
     protected void write(Message... messages) {
         for (Message message : messages) {
-            ctx.write(message).addListener(outboundErrorListener);
+            ctx.write(message)
+               .addListener(outboundErrorListener);
         }
         ctx.flush();
     }
@@ -139,13 +142,14 @@ public class NettyPgProtocolStream extends PgProtocolStream {
             protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
                 if (in.readableBytes() >= 1) {
                     if ('S' == in.readByte()) { // SSL supported response
+                        //TODO: take SSL configuration from config
                         ctx.pipeline().remove(this);
                         ctx.pipeline().addFirst(
-                                SslContextBuilder
-                                        .forClient()
-                                        .trustManager(InsecureTrustManagerFactory.INSTANCE)
-                                        .build()
-                                        .newHandler(ctx.alloc()));
+                            SslContextBuilder
+                                .forClient()
+                                .trustManager(InsecureTrustManagerFactory.INSTANCE)
+                                .build()
+                                .newHandler(ctx.alloc()));
                     } else {
                         ctx.fireExceptionCaught(new IllegalStateException("SSL required but not supported by Postgres"));
                     }
@@ -169,15 +173,15 @@ public class NettyPgProtocolStream extends PgProtocolStream {
 
             @Override
             public void userEventTriggered(ChannelHandlerContext context, Object evt) {
-                if (evt instanceof SslHandshakeCompletionEvent && ((SslHandshakeCompletionEvent) evt).isSuccess()) {
+                if (evt instanceof SslHandshakeCompletionEvent handshake && handshake.isSuccess()) {
                     gotMessage(SslHandshake.INSTANCE);
                 }
             }
 
             @Override
             public void channelRead(ChannelHandlerContext context, Object message) {
-                if (message instanceof Message) {
-                    gotMessage((Message) message);
+                if (message instanceof Message msg) {
+                    gotMessage(msg);
                 }
             }
 
@@ -192,5 +196,4 @@ public class NettyPgProtocolStream extends PgProtocolStream {
             }
         };
     }
-
 }

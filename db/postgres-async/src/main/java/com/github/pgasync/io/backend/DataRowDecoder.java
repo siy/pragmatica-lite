@@ -41,7 +41,6 @@ import java.nio.charset.Charset;
  * @author Antti Laisi
  */
 public class DataRowDecoder implements Decoder<DataRow> {
-
     @Override
     public byte getMessageId() {
         return 'D';

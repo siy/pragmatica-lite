@@ -36,7 +36,6 @@ import java.nio.charset.Charset;
  * @author Marat Gainullin
  */
 public class CloseCompleteDecoder implements Decoder<BIndicators> {
-
     @Override
     public byte getMessageId() {
         return '3';
@@ -46,5 +45,4 @@ public class CloseCompleteDecoder implements Decoder<BIndicators> {
     public BIndicators read(ByteBuffer buffer, int contentLength, Charset encoding) {
         return BIndicators.CLOSE_COMPLETE;
     }
-
 }

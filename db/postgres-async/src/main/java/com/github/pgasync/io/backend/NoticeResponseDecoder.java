@@ -21,7 +21,6 @@ import com.github.pgasync.message.backend.NoticeResponse;
  * @author Marat Gainullin
  */
 public class NoticeResponseDecoder extends LogResponseDecoder<NoticeResponse> {
-
     @Override
     public byte getMessageId() {
         return 'N';
@@ -31,5 +30,4 @@ public class NoticeResponseDecoder extends LogResponseDecoder<NoticeResponse> {
     protected NoticeResponse asMessage(String level, String code, String message) {
         return new NoticeResponse(level, code, message);
     }
-
 }

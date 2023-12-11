@@ -44,11 +44,11 @@ public class Describe implements ExtendedQueryMessage {
         this.kind = kind;
     }
 
-    public Kind getKind() {
+    public Kind kind() {
         return kind;
     }
 
-    public String getName() {
+    public String name() {
         return name;
     }
 

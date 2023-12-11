@@ -39,7 +39,7 @@ import static org.junit.Assert.assertEquals;
 public class QueryResultTest {
 
     @ClassRule
-    public static DatabaseRule dbr = new DatabaseRule();
+    public static DatabaseRule dbr = DatabaseRule.defaultConfiguration();
 
     @BeforeClass
     public static void create() {
@@ -57,7 +57,7 @@ public class QueryResultTest {
         Assert.assertEquals(2, dbr.query("INSERT INTO CONN_TEST (ID) VALUES (1),(2)").affectedRows());
         ResultSet result = dbr.query("SELECT * FROM CONN_TEST WHERE ID <= 2 ORDER BY ID");
         assertEquals(2, result.size());
-        Assert.assertEquals("ID", result.getOrderedColumns().iterator().next().getName().toUpperCase());
+        Assert.assertEquals("ID", result.orderedColumns().iterator().next().name().toUpperCase());
 
         Iterator<Row> i = result.iterator();
         assertEquals(1L, i.next().getLong(0).longValue());

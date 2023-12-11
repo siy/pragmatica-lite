@@ -23,38 +23,38 @@ public class SASLInitialResponse implements Message {
         this.userName = userName;
         this.nonce = clientNonce;
 
-        String channelBinding = channelBindingType != null && !channelBindingType.isBlank() ? "p=" + channelBindingType + "," : "n,";
-        gs2Header = channelBinding + ","; // It could be '"a=" + msg.getUsername() + ",";' but it is not needed unless we are using impersonate techniques.
+        String channelBinding = channelBindingType != null && !channelBindingType.isBlank() ? STR."p=\{channelBindingType}," : "n,";
+        gs2Header = STR."\{channelBinding},"; // It could be '"a=" + msg.getUsername() + ",";' but it is not needed unless we are using impersonate techniques.
 
-        clientFirstMessageBare = "n=" + SaslPrep.asQueryString(userName) + ",r=" + clientNonce;
+        clientFirstMessageBare = STR."n=\{SaslPrep.asQueryString(userName)},r=\{clientNonce}";
         clientFirstMessage = gs2Header + clientFirstMessageBare;
     }
 
-    public String getUserName() {
+    public String userName() {
         return userName;
     }
 
-    public String getChannelBindingType() {
+    public String channelBindingType() {
         return channelBindingType;
     }
 
-    public String getSaslMechanism() {
+    public String saslMechanism() {
         return saslMechanism;
     }
 
-    public String getNonce() {
+    public String nonce() {
         return nonce;
     }
 
-    public String getGs2Header() {
+    public String gs2Header() {
         return gs2Header;
     }
 
-    public String getClientFirstMessageBare() {
+    public String clientFirstMessageBare() {
         return clientFirstMessageBare;
     }
 
-    public String getClientFirstMessage() {
+    public String clientFirstMessage() {
         return clientFirstMessage;
     }
 }

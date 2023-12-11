@@ -34,7 +34,6 @@ import java.util.Map;
  * @author Antti Laisi
  */
 public class PgRow implements Row {
-
     private final DataRow data;
     private final DataConverter dataConverter;
     private final Map<String, PgColumn> columnsByName;
@@ -49,209 +48,209 @@ public class PgRow implements Row {
 
     @Override
     public String getString(int index) {
-        return dataConverter.toString(columns[index].getType(), data.getValue(index));
+        return dataConverter.toString(columns[index].type(), data.getValue(index));
     }
 
     @Override
     public String getString(String column) {
         PgColumn pgColumn = getColumn(column);
-        return getString(pgColumn.at());
+        return getString(pgColumn.index());
     }
 
     @Override
     public Character getChar(int index) {
-        return dataConverter.toChar(columns[index].getType(), data.getValue(index));
+        return dataConverter.toChar(columns[index].type(), data.getValue(index));
     }
 
     @Override
     public Character getChar(String column) {
         PgColumn pgColumn = getColumn(column);
-        return getChar(pgColumn.at());
+        return getChar(pgColumn.index());
     }
 
     @Override
     public Byte getByte(int index) {
-        return dataConverter.toByte(columns[index].getType(), data.getValue(index));
+        return dataConverter.toByte(columns[index].type(), data.getValue(index));
     }
 
     @Override
     public Byte getByte(String column) {
         PgColumn pgColumn = getColumn(column);
-        return getByte(pgColumn.at());
+        return getByte(pgColumn.index());
     }
 
     @Override
     public Short getShort(int index) {
-        return dataConverter.toShort(columns[index].getType(), data.getValue(index));
+        return dataConverter.toShort(columns[index].type(), data.getValue(index));
     }
 
     @Override
     public Short getShort(String column) {
         PgColumn pgColumn = getColumn(column);
-        return getShort(pgColumn.at());
+        return getShort(pgColumn.index());
     }
 
     @Override
     public Integer getInt(int index) {
-        return dataConverter.toInteger(columns[index].getType(), data.getValue(index));
+        return dataConverter.toInteger(columns[index].type(), data.getValue(index));
     }
 
     @Override
     public Integer getInt(String column) {
         PgColumn pgColumn = getColumn(column);
-        return getInt(pgColumn.at());
+        return getInt(pgColumn.index());
     }
 
     @Override
     public Long getLong(int index) {
-        return dataConverter.toLong(columns[index].getType(), data.getValue(index));
+        return dataConverter.toLong(columns[index].type(), data.getValue(index));
     }
 
     @Override
     public Long getLong(String column) {
         PgColumn pgColumn = getColumn(column);
-        return getLong(pgColumn.at());
+        return getLong(pgColumn.index());
     }
 
     @Override
     public BigInteger getBigInteger(int index) {
-        return dataConverter.toBigInteger(columns[index].getType(), data.getValue(index));
+        return dataConverter.toBigInteger(columns[index].type(), data.getValue(index));
     }
 
     @Override
     public BigInteger getBigInteger(String column) {
         PgColumn pgColumn = getColumn(column);
-        return getBigInteger(pgColumn.at());
+        return getBigInteger(pgColumn.index());
     }
 
     @Override
     public BigDecimal getBigDecimal(int index) {
-        return dataConverter.toBigDecimal(columns[index].getType(), data.getValue(index));
+        return dataConverter.toBigDecimal(columns[index].type(), data.getValue(index));
     }
 
     @Override
     public BigDecimal getBigDecimal(String column) {
         PgColumn pgColumn = getColumn(column);
-        return getBigDecimal(pgColumn.at());
+        return getBigDecimal(pgColumn.index());
     }
 
     @Override
     public Double getDouble(int index) {
-        return dataConverter.toDouble(columns[index].getType(), data.getValue(index));
+        return dataConverter.toDouble(columns[index].type(), data.getValue(index));
     }
 
     @Override
     public Double getDouble(String column) {
         PgColumn pgColumn = getColumn(column);
-        return getDouble(pgColumn.at());
+        return getDouble(pgColumn.index());
     }
 
     @Override
     public LocalDate getLocalDate(int index) {
-        return dataConverter.toLocalDate(columns[index].getType(), data.getValue(index));
+        return dataConverter.toLocalDate(columns[index].type(), data.getValue(index));
     }
 
     @Override
     public LocalDate getLocalDate(String column) {
         PgColumn pgColumn = getColumn(column);
-        return getLocalDate(pgColumn.at());
+        return getLocalDate(pgColumn.index());
     }
 
     @Override
     public Time getTime(int index) {
-        return dataConverter.toTime(columns[index].getType(), data.getValue(index));
+        return dataConverter.toTime(columns[index].type(), data.getValue(index));
     }
 
     @Override
     public Time getTime(String column) {
         PgColumn pgColumn = getColumn(column);
-        return getTime(pgColumn.at());
+        return getTime(pgColumn.index());
     }
 
     @Override
     public Date getDate(int index) {
-        return dataConverter.toDate(columns[index].getType(), data.getValue(index));
+        return dataConverter.toDate(columns[index].type(), data.getValue(index));
     }
 
     @Override
     public Date getDate(String column) {
         PgColumn pgColumn = getColumn(column);
-        return getDate(pgColumn.at());
+        return getDate(pgColumn.index());
     }
 
     @Override
     public Timestamp getTimestamp(int index) {
-        return dataConverter.toTimestamp(columns[index].getType(), data.getValue(index));
+        return dataConverter.toTimestamp(columns[index].type(), data.getValue(index));
     }
 
     @Override
     public Timestamp getTimestamp(String column) {
         PgColumn pgColumn = getColumn(column);
-        return getTimestamp(pgColumn.at());
+        return getTimestamp(pgColumn.index());
     }
 
     @Override
     public Instant getInstant(int index) {
-        return dataConverter.toInstant(columns[index].getType(), data.getValue(index));
+        return dataConverter.toInstant(columns[index].type(), data.getValue(index));
     }
 
     @Override
     public Instant getInstant(String column) {
         PgColumn pgColumn = getColumn(column);
-        return getInstant(pgColumn.at());
+        return getInstant(pgColumn.index());
     }
 
     @Override
     public byte[] getBytes(int index) {
-        return dataConverter.toBytes(columns[index].getType(), data.getValue(index));
+        return dataConverter.toBytes(columns[index].type(), data.getValue(index));
     }
 
     @Override
     public byte[] getBytes(String column) {
         PgColumn pgColumn = getColumn(column);
-        return getBytes(pgColumn.at());
+        return getBytes(pgColumn.index());
     }
 
     @Override
     public Boolean getBoolean(int index) {
-        return dataConverter.toBoolean(columns[index].getType(), data.getValue(index));
+        return dataConverter.toBoolean(columns[index].type(), data.getValue(index));
     }
 
     @Override
     public Boolean getBoolean(String column) {
         PgColumn pgColumn = getColumn(column);
-        return getBoolean(pgColumn.at());
+        return getBoolean(pgColumn.index());
     }
 
     @Override
     public <TArray> TArray getArray(int index, Class<TArray> arrayType) {
-        return dataConverter.toArray(arrayType, columns[index].getType(), data.getValue(index));
+        return dataConverter.toArray(arrayType, columns[index].type(), data.getValue(index));
     }
 
     @Override
     public <TArray> TArray getArray(String column, Class<TArray> arrayType) {
         PgColumn pgColumn = getColumn(column);
-        return getArray(pgColumn.at(), arrayType);
+        return getArray(pgColumn.index(), arrayType);
     }
 
     @Override
     public <T> T get(int index, Class<T> type) {
-        return dataConverter.toObject(type, columns[index].getType(), data.getValue(index));
+        return dataConverter.toObject(type, columns[index].type(), data.getValue(index));
     }
 
     @Override
     public <T> T get(String column, Class<T> type) {
         PgColumn pgColumn = getColumn(column);
-        return get(pgColumn.at(), type);
+        return get(pgColumn.index(), type);
     }
 
     public Object get(int index) {
-        return dataConverter.toObject(columns[index].getType(), data.getValue(index));
+        return dataConverter.toObject(columns[index].type(), data.getValue(index));
     }
 
     public Object get(String column) {
         PgColumn pgColumn = getColumn(column);
-        return get(pgColumn.at());
+        return get(pgColumn.index());
     }
 
     private PgColumn getColumn(String name) {

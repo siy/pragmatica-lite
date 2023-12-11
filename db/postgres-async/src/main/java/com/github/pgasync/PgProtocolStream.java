@@ -80,9 +80,9 @@ public abstract class PgProtocolStream implements ProtocolStream {
             return send(saslInitialResponse)
                     .thenApply(message -> {
                         if (message instanceof Authentication) {
-                            String serverFirstMessage = ((Authentication) message).getSaslContinueData();
+                            String serverFirstMessage = ((Authentication) message).saslContinueData();
                             if (serverFirstMessage != null) {
-                                return send(SASLResponse.of(password, serverFirstMessage, clientNonce, saslInitialResponse.getGs2Header(), saslInitialResponse.getClientFirstMessageBare()));
+                                return send(SASLResponse.of(password, serverFirstMessage, clientNonce, saslInitialResponse.gs2Header(), saslInitialResponse.clientFirstMessageBare()));
                             } else {
                                 throw new IllegalStateException("Bad SASL authentication sequence message detected on 'server-first-message' step");
                             }
@@ -92,7 +92,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
                     })
                     .thenCompose(Function.identity());
         } else {
-            return send(new PasswordMessage(userName, password, authRequired.getMd5Salt(), encoding));
+            return send(PasswordMessage.passwordMessage(userName, password, authRequired.md5Salt(), encoding));
         }
     }
 
@@ -199,7 +199,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
             }
         } else if (message instanceof Authentication) {
             Authentication authentication = (Authentication) message;
-            if (authentication.isAuthenticationOk() || authentication.isSaslServerFinalResponse()) {
+            if (authentication.authenticationOk() || authentication.isSaslServerFinalResponse()) {
                 readyForQueryPendingMessage = message;
             } else {
                 consumeOnResponse().completeAsync(() -> message, futuresExecutor);

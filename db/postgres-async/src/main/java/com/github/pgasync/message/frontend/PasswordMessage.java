@@ -25,26 +25,13 @@ import static com.github.pgasync.util.HexConverter.printHexBinary;
 /**
  * @author Antti Laisi
  */
-public class PasswordMessage implements Message {
-
-    private final String password;
-    private final byte[] passwordHash;
-
-    public PasswordMessage(String username, String password, byte[] md5salt, Charset encoding) {
-        this.password = password;
-        this.passwordHash = md5salt != null ? md5(username, password, md5salt, encoding) : null;
-    }
-
-    public byte[] getPasswordHash() {
-        return passwordHash;
-    }
-
-    public String getPassword() {
-        return password;
+public record PasswordMessage(String password, byte[] passwordHash) implements Message {
+    public static PasswordMessage passwordMessage(String username, String password, byte[] md5salt, Charset encoding) {
+        return new PasswordMessage(password, md5salt != null ? md5(username, password, md5salt, encoding) : null);
     }
 
     private static byte[] md5(String username, String password, byte[] md5salt, Charset encoding) {
-        MessageDigest md5 = md5();
+        var md5 = md5();
         md5.update(password.getBytes(encoding));
         md5.update(username.getBytes(encoding));
         byte[] hash = printHexBinary(md5.digest()).toLowerCase().getBytes(encoding);
@@ -53,11 +40,12 @@ public class PasswordMessage implements Message {
         md5.update(md5salt);
         hash = printHexBinary(md5.digest()).toLowerCase().getBytes(encoding);
 
-        byte[] prefixed = new byte[hash.length + 3];
+        var prefixed = new byte[hash.length + 3];
         prefixed[0] = (byte) 'm';
         prefixed[1] = (byte) 'd';
         prefixed[2] = (byte) '5';
         System.arraycopy(hash, 0, prefixed, 3, hash.length);
+
         return prefixed;
     }
 

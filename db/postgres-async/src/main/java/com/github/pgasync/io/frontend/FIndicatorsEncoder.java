@@ -36,20 +36,17 @@ import java.nio.charset.Charset;
  * @author Antti Laisi
  */
 public class FIndicatorsEncoder implements Encoder<FIndicators> {
-
     @Override
     public Class<FIndicators> getMessageType() {
         return FIndicators.class;
     }
 
+    @SuppressWarnings("SwitchStatementWithTooFewBranches")
     @Override
     public void write(FIndicators msg, ByteBuffer buffer, Charset encoding) {
         switch (msg) {
-            case SYNC:
-                sync(buffer);
-                break;
-            default:
-                throw new IllegalStateException(msg.name());
+            case SYNC -> sync(buffer);
+            default -> throw new IllegalStateException(msg.name());
         }
     }
 
@@ -57,5 +54,4 @@ public class FIndicatorsEncoder implements Encoder<FIndicators> {
         buffer.put((byte) 'S');
         buffer.putInt(4);
     }
-
 }

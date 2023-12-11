@@ -22,7 +22,6 @@ import java.nio.charset.Charset;
  *       The current value of the parameter.
  */
 public class ParameterStatusDecoder implements Decoder<ParameterStatus> {
-
     @Override
     public byte getMessageId() {
         return 'S';

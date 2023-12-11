@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
-import static com.github.pgasync.DatabaseRule.createPoolBuilder;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.System.out;
 
@@ -40,7 +39,7 @@ public class PerformanceTest {
 
     static {
         System.setProperty("io.netty.eventLoopThreads", "1");
-        dbr = new DatabaseRule(createPoolBuilder(1));
+        dbr = DatabaseRule.withMaxConnections(1);
     }
 
     private static final String SELECT_42 = "select 42";
@@ -75,11 +74,11 @@ public class PerformanceTest {
     @Before
     public void setup() {
         pool = dbr.builder
-                .password("async-pg")
-                .maxConnections(poolSize)
-                .pool(Executors.newFixedThreadPool(numThreads));
-        List<Connection> connections = IntStream.range(0, poolSize)
-                .mapToObj(i -> pool.getConnection().join()).collect(Collectors.toList());
+            .password("async-pg")
+            .maxConnections(poolSize)
+            .pool(Executors.newFixedThreadPool(numThreads));
+        var connections = IntStream.range(0, poolSize)
+                                   .mapToObj(i -> pool.getConnection().join()).toList();
         connections.forEach(connection -> {
             connection.prepareStatement(SELECT_42).join().close().join();
             connection.close().join();
@@ -99,20 +98,20 @@ public class PerformanceTest {
 
     private void performBatches(SortedMap<Integer, SortedMap<Integer, Long>> results, IntFunction<CompletableFuture<Long>> batchStarter) {
         double mean = LongStream.range(0, repeats)
-                .map(i -> {
-                    try {
-                        List<CompletableFuture<Long>> batches = IntStream.range(0, poolSize)
-                                .mapToObj(batchStarter)
-                                .collect(Collectors.toList());
-                        CompletableFuture.allOf(batches.toArray(new CompletableFuture<?>[]{})).get();
-                        return batches.stream().map(CompletableFuture::join).max(Long::compare).get();
-                    } catch (Exception ex) {
-                        throw new RuntimeException(ex);
-                    }
-                })
-                .average().getAsDouble();
+                                .map(i -> {
+                                    try {
+                                        List<CompletableFuture<Long>> batches = IntStream.range(0, poolSize)
+                                                                                         .mapToObj(batchStarter)
+                                                                                         .collect(Collectors.toList());
+                                        CompletableFuture.allOf(batches.toArray(new CompletableFuture<?>[]{})).get();
+                                        return batches.stream().map(CompletableFuture::join).max(Long::compare).get();
+                                    } catch (Exception ex) {
+                                        throw new RuntimeException(ex);
+                                    }
+                                })
+                                .average().getAsDouble();
         results.computeIfAbsent(poolSize, k -> new TreeMap<>())
-                .put(numThreads, Math.round(mean));
+               .put(numThreads, Math.round(mean));
     }
 
     private class Batch {
@@ -142,52 +141,52 @@ public class PerformanceTest {
 
         private void nextSamplePreparedStatement() {
             pool.getConnection()
-                    .thenApply(connection ->
-                            connection.prepareStatement(SELECT_42)
-                                    .thenApply(stmt -> stmt.query()
-                                            .thenApply(rs -> stmt.close())
-                                            .exceptionally(th -> stmt.close().whenComplete((v, _th) -> {
-                                                throw new RuntimeException(th);
-                                            }))
-                                            .thenCompose(Function.identity())
-                                            .thenApply(v -> connection.close())
-                                            .exceptionally(th -> connection.close().whenComplete((v, _th) -> {
-                                                throw new RuntimeException(th);
-                                            }))
-                                            .thenCompose(Function.identity())
-                                    )
-                                    .thenCompose(Function.identity())
-                    )
-                    .thenCompose(Function.identity())
-                    .thenAccept(v -> {
-                        if (++performed < batchSize) {
-                            nextSamplePreparedStatement();
-                        } else {
-                            long duration = currentTimeMillis() - startedAt;
-                            onBatch.complete(duration);
-                        }
-                    })
-                    .exceptionally(th -> {
-                        onBatch.completeExceptionally(th);
-                        return null;
-                    });
+                .thenApply(connection ->
+                               connection.prepareStatement(SELECT_42)
+                                         .thenApply(stmt -> stmt.query()
+                                                                .thenApply(rs -> stmt.close())
+                                                                .exceptionally(th -> stmt.close().whenComplete((v, _th) -> {
+                                                                    throw new RuntimeException(th);
+                                                                }))
+                                                                .thenCompose(Function.identity())
+                                                                .thenApply(v -> connection.close())
+                                                                .exceptionally(th -> connection.close().whenComplete((v, _th) -> {
+                                                                    throw new RuntimeException(th);
+                                                                }))
+                                                                .thenCompose(Function.identity())
+                                         )
+                                         .thenCompose(Function.identity())
+                )
+                .thenCompose(Function.identity())
+                .thenAccept(v -> {
+                    if (++performed < batchSize) {
+                        nextSamplePreparedStatement();
+                    } else {
+                        long duration = currentTimeMillis() - startedAt;
+                        onBatch.complete(duration);
+                    }
+                })
+                .exceptionally(th -> {
+                    onBatch.completeExceptionally(th);
+                    return null;
+                });
 
         }
 
         private void nextSampleSimpleQuery() {
             pool.completeScript(SELECT_42)
-                    .thenAccept(v -> {
-                        if (++performed < batchSize) {
-                            nextSamplePreparedStatement();
-                        } else {
-                            long duration = currentTimeMillis() - startedAt;
-                            onBatch.complete(duration);
-                        }
-                    })
-                    .exceptionally(th -> {
-                        onBatch.completeExceptionally(th);
-                        return null;
-                    });
+                .thenAccept(v -> {
+                    if (++performed < batchSize) {
+                        nextSamplePreparedStatement();
+                    } else {
+                        long duration = currentTimeMillis() - startedAt;
+                        onBatch.complete(duration);
+                    }
+                })
+                .exceptionally(th -> {
+                    onBatch.completeExceptionally(th);
+                    return null;
+                });
         }
     }
 
@@ -209,7 +208,7 @@ public class PerformanceTest {
         out.println();
 
         results.values().iterator().next().keySet().forEach(threads -> {
-            out.print("    " + threads);
+            out.print(STR."    \{threads}");
             results.keySet().forEach(connections -> {
                 long batchDuration = results.get(connections).get(threads);
                 double rps = 1000 * batchSize * connections / (double) batchDuration;

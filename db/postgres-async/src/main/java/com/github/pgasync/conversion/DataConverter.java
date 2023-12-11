@@ -25,18 +25,13 @@ import static com.github.pgasync.util.HexConverter.parseHexBinary;
  * @author Antti Laisi
  */
 public class DataConverter {
-
     private final Map<Class<?>, Converter<?>> typeToConverter;
     private final Charset encoding;
 
     public DataConverter(List<Converter<?>> converters, Charset encoding) {
         this.typeToConverter = converters.stream()
-                .collect(Collectors.toMap(Converter::type, Function.identity()));
+                                         .collect(Collectors.toMap(Converter::type, Function.identity()));
         this.encoding = encoding;
-    }
-
-    public DataConverter(Charset encoding) {
-        this(List.of(), encoding);
     }
 
     public String toString(Oid oid, byte[] value) {
@@ -79,6 +74,7 @@ public class DataConverter {
         return value == null ? null : TemporalConversions.toLocalDate(oid, new String(value, encoding));
     }
 
+    //TODO: get rid of it
     public Date toDate(Oid oid, byte[] value) {
         return value == null ? null : TemporalConversions.toDate(oid, new String(value, encoding));
     }
@@ -107,98 +103,69 @@ public class DataConverter {
         if (value == null) {
             return null;
         }
-        String svalue = new String(value, encoding);
-        switch (oid) {
-            case INT2_ARRAY:
-                return ArrayConversions.toArray(arrayType, oid, svalue, NumericConversions::toShort);
-            case INT4_ARRAY:
-                return ArrayConversions.toArray(arrayType, oid, svalue, NumericConversions::toInteger);
-            case INT8_ARRAY:
-                return ArrayConversions.toArray(arrayType, oid, svalue, NumericConversions::toLong);
 
-            case TEXT_ARRAY:
-            case CHAR_ARRAY:
-            case BPCHAR_ARRAY:
-            case VARCHAR_ARRAY:
-                return ArrayConversions.toArray(arrayType, oid, svalue, StringConversions::toString);
-
-            case NUMERIC_ARRAY:
-            case FLOAT4_ARRAY:
-            case FLOAT8_ARRAY:
-                return ArrayConversions.toArray(arrayType, oid, svalue, NumericConversions::toBigDecimal);
-
-            case TIMESTAMP_ARRAY:
-            case TIMESTAMPTZ_ARRAY:
-                return ArrayConversions.toArray(arrayType, oid, svalue, TemporalConversions::toTimestamp);
-
-            case TIMETZ_ARRAY:
-            case TIME_ARRAY:
-                return ArrayConversions.toArray(arrayType, oid, svalue, TemporalConversions::toTime);
-
-            case DATE_ARRAY:
-                return ArrayConversions.toArray(arrayType, oid, svalue, TemporalConversions::toLocalDate);
-
-            case BOOL_ARRAY:
-                return ArrayConversions.toArray(arrayType, oid, svalue, BooleanConversions::toBoolean);
-            case BYTEA_ARRAY:
-                return ArrayConversions.toArray(arrayType, oid, svalue, (oide, svaluee) -> {
-                    byte[] first = BlobConversions.toBytes(oide, svaluee.substring(2));
-                    return parseHexBinary(new String(first, 1, first.length - 1, encoding));
-                });
-            default:
-                throw new IllegalStateException("Unsupported array type: " + oid);
-        }
+        var svalue = new String(value, encoding);
+        return switch (oid) {
+            case INT2_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, NumericConversions::toShort);
+            case INT4_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, NumericConversions::toInteger);
+            case INT8_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, NumericConversions::toLong);
+            case TEXT_ARRAY, CHAR_ARRAY, BPCHAR_ARRAY, VARCHAR_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, StringConversions::toString);
+            case NUMERIC_ARRAY, FLOAT4_ARRAY, FLOAT8_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, NumericConversions::toBigDecimal);
+            case TIMESTAMP_ARRAY, TIMESTAMPTZ_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, TemporalConversions::toTimestamp);
+            case TIMETZ_ARRAY, TIME_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, TemporalConversions::toTime);
+            case DATE_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, TemporalConversions::toLocalDate);
+            case BOOL_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, BooleanConversions::toBoolean);
+            case BYTEA_ARRAY -> ArrayConversions.toArray(arrayType, oid, svalue, (oide, svaluee) -> {
+                byte[] first = BlobConversions.toBytes(oide, svaluee.substring(2));
+                return parseHexBinary(new String(first, 1, first.length - 1, encoding));
+            });
+            default -> throw new IllegalStateException(STR."Unsupported array type: \{oid}");
+        };
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T toObject(Class<T> type, Oid oid, byte[] value) {
-        Converter converter = typeToConverter.get(type);
+    private <T> Converter<T> getConverter(Class<T> type) {
+        var converter = (Converter<T>) typeToConverter.get(type);
+
         if (converter == null) {
-            throw new IllegalArgumentException("Unknown conversion target: " + value.getClass());
+            throw new IllegalArgumentException(STR."Unknown conversion target: \{type}");
         }
-        return value == null ? null : (T) converter.to(oid, new String(value, encoding));
+
+        return converter;
+    }
+
+    public <T> T toObject(Class<T> type, Oid oid, byte[] value) {
+        var converter = getConverter(type);
+
+        return value == null ? null
+                             : converter.to(oid, new String(value, encoding));
     }
 
     private String fromObject(Object o) {
-        if (o == null) {
-            return null;
-        }
-        if (o instanceof Time) {
-            return TemporalConversions.fromTime((Time) o);
-        }
-        if (o instanceof Timestamp) {
-            return TemporalConversions.fromTimestamp((Timestamp) o);
-        }
-        if (o instanceof LocalDate) {
-            return TemporalConversions.fromLocalDate((LocalDate) o);
-        }
-        if (o instanceof Date) {
-            return TemporalConversions.fromDate((Date) o);
-        }
-        if (o instanceof Instant) {
-            return TemporalConversions.fromInstant((Instant) o);
-        }
-        if (o instanceof byte[]) {
-            return BlobConversions.fromBytes((byte[]) o);
-        }
-        if (o instanceof Boolean) {
-            return BooleanConversions.fromBoolean((boolean) o);
-        }
-        if (o.getClass().isArray()) {
-            return ArrayConversions.fromArray(o, this::fromObject);
-        }
-        if (o instanceof String || o instanceof Number || o instanceof Character || o instanceof UUID) {
-            return o.toString();
-        }
-        return fromConvertible(o);
+        return switch (o) {
+            case null -> null;
+            case Time time -> TemporalConversions.fromTime(time);
+            case Timestamp timestamp -> TemporalConversions.fromTimestamp(timestamp);
+            case LocalDate localDate -> TemporalConversions.fromLocalDate(localDate);
+            case Date date -> TemporalConversions.fromDate(date);
+            case Instant instant -> TemporalConversions.fromInstant(instant);
+            case byte[] bytes -> BlobConversions.fromBytes(bytes);
+            case Boolean bool -> BooleanConversions.fromBoolean(bool);
+            case String _, Number _, Character _, UUID _ -> o.toString();
+
+            default -> {
+                if (o.getClass().isArray()) {
+                    yield ArrayConversions.fromArray(o, this::fromObject);
+                } else {
+                    yield fromConvertible(o);
+                }
+            }
+        };
     }
 
     @SuppressWarnings("unchecked")
-    private String fromConvertible(Object value) {
-        Converter converter = typeToConverter.get(value.getClass());
-        if (converter == null) {
-            throw new IllegalArgumentException("Unknown conversion target: " + value.getClass());
-        }
+    private <T> String fromConvertible(T value) {
+        var converter = getConverter((Class<T>) value.getClass());
         return converter.from(value);
     }
 
@@ -209,112 +176,73 @@ public class DataConverter {
     public byte[][] fromParameters(Object[] parameters) {
         byte[][] params = new byte[parameters.length][];
         int i = 0;
-        for (Object param : parameters) {
-            String converted = fromObject(param);
+        for (var param : parameters) {
+            var converted = fromObject(param);
             params[i++] = converted == null ? null : converted.getBytes(encoding);
         }
         return params;
     }
 
     public Object toObject(Oid oid, byte[] value) {
-        if (value == null) {
-            return null;
-        }
-        switch (oid) {
-            case TEXT: // fallthrough
-            case CHAR: // fallthrough
-            case BPCHAR: // fallthrough
-            case VARCHAR:
-                return toString(oid, value);
-            case INT2:
-                return toShort(oid, value);
-            case INT4:
-                return toInteger(oid, value);
-            case INT8:
-                return toLong(oid, value);
-            case NUMERIC: // fallthrough
-            case FLOAT4: // fallthrough
-            case FLOAT8:
-                return toBigDecimal(oid, value);
-            case BYTEA:
-                return toBytes(oid, value);
-            case DATE:
-                return toLocalDate(oid, value);
-            case TIMETZ: // fallthrough
-            case TIME:
-                return toTime(oid, value);
-            case TIMESTAMP: // fallthrough
-            case TIMESTAMPTZ:
-                return toTimestamp(oid, value);
-            case UUID:
-                return UUID.fromString(toString(oid, value));
-            case BOOL:
-                return toBoolean(oid, value);
-
-            case INT2_ARRAY:
-            case INT4_ARRAY:
-            case INT8_ARRAY:
-            case NUMERIC_ARRAY:
-            case FLOAT4_ARRAY:
-            case FLOAT8_ARRAY:
-            case TEXT_ARRAY:
-            case CHAR_ARRAY:
-            case BPCHAR_ARRAY:
-            case VARCHAR_ARRAY:
-            case TIMESTAMP_ARRAY:
-            case TIMESTAMPTZ_ARRAY:
-            case TIMETZ_ARRAY:
-            case TIME_ARRAY:
-            case BOOL_ARRAY:
-                return toArray(Object[].class, oid, value);
-            default:
-                return toConvertible(oid, value);
-        }
+        return switch (oid) { // fallthrough
+            case null -> null;
+            case TEXT, CHAR, BPCHAR, VARCHAR -> toString(oid, value);
+            case INT2 -> toShort(oid, value);
+            case INT4 -> toInteger(oid, value);
+            case INT8 -> toLong(oid, value);
+            case NUMERIC, FLOAT4, FLOAT8 -> toBigDecimal(oid, value);
+            case BYTEA -> toBytes(oid, value);
+            case DATE -> toLocalDate(oid, value);
+            case TIMETZ, TIME -> toTime(oid, value);
+            case TIMESTAMP, TIMESTAMPTZ -> toTimestamp(oid, value);
+            case UUID -> UUID.fromString(toString(oid, value));
+            case BOOL -> toBoolean(oid, value);
+            case INT2_ARRAY, INT4_ARRAY, INT8_ARRAY, NUMERIC_ARRAY, FLOAT4_ARRAY, FLOAT8_ARRAY,
+                TEXT_ARRAY, CHAR_ARRAY, BPCHAR_ARRAY, VARCHAR_ARRAY,
+                TIMESTAMP_ARRAY, TIMESTAMPTZ_ARRAY, TIMETZ_ARRAY, TIME_ARRAY, BOOL_ARRAY -> toArray(Object[].class, oid, value);
+            default -> toConvertible(oid, value);
+        };
     }
 
     private Object toConvertible(Oid oid, byte[] value) {
-        throw new IllegalStateException("Unknown conversion source: " + oid);
+        throw new IllegalStateException(STR."Unknown conversion source: \{oid}");
     }
 
     public Oid[] assumeTypes(Object... params) {
-        Oid[] types = new Oid[params.length];
+        var types = new Oid[params.length];
+
         for (int i = 0; i < params.length; i++) {
             switch (params[i]) {
-                case Double v -> types[i] = Oid.FLOAT8;
-                case double[] doubles -> types[i] = Oid.FLOAT8_ARRAY;
-                case Float v -> types[i] = Oid.FLOAT4;
-                case float[] floats -> types[i] = Oid.FLOAT4_ARRAY;
-                case Long l -> types[i] = Oid.INT8;
-                case long[] longs -> types[i] = Oid.INT8_ARRAY;
-                case Integer integer -> types[i] = Oid.INT4;
-                case int[] ints -> types[i] = Oid.INT4_ARRAY;
-                case Short aShort -> types[i] = Oid.INT2;
-                case short[] shorts -> types[i] = Oid.INT2_ARRAY;
-                case Byte b -> types[i] = Oid.INT2;
-                case byte[] bytes -> types[i] = Oid.BYTEA;
-                case byte[][] bytes -> types[i] = Oid.BYTEA_ARRAY;
-                case BigInteger bigInteger -> types[i] = Oid.NUMERIC;
-                case BigInteger[] bigIntegers -> types[i] = Oid.NUMERIC_ARRAY;
-                case BigDecimal bigDecimal -> types[i] = Oid.NUMERIC;
-                case BigDecimal[] bigDecimals -> types[i] = Oid.NUMERIC_ARRAY;
-                case Boolean b -> types[i] = Oid.BOOL;
-                case Boolean[] booleans -> types[i] = Oid.BOOL_ARRAY;
-                case CharSequence charSequence -> types[i] = Oid.VARCHAR;
-                case Character c -> types[i] = Oid.VARCHAR;
-                case Date date -> types[i] = Oid.TIMESTAMP;
-                case Timestamp timestamp -> types[i] = Oid.TIMESTAMP;
-                case Instant instant -> types[i] = Oid.TIMESTAMP;
-                case OffsetDateTime offsetDateTime -> types[i] = Oid.TIMESTAMPTZ;
-                case LocalDateTime localDateTime -> types[i] = Oid.TIMESTAMP;
-                case LocalDate localDate -> types[i] = Oid.DATE;
-                case Time time -> types[i] = Oid.TIME;
-                case OffsetTime offsetTime -> types[i] = Oid.TIME;
-                case LocalTime localTime -> types[i] = Oid.TIMETZ;
-                case UUID uuid -> types[i] = Oid.UUID;
+                case Double _ -> types[i] = Oid.FLOAT8;
+                case double[] _ -> types[i] = Oid.FLOAT8_ARRAY;
+                case Float _ -> types[i] = Oid.FLOAT4;
+                case float[] _ -> types[i] = Oid.FLOAT4_ARRAY;
+                case Long _ -> types[i] = Oid.INT8;
+                case long[] _ -> types[i] = Oid.INT8_ARRAY;
+                case Integer _ -> types[i] = Oid.INT4;
+                case int[] _ -> types[i] = Oid.INT4_ARRAY;
+                case Short _ -> types[i] = Oid.INT2;
+                case short[] _ -> types[i] = Oid.INT2_ARRAY;
+                case Byte _ -> types[i] = Oid.INT2;
+                case byte[] _ -> types[i] = Oid.BYTEA;
+                case byte[][] _ -> types[i] = Oid.BYTEA_ARRAY;
+                case BigInteger _ -> types[i] = Oid.NUMERIC;
+                case BigInteger[] _ -> types[i] = Oid.NUMERIC_ARRAY;
+                case BigDecimal _ -> types[i] = Oid.NUMERIC;
+                case BigDecimal[] _ -> types[i] = Oid.NUMERIC_ARRAY;
+                case Boolean _ -> types[i] = Oid.BOOL;
+                case Boolean[] _ -> types[i] = Oid.BOOL_ARRAY;
+                case CharSequence _, Character _ -> types[i] = Oid.VARCHAR;
+                case Date _, Timestamp _, Instant _ -> types[i] = Oid.TIMESTAMP;
+                case OffsetDateTime _ -> types[i] = Oid.TIMESTAMPTZ;
+                case LocalDateTime _ -> types[i] = Oid.TIMESTAMP;
+                case LocalDate _ -> types[i] = Oid.DATE;
+                case Time _, OffsetTime _ -> types[i] = Oid.TIME;
+                case LocalTime _ -> types[i] = Oid.TIMETZ;
+                case UUID _ -> types[i] = Oid.UUID;
                 case null, default -> types[i] = Oid.UNSPECIFIED;
             }
         }
         return types;
     }
-
 }

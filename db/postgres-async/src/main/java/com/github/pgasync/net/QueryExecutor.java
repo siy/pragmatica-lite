@@ -39,7 +39,7 @@ public interface QueryExecutor {
                 rows = null;
             }
         }
-        ResultSetAssembly assembly = new ResultSetAssembly();
+        var assembly = new ResultSetAssembly();
         return script(
                 (columnsByName, orderedColumns) -> {
                     assembly.columnsByName = columnsByName;
@@ -58,7 +58,7 @@ public interface QueryExecutor {
                 },
                 sql
         )
-                .thenApply(v -> results);
+                .thenApply(_ -> results);
 
     }
 
@@ -76,7 +76,9 @@ public interface QueryExecutor {
      * @param sql        Sql Script text.
      * @return CompletableFuture that is completed when the whole process of multiple {@link ResultSet}s fetching ends.
      */
-    CompletableFuture<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns, Consumer<Row> onRow, Consumer<Integer> onAffected, String sql);
+    CompletableFuture<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                   Consumer<Row> onRow,
+                                   Consumer<Integer> onAffected, String sql);
 
     /**
      * Sends single query with parameters. Uses extended query protocol of Postgres.
@@ -93,7 +95,7 @@ public interface QueryExecutor {
             private PgColumn[] orderedColumns;
             private List<Row> rows;
         }
-        ResultSetAssembly assembly = new ResultSetAssembly();
+        var assembly = new ResultSetAssembly();
         return query(
                 (columnsByName, orderedColumns) -> {
                     assembly.columnsByName = columnsByName;
@@ -126,5 +128,8 @@ public interface QueryExecutor {
      * This future is used by implementation to create a {@link ResultSet} instance from already fetched columns, rows and affected rows count.
      * Affected rows count is this future's completion value.
      */
-    CompletableFuture<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns, Consumer<Row> onRow, String sql, Object... params);
+    CompletableFuture<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                     Consumer<Row> onRow,
+                                     String sql,
+                                     Object... params);
 }

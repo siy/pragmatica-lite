@@ -40,7 +40,7 @@ import static org.junit.Assert.assertEquals;
 public class ConnectionPoolingTest {
 
     @Rule
-    public final DatabaseRule dbr = new DatabaseRule();
+    public final DatabaseRule dbr = DatabaseRule.defaultConfiguration();;
 
     @Before
     public void create() {
@@ -64,7 +64,7 @@ public class ConnectionPoolingTest {
         ExecutorService executor = Executors.newFixedThreadPool(20);
         executor.invokeAll(tasks).forEach(this::await);
 
-        assertEquals(count, dbr.query("SELECT COUNT(*) FROM CP_TEST").at(0).getLong(0).longValue());
+        assertEquals(count, dbr.query("SELECT COUNT(*) FROM CP_TEST").index(0).getLong(0).longValue());
     }
 
     <T> T await(Future<T> future) {

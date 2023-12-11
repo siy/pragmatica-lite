@@ -9,91 +9,55 @@ import java.math.BigInteger;
 /**
  * @author Antti Laisi
  */
-class NumericConversions {
+final class NumericConversions {
+    private NumericConversions() {}
 
     static Long toLong(Oid oid, String value) {
-        switch (oid) {
-            case UNSPECIFIED: // fallthrough
-            case INT2: // fallthrough
-            case INT4: // fallthrough
-            case INT8:
-                return Long.valueOf(value);
-            default:
-                throw new SqlException("Unsupported conversion " + oid.name() + " -> Long");
-        }
+        return switch (oid) {
+            case UNSPECIFIED, INT2, INT4, INT8 -> Long.valueOf(value);
+            default -> throw new SqlException(STR."Unsupported conversion \{oid.name()} -> Long");
+        };
     }
 
     static Integer toInteger(Oid oid, String value) {
-        switch (oid) {
-            case UNSPECIFIED: // fallthrough
-            case INT2: // fallthrough
-            case INT4:
-                return Integer.valueOf(value);
-            default:
-                throw new SqlException("Unsupported conversion " + oid.name() + " -> Integer");
-        }
+        return switch (oid) {
+            case UNSPECIFIED, INT2, INT4 -> Integer.valueOf(value);
+            default -> throw new SqlException(STR."Unsupported conversion \{oid.name()} -> Integer");
+        };
     }
 
     static Short toShort(Oid oid, String value) {
-        switch (oid) {
-            case UNSPECIFIED: // fallthrough
-            case INT2:
-                return Short.valueOf(value);
-            default:
-                throw new SqlException("Unsupported conversion " + oid.name() + " -> Short");
-        }
+        return switch (oid) {
+            case UNSPECIFIED, INT2 -> Short.valueOf(value);
+            default -> throw new SqlException(STR."Unsupported conversion \{oid.name()} -> Short");
+        };
     }
 
     static Byte toByte(Oid oid, String value) {
-        switch (oid) {
-            case UNSPECIFIED: // fallthrough
-            case INT2:
-                return Byte.valueOf(value);
-            default:
-                throw new SqlException("Unsupported conversion " + oid.name() + " -> Byte");
-        }
+        return switch (oid) {
+            case UNSPECIFIED, INT2 -> Byte.valueOf(value);
+            default -> throw new SqlException(STR."Unsupported conversion \{oid.name()} -> Byte");
+        };
     }
 
     static BigInteger toBigInteger(Oid oid, String value) {
-        switch (oid) {
-            case UNSPECIFIED: // fallthrough
-            case INT2: // fallthrough
-            case INT4: // fallthrough
-            case INT8:
-                return new BigInteger(value);
-            default:
-                throw new SqlException("Unsupported conversion " + oid.name() + " -> BigInteger");
-        }
+        return switch (oid) {
+            case UNSPECIFIED, INT2, INT4, INT8 -> new BigInteger(value);
+            default -> throw new SqlException(STR."Unsupported conversion \{oid.name()} -> BigInteger");
+        };
     }
 
     static BigDecimal toBigDecimal(Oid oid, String value) {
-        switch (oid) {
-            case UNSPECIFIED: // fallthrough
-            case INT2: // fallthrough
-            case INT4: // fallthrough
-            case INT8: // fallthrough
-            case NUMERIC: // fallthrough
-            case FLOAT4: // fallthrough
-            case FLOAT8:
-                return new BigDecimal(value);
-            default:
-                throw new SqlException("Unsupported conversion " + oid.name() + " -> BigDecimal");
-        }
+        return switch (oid) {
+            case UNSPECIFIED, INT2, INT4, INT8, NUMERIC, FLOAT4, FLOAT8 -> new BigDecimal(value);
+            default -> throw new SqlException(STR."Unsupported conversion \{oid.name()} -> BigDecimal");
+        };
     }
 
     static Double toDouble(Oid oid, String value) {
-        switch (oid) {
-            case UNSPECIFIED: // fallthrough
-            case INT2: // fallthrough
-            case INT4: // fallthrough
-            case INT8: // fallthrough
-            case NUMERIC: // fallthrough
-            case FLOAT4: // fallthrough
-            case FLOAT8:
-                return Double.valueOf(value);
-            default:
-                throw new SqlException("Unsupported conversion " + oid.name() + " -> Double");
-        }
+        return switch (oid) {
+            case UNSPECIFIED, INT2, INT4, INT8, NUMERIC, FLOAT4, FLOAT8 -> Double.valueOf(value);
+            default -> throw new SqlException(STR."Unsupported conversion \{oid.name()} -> Double");
+        };
     }
-
 }

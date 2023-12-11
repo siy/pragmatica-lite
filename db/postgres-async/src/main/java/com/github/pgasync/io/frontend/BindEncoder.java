@@ -66,7 +66,6 @@ import java.nio.charset.Charset;
  * @author Antti Laisi
  */
 public class BindEncoder extends ExtendedQueryEncoder<Bind> {
-
     @Override
     public Class<Bind> getMessageType() {
         return Bind.class;
@@ -80,10 +79,11 @@ public class BindEncoder extends ExtendedQueryEncoder<Bind> {
     @Override
     public void writeBody(Bind msg, ByteBuffer buffer, Charset encoding) {
         IO.putCString(buffer, "", encoding); // portal
-        IO.putCString(buffer, msg.getSname(), encoding); // prepared statement
+        IO.putCString(buffer, msg.sname(), encoding); // prepared statement
         buffer.putShort((short) 0); // number of format codes
-        buffer.putShort((short) msg.getParams().length); // number of parameters
-        for (byte[] param : msg.getParams()) {
+        buffer.putShort((short) msg.params().length); // number of parameters
+
+        for (byte[] param : msg.params()) {
             writeParameter(buffer, param);
         }
         buffer.putShort((short) 0);

@@ -15,8 +15,8 @@ public class SASLInitialResponseEncoder extends SkipableEncoder<SASLInitialRespo
 
     @Override
     protected void writeBody(SASLInitialResponse msg, ByteBuffer buffer, Charset encoding) {
-        IO.putCString(buffer, msg.getSaslMechanism(), encoding);
-        byte[] clientFirstMessageContent = msg.getClientFirstMessage().getBytes(encoding);
+        IO.putCString(buffer, msg.saslMechanism(), encoding);
+        byte[] clientFirstMessageContent = msg.clientFirstMessage().getBytes(encoding);
         buffer.putInt(clientFirstMessageContent.length);
         buffer.put(clientFirstMessageContent);
     }

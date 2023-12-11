@@ -44,11 +44,11 @@ public class Close implements ExtendedQueryMessage {
         this.kind = kind;
     }
 
-    public String getName() {
+    public String name() {
         return name;
     }
 
-    public Kind getKind() {
+    public Kind kind() {
         return kind;
     }
 

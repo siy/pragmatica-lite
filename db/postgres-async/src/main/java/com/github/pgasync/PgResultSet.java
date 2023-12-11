@@ -39,12 +39,12 @@ public class PgResultSet implements ResultSet {
     }
 
     @Override
-    public Map<String, PgColumn> getColumnsByName() {
+    public Map<String, PgColumn> columnsByName() {
         return columnsByName != null ? columnsByName : Map.of();
     }
 
     @Override
-    public List<PgColumn> getOrderedColumns() {
+    public List<PgColumn> orderedColumns() {
         return orderedColumns;
     }
 
@@ -54,7 +54,7 @@ public class PgResultSet implements ResultSet {
     }
 
     @Override
-    public Row at(int index) {
+    public Row index(int index) {
         if (rows == null) {
             throw new IndexOutOfBoundsException();
         }
@@ -70,5 +70,4 @@ public class PgResultSet implements ResultSet {
     public int affectedRows() {
         return affectedRows;
     }
-
 }

@@ -10,8 +10,8 @@ import java.util.function.Function;
 
 // TODO: change internal value format from byte[] to PgValue(TEXT|BINARY)
 @SuppressWarnings({"unchecked", "rawtypes"})
-class ArrayConversions {
-
+final class ArrayConversions {
+    private ArrayConversions() {}
     static String fromArray(final Object elements, final Function<Object, String> printFn) {
         return appendArray(new StringBuilder(), elements, printFn).toString();
     }
@@ -56,9 +56,11 @@ class ArrayConversions {
 
     static <T> T toArray(Class<T> arrayType, Oid oid, String value, BiFunction<Oid, String, Object> parse) {
         Class elementType = arrayType.getComponentType();
+
         while (elementType.getComponentType() != null && elementType != byte[].class) {
             elementType = elementType.getComponentType();
         }
+
         if (elementType.isPrimitive()) {
             throw new IllegalArgumentException("Primitive arrays are not supported due to possible NULL values");
         }
@@ -89,7 +91,7 @@ class ArrayConversions {
     }
 
     private static int readArray(final char[] text, final int start, List<Object> result) {
-        var values = new ArrayList<Object>();
+        var values = new ArrayList<>();
 
         for (int i = start + 1; ; ) {
             final char c = text[i];
@@ -171,18 +173,18 @@ class ArrayConversions {
         if (result.isEmpty()) {
             return new int[]{0};
         }
-        if (!(result.get(0) instanceof List)) {
+        if (!(result.getFirst() instanceof List)) {
             return new int[]{result.size()};
         }
 
-        List<Integer> dimensions = new ArrayList<>();
+        var dimensions = new ArrayList<Integer>();
         dimensions.add(result.size());
 
-        Object value = result.get(0);
-        while (value instanceof List) {
-            List nested = (List) value;
+        var value = result.getFirst();
+
+        while (value instanceof List nested) {
             dimensions.add(nested.size());
-            value = nested.isEmpty() ? null : nested.get(0);
+            value = nested.isEmpty() ? null : nested.getFirst();
         }
 
         return toIntArray(dimensions);

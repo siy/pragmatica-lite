@@ -45,7 +45,6 @@ import static com.github.pgasync.io.IO.getCString;
  * @author Antti Laisi
  */
 public class CommandCompleteDecoder implements Decoder<CommandComplete> {
-
     @Override
     public byte getMessageId() {
         return 'C';
@@ -53,15 +52,17 @@ public class CommandCompleteDecoder implements Decoder<CommandComplete> {
 
     @Override
     public CommandComplete read(ByteBuffer buffer, int contentLength, Charset encoding) {
-        String tag = getCString(buffer, encoding);
-        int affectedRows;
-        if (tag.contains("INSERT") || tag.contains("UPDATE") || tag.contains("DELETE")) {
-            String[] parts = tag.split(" ");
-            affectedRows = Integer.parseInt(parts[parts.length - 1]);
-        } else {
-            affectedRows = 0;
-        }
-        return new CommandComplete(tag, affectedRows);
+        var tag = getCString(buffer, encoding);
+
+        return new CommandComplete(tag, calculateAffectedRows(tag));
     }
 
+    private static int calculateAffectedRows(String tag) {
+        if (tag.contains("INSERT") || tag.contains("UPDATE") || tag.contains("DELETE")) {
+            var parts = tag.split(" ");
+            return Integer.parseInt(parts[parts.length - 1]);
+        }
+
+        return 0;
+    }
 }

@@ -36,7 +36,6 @@ import java.nio.charset.Charset;
  * @author Antti Laisi
  */
 public class ReadyForQueryDecoder implements Decoder<ReadyForQuery> {
-
     @Override
     public ReadyForQuery read(ByteBuffer buffer, int contentLength, Charset encoding) {
         buffer.get();
@@ -47,5 +46,4 @@ public class ReadyForQueryDecoder implements Decoder<ReadyForQuery> {
     public byte getMessageId() {
         return 'Z';
     }
-
 }

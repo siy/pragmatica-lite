@@ -53,7 +53,6 @@ import java.nio.charset.Charset;
  * @author Antti Laisi
  */
 public class RowDescriptionDecoder implements Decoder<RowDescription> {
-
     @Override
     public byte getMessageId() {
         return 'T';

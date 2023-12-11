@@ -101,5 +101,4 @@ public interface Row {
     <TArray> TArray getArray(String column, Class<TArray> arrayType);
 
     <TArray> TArray getArray(int index, Class<TArray> arrayType);
-
 }

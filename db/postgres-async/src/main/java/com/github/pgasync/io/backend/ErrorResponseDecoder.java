@@ -35,7 +35,6 @@ import com.github.pgasync.message.backend.ErrorResponse;
  * @author Antti Laisi
  */
 public class ErrorResponseDecoder extends LogResponseDecoder<ErrorResponse> {
-
     @Override
     public byte getMessageId() {
         return 'E';
@@ -45,5 +44,4 @@ public class ErrorResponseDecoder extends LogResponseDecoder<ErrorResponse> {
     protected ErrorResponse asMessage(String level, String code, String message) {
         return new ErrorResponse(level, code, message);
     }
-
 }

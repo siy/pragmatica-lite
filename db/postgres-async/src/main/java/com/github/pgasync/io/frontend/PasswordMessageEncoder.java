@@ -48,7 +48,7 @@ public class PasswordMessageEncoder extends SkipableEncoder<PasswordMessage> {
 
     @Override
     public void writeBody(PasswordMessage msg, ByteBuffer buffer, Charset encoding) {
-        buffer.put(msg.getPasswordHash() != null ? msg.getPasswordHash() : msg.getPassword().getBytes(encoding));
+        buffer.put(msg.passwordHash() != null ? msg.passwordHash() : msg.password().getBytes(encoding));
         buffer.put((byte) 0);
     }
 

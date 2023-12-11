@@ -44,7 +44,6 @@ import java.nio.charset.Charset;
  * @author Antti Laisi
  */
 public class ParseEncoder extends ExtendedQueryEncoder<Parse> {
-
     @Override
     public Class<Parse> getMessageType() {
         return Parse.class;
@@ -57,10 +56,10 @@ public class ParseEncoder extends ExtendedQueryEncoder<Parse> {
 
     @Override
     public void writeBody(Parse msg, ByteBuffer buffer, Charset encoding) {
-        IO.putCString(buffer, msg.getSname(), encoding); // prepared statement
-        IO.putCString(buffer, msg.getQuery(), encoding);
-        buffer.putShort((short) msg.getTypes().length); // parameter types count
-        for (Oid type : msg.getTypes()) {
+        IO.putCString(buffer, msg.sname(), encoding); // prepared statement
+        IO.putCString(buffer, msg.query(), encoding);
+        buffer.putShort((short) msg.types().length); // parameter types count
+        for (Oid type : msg.types()) {
             buffer.putInt(type.getId());
         }
     }

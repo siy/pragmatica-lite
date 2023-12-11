@@ -17,7 +17,7 @@ public class PreparedStatementsCacheTest {
     private static final String SELECT_32 = "select 32";
 
     @ClassRule
-    public static DatabaseRule dbr = new DatabaseRule(DatabaseRule.createPoolBuilder(5));
+    public static DatabaseRule dbr = DatabaseRule.withMaxConnections(5);
 
     private Connectible pool;
 

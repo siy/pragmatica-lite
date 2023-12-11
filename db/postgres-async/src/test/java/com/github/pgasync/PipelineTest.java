@@ -43,7 +43,7 @@ import static org.junit.Assert.assertThat;
 public class PipelineTest {
 
     @ClassRule
-    public static DatabaseRule dbr = new DatabaseRule();
+    public static DatabaseRule dbr = DatabaseRule.defaultConfiguration();
 
     private Connection c;
     private Connectible pool;

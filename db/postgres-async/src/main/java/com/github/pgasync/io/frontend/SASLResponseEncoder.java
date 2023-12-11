@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 public class SASLResponseEncoder extends SkipableEncoder<SASLResponse> {
-
     @Override
     protected byte getMessageId() {
         return 'p';

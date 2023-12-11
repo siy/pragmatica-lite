@@ -33,7 +33,7 @@ import java.util.List;
 public class ScriptResultsTest {
 
     @ClassRule
-    public static DatabaseRule dbr = new DatabaseRule();
+    public static DatabaseRule dbr = DatabaseRule.defaultConfiguration();
 
     @BeforeClass
     public static void create() {
@@ -59,36 +59,36 @@ public class ScriptResultsTest {
         ResultSet firstInsertResult = results.get(0);
         Assert.assertEquals(2, firstInsertResult.affectedRows());
         Assert.assertEquals(0, firstInsertResult.size());
-        Assert.assertTrue(firstInsertResult.getOrderedColumns().isEmpty());
-        Assert.assertTrue(firstInsertResult.getColumnsByName().isEmpty());
+        Assert.assertTrue(firstInsertResult.orderedColumns().isEmpty());
+        Assert.assertTrue(firstInsertResult.columnsByName().isEmpty());
 
         ResultSet firstSelectResult = results.get(1);
         Assert.assertEquals(0, firstSelectResult.affectedRows());
         Assert.assertEquals(2, firstSelectResult.size());
-        Assert.assertEquals(1, firstSelectResult.at(0).getLong("first_id").intValue());
-        Assert.assertEquals(2, firstSelectResult.at(1).getLong("first_id").intValue());
-        Assert.assertEquals(1, firstSelectResult.getOrderedColumns().size());
-        Assert.assertEquals("first_id", firstSelectResult.getOrderedColumns().get(0).getName());
-        Assert.assertEquals(1, firstSelectResult.getColumnsByName().size());
-        Assert.assertTrue(firstSelectResult.getColumnsByName().containsKey("first_id"));
+        Assert.assertEquals(1, firstSelectResult.index(0).getLong("first_id").intValue());
+        Assert.assertEquals(2, firstSelectResult.index(1).getLong("first_id").intValue());
+        Assert.assertEquals(1, firstSelectResult.orderedColumns().size());
+        Assert.assertEquals("first_id", firstSelectResult.orderedColumns().get(0).name());
+        Assert.assertEquals(1, firstSelectResult.columnsByName().size());
+        Assert.assertTrue(firstSelectResult.columnsByName().containsKey("first_id"));
 
 
         ResultSet secondInsertResult = results.get(2);
         Assert.assertEquals(3, secondInsertResult.affectedRows());
         Assert.assertEquals(0, secondInsertResult.size());
-        Assert.assertTrue(secondInsertResult.getOrderedColumns().isEmpty());
-        Assert.assertTrue(secondInsertResult.getColumnsByName().isEmpty());
+        Assert.assertTrue(secondInsertResult.orderedColumns().isEmpty());
+        Assert.assertTrue(secondInsertResult.columnsByName().isEmpty());
 
         ResultSet secondSelectResult = results.get(3);
         Assert.assertEquals(0, secondSelectResult.affectedRows());
         Assert.assertEquals(3, secondSelectResult.size());
-        Assert.assertEquals(3, secondSelectResult.at(0).getLong("second_id").intValue());
-        Assert.assertEquals(4, secondSelectResult.at(1).getLong("second_id").intValue());
-        Assert.assertEquals(5, secondSelectResult.at(2).getLong("second_id").intValue());
-        Assert.assertEquals(1, secondSelectResult.getOrderedColumns().size());
-        Assert.assertEquals("second_id", secondSelectResult.getOrderedColumns().get(0).getName());
-        Assert.assertEquals(1, secondSelectResult.getColumnsByName().size());
-        Assert.assertTrue(secondSelectResult.getColumnsByName().containsKey("second_id"));
+        Assert.assertEquals(3, secondSelectResult.index(0).getLong("second_id").intValue());
+        Assert.assertEquals(4, secondSelectResult.index(1).getLong("second_id").intValue());
+        Assert.assertEquals(5, secondSelectResult.index(2).getLong("second_id").intValue());
+        Assert.assertEquals(1, secondSelectResult.orderedColumns().size());
+        Assert.assertEquals("second_id", secondSelectResult.orderedColumns().get(0).name());
+        Assert.assertEquals(1, secondSelectResult.columnsByName().size());
+        Assert.assertTrue(secondSelectResult.columnsByName().containsKey("second_id"));
     }
 
     @Test(expected = SqlException.class)

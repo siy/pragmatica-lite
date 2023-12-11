@@ -41,7 +41,6 @@ import java.nio.charset.Charset;
  * @author Marat Gainullin
  */
 public class ExecuteEncoder extends ExtendedQueryEncoder<Execute> {
-
     @Override
     public Class<Execute> getMessageType() {
         return Execute.class;

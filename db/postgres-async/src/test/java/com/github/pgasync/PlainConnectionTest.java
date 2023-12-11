@@ -32,7 +32,7 @@ import static org.junit.Assert.assertEquals;
 public class PlainConnectionTest {
 
     @Rule
-    public final DatabaseRule dbr = new DatabaseRule();
+    public final DatabaseRule dbr = DatabaseRule.defaultConfiguration();
     private Connectible plain;
 
     @Before
@@ -62,7 +62,7 @@ public class PlainConnectionTest {
                 .mapToObj(value -> "" + value)
                 .forEach(value -> plain.completeQuery("INSERT INTO PC_TEST_1 VALUES($1)", value).join());
 
-        assertEquals(count, dbr.query("SELECT COUNT(*) FROM PC_TEST_1").at(0).getLong(0).longValue());
+        assertEquals(count, dbr.query("SELECT COUNT(*) FROM PC_TEST_1").index(0).getLong(0).longValue());
     }
 
     @Test
@@ -75,6 +75,6 @@ public class PlainConnectionTest {
                 "INSERT INTO PC_TEST_2 VALUES('___" + value + "');"
         ).join());
 
-        assertEquals(count * 4, dbr.query("SELECT COUNT(*) FROM PC_TEST_2").at(0).getLong(0).longValue());
+        assertEquals(count * 4, dbr.query("SELECT COUNT(*) FROM PC_TEST_2").index(0).getLong(0).longValue());
     }
 }

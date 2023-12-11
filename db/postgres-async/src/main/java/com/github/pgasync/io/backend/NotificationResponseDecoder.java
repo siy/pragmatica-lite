@@ -27,14 +27,13 @@ import java.nio.charset.Charset;
  * @author Antti Laisi
  */
 public class NotificationResponseDecoder implements Decoder<NotificationResponse> {
+    @Override
+    public byte getMessageId() {
+        return 'A';
+    }
 
     @Override
     public NotificationResponse read(ByteBuffer buffer, int contentLength, Charset encoding) {
         return new NotificationResponse(buffer.getInt(), IO.getCString(buffer, encoding), IO.getCString(buffer, encoding));
-    }
-
-    @Override
-    public byte getMessageId() {
-        return 'A';
     }
 }
