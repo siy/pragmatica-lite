@@ -40,7 +40,7 @@ public interface Connection extends QueryExecutor {
      * - {@link Listening#unlisten()}
      *
      * @param channel Channel name to listen to.
-     * @param onNotification Callback, thar is cinvoked every time notification arrives.
+     * @param onNotification Callback, thar is invoked every time notification arrives.
      * @return CompletableFuture instance, completed when subscription will be registered at the backend.
      */
     CompletableFuture<Listening> subscribe(String channel, Consumer<String> onNotification);
