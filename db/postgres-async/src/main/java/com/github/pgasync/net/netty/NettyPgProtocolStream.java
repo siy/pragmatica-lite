@@ -23,7 +23,6 @@ import com.github.pgasync.message.frontend.Terminate;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.ssl.SslContextBuilder;
@@ -31,13 +30,14 @@ import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import org.pragmatica.lang.Promise;
+import org.pragmatica.net.transport.api.TransportConfiguration;
 
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.function.Function;
 
 /**
@@ -58,14 +58,13 @@ public class NettyPgProtocolStream extends PgProtocolStream {
         }
     };
 
-    public NettyPgProtocolStream(EventLoopGroup group, SocketAddress address, boolean useSsl, Charset encoding, Executor futuresExecutor) {
-        super(encoding, futuresExecutor);
+    public NettyPgProtocolStream(SocketAddress address, boolean useSsl, Charset encoding) {
+        super(encoding);
         this.address = address;
         this.useSsl = useSsl; // TODO: refactor into SSLConfig with trust parameters
-        this.channelPipeline = new Bootstrap()  //TODO: use transport SPI
-                                                .group(group)
-                                                .channel(NioSocketChannel.class)
-                                                .handler(newProtocolInitializer());
+        this.channelPipeline = TransportConfiguration.transportConfiguration()
+                                                     .clientBootstrap()
+                                                     .handler(newProtocolInitializer());
     }
 
     @Override
@@ -98,15 +97,15 @@ public class NettyPgProtocolStream extends PgProtocolStream {
                    ctx.close()
                       .addListener(closed -> {
                           if (closed.isSuccess()) {
-                              uponClose.completeAsync(() -> null, futuresExecutor);
+                              uponClose.completeAsync(() -> null);
                           } else {
                               Throwable th = closed.cause();
-                              futuresExecutor.execute(() -> uponClose.completeExceptionally(th));
+                              Promise.runAsync(() -> uponClose.completeExceptionally(th));
                           }
                       });
                } else {
                    Throwable th = written.cause();
-                   futuresExecutor.execute(() -> uponClose.completeExceptionally(th));
+                   Promise.runAsync(() -> uponClose.completeExceptionally(th));
                }
            });
         return uponClose;

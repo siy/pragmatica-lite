@@ -20,8 +20,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinPool;
 
 /**
  * Builder for creating {@link Connectible} instances.
@@ -36,20 +34,12 @@ public abstract class ConnectibleBuilder {
     /**
      * @return Pool ready for use
      */
-    public abstract Connectible pool(Executor futuresExecutor);
-
-    public Connectible pool() {
-        return pool(ForkJoinPool.commonPool());
-    }
+    public abstract Connectible pool();
 
     /**
      * @return Pool ready for use
      */
-    public abstract Connectible plain(Executor futuresExecutor);
-
-    public Connectible plain() {
-        return plain(ForkJoinPool.commonPool());
-    }
+    public abstract Connectible plain();
 
     public ConnectibleBuilder hostname(String hostname) {
         properties.hostname = hostname;

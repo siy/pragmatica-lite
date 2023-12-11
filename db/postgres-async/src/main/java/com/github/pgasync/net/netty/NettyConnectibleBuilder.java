@@ -19,13 +19,10 @@ import com.github.pgasync.PgDatabase;
 import com.github.pgasync.ProtocolStream;
 import com.github.pgasync.net.Connectible;
 import com.github.pgasync.net.ConnectibleBuilder;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 
 /**
  * Builder for creating {@link Connectible} instances.
@@ -34,28 +31,21 @@ import java.util.concurrent.Executor;
  * @author Marat Gainullin
  */
 public class NettyConnectibleBuilder extends ConnectibleBuilder {
-
-    // TODO: refactor when Netty will support more advanced threading model
-    //new NioEventLoopGroup(0/*Netty defaults will be used*/, futuresExecutor),
-    private static final EventLoopGroup group = new NioEventLoopGroup();
-
-    private CompletableFuture<ProtocolStream> obtainStream(Executor futuresExecutor) {
+    private CompletableFuture<ProtocolStream> obtainStream() {
         return CompletableFuture.completedFuture(new NettyPgProtocolStream(
-                group,
-                //TODO: use resolver
-                new InetSocketAddress(properties.getHostname(), properties.getPort()),
-                properties.getUseSsl(),
-                Charset.forName(properties.getEncoding()),
-                futuresExecutor
+            //TODO: use resolver
+            new InetSocketAddress(properties.getHostname(), properties.getPort()),
+            properties.getUseSsl(),
+            Charset.forName(properties.getEncoding())
         ));
     }
 
-    public Connectible pool(Executor futuresExecutor) {
-        return new PgConnectionPool(properties, () -> obtainStream(futuresExecutor), futuresExecutor);
+    public Connectible pool() {
+        return new PgConnectionPool(properties, this::obtainStream);
     }
 
-    public Connectible plain(Executor futuresExecutor) {
-        return new PgDatabase(properties, () -> obtainStream(futuresExecutor), futuresExecutor);
+    public Connectible plain() {
+        return new PgDatabase(properties, this::obtainStream);
     }
 
 }

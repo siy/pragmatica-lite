@@ -15,8 +15,6 @@
 package com.github.pgasync.io.frontend;
 
 import com.github.pgasync.io.Encoder;
-import com.github.pgasync.io.IO;
-import com.github.pgasync.message.backend.Authentication;
 import com.github.pgasync.message.frontend.FIndicators;
 
 import java.nio.ByteBuffer;

@@ -1,7 +1,6 @@
 package org.pragmatica.http.protocol;
 
 import org.pragmatica.lang.Option;
-import org.pragmatica.lang.Tuple;
 import org.pragmatica.lang.Tuple.Tuple2;
 
 import java.util.ArrayList;

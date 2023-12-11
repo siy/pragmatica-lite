@@ -8,7 +8,6 @@ import com.github.pgasync.net.Row;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -19,7 +18,6 @@ public abstract class PgConnectible implements Connectible {
     final String validationQuery;
     final String username;
     final DataConverter dataConverter;
-    final Executor futuresExecutor;
     final Supplier<CompletableFuture<ProtocolStream>> obtainStream;
 
     protected final String password;
@@ -27,8 +25,7 @@ public abstract class PgConnectible implements Connectible {
     protected final Charset encoding;
 
     PgConnectible(ConnectibleBuilder.ConnectibleProperties properties,
-                  Supplier<CompletableFuture<ProtocolStream>> obtainStream,
-                  Executor futuresExecutor) {
+                  Supplier<CompletableFuture<ProtocolStream>> obtainStream) {
         this.username = properties.getUsername();
         this.password = properties.getPassword();
         this.database = properties.getDatabase();
@@ -36,7 +33,6 @@ public abstract class PgConnectible implements Connectible {
         this.validationQuery = properties.getValidationQuery();
         this.encoding = Charset.forName(properties.getEncoding());
         this.obtainStream = obtainStream;
-        this.futuresExecutor = futuresExecutor;
     }
 
     @Override

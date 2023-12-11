@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.IntStream;
@@ -89,7 +88,7 @@ public class PerformanceTest {
             .password(DatabaseRule.postgres.getPassword())
             .database(DatabaseRule.postgres.getDatabaseName())
             .username(DatabaseRule.postgres.getUsername())
-            .pool(Executors.newFixedThreadPool(numThreads));
+            .pool();
         var connections = IntStream.range(0, poolSize)
                                    .mapToObj(i -> pool.getConnection().join()).toList();
         connections.forEach(connection -> {

@@ -14,6 +14,7 @@
 
 package com.github.pgasync.net;
 
+import java.io.Serial;
 import java.util.function.Consumer;
 
 /**
@@ -24,13 +25,14 @@ import java.util.function.Consumer;
  */
 public class SqlException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
     private static final int MAX_CAUSE_DEPTH = 100;
 
     final String code;
 
     public SqlException(String level, String code, String message) {
-        super(level + ": SQLSTATE=" + code + ", MESSAGE=" + message);
+        super(STR."\{level}: SQLSTATE=\{code}, MESSAGE=\{message}");
         this.code = code;
     }
 

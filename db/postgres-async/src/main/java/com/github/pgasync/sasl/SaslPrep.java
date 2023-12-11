@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 
 /**
- * This is a refactored version of https://github.com/ogrebgr/scram-sasl
+ * This is a refactored version of <a href="https://github.com/ogrebgr/scram-sasl">original code</a>.
  */
 public class SaslPrep {
 
@@ -23,24 +23,29 @@ public class SaslPrep {
 
         private void addRange(int start, int end) {
             if (start > end) {
-                throw new IllegalStateException("An empty range [" + start + ", " + end + "] detected");
+                throw new IllegalStateException(STR."An empty range [\{start}, \{end}] detected");
             }
+
             int coalescedStart = start;
             int coalescedEnd = end;
-            Map.Entry<Integer, Integer> left = mapping.floorEntry(start);
+            var left = mapping.floorEntry(start);
+
             if (left != null) {
                 int leftStart = left.getKey();
                 int leftEnd = leftStart + left.getValue() - 1;
+
                 if (start <= leftEnd) {
                     mapping.remove(leftStart);
                     coalescedStart = leftStart;
                     coalescedEnd = Math.max(end, leftEnd);
                 }
             }
-            Map.Entry<Integer, Integer> right = mapping.ceilingEntry(start);
+
+            var right = mapping.ceilingEntry(start);
             while (right != null) {
                 int rightStart = right.getKey();
                 int rightEnd = rightStart + right.getValue() - 1;
+
                 if (end >= rightStart) {
                     mapping.remove(rightStart);
                     coalescedEnd = Math.max(end, rightEnd);
@@ -53,7 +58,7 @@ public class SaslPrep {
         }
 
         public boolean isCharInClass(int c) {
-            Map.Entry<Integer, Integer> left = mapping.floorEntry(c);
+            var left = mapping.floorEntry(c);
             return left != null && c < left.getKey() + left.getValue();
         }
 
@@ -64,8 +69,10 @@ public class SaslPrep {
         private int indexOfIn(String s) {
             for (int i = 0; i < s.length(); ) {
                 int c = Character.codePointAt(s, i);
-                if (isCharInClass(c))
+
+                if (isCharInClass(c)) {
                     return i;
+                }
 
                 i += Character.charCount(c);
             }
@@ -77,14 +84,17 @@ public class SaslPrep {
          * with the string {@code mapTo}.
          */
         private String applyMapTo(String s, String mapTo) {
-            StringBuilder result = new StringBuilder();
+            var result = new StringBuilder();
+
             for (int i = 0; i < s.length(); ) {
                 int c = Character.codePointAt(s, i);
                 int charCount = Character.charCount(c);
-                if (isCharInClass(c))
+
+                if (isCharInClass(c)) {
                     result.append(mapTo);
-                else
+                } else {
                     result.append(s, i, i + charCount);
+                }
                 i += charCount;
             }
 
@@ -96,18 +106,22 @@ public class SaslPrep {
         }
 
         public static CharsClass fromList(int... charList) {
-            CharsClass charsClass = new CharsClass();
-            for (int j : charList) charsClass.addRange(j, j);
+            var charsClass = new CharsClass();
+
+            for (int j : charList) {
+                charsClass.addRange(j, j);
+            }
             return charsClass;
         }
 
 
         public static CharsClass fromRanges(int... charMap) {
             // There must be an even number of tuples in RANGES tables.
-            if ((charMap.length % 2) != 0)
+            if ((charMap.length % 2) != 0) {
                 throw new IllegalArgumentException("Invalid character list size");
+            }
 
-            CharsClass charsClass = new CharsClass();
+            var charsClass = new CharsClass();
             for (int i = 0; i < charMap.length; i += 2) {
                 charsClass.addRange(charMap[i], charMap[i + 1]);
             }
@@ -115,9 +129,10 @@ public class SaslPrep {
         }
 
         private static CharsClass fromClasses(CharsClass... classes) {
-            CharsClass charsClass = new CharsClass();
-            for (CharsClass aCharsClass : classes) {
-                for (Map.Entry<Integer, Integer> e : aCharsClass.mapping.entrySet()) {
+            var charsClass = new CharsClass();
+
+            for (var aCharsClass : classes) {
+                for (var e : aCharsClass.mapping.entrySet()) {
                     int start = e.getKey();
                     int end = start + e.getValue() - 1;
                     charsClass.addRange(start, end);
@@ -318,14 +333,15 @@ public class SaslPrep {
 
     public static String asQueryString(String value) {
         // Map
-        String mapped1 = B1.applyMapTo(value, "");
-        String mapped2 = C12.applyMapTo(mapped1, " ");
+        var mapped1 = B1.applyMapTo(value, "");
+        var mapped2 = C12.applyMapTo(mapped1, " ");
         // Normalize
-        String normalized = Normalizer.normalize(mapped2, Normalizer.Form.NFKC);
+        var normalized = Normalizer.normalize(mapped2, Normalizer.Form.NFKC);
         // Prohibit
         int idx = saslProhibited.indexOfIn(normalized);
-        if (idx != -1)
+        if (idx != -1) {
             throw new IllegalStateException("Prohibited character detected while SASLPrep");
+        }
         // Check bidirectional strings
         verifyRTL(normalized);
         return normalized;
@@ -341,15 +357,18 @@ public class SaslPrep {
             // 2) If a string contains any RandALCat character, the string MUST NOT
             // contain any LCat character.
             int containsL = D2.indexOfIn(s);
-            if (containsL != -1)
+            if (containsL != -1) {
                 throw new IllegalStateException("Both RAL and L characters detected while SASLprep");
+            }
             // 3) If a string contains any RandALCat character, a RandALCat
             // character MUST be the first character of the string
-            if (containsRAL != 0)
+            if (containsRAL != 0) {
                 throw new IllegalStateException("RAL without prefix detected while SASLprep");
+            }
             // ... and a RandALCat character MUST be the last character of the string.
-            if (!D1.isCharInClass(s.charAt(s.length() - 1)))
+            if (!D1.isCharInClass(s.charAt(s.length() - 1))) {
                 throw new IllegalStateException("RAL without suffix detected while SASLprep");
+            }
         }
     }
 }

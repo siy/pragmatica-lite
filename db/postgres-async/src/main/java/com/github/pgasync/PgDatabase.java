@@ -4,14 +4,13 @@ import com.github.pgasync.net.ConnectibleBuilder;
 import com.github.pgasync.net.Connection;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class PgDatabase extends PgConnectible {
 
-    public PgDatabase(ConnectibleBuilder.ConnectibleProperties properties, Supplier<CompletableFuture<ProtocolStream>> obtainStream, Executor futuresExecutor) {
-        super(properties, obtainStream, futuresExecutor);
+    public PgDatabase(ConnectibleBuilder.ConnectibleProperties properties, Supplier<CompletableFuture<ProtocolStream>> obtainStream) {
+        super(properties, obtainStream);
     }
 
     @Override
