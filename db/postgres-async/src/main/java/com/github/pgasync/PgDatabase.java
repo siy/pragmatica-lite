@@ -9,12 +9,12 @@ import java.util.function.Supplier;
 
 public class PgDatabase extends PgConnectible {
 
-    public PgDatabase(ConnectibleBuilder.ConnectibleProperties properties, Supplier<CompletableFuture<ProtocolStream>> obtainStream) {
+    public PgDatabase(ConnectibleBuilder.ConnectibleConfiguration properties, Supplier<CompletableFuture<ProtocolStream>> obtainStream) {
         super(properties, obtainStream);
     }
 
     @Override
-    public CompletableFuture<Connection> getConnection() {
+    public CompletableFuture<Connection> connection() {
         return obtainStream.get()
                 .thenApply(stream -> new PgConnection(stream, dataConverter).connect(username, password, database))
                 .thenCompose(Function.identity())

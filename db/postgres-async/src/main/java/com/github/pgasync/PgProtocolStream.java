@@ -31,6 +31,7 @@ import com.github.pgasync.message.backend.UnknownMessage;
 import com.github.pgasync.message.frontend.*;
 import com.github.pgasync.net.SqlException;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +51,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
 
     protected final Charset encoding;
 
-    private CompletableFuture<? super Message> onResponse;
+    private Promise<? super Message> onResponse;
     private final Map<String, Set<Consumer<String>>> subscriptions = new HashMap<>();
 
     private Consumer<RowDescription.ColumnDescription[]> onColumns;
@@ -65,14 +66,14 @@ public abstract class PgProtocolStream implements ProtocolStream {
         this.encoding = encoding;
     }
 
-    private CompletableFuture<? super Message> consumeOnResponse() {
-        CompletableFuture<? super Message> wasOnResponse = onResponse;
+    private Promise<? super Message> consumeOnResponse() {
+        var wasOnResponse = onResponse;
         onResponse = null;
         return wasOnResponse;
     }
 
     @Override
-    public CompletableFuture<Message> authenticate(String userName, String password, Authentication authRequired) {
+    public Promise<Message> authenticate(String userName, String password, Authentication authRequired) {
         if (authRequired.saslScramSha256()) {
             var clientNonce = UUID.randomUUID().toString();
             var saslInitialResponse = new SASLInitialResponse(Authentication.SUPPORTED_SASL,
@@ -104,7 +105,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
     protected abstract void write(Message... messages);
 
     @Override
-    public CompletableFuture<Message> send(Message message) {
+    public Promise<Message> send(Message message) {
         return offerRoundTrip(() -> {
             lastSentMessage = message;
             write(message);
@@ -115,18 +116,19 @@ public abstract class PgProtocolStream implements ProtocolStream {
     }
 
     @Override
-    public CompletableFuture<Void> send(Query query,
-                                        Consumer<RowDescription.ColumnDescription[]> onColumns,
-                                        Consumer<DataRow> onRow,
-                                        Consumer<CommandComplete> onAffected) {
+    public Promise<Unit> send(Query query,
+                              Consumer<RowDescription.ColumnDescription[]> onColumns,
+                              Consumer<DataRow> onRow,
+                              Consumer<CommandComplete> onAffected) {
         this.onColumns = onColumns;
         this.onRow = onRow;
         this.onAffected = onAffected;
-        return send(query).thenAccept(_ -> {});
+        return send(query)
+            .map(Unit::unit);
     }
 
     @Override
-    public CompletableFuture<Integer> send(Bind bind,
+    public Promise<Integer> send(Bind bind,
                                            Describe describe,
                                            Consumer<RowDescription.ColumnDescription[]> onColumns,
                                            Consumer<DataRow> onRow) {
@@ -137,11 +139,15 @@ public abstract class PgProtocolStream implements ProtocolStream {
             Execute execute;
             lastSentMessage = execute = new Execute();
             write(bind, describe, execute, FIndicators.SYNC);
-        }).thenApply(commandComplete -> ((CommandComplete) commandComplete).affectedRows());
+        }).map(PgProtocolStream::affectedRows);
+    }
+
+    private static int affectedRows(Message commandComplete) {
+        return ((CommandComplete) commandComplete).affectedRows();
     }
 
     @Override
-    public CompletableFuture<Integer> send(Bind bind, Consumer<DataRow> onRow) {
+    public Promise<Integer> send(Bind bind, Consumer<DataRow> onRow) {
         this.onColumns = null;
         this.onRow = onRow;
         this.onAffected = null;
@@ -149,7 +155,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
             Execute execute;
             lastSentMessage = execute = new Execute();
             write(bind, execute, FIndicators.SYNC);
-        }).thenApply(commandComplete -> ((CommandComplete) commandComplete).affectedRows());
+        }).map(PgProtocolStream::affectedRows);
     }
 
     @Override
@@ -157,6 +163,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
         subscriptions
             .computeIfAbsent(channel, _ -> new HashSet<>())
             .add(onNotification);
+
         return () -> subscriptions.computeIfPresent(channel, (_, subscription) -> {
             subscription.remove(onNotification);
             return subscription.isEmpty() ? null : subscription;
@@ -169,9 +176,9 @@ public abstract class PgProtocolStream implements ProtocolStream {
         onAffected = null;
         readyForQueryPendingMessage = null;
         lastSentMessage = null;
+
         if (onResponse != null) {
-            var uponResponse = consumeOnResponse();
-            Promise.runAsync(() -> uponResponse.completeExceptionally(th));
+            consumeOnResponse().failure(SqlError.fromThrowable(th));
         }
     }
 
@@ -216,22 +223,23 @@ public abstract class PgProtocolStream implements ProtocolStream {
                     onRow = null;
                     onAffected = null;
                     var response = readyForQueryPendingMessage != null ? readyForQueryPendingMessage : message;
-                    consumeOnResponse().completeAsync(() -> response);
+                    consumeOnResponse().success(response);
                 }
                 readyForQueryPendingMessage = null;
             }
             case ParameterStatus _, BackendKeyData _, UnknownMessage _ -> log.trace(message.toString());
             case NoticeResponse _ -> log.warn(message.toString());
-            case null, default -> consumeOnResponse().completeAsync(() -> message);
+            case null, default -> consumeOnResponse().success(message);
         }
     }
 
-    private CompletableFuture<Message> offerRoundTrip(Runnable requestAction) {
+    private Promise<Message> offerRoundTrip(Runnable requestAction) {
         return offerRoundTrip(requestAction, true);
     }
 
-    protected CompletableFuture<Message> offerRoundTrip(Runnable requestAction, boolean assumeConnected) {
-        CompletableFuture<Message> uponResponse = new CompletableFuture<>();
+    protected Promise<Message> offerRoundTrip(Runnable requestAction, boolean assumeConnected) {
+        var uponResponse = Promise.<Message>promise();
+
         if (!assumeConnected || isConnected()) {
             if (onResponse == null) {
                 onResponse = uponResponse;
@@ -241,11 +249,10 @@ public abstract class PgProtocolStream implements ProtocolStream {
                     gotException(th);
                 }
             } else {
-                Promise.runAsync(() -> uponResponse.completeExceptionally(new IllegalStateException(
-                    "Postgres messages stream simultaneous use detected")));
+                uponResponse.failure(new SqlError.SimultaneousUseDetected("Postgres messages stream simultaneous use detected"));
             }
         } else {
-            Promise.runAsync(() -> uponResponse.completeExceptionally(new IllegalStateException("Channel is closed")));
+            uponResponse.failure(new SqlError.ChannelClosed("Channel is closed"));
         }
         return uponResponse;
     }

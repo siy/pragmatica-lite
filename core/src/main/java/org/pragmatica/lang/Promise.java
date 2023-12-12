@@ -101,6 +101,16 @@ public interface Promise<T> {
 
     Promise<T> mapError(Fn1<Cause, Cause> mapper);
 
+    /**
+     * Handle both outcomes of resolution of current instance (success and failure), transform them and produce new
+     * instance with the result of the transformation.
+     *
+     * @param failureMapper the mapper for the case of resolution with failure
+     * @param successMapper the mapper for the case of resolution with success
+     *
+     * @return Transformed instance
+     */
+    <U> Promise<U> fold(Fn1<Promise<U>, ? super Cause> failureMapper, Fn1<Promise<U>, ? super T> successMapper);
 
     /**
      * General purpose method to start new virtual thread.
@@ -778,7 +788,7 @@ public interface Promise<T> {
 
             @Override
             public String toString() {
-                return this == NOP ? "NOP" : "Action(" + (dependency == null ? "free" : dependency.toString()) + ')';
+                return this == NOP ? "NOP" : STR."Action(\{dependency == null ? "free" : dependency.toString()}\{')'}";
             }
         }
 
@@ -833,6 +843,21 @@ public interface Promise<T> {
             var result = new PromiseImpl<U>(null);
 
             push(new CompletionAction<>(value -> value.fold(_ -> new PromiseImpl<>((Result<U>) value), mapper)
+                                                      .onResult(result::resolve),
+                                        result));
+
+            return result;
+        }
+
+        @Override
+        public <U> Promise<U> fold(Fn1<Promise<U>, ? super Cause> failureMapper, Fn1<Promise<U>, ? super T> successMapper) {
+            if (value != null) {
+                return value.fold(failureMapper, successMapper);
+            }
+
+            var result = new PromiseImpl<U>(null);
+
+            push(new CompletionAction<>(value -> value.fold(failureMapper, successMapper)
                                                       .onResult(result::resolve),
                                         result));
 

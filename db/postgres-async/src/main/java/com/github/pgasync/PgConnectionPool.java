@@ -23,6 +23,8 @@ import com.github.pgasync.net.SqlException;
 import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.Transaction;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Tuple;
+import org.pragmatica.lang.Unit;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -32,6 +34,8 @@ import java.util.function.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static org.pragmatica.lang.Tuple.tuple;
 
 /**
  * Resource pool for backend connections.
@@ -115,15 +119,16 @@ public class PgConnectionPool extends PgConnectible {
 
         private void closeNextStatement(Iterator<PooledPgPreparedStatement> statementsSource, CompletableFuture<Void> onComplete) {
             if (statementsSource.hasNext()) {
-                statementsSource.next().delegate.close()
-                                                .thenAccept(v -> {
-                                                    statementsSource.remove();
-                                                    closeNextStatement(statementsSource, onComplete);
-                                                })
-                                                .exceptionally(th -> {
-                                                    Promise.runAsync(() -> onComplete.completeExceptionally(th));
-                                                    return null;
-                                                });
+                statementsSource.next()
+                    .delegate.close()
+                             .thenAccept(v -> {
+                                 statementsSource.remove();
+                                 closeNextStatement(statementsSource, onComplete);
+                             })
+                             .exceptionally(th -> {
+                                 Promise.runAsync(() -> onComplete.completeExceptionally(th));
+                                 return null;
+                             });
             } else {
                 Promise.runAsync(() -> onComplete.complete(null));
             }
@@ -260,13 +265,13 @@ public class PgConnectionPool extends PgConnectible {
     private int size;
     private final Queue<CompletableFuture<? super Connection>> pending = new LinkedList<>();
     private final Queue<PooledPgConnection> connections = new LinkedList<>();
-    private CompletableFuture<Void> closing;
+    private Promise<Unit> closing;
 
-    public PgConnectionPool(ConnectibleBuilder.ConnectibleProperties properties,
+    public PgConnectionPool(ConnectibleBuilder.ConnectibleConfiguration properties,
                             Supplier<CompletableFuture<ProtocolStream>> obtainStream) {
         super(properties, obtainStream);
-        this.maxConnections = properties.getMaxConnections();
-        this.maxStatements = properties.getMaxStatements();
+        this.maxConnections = properties.maxConnections();
+        this.maxStatements = properties.maxStatements();
     }
 
     private <T> T locked(Supplier<T> action) {
@@ -295,7 +300,7 @@ public class PgConnectionPool extends PgConnectible {
     }
 
     @Override
-    public CompletableFuture<Connection> getConnection() {
+    public CompletableFuture<Connection> connection() {
         if (locked(() -> closing != null)) {
             return CompletableFuture.failedFuture(new SqlException("Connection pool is closed"));
         } else {
@@ -362,21 +367,22 @@ public class PgConnectionPool extends PgConnectible {
     private record CloseTuple(CompletableFuture<Void> closing, Runnable immediate) {}
 
     @Override
-    public CompletableFuture<Void> close() {
+//    public CompletableFuture<Void> close() {
+    public Promise<Unit> close() {
         var tuple = locked(() -> {
             if (closing == null) {
-                closing = new CompletableFuture<>()
-                    .thenApply(_ -> locked(() ->
-                                               CompletableFuture.allOf(connections.stream()
-                                                                                  .map(PooledPgConnection::shutdown)
-                                                                                  .toArray(CompletableFuture[]::new))
-                    ))
-                    .thenCompose(Function.identity());
-                return new CloseTuple(closing, checkClosed());
+                closing = Promise.promise(_ -> locked(() ->
+                                                          CompletableFuture.allOf(connections.stream()
+                                                                                             .map(PooledPgConnection::shutdown)
+                                                                                             .toArray(CompletableFuture[]::new))
+                                 ))
+                                 .thenCompose(Function.identity());
+                return tuple(closing, checkClosed());
             } else {
                 return new CloseTuple(CompletableFuture.failedFuture(new IllegalStateException("PG pool is already shutting down")), NO_OP);
             }
         });
+
         Promise.runAsync(tuple.immediate);
 
         return tuple.closing;

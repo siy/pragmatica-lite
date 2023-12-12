@@ -91,7 +91,7 @@ public class PipelineTest {
 
     private Connection getConnection() throws InterruptedException {
         SynchronousQueue<Connection> connQueue = new SynchronousQueue<>();
-        pool.getConnection()
+        pool.connection()
                 .thenAccept(connQueue::offer);
         return c = connQueue.take();
     }

@@ -15,6 +15,7 @@
 package com.github.pgasync.net.netty;
 
 import com.github.pgasync.PgProtocolStream;
+import com.github.pgasync.SqlError;
 import com.github.pgasync.message.Message;
 import com.github.pgasync.message.backend.SslHandshake;
 import com.github.pgasync.message.frontend.SSLRequest;
@@ -31,6 +32,8 @@ import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Unit;
 import org.pragmatica.net.transport.api.TransportConfiguration;
 
 import java.io.IOException;
@@ -39,6 +42,8 @@ import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+
+import static org.pragmatica.lang.Unit.unitResult;
 
 /**
  * Netty messages stream to Postgres backend.
@@ -68,19 +73,18 @@ public class NettyPgProtocolStream extends PgProtocolStream {
     }
 
     @Override
-    public CompletableFuture<Message> connect(StartupMessage startup) {
+    public Promise<Message> connect(StartupMessage startup) {
         startupWith = startup;
+
         return offerRoundTrip(() -> channelPipeline.connect(address).addListener(outboundErrorListener), false)
-            .thenApply(this::send)
-            .thenCompose(Function.identity())
-            .thenApply(message -> {
+            .flatMap(this::send)
+            .flatMap(message -> {
                 if (message == SslHandshake.INSTANCE) {
                     return send(startup);
                 } else {
-                    return CompletableFuture.completedFuture(message);
+                    return Promise.successful(message);
                 }
-            })
-            .thenCompose(Function.identity());
+            });
     }
 
     @Override
@@ -89,23 +93,22 @@ public class NettyPgProtocolStream extends PgProtocolStream {
     }
 
     @Override
-    public CompletableFuture<Void> close() {
-        CompletableFuture<Void> uponClose = new CompletableFuture<>();
+    public Promise<Unit> close() {
+        Promise<Unit> uponClose = new CompletableFuture<>();
         ctx.writeAndFlush(Terminate.INSTANCE)
            .addListener(written -> {
                if (written.isSuccess()) {
                    ctx.close()
+
                       .addListener(closed -> {
                           if (closed.isSuccess()) {
-                              uponClose.completeAsync(() -> null);
+                              uponClose.resolve(unitResult());
                           } else {
-                              Throwable th = closed.cause();
-                              Promise.runAsync(() -> uponClose.completeExceptionally(th));
+                              uponClose.failure(SqlError.fromThrowable(closed.cause()));
                           }
                       });
                } else {
-                   Throwable th = written.cause();
-                   Promise.runAsync(() -> uponClose.completeExceptionally(th));
+                   uponClose.failure(SqlError.fromThrowable(written.cause()));
                }
            });
         return uponClose;
@@ -124,13 +127,16 @@ public class NettyPgProtocolStream extends PgProtocolStream {
         return new ChannelInitializer<>() {
             @Override
             protected void initChannel(Channel channel) {
+                var pipeline = channel.pipeline();
+
                 if (useSsl) {
-                    channel.pipeline().addLast(newSslInitiator());
+                    pipeline.addLast(newSslInitiator());
                 }
-                channel.pipeline().addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 1, 4, -4, 0, true));
-                channel.pipeline().addLast(new NettyMessageDecoder(encoding));
-                channel.pipeline().addLast(new NettyMessageEncoder(encoding));
-                channel.pipeline().addLast(newProtocolHandler());
+                pipeline
+                    .addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 1, 4, -4, 0, true))
+                    .addLast(new NettyMessageDecoder(encoding))
+                    .addLast(new NettyMessageEncoder(encoding))
+                    .addLast(newProtocolHandler());
             }
         };
     }

@@ -38,7 +38,7 @@ public class PreparedStatementsCacheTest {
 
     @Test
     public void shouldEvictedStatementBeReallyClosed() {
-        Connection conn = pool.getConnection().join();
+        Connection conn = pool.connection().join();
         try {
             PreparedStatement evictor = conn.prepareStatement(SELECT_52).join();
             try {
@@ -54,7 +54,7 @@ public class PreparedStatementsCacheTest {
 
     @Test
     public void shouldDuplicatedStatementBeReallyClosed() {
-        Connection conn = pool.getConnection().join();
+        Connection conn = pool.connection().join();
         try {
             PreparedStatement stmt = conn.prepareStatement(SELECT_52).join();
             try {
@@ -70,7 +70,7 @@ public class PreparedStatementsCacheTest {
 
     @Test
     public void shouldDuplicatedAndEvictedStatementsBeReallyClosed() {
-        Connection conn = pool.getConnection().join();
+        Connection conn = pool.connection().join();
         try {
             PreparedStatement stmt = conn.prepareStatement(SELECT_52).join();
             try {

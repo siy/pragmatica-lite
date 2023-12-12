@@ -4,6 +4,7 @@ import com.github.pgasync.conversion.DataConverter;
 import com.github.pgasync.net.ConnectibleBuilder;
 import com.github.pgasync.net.Connectible;
 import com.github.pgasync.net.Row;
+import org.pragmatica.lang.Promise;
 
 import java.nio.charset.Charset;
 import java.util.Map;
@@ -24,14 +25,14 @@ public abstract class PgConnectible implements Connectible {
     protected final String database;
     protected final Charset encoding;
 
-    PgConnectible(ConnectibleBuilder.ConnectibleProperties properties,
+    PgConnectible(ConnectibleBuilder.ConnectibleConfiguration properties,
                   Supplier<CompletableFuture<ProtocolStream>> obtainStream) {
-        this.username = properties.getUsername();
-        this.password = properties.getPassword();
-        this.database = properties.getDatabase();
-        this.dataConverter = properties.getDataConverter();
-        this.validationQuery = properties.getValidationQuery();
-        this.encoding = Charset.forName(properties.getEncoding());
+        this.username = properties.username();
+        this.password = properties.password();
+        this.database = properties.database();
+        this.dataConverter = properties.dataConverter();
+        this.validationQuery = properties.validationQuery();
+        this.encoding = Charset.forName(properties.encoding());
         this.obtainStream = obtainStream;
     }
 
@@ -40,7 +41,7 @@ public abstract class PgConnectible implements Connectible {
                                           Consumer<Row> onRow,
                                           Consumer<Integer> onAffected,
                                           String sql) {
-        return getConnection()
+        return connection()
             .thenApply(connection ->
                            connection.script(onColumns, onRow, onAffected, sql)
                                      .handle((message, th) ->
@@ -57,25 +58,26 @@ public abstract class PgConnectible implements Connectible {
     }
 
     @Override
-    public CompletableFuture<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                            Consumer<Row> onRow,
-                                            String sql,
-                                            Object... params) {
-        return getConnection()
+    public Promise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                  Consumer<Row> onRow,
+                                  String sql,
+                                  Object... params) {
+        return connection()
             .thenApply(connection ->
                            connection.query(onColumns, onRow, sql, params)
-                                     .handle((affected, th) ->
-                                                 connection.close()
-                                                           .thenApply(v -> {
-                                                               if (th == null) {
-                                                                   return affected;
-                                                               } else {
-                                                                   throw new RuntimeException(th);
-                                                               }
-                                                           })
-                                     ).thenCompose(Function.identity())
-            )
-            .thenCompose(Function.identity());
+                               .fold(cause -> connection.close().flatMap(_ -> Promise.<Integer>failed(cause)),
+                                     affected -> connection.close().map(() -> affected));
+//                               .onResultDp(() -> connection.close())
+//                                     .flatMap((affected, th) ->
+//                                                 connection.close()
+//                                                           .thenApply(v -> {
+//                                                               if (th == null) {
+//                                                                   return affected;
+//                                                               } else {
+//                                                                   throw new RuntimeException(th);
+//                                                               }
+//                                                           })
+//                                     )
+            );
     }
-
 }

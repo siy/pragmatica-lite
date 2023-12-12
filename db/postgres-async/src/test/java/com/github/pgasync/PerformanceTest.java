@@ -90,7 +90,7 @@ public class PerformanceTest {
             .username(DatabaseRule.postgres.getUsername())
             .pool();
         var connections = IntStream.range(0, poolSize)
-                                   .mapToObj(i -> pool.getConnection().join()).toList();
+                                   .mapToObj(i -> pool.connection().join()).toList();
         connections.forEach(connection -> {
             connection.prepareStatement(SELECT_42).join().close().join();
             connection.close().join();
@@ -153,7 +153,7 @@ public class PerformanceTest {
         }
 
         private void nextSamplePreparedStatement() {
-            pool.getConnection()
+            pool.connection()
                 .thenApply(connection ->
                                connection.prepareStatement(SELECT_42)
                                          .thenApply(stmt -> stmt.query()

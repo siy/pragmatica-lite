@@ -41,7 +41,7 @@ public class ListenNotifyTest {
     public void shouldReceiveNotificationsOnListenedChannel() throws InterruptedException {
         BlockingQueue<String> result = new LinkedBlockingQueue<>(5);
 
-        Connection conn = pool.getConnection().join();
+        Connection conn = pool.connection().join();
         try {
             Listening subscription = conn.subscribe("example", result::offer).join();
             try {

@@ -31,9 +31,9 @@ public class PgResultSet implements ResultSet {
     private final List<PgColumn> orderedColumns;
     private final int affectedRows;
 
-    public PgResultSet(Map<String, PgColumn> columnsByName, List<PgColumn> orderedColumns, List<Row> rows, int affectedRows) {
-        this.columnsByName = columnsByName != null ? columnsByName : Map.of();
-        this.orderedColumns = orderedColumns;
+    public PgResultSet(Map<String, PgColumn> columnsByName, PgColumn[] orderedColumns, List<Row> rows, int affectedRows) {
+        this.columnsByName = columnsByName == null ? Map.of() : columnsByName;
+        this.orderedColumns = orderedColumns == null ? List.of() : List.of(orderedColumns);
         this.rows = rows == null ? List.of() : rows;
         this.affectedRows = affectedRows;
     }

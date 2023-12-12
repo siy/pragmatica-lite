@@ -15,6 +15,8 @@
 package com.github.pgasync.net;
 
 import com.github.pgasync.Oid;
+import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.io.AsyncCloseable;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -29,9 +31,9 @@ import java.util.function.Consumer;
  * @author Antti Laisi
  * @author Marat Gainullin
  */
-public interface Connection extends QueryExecutor {
+public interface Connection extends QueryExecutor, AsyncCloseable {
 
-    CompletableFuture<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes);
+    Promise<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes);
 
     /**
      * The typical scenario of using notifications is as follows:
@@ -43,11 +45,9 @@ public interface Connection extends QueryExecutor {
      * @param onNotification Callback, thar is invoked every time notification arrives.
      * @return CompletableFuture instance, completed when subscription will be registered at the backend.
      */
-    CompletableFuture<Listening> subscribe(String channel, Consumer<String> onNotification);
+    Promise<Listening> subscribe(String channel, Consumer<String> onNotification);
 
-    CompletableFuture<Transaction> begin();
-
-    CompletableFuture<Void> close();
+    Promise<Transaction> begin();
 
     boolean isConnected();
 }

@@ -44,6 +44,7 @@ import com.github.pgasync.message.Message;
 import com.github.pgasync.message.frontend.Parse;
 import com.github.pgasync.message.frontend.Query;
 import com.github.pgasync.message.frontend.StartupMessage;
+import org.pragmatica.lang.Promise;
 
 /**
  * A connection to Postgres backend. The postmaster forks a backend process for each connection. A connection can process only a single query at a
@@ -66,13 +67,14 @@ public class PgConnection implements Connection {
         @Override
         public CompletableFuture<ResultSet> query(Object... params) {
             var rows = new ArrayList<Row>();
-            return fetch((columnsByName, orderedColumns) -> {
-            }, rows::add, params)
-                .thenApply(v -> new PgResultSet(columns.byName, List.of(columns.ordered), rows, 0));
+
+            return fetch((_, _) -> {}, rows::add, params)
+                .map(_ -> new PgResultSet(columns.byName, List.of(columns.ordered), rows, 0));
         }
 
+        //TODO: consider conversion to "reducer" style to eliminate externally stored state
         @Override
-        public CompletableFuture<Integer> fetch(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns, Consumer<Row> processor, Object... params) {
+        public Promise<Integer> fetch(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns, Consumer<Row> processor, Object... params) {
             var bind = new Bind(sname, dataConverter.fromParameters(params));
             Consumer<DataRow> rowProcessor = dataRow -> processor.accept(new PgRow(dataRow, columns.byName, columns.ordered, dataConverter));
 

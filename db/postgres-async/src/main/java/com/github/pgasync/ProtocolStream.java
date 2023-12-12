@@ -23,6 +23,9 @@ import com.github.pgasync.message.frontend.Bind;
 import com.github.pgasync.message.frontend.Describe;
 import com.github.pgasync.message.frontend.Query;
 import com.github.pgasync.message.frontend.StartupMessage;
+import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
+import org.pragmatica.lang.io.AsyncCloseable;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -32,24 +35,20 @@ import java.util.function.Consumer;
  *
  * @author Antti Laisi
  */
-public interface ProtocolStream {
+public interface ProtocolStream extends AsyncCloseable {
+    Promise<Message> connect(StartupMessage startup);
 
-    CompletableFuture<Message> connect(StartupMessage startup);
+    Promise<Message> authenticate(String userName, String password, Authentication authRequired);
 
-    CompletableFuture<Message> authenticate(String userName, String password, Authentication authRequired);
+    Promise<Message> send(Message message);
 
-    CompletableFuture<Message> send(Message message);
+    Promise<Unit> send(Query query, Consumer<RowDescription.ColumnDescription[]> onColumns, Consumer<DataRow> onRow, Consumer<CommandComplete> onAffected);
 
-    CompletableFuture<Void> send(Query query, Consumer<RowDescription.ColumnDescription[]> onColumns, Consumer<DataRow> onRow, Consumer<CommandComplete> onAffected);
+    Promise<Integer> send(Bind bind, Describe describe, Consumer<RowDescription.ColumnDescription[]> onColumns, Consumer<DataRow> onRow);
 
-    CompletableFuture<Integer> send(Bind bind, Describe describe, Consumer<RowDescription.ColumnDescription[]> onColumns, Consumer<DataRow> onRow);
-
-    CompletableFuture<Integer> send(Bind bind, Consumer<DataRow> onRow);
+    Promise<Integer> send(Bind bind, Consumer<DataRow> onRow);
 
     Runnable subscribe(String channel, Consumer<String> onNotification);
 
     boolean isConnected();
-
-    CompletableFuture<Void> close();
-
 }

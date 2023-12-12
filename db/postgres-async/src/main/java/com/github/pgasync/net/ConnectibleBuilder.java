@@ -29,7 +29,7 @@ import java.util.List;
  */
 public abstract class ConnectibleBuilder {
 
-    protected final ConnectibleProperties properties = new ConnectibleProperties();
+    protected final ConnectibleConfiguration properties = new ConnectibleConfiguration();
 
     /**
      * @return Pool ready for use
@@ -104,62 +104,61 @@ public abstract class ConnectibleBuilder {
     /**
      * Configuration for a connectible.
      */
-    public static class ConnectibleProperties {
+    public static class ConnectibleConfiguration {
+        private String hostname = "localhost";
+        private int port = 5432;
+        private String username;
+        private String password;
+        private String database;
+        private int maxConnections = 20;
+        private int maxStatements = 20;
+        private DataConverter dataConverter;
+        private final List<Converter<?>> converters = new ArrayList<>();
+        private boolean useSsl;
+        private String encoding = System.getProperty("pg.async.encoding", "utf-8");
+        private String validationQuery;
 
-        String hostname = "localhost";
-        int port = 5432;
-        String username;
-        String password;
-        String database;
-        int maxConnections = 20;
-        int maxStatements = 20;
-        DataConverter dataConverter;
-        List<Converter<?>> converters = new ArrayList<>();
-        boolean useSsl;
-        String encoding = System.getProperty("pg.async.encoding", "utf-8");
-        String validationQuery;
-
-        public String getHostname() {
+        public String hostname() {
             return hostname;
         }
 
-        public int getPort() {
+        public int port() {
             return port;
         }
 
-        public String getUsername() {
+        public String username() {
             return username;
         }
 
-        public String getPassword() {
+        public String password() {
             return password;
         }
 
-        public String getDatabase() {
+        public String database() {
             return database;
         }
 
-        public int getMaxConnections() {
+        public int maxConnections() {
             return maxConnections;
         }
 
-        public int getMaxStatements() {
+        public int maxStatements() {
             return maxStatements;
         }
 
-        public boolean getUseSsl() {
+        public boolean useSsl() {
             return useSsl;
         }
 
-        public String getEncoding() {
+        public String encoding() {
             return encoding;
         }
 
-        public DataConverter getDataConverter() {
+        public DataConverter dataConverter() {
             return dataConverter != null ? dataConverter : new DataConverter(converters, Charset.forName(encoding));
         }
 
-        public String getValidationQuery() {
+        public String validationQuery() {
             return validationQuery;
         }
     }

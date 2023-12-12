@@ -53,7 +53,7 @@ public class TransactionTest {
 
     @Test
     public void shouldCommitSelectInTransaction() throws Exception {
-        dbr.pool().getConnection()
+        dbr.pool().connection()
                 .thenApply(connection -> connection.begin()
                         .thenApply(transaction -> transaction.completeQuery("SELECT 1")
                                 .thenApply(result -> {
@@ -78,7 +78,7 @@ public class TransactionTest {
 
     @Test
     public void shouldCommitInsertInTransaction() throws Exception {
-        dbr.pool().getConnection()
+        dbr.pool().connection()
                 .thenApply(connection -> connection.begin()
                         .thenApply(transaction ->
                                 transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(10)")
@@ -107,7 +107,7 @@ public class TransactionTest {
     @Test
     public void shouldCommitParameterizedInsertInTransaction() throws Exception {
         // Ref: https://github.com/alaisi/postgres-async-driver/issues/34
-        long id = dbr.pool().getConnection()
+        long id = dbr.pool().connection()
                 .thenApply(connection -> connection.begin()
                         .thenApply(transaction ->
                                 transaction.completeQuery("INSERT INTO TX_TEST (ID) VALUES ($1) RETURNING ID", 35)
@@ -136,7 +136,7 @@ public class TransactionTest {
 
     @Test
     public void shouldRollbackTransaction() throws Exception {
-        dbr.pool().getConnection()
+        dbr.pool().connection()
                 .thenApply(connection -> connection.begin()
                         .thenApply(transaction ->
                                 transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(9)")
@@ -166,7 +166,7 @@ public class TransactionTest {
     @Test(expected = SqlException.class)
     public void shouldRollbackTransactionOnBackendError() throws Exception {
         try {
-            dbr.pool().getConnection()
+            dbr.pool().connection()
                     .thenApply(connection -> connection.begin()
                             .thenApply(transaction ->
                                     transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(11)")
@@ -200,7 +200,7 @@ public class TransactionTest {
 
     @Test
     public void shouldRollbackTransactionAfterBackendError() throws Exception {
-        dbr.pool().getConnection()
+        dbr.pool().connection()
                 .thenApply(connection -> connection.begin()
                         .thenApply(transaction ->
                                 transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(22)")
@@ -230,7 +230,7 @@ public class TransactionTest {
 
     @Test
     public void shouldSupportNestedTransactions() throws Exception {
-        dbr.pool().getConnection()
+        dbr.pool().connection()
                 .thenApply(connection -> connection.begin()
                         .thenApply(transaction ->
                                 transaction.begin()
@@ -263,7 +263,7 @@ public class TransactionTest {
 
     @Test
     public void shouldRollbackNestedTransaction() throws Exception {
-        dbr.pool().getConnection()
+        dbr.pool().connection()
                 .thenApply(connection -> connection.begin()
                         .thenApply(transaction ->
                                 transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(24)")
@@ -302,7 +302,7 @@ public class TransactionTest {
 
     @Test
     public void shouldRollbackNestedTransactionOnBackendError() throws Exception {
-        dbr.pool().getConnection()
+        dbr.pool().connection()
                 .thenApply(connection -> connection.begin()
                         .thenApply(transaction ->
                                 transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(25)")
