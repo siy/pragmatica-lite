@@ -1,8 +1,7 @@
 package com.github.pgasync.net;
 
+import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.io.AsyncCloseable;
-
-import java.util.concurrent.CompletableFuture;
 
 /**
  * General container of connections.
@@ -10,7 +9,5 @@ import java.util.concurrent.CompletableFuture;
  * @author Marat Gainullin
  */
 public interface Connectible extends QueryExecutor, AsyncCloseable {
-    CompletableFuture<Connection> connection();
-
-//    CompletableFuture<Void> close();
+    Promise<Connection> connection();
 }

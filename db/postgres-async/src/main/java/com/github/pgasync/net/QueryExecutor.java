@@ -3,6 +3,7 @@ package com.github.pgasync.net;
 import com.github.pgasync.PgColumn;
 import com.github.pgasync.PgResultSet;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,7 +19,6 @@ import java.util.function.Consumer;
  * @author Antti Laisi
  */
 public interface QueryExecutor {
-
     /**
      * Sends parameter less query script. The script may be multi query. Queries are separated with semicolons. Accumulates fetched columns, rows and
      * affected rows counts into memory and transforms them into a ResultSet when each {@link ResultSet} is fetched. Completes returned
@@ -28,39 +28,15 @@ public interface QueryExecutor {
      *
      * @return CompletableFuture that is completed with a collection of fetched {@link ResultSet}s.
      */
-    default CompletableFuture<Collection<ResultSet>> completeScript(String sql) {
-        List<ResultSet> results = new ArrayList<>();
-        class ResultSetAssembly {
-            private Map<String, PgColumn> columnsByName;
-            private PgColumn[] orderedColumns;
-            private List<Row> rows;
-
-            private void reset() {
-                columnsByName = null;
-                orderedColumns = null;
-                rows = null;
-            }
-        }
+    default Promise<Collection<ResultSet>> completeScript(String sql) {
+        var results = new ArrayList<ResultSet>();
         var assembly = new ResultSetAssembly();
 
-        return script(
-            (columnsByName, orderedColumns) -> {
-                assembly.columnsByName = columnsByName;
-                assembly.orderedColumns = orderedColumns;
-                assembly.rows = new ArrayList<>();
-            },
-            row -> assembly.rows.add(row),
-            affected -> {
-                results.add(new PgResultSet(
-                    assembly.columnsByName,
-                    assembly.orderedColumns,
-                    assembly.rows,
-                    affected
-                ));
-                assembly.reset();
-            },
-            sql
-        ).thenApply(_ -> results);
+        return script(assembly::start,
+                      assembly::add,
+                      affected -> results.add(assembly.asResultSet(affected)),
+                      sql)
+            .map(_ -> results);
     }
 
     /**
@@ -78,10 +54,10 @@ public interface QueryExecutor {
      *
      * @return CompletableFuture that is completed when the whole process of multiple {@link ResultSet}s fetching ends.
      */
-    CompletableFuture<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                   Consumer<Row> onRow,
-                                   Consumer<Integer> onAffected,
-                                   String sql);
+    Promise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                         Consumer<Row> onRow,
+                         Consumer<Integer> onAffected,
+                         String sql);
 
     /**
      * Sends single query with parameters. Uses extended query protocol of Postgres. Accumulates fetched columns, rows and affected rows count into
@@ -94,29 +70,9 @@ public interface QueryExecutor {
      * @return CompletableFuture of {@link ResultSet}.
      */
     default Promise<ResultSet> completeQuery(String sql, Object... params) {
-        class ResultSetAssembly {
-            private Map<String, PgColumn> columnsByName;
-            private PgColumn[] orderedColumns;
-            private List<Row> rows;
-        }
         var assembly = new ResultSetAssembly();
-        return query(
-            (columnsByName, orderedColumns) -> {
-                assembly.columnsByName = columnsByName;
-                assembly.orderedColumns = orderedColumns;
-                assembly.rows = new ArrayList<>();
-            },
-            row -> assembly.rows.add(row),
-            sql,
-            params
-        )
-            .thenApply(affected -> new PgResultSet(
-                assembly.columnsByName,
-                assembly.orderedColumns,
-                assembly.rows,
-                affected
-            ));
 
+        return query(assembly::start, assembly::add, sql, params).map(assembly::asResultSet);
     }
 
     /**
@@ -134,7 +90,40 @@ public interface QueryExecutor {
      *     fetched columns, rows and affected rows count. Affected rows count is this future's completion value.
      */
     Promise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                     Consumer<Row> onRow,
-                                     String sql,
-                                     Object... params);
+                           Consumer<Row> onRow,
+                           String sql,
+                           Object... params);
+
+    class ResultSetAssembly {
+        private Map<String, PgColumn> columnsByName;
+        private PgColumn[] orderedColumns;
+        private List<Row> rows;
+
+        private void reset() {
+            columnsByName = null;
+            orderedColumns = null;
+            rows = null;
+        }
+
+        private PgResultSet asResultSet(int affectedRows) {
+            var resultSet = new PgResultSet(
+                columnsByName,
+                orderedColumns,
+                rows,
+                affectedRows
+            );
+            reset();
+            return resultSet;
+        }
+
+        private void start(Map<String, PgColumn> columnsByName, PgColumn[] orderedColumns) {
+            this.columnsByName = columnsByName;
+            this.orderedColumns = orderedColumns;
+            this.rows = new ArrayList<>();
+        }
+
+        private void add(Row row) {
+            rows.add(row);
+        }
+    }
 }

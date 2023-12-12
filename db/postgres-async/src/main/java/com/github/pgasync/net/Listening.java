@@ -1,9 +1,10 @@
 package com.github.pgasync.net;
 
-import java.util.concurrent.CompletableFuture;
+import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
 
 @FunctionalInterface
 public interface Listening {
 
-    CompletableFuture<Void> unlisten();
+    Promise<Unit> unlisten();
 }

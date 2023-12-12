@@ -367,6 +367,24 @@ public sealed interface Result<T> permits Success, Failure {
     }
 
     /**
+     * <b>WARNING:</b> low level, unsafe method. Use with caution.
+     * <p>
+     * Handle both possible states with single function, transform them and produce new instance with the result
+     * of the transformation.
+     * <p>
+     * One of the input parameters are null (cause in case of successful resolution and value in case of failure) at the
+     * entry of the function.
+     *
+     * @param mapper the mapper which accepts both success and failure
+     *
+     * @return Transformed instance
+     */
+    default <U> Result<U> unsafeFold(Fn2<Result<U>, ? super Cause, ? super T> mapper) {
+        return fold(failure -> mapper.apply(failure, null),
+                    success -> mapper.apply(null, success));
+    }
+
+    /**
      * Create an instance of successful operation result.
      *
      * @param value Operation result

@@ -14,7 +14,8 @@
 
 package com.github.pgasync.net;
 
-import java.util.concurrent.CompletableFuture;
+import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
 
 /**
  * A unit of work. Transactions must be committed or rolled back, otherwise a
@@ -28,23 +29,22 @@ public interface Transaction extends QueryExecutor {
     /**
      * Commits a transaction
      */
-    CompletableFuture<Void> commit();
+    Promise<Unit> commit();
 
     /**
      * Rollbacks a transaction.
      */
-    CompletableFuture<Void> rollback();
+    Promise<Unit> rollback();
 
     /**
      * Commits a transaction and rollbacks it if an error occurs.
      */
-    CompletableFuture<Void> close();
+    Promise<Unit> close();
 
     /**
      * Returns a connection, this transaction belongs to.
      */
     Connection getConnection();
 
-    CompletableFuture<Transaction> begin();
-
+    Promise<Transaction> begin();
 }

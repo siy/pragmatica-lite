@@ -21,14 +21,17 @@ import org.pragmatica.lang.Functions.*;
 import org.pragmatica.lang.Result.Cause;
 import org.pragmatica.lang.io.CoreError;
 import org.pragmatica.lang.io.Timeout;
+import org.pragmatica.lang.utils.ResultCollector;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 import static org.pragmatica.lang.utils.ActionableThreshold.threshold;
 import static org.pragmatica.lang.utils.ResultCollector.resultCollector;
@@ -102,8 +105,8 @@ public interface Promise<T> {
     Promise<T> mapError(Fn1<Cause, Cause> mapper);
 
     /**
-     * Handle both outcomes of resolution of current instance (success and failure), transform them and produce new
-     * instance with the result of the transformation.
+     * Handle both outcomes of resolution of current instance (success and failure), transform them and produce new instance with the result of the
+     * transformation.
      *
      * @param failureMapper the mapper for the case of resolution with failure
      * @param successMapper the mapper for the case of resolution with success
@@ -111,6 +114,16 @@ public interface Promise<T> {
      * @return Transformed instance
      */
     <U> Promise<U> fold(Fn1<Promise<U>, ? super Cause> failureMapper, Fn1<Promise<U>, ? super T> successMapper);
+
+    /**
+     * Compose current instance with the function which returns a Promise of another type. Unlike {@link Promise#flatMap(Fn1)}, the function will be
+     * invoked in any case, regardless of the result of the current instance.
+     *
+     * @param mapper the mapper
+     *
+     * @return Transformed instance
+     */
+    <U> Promise<U> fold(Fn1<Promise<U>, Result<T>> mapper);
 
     /**
      * General purpose method to start new virtual thread.
@@ -392,6 +405,18 @@ public interface Promise<T> {
      */
     static <T> void cancelAll(List<Promise<T>> promises) {
         promises.forEach(Promise::cancel);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T> Promise<List<Result<T>>> allOf(Collection<Promise<T>> promises) {
+        var array = promises.toArray(new Promise[0]);
+        var promise = Promise.promise();
+        var collector = ResultCollector.resultCollector(promises.size(),
+                                                        values -> promise.success(List.of(values)));
+        IntStream.range(0, promises.size())
+                 .forEach(index -> array[index].onResult(result -> collector.registerEvent(index, result)));
+
+        return promise.map(list -> (List<Result<T>>) list);
     }
 
     /**
@@ -861,6 +886,20 @@ public interface Promise<T> {
                                                       .onResult(result::resolve),
                                         result));
 
+            return result;
+        }
+
+        @Override
+        public <U> Promise<U> fold(Fn1<Promise<U>, Result<T>> mapper) {
+            if (value != null) {
+                return mapper.apply(value);
+            }
+
+            var result = new PromiseImpl<U>(null);
+
+            push(new CompletionAction<>(value -> mapper.apply(value)
+                                                       .onResult(result::resolve),
+                                        result));
             return result;
         }
 

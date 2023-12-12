@@ -19,7 +19,6 @@ import static com.github.pgasync.message.backend.RowDescription.ColumnDescriptio
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
@@ -45,6 +44,7 @@ import com.github.pgasync.message.frontend.Parse;
 import com.github.pgasync.message.frontend.Query;
 import com.github.pgasync.message.frontend.StartupMessage;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
 
 /**
  * A connection to Postgres backend. The postmaster forks a backend process for each connection. A connection can process only a single query at a
@@ -65,11 +65,11 @@ public class PgConnection implements Connection {
         }
 
         @Override
-        public CompletableFuture<ResultSet> query(Object... params) {
+        public Promise<ResultSet> query(Object... params) {
             var rows = new ArrayList<Row>();
 
             return fetch((_, _) -> {}, rows::add, params)
-                .map(_ -> new PgResultSet(columns.byName, List.of(columns.ordered), rows, 0));
+                .map(_ -> new PgResultSet(columns.byName, columns.ordered, rows, 0));
         }
 
         //TODO: consider conversion to "reducer" style to eliminate externally stored state
@@ -92,24 +92,15 @@ public class PgConnection implements Connection {
         }
 
         @Override
-        public CompletableFuture<Void> close() {
+        public Promise<Unit> close() {
             return stream.send(Close.statement(sname))
-                         .thenAccept(_ -> {});
+                         .map(Unit::unit);
         }
     }
 
-    public static class Columns {
-        private final Map<String, PgColumn> byName;
-        private final PgColumn[] ordered;
-
-        Columns(Map<String, PgColumn> byName, PgColumn[] ordered) {
-            this.byName = byName;
-            this.ordered = ordered;
-        }
-    }
+    public record Columns(Map<String, PgColumn> byName, PgColumn[] ordered) {}
 
     private static class NameSequence {
-
         private long counter;
         private String prefix;
 
@@ -120,7 +111,7 @@ public class PgConnection implements Connection {
         private String next() {
             if (counter == Long.MAX_VALUE) {
                 counter = 0;
-                prefix = "_" + prefix;
+                prefix = STR."_\{prefix}";
             }
             return prefix + ++counter;
         }
@@ -138,17 +129,16 @@ public class PgConnection implements Connection {
         this.dataConverter = dataConverter;
     }
 
-    CompletableFuture<Connection> connect(String username, String password, String database) {
+    Promise<Connection> connect(String username, String password, String database) {
         return stream.connect(new StartupMessage(username, database))
-                     .thenApply(authentication -> authenticate(username, password, authentication))
-                     .thenCompose(Function.identity())
-                     .thenApply(_ -> PgConnection.this);
+                     .flatMap(authentication -> authenticate(username, password, authentication))
+                     .map(_ -> PgConnection.this);
     }
 
-    private CompletableFuture<? extends Message> authenticate(String username, String password, Message message) {
+    private Promise<? extends Message> authenticate(String username, String password, Message message) {
         return message instanceof Authentication authentication && !authentication.authenticationOk()
                ? stream.authenticate(username, password, authentication)
-               : CompletableFuture.completedFuture(message);
+               : Promise.successful(message);
     }
 
     public boolean isConnected() {
@@ -156,12 +146,12 @@ public class PgConnection implements Connection {
     }
 
     @Override
-    public CompletableFuture<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes) {
+    public Promise<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes) {
         return preparedStatementOf(sql, parametersTypes)
             .thenApply(Function.identity());
     }
 
-    CompletableFuture<PgPreparedStatement> preparedStatementOf(String sql, Oid... parametersTypes) {
+    Promise<PgPreparedStatement> preparedStatementOf(String sql, Oid... parametersTypes) {
         if (sql == null || sql.isBlank()) {
             throw new IllegalArgumentException("'sql' shouldn't be null or empty or blank string");
         }
@@ -177,10 +167,10 @@ public class PgConnection implements Connection {
     }
 
     @Override
-    public CompletableFuture<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                          Consumer<Row> onRow,
-                                          Consumer<Integer> onAffected,
-                                          String sql) {
+    public Promise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                Consumer<Row> onRow,
+                                Consumer<Integer> onAffected,
+                                String sql) {
         if (sql == null || sql.isBlank()) {
             throw new IllegalArgumentException("'sql' shouldn't be null or empty or blank string");
         }
@@ -221,42 +211,44 @@ public class PgConnection implements Connection {
     }
 
     @Override
-    public CompletableFuture<Transaction> begin() {
+    public Promise<Transaction> begin() {
         return completeScript("BEGIN")
-            .thenApply(rs -> new PgConnectionTransaction());
+            .map(_ -> new PgConnectionTransaction());
     }
 
-    public CompletableFuture<Listening> subscribe(String channel, Consumer<String> onNotification) {
+    public Promise<Listening> subscribe(String channel, Consumer<String> onNotification) {
         // TODO: wait for commit before sending unlisten as otherwise it can be rolled back
-        return completeScript("LISTEN " + channel)
-            .thenApply(results -> {
-                Runnable unsubscribe = stream.subscribe(channel, onNotification);
-                return () -> completeScript("UNLISTEN " + channel)
-                    .thenAccept(res -> unsubscribe.run());
+        return completeScript(STR."LISTEN \{channel}")
+            .map(() -> {
+
+                return () -> completeScript(STR."UNLISTEN \{channel}")
+                    .onResultDo(() -> stream.subscribe(channel, onNotification))
+                    .map(Unit::unit);
             });
     }
 
     @Override
-    public CompletableFuture<Void> close() {
+    public Promise<Unit> close() {
         return stream.close();
     }
 
     private static Columns calcColumns(ColumnDescription[] descriptions) {
-        Map<String, PgColumn> byName = new HashMap<>();
-        PgColumn[] ordered = new PgColumn[descriptions.length];
+        var byName = new HashMap<String, PgColumn>();
+        var ordered = new PgColumn[descriptions.length];
+
         for (int i = 0; i < descriptions.length; i++) {
-            PgColumn column = new PgColumn(i, descriptions[i].getName(), descriptions[i].getType());
+            var column = new PgColumn(i, descriptions[i].getName(), descriptions[i].getType());
+
             byName.put(descriptions[i].getName(), column);
             ordered[i] = column;
         }
-        return new Columns(Collections.unmodifiableMap(byName), ordered);
+        return new Columns(Map.copyOf(byName), ordered);
     }
 
     /**
      * Transaction that rollbacks the tx on backend error and closes the connection on COMMIT/ROLLBACK failure.
      */
     class PgConnectionTransaction implements Transaction {
-
         @Override
         public CompletableFuture<Transaction> begin() {
             return completeScript("SAVEPOINT sp_1")

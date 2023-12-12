@@ -14,28 +14,23 @@
 
 package com.github.pgasync;
 
-import com.github.pgasync.net.ConnectibleBuilder;
-import com.github.pgasync.net.Connection;
-import com.github.pgasync.net.Listening;
-import com.github.pgasync.net.PreparedStatement;
-import com.github.pgasync.net.Row;
-import com.github.pgasync.net.SqlException;
-import com.github.pgasync.net.ResultSet;
-import com.github.pgasync.net.Transaction;
+import com.github.pgasync.net.*;
 import org.pragmatica.lang.Promise;
-import org.pragmatica.lang.Tuple;
 import org.pragmatica.lang.Unit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
-import static org.pragmatica.lang.Tuple.tuple;
+import static org.pragmatica.lang.Unit.unitResult;
 
 /**
  * Resource pool for backend connections.
@@ -43,9 +38,8 @@ import static org.pragmatica.lang.Tuple.tuple;
  * @author Antti Laisi
  */
 public class PgConnectionPool extends PgConnectible {
-
+    private static final Logger log = LoggerFactory.getLogger(PgConnectionPool.class);
     private class PooledPgConnection implements Connection {
-
         private class PooledPgTransaction implements Transaction {
 
             private final Transaction delegate;
@@ -54,35 +48,39 @@ public class PgConnectionPool extends PgConnectible {
                 this.delegate = delegate;
             }
 
-            public CompletableFuture<Void> commit() {
+            @Override
+            public Promise<Unit> commit() {
                 return delegate.commit();
             }
 
-            public CompletableFuture<Void> rollback() {
+            @Override
+            public Promise<Unit> rollback() {
                 return delegate.rollback();
             }
 
-            public CompletableFuture<Void> close() {
+            @Override
+            public Promise<Unit> close() {
                 return delegate.close();
             }
 
-            public CompletableFuture<Transaction> begin() {
-                return delegate.begin().thenApply(PooledPgTransaction::new);
+            @Override
+            public Promise<Transaction> begin() {
+                return delegate.begin().map(PooledPgTransaction::new);
             }
 
             @Override
-            public CompletableFuture<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                                    Consumer<Row> onRow,
-                                                    String sql,
-                                                    Object... params) {
+            public Promise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                          Consumer<Row> onRow,
+                                          String sql,
+                                          Object... params) {
                 return delegate.query(onColumns, onRow, sql, params);
             }
 
             @Override
-            public CompletableFuture<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                                  Consumer<Row> onRow,
-                                                  Consumer<Integer> onAffected,
-                                                  String sql) {
+            public Promise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                        Consumer<Row> onRow,
+                                        Consumer<Integer> onAffected,
+                                        String sql) {
                 return delegate.script(onColumns, onRow, onAffected, sql);
             }
 
@@ -109,62 +107,42 @@ public class PgConnectionPool extends PgConnectible {
             this.delegate = delegate;
         }
 
-        CompletableFuture<Connection> connect(String username, String password, String database) {
-            return delegate.connect(username, password, database).thenApply(conn -> PooledPgConnection.this);
+        Promise<Connection> connect(String username, String password, String database) {
+            return delegate.connect(username, password, database)
+                           .map(_ -> PooledPgConnection.this);
         }
 
         public boolean isConnected() {
             return delegate.isConnected();
         }
 
-        private void closeNextStatement(Iterator<PooledPgPreparedStatement> statementsSource, CompletableFuture<Void> onComplete) {
-            if (statementsSource.hasNext()) {
-                statementsSource.next()
-                    .delegate.close()
-                             .thenAccept(v -> {
-                                 statementsSource.remove();
-                                 closeNextStatement(statementsSource, onComplete);
-                             })
-                             .exceptionally(th -> {
-                                 Promise.runAsync(() -> onComplete.completeExceptionally(th));
-                                 return null;
-                             });
-            } else {
-                Promise.runAsync(() -> onComplete.complete(null));
-            }
-        }
-
-        CompletableFuture<Void> shutdown() {
-            CompletableFuture<Void> onComplete = new CompletableFuture<>();
-            closeNextStatement(statements.values().iterator(), onComplete);
-            return onComplete
-                .thenApply(v -> {
-                    if (!statements.isEmpty()) {
-                        throw new IllegalStateException(STR."Stale prepared statements detected (\{statements.size()})");
-                    }
-                    return delegate.close();
-                })
-                .thenCompose(Function.identity());
+        Promise<Unit> shutdown() {
+            return Promise.allOf(statements.values()
+                                           .stream()
+                                           .map(stmt -> stmt.delegate.close())
+                                           .toList())
+                          .flatMap(_ -> delegate.close());
         }
 
         @Override
-        public CompletableFuture<Void> close() {
+        public Promise<Unit> close() {
             release(this);
-            return CompletableFuture.completedFuture(null);
+            return Promise.resolved(unitResult());
         }
 
         @Override
-        public CompletableFuture<Listening> subscribe(String channel, Consumer<String> onNotification) {
+        public Promise<Listening> subscribe(String channel, Consumer<String> onNotification) {
             return delegate.subscribe(channel, onNotification);
         }
 
         @Override
-        public CompletableFuture<Transaction> begin() {
-            return delegate.begin().thenApply(PooledPgTransaction::new);
+        public Promise<Transaction> begin() {
+            return delegate.begin()
+                           .map(PooledPgTransaction::new);
         }
 
         @Override
-        public CompletableFuture<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+        public Promise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
                                               Consumer<Row> onRow,
                                               Consumer<Integer> onAffected,
                                               String sql) {
@@ -172,7 +150,7 @@ public class PgConnectionPool extends PgConnectible {
         }
 
         @Override
-        public CompletableFuture<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+        public Promise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
                                                 Consumer<Row> onRow,
                                                 String sql,
                                                 Object... params) {
@@ -193,13 +171,13 @@ public class PgConnectionPool extends PgConnectible {
         }
 
         @Override
-        public CompletableFuture<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes) {
-            PooledPgPreparedStatement statement = statements.remove(sql);
+        public Promise<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes) {
+            var statement = statements.remove(sql);
             if (statement != null) {
-                return CompletableFuture.completedFuture(statement);
+                return Promise.successful(statement);
             } else {
                 return delegate.preparedStatementOf(sql, parametersTypes)
-                               .thenApply(stmt -> new PooledPgPreparedStatement(sql, stmt));
+                               .map(stmt -> new PooledPgPreparedStatement(sql, stmt));
             }
         }
 
@@ -217,8 +195,9 @@ public class PgConnectionPool extends PgConnectible {
             }
 
             @Override
-            public CompletableFuture<Void> close() {
-                PooledPgPreparedStatement already = statements.put(sql, this);
+            public Promise<Unit> close() {
+                var already = statements.put(sql, this);
+
                 if (evicted != null) {
                     try {
                         if (already != null && already != evicted) {
@@ -226,8 +205,7 @@ public class PgConnectionPool extends PgConnectible {
                                                                                    DUPLICATED_PREPARED_STATEMENT_DETECTED,
                                                                                    already.sql);
                             return evicted.delegate.close()
-                                                   .thenApply(v -> already.delegate.close())
-                                                   .thenCompose(Function.identity());
+                                                   .onResultDo(already.delegate::close);
                         } else {
                             return evicted.delegate.close();
                         }
@@ -239,18 +217,18 @@ public class PgConnectionPool extends PgConnectible {
                         Logger.getLogger(PgConnectionPool.class.getName()).log(Level.WARNING, DUPLICATED_PREPARED_STATEMENT_DETECTED, already.sql);
                         return already.delegate.close();
                     } else {
-                        return CompletableFuture.completedFuture(null);
+                        return Promise.resolved(unitResult());
                     }
                 }
             }
 
             @Override
-            public CompletableFuture<ResultSet> query(Object... params) {
+            public Promise<ResultSet> query(Object... params) {
                 return delegate.query(params);
             }
 
             @Override
-            public CompletableFuture<Integer> fetch(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+            public Promise<Integer> fetch(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
                                                     Consumer<Row> processor,
                                                     Object... params) {
                 return delegate.fetch(onColumns, processor, params);
@@ -263,12 +241,12 @@ public class PgConnectionPool extends PgConnectible {
 
     private final Lock guard = new ReentrantLock();
     private int size;
-    private final Queue<CompletableFuture<? super Connection>> pending = new LinkedList<>();
+    private final Queue<Promise<? super Connection>> pending = new LinkedList<>();
     private final Queue<PooledPgConnection> connections = new LinkedList<>();
     private Promise<Unit> closing;
 
     public PgConnectionPool(ConnectibleBuilder.ConnectibleConfiguration properties,
-                            Supplier<CompletableFuture<ProtocolStream>> obtainStream) {
+                            Supplier<Promise<ProtocolStream>> obtainStream) {
         super(properties, obtainStream);
         this.maxConnections = properties.maxConnections();
         this.maxStatements = properties.maxStatements();
@@ -300,17 +278,20 @@ public class PgConnectionPool extends PgConnectible {
     }
 
     @Override
-    public CompletableFuture<Connection> connection() {
+    public Promise<Connection> connection() {
         if (locked(() -> closing != null)) {
-            return CompletableFuture.failedFuture(new SqlException("Connection pool is closed"));
+            return Promise.failed(new SqlError.ConnectionPoolClosed("Connection pool is closed"));
         } else {
-            Connection cached = locked(this::firstAliveConnection);
+            var cached = locked(this::firstAliveConnection);
+
             if (cached != null) {
-                return CompletableFuture.completedFuture(cached);
+                return Promise.successful(cached);
             } else {
-                CompletableFuture<Connection> deferred = new CompletableFuture<>();
+                var deferred = Promise.<Connection>promise();
+
                 boolean makeNewConnection = locked(() -> {
                     pending.add(deferred);
+
                     if (size < maxConnections) {
                         size++;
                         return true;
@@ -318,90 +299,51 @@ public class PgConnectionPool extends PgConnectible {
                         return false;
                     }
                 });
+
                 if (makeNewConnection) {
                     obtainStream.get()
-                                .thenApply(stream -> new PooledPgConnection(new PgConnection(stream, dataConverter))
-                                    .connect(username, password, database))
-                                .thenCompose(Function.identity())
-                                .thenApply(pooledConnection -> {
+                                .flatMap(stream -> new PooledPgConnection(new PgConnection(stream, dataConverter)).connect(username,
+                                                                                                                           password,
+                                                                                                                           database))
+                                .flatMap(pooledConnection -> {
                                     if (validationQuery != null && !validationQuery.isBlank()) {
                                         return pooledConnection.completeScript(validationQuery)
-                                                               .handle((rss, th) -> {
-                                                                   if (th != null) {
-                                                                       return ((PooledPgConnection) pooledConnection).delegate.close()
-                                                                                                                              .thenApply(v -> CompletableFuture.<Connection>failedFuture(
-                                                                                                                                  th))
-                                                                                                                              .thenCompose(Function.identity());
-                                                                   } else {
-                                                                       return CompletableFuture.completedFuture(pooledConnection);
-                                                                   }
-                                                               })
-                                                               .thenCompose(Function.identity());
+                                                               .map(_ -> pooledConnection)
+                                                               .onFailureDo(() -> ((PooledPgConnection) pooledConnection).delegate.close());
                                     } else {
-                                        return CompletableFuture.completedFuture(pooledConnection);
+                                        return Promise.successful(pooledConnection);
                                     }
-                                })
-                                .thenCompose(Function.identity())
-                                .whenComplete((connected, th) -> {
-                                    if (th == null) {
-                                        release((PooledPgConnection) connected);
-                                    } else {
-                                        Collection<Runnable> actions = locked(() -> {
-                                            size--;
-                                            var unlucky = pending.stream()
-                                                                 .<Runnable>map(item -> () -> item.completeExceptionally(th))
-                                                                 .collect(Collectors.toList());
-                                            unlucky.add(checkClosed());
-                                            pending.clear();
-                                            return unlucky;
-                                        });
-                                        actions.forEach(Promise::runAsync);
-                                    }
-                                });
+                                }).onResult(result -> result.onSuccess(connection -> release((PooledPgConnection) connection))
+                                                            .onFailureDo(() -> {
+                                                                var promises = locked(() -> {
+                                                                    List<Promise<? super Connection>> unlucky = new ArrayList<>(pending);
+                                                                    pending.clear();
+                                                                    return unlucky;
+                                                                });
+                                                                Promise.cancelAll(promises);
+                                                            }));
                 }
                 return deferred;
             }
         }
     }
 
-    private record CloseTuple(CompletableFuture<Void> closing, Runnable immediate) {}
-
     @Override
-//    public CompletableFuture<Void> close() {
     public Promise<Unit> close() {
-        var tuple = locked(() -> {
+        return locked(() -> {
             if (closing == null) {
-                closing = Promise.promise(_ -> locked(() ->
-                                                          CompletableFuture.allOf(connections.stream()
-                                                                                             .map(PooledPgConnection::shutdown)
-                                                                                             .toArray(CompletableFuture[]::new))
-                                 ))
-                                 .thenCompose(Function.identity());
-                return tuple(closing, checkClosed());
-            } else {
-                return new CloseTuple(CompletableFuture.failedFuture(new IllegalStateException("PG pool is already shutting down")), NO_OP);
+                closing = Promise.allOf(connections.stream()
+                                                   .map(PooledPgConnection::shutdown)
+                                                   .toList())
+                                 .map(Unit::unit);
             }
+            return closing;
         });
-
-        Promise.runAsync(tuple.immediate);
-
-        return tuple.closing;
-    }
-
-    private static final Runnable NO_OP = () -> {
-    };
-
-    private Runnable checkClosed() {
-        if (closing != null && size <= connections.size()) {
-            assert pending.isEmpty();
-            return () -> closing.complete(null);
-        } else {
-            return NO_OP;
-        }
     }
 
     private Connection firstAliveConnection() {
         Connection connection = connections.poll();
+
         while (connection != null && !connection.isConnected()) {
             size--;
             connection = connections.poll();

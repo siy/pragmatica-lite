@@ -27,7 +27,6 @@ import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.io.AsyncCloseable;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**

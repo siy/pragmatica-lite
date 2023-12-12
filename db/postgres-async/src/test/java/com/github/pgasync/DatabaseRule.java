@@ -89,7 +89,7 @@ class DatabaseRule extends ExternalResource {
 
     private <T> T block(CompletableFuture<T> future) {
         try {
-            return future.get(5_0000000, TimeUnit.SECONDS);
+            return future.get(50_000_000, TimeUnit.SECONDS);
         } catch (Throwable th) {
             throw new RuntimeException(th);
         }
