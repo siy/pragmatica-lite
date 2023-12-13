@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.pragmatica.lang.Option.option;
-import static org.pragmatica.lang.Unit.unitResult;
+import static org.pragmatica.lang.Result.unitResult;
 import static org.pragmatica.lang.io.Timeout.timeout;
 
 public interface DnsClient extends AsyncCloseable {

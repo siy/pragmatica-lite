@@ -9,6 +9,8 @@ public sealed interface SqlError extends Result.Cause {
 
     record ConnectionPoolClosed(String message) implements SqlError {}
 
+    record BadAuthenticationSequence(String message) implements SqlError {}
+
     static Result.Cause fromThrowable(Throwable th) {
         throw new UnsupportedOperationException("Not implemented yet");
     }

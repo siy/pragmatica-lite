@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 
-import static org.pragmatica.lang.Unit.unitResult;
+import static org.pragmatica.lang.Result.unitResult;
 import static org.pragmatica.net.transport.api.TransportConfiguration.transportConfiguration;
 
 //TODO: injection of routes via SPI (metrics, health, etc.)

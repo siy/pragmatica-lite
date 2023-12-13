@@ -48,6 +48,8 @@ import java.util.function.Function;
  */
 public abstract class PgProtocolStream implements ProtocolStream {
     private static final Logger log = LoggerFactory.getLogger(PgProtocolStream.class);
+    private static final Promise<Message> BAD_AUTH_SEQUENCE = Promise.failed(new SqlError.BadAuthenticationSequence(
+        "Bad SASL authentication sequence message detected on 'server-first-message' step"));
 
     protected final Charset encoding;
 
@@ -80,7 +82,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
                                                               null, ""/*SaslPrep.asQueryString(userName) - Postgres requires an empty string here*/,
                                                               clientNonce);
             return send(saslInitialResponse)
-                .thenApply(message -> {
+                .flatMap(message -> {
                     if (message instanceof Authentication authentication) {
                         var serverFirstMessage = authentication.saslContinueData();
                         if (serverFirstMessage != null) {
@@ -90,13 +92,12 @@ public abstract class PgProtocolStream implements ProtocolStream {
                                                         saslInitialResponse.gs2Header(),
                                                         saslInitialResponse.clientFirstMessageBare()));
                         } else {
-                            throw new IllegalStateException("Bad SASL authentication sequence message detected on 'server-first-message' step");
+                            return BAD_AUTH_SEQUENCE;
                         }
                     } else {
-                        throw new IllegalStateException("Bad SASL authentication sequence detected on 'server-first-message' step");
+                        return BAD_AUTH_SEQUENCE;
                     }
-                })
-                .thenCompose(Function.identity());
+                });
         } else {
             return send(PasswordMessage.passwordMessage(userName, password, authRequired.md5salt(), encoding));
         }
@@ -124,7 +125,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
         this.onRow = onRow;
         this.onAffected = onAffected;
         return send(query)
-            .map(Unit::unit);
+            .mapToUnit();
     }
 
     @Override
@@ -211,7 +212,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
                 if (authentication.authenticationOk() || authentication.saslServerFinalResponse()) {
                     readyForQueryPendingMessage = message;
                 } else {
-                    consumeOnResponse().completeAsync(() -> message);
+                    consumeOnResponse().success(message);
                 }
             }
             case ReadyForQuery _ -> {

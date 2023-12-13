@@ -29,7 +29,7 @@ import static org.pragmatica.http.protocol.HttpStatus.NOT_IMPLEMENTED;
 import static org.pragmatica.lang.Promise.resolved;
 import static org.pragmatica.lang.Result.failure;
 import static org.pragmatica.lang.Result.success;
-import static org.pragmatica.lang.Unit.unitResult;
+import static org.pragmatica.lang.Result.unitResult;
 
 //TODO: add customisation for name resolver
 @SuppressWarnings("unused")
@@ -140,7 +140,7 @@ record HttpClientImpl(HttpClientConfiguration configuration, Bootstrap bootstrap
 
         return newUntrustedContext()
             .onSuccess(sslContext -> addSslHandler(channel, sslContext))
-            .map(Unit::unit);
+            .mapToUnit();
     }
 
     private static void addSslHandler(Channel channel, SslContext sslContext) {

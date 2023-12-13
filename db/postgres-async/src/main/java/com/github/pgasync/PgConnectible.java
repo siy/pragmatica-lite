@@ -41,11 +41,8 @@ public abstract class PgConnectible implements Connectible {
                                 Consumer<Integer> onAffected,
                                 String sql) {
         return connection()
-            .flatMap(connection ->
-                         connection.script(onColumns, onRow, onAffected, sql)
-                                   .fold(result ->
-                                             connection.close()
-                                                       .flatMap(_ -> Promise.resolved(result))));
+            .flatMap(connection -> connection.script(onColumns, onRow, onAffected, sql)
+                                             .onResultDo(_ -> connection.close()));
     }
 
     @Override
@@ -54,10 +51,7 @@ public abstract class PgConnectible implements Connectible {
                                   String sql,
                                   Object... params) {
         return connection()
-            .flatMap(connection ->
-                         connection.query(onColumns, onRow, sql, params)
-                                   .fold(result ->
-                                             connection.close()
-                                                       .flatMap(_ -> Promise.resolved(result))));
+            .flatMap(connection -> connection.query(onColumns, onRow, sql, params)
+                                             .onResultDo(_ -> connection.close()));
     }
 }

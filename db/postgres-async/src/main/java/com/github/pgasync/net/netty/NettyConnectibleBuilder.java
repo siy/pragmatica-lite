@@ -19,6 +19,7 @@ import com.github.pgasync.PgDatabase;
 import com.github.pgasync.ProtocolStream;
 import com.github.pgasync.net.Connectible;
 import com.github.pgasync.net.ConnectibleBuilder;
+import org.pragmatica.lang.Promise;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
@@ -31,9 +32,9 @@ import java.util.concurrent.CompletableFuture;
  * @author Marat Gainullin
  */
 public class NettyConnectibleBuilder extends ConnectibleBuilder {
-    private CompletableFuture<ProtocolStream> obtainStream() {
-        return CompletableFuture.completedFuture(new NettyPgProtocolStream(
-            //TODO: use resolver
+    private Promise<ProtocolStream> obtainStream() {
+        //TODO: use resolver
+        return Promise.successful(new NettyPgProtocolStream(
             new InetSocketAddress(properties.hostname(), properties.port()),
             properties.useSsl(),
             Charset.forName(properties.encoding())

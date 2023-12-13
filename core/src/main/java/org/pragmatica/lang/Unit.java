@@ -38,7 +38,6 @@ public final class Unit implements Tuple.Tuple0 {
     private Unit() {}
 
     private static final Unit UNIT = new Unit();
-    private static final Result<Unit> UNIT_RESULT = Result.success(UNIT);
 
     public static Unit aUnit() {
         return UNIT;
@@ -84,10 +83,6 @@ public final class Unit implements Tuple.Tuple0 {
                                                                  final T4 ignored4, final T5 ignored5, final T6 ignored6,
                                                                  final T7 ignored7, final T8 ignored8, final T9 ignored9) {
         return UNIT;
-    }
-
-    public static Result<Unit> unitResult() {
-        return UNIT_RESULT;
     }
 
     @Override

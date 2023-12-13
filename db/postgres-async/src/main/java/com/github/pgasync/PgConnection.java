@@ -94,7 +94,7 @@ public class PgConnection implements Connection {
         @Override
         public Promise<Unit> close() {
             return stream.send(Close.statement(sname))
-                         .map(Unit::unit);
+                         .mapToUnit();
         }
     }
 
@@ -148,7 +148,7 @@ public class PgConnection implements Connection {
     @Override
     public Promise<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes) {
         return preparedStatementOf(sql, parametersTypes)
-            .thenApply(Function.identity());
+            .map(ps -> ps);
     }
 
     Promise<PgPreparedStatement> preparedStatementOf(String sql, Oid... parametersTypes) {
@@ -163,7 +163,7 @@ public class PgConnection implements Connection {
 
         return stream
             .send(new Parse(sql, statementName, parametersTypes))
-            .thenApply(_ -> new PgPreparedStatement(statementName));
+            .map(_ -> new PgPreparedStatement(statementName));
     }
 
     @Override
@@ -190,24 +190,13 @@ public class PgConnection implements Connection {
     }
 
     @Override
-    public CompletableFuture<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                            Consumer<Row> onRow,
-                                            String sql,
-                                            Object... params) {
+    public Promise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                  Consumer<Row> onRow,
+                                  String sql,
+                                  Object... params) {
         return prepareStatement(sql, dataConverter.assumeTypes(params))
-            .thenApply(ps -> ps.fetch(onColumns, onRow, params)
-                               .handle((affected, th) -> ps.close()
-                                                           .thenApply(v -> {
-                                                               if (th != null) {
-                                                                   throw new RuntimeException(th);
-                                                               } else {
-                                                                   return affected;
-                                                               }
-                                                           })
-                               )
-                               .thenCompose(Function.identity())
-            )
-            .thenCompose(Function.identity());
+            .flatMap(ps -> ps.fetch(onColumns, onRow, params)
+                             .onResultDo(ps::close));
     }
 
     @Override
@@ -223,7 +212,7 @@ public class PgConnection implements Connection {
 
                 return () -> completeScript(STR."UNLISTEN \{channel}")
                     .onResultDo(() -> stream.subscribe(channel, onNotification))
-                    .map(Unit::unit);
+                    .mapToUnit();
             });
     }
 
@@ -250,44 +239,34 @@ public class PgConnection implements Connection {
      */
     class PgConnectionTransaction implements Transaction {
         @Override
-        public CompletableFuture<Transaction> begin() {
+        public Promise<Transaction> begin() {
             return completeScript("SAVEPOINT sp_1")
-                .thenApply(rs -> new PgConnectionNestedTransaction(1));
+                .map(_ -> new PgConnectionNestedTransaction(1));
         }
 
-        CompletableFuture<Void> sendCommit() {
-            return PgConnection.this.completeScript("COMMIT").thenAccept(readyForQuery -> {
-            });
+        Promise<Unit> sendCommit() {
+            return PgConnection.this.completeScript("COMMIT")
+                                    .mapToUnit();
         }
 
-        CompletableFuture<Void> sendRollback() {
-            return PgConnection.this.completeScript("ROLLBACK").thenAccept(readyForQuery -> {
-            });
-        }
-
-        @Override
-        public CompletableFuture<Void> commit() {
-            return sendCommit().thenAccept(rs -> {
-            });
+        Promise<Unit> sendRollback() {
+            return PgConnection.this.completeScript("ROLLBACK")
+                                    .mapToUnit();
         }
 
         @Override
-        public CompletableFuture<Void> rollback() {
+        public Promise<Unit> commit() {
+            return sendCommit();
+        }
+
+        @Override
+        public Promise<Unit> rollback() {
             return sendRollback();
         }
 
         @Override
-        public CompletableFuture<Void> close() {
-            return sendCommit()
-                .handle((v, th) -> {
-                    if (th != null) {
-                        Logger.getLogger(PgConnectionTransaction.class.getName()).log(Level.SEVERE, null, th);
-                        return sendRollback();
-                    } else {
-                        return CompletableFuture.completedFuture(v);
-                    }
-                })
-                .thenCompose(Function.identity());
+        public Promise<Unit> close() {
+            return sendCommit();
         }
 
         @Override
@@ -296,49 +275,28 @@ public class PgConnection implements Connection {
         }
 
         @Override
-        public CompletableFuture<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                              Consumer<Row> onRow,
-                                              Consumer<Integer> onAffected,
-                                              String sql) {
+        public Promise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                    Consumer<Row> onRow,
+                                    Consumer<Integer> onAffected,
+                                    String sql) {
             return PgConnection.this.script(onColumns, onRow, onAffected, sql)
-                                    .handle((v, th) -> {
-                                        if (th != null) {
-                                            return rollback()
-                                                .thenAccept(_v -> {
-                                                    throw new RuntimeException(th);
-                                                });
-                                        } else {
-                                            return CompletableFuture.<Void>completedFuture(null);
-                                        }
-                                    })
-                                    .thenCompose(Function.identity());
+                                    .onFailureDo(_ -> rollback());
         }
 
-        public CompletableFuture<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                                Consumer<Row> onRow,
-                                                String sql,
-                                                Object... params) {
+        @Override
+        public Promise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                      Consumer<Row> onRow,
+                                      String sql,
+                                      Object... params) {
             return PgConnection.this.query(onColumns, onRow, sql, params)
-                                    .handle((affected, th) -> {
-                                        if (th != null) {
-                                            return rollback()
-                                                .<Integer>thenApply(v -> {
-                                                    throw new RuntimeException(th);
-                                                });
-                                        } else {
-                                            return CompletableFuture.completedFuture(affected);
-                                        }
-                                    })
-                                    .thenCompose(Function.identity());
+                                    .onFailureDo(_ -> rollback());
         }
-
     }
 
     /**
      * Nested transaction using savepoints.
      */
     class PgConnectionNestedTransaction extends PgConnectionTransaction {
-
         final int depth;
 
         PgConnectionNestedTransaction(int depth) {
@@ -346,23 +304,21 @@ public class PgConnection implements Connection {
         }
 
         @Override
-        public CompletableFuture<Transaction> begin() {
-            return completeScript("SAVEPOINT sp_" + (depth + 1))
-                .thenApply(rs -> new PgConnectionNestedTransaction(depth + 1));
+        public Promise<Transaction> begin() {
+            return completeScript(STR."SAVEPOINT sp_\{depth + 1}")
+                .map(_ -> new PgConnectionNestedTransaction(depth + 1));
         }
 
         @Override
-        public CompletableFuture<Void> commit() {
-            return PgConnection.this.completeScript("RELEASE SAVEPOINT sp_" + depth)
-                                    .thenAccept(rs -> {
-                                    });
+        public Promise<Unit> commit() {
+            return PgConnection.this.completeScript(STR."RELEASE SAVEPOINT sp_\{depth}")
+                                    .mapToUnit();
         }
 
         @Override
-        public CompletableFuture<Void> rollback() {
-            return PgConnection.this.completeScript("ROLLBACK TO SAVEPOINT sp_" + depth)
-                                    .thenAccept(rs -> {
-                                    });
+        public Promise<Unit> rollback() {
+            return PgConnection.this.completeScript(STR."ROLLBACK TO SAVEPOINT sp_\{depth}")
+                                    .mapToUnit();
         }
     }
 }

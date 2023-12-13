@@ -30,7 +30,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 
-import static org.pragmatica.lang.Unit.unitResult;
+import static org.pragmatica.lang.Option.option;
+import static org.pragmatica.lang.Result.unitResult;
 
 /**
  * Resource pool for backend connections.
@@ -39,6 +40,7 @@ import static org.pragmatica.lang.Unit.unitResult;
  */
 public class PgConnectionPool extends PgConnectible {
     private static final Logger log = LoggerFactory.getLogger(PgConnectionPool.class);
+
     private class PooledPgConnection implements Connection {
         private class PooledPgTransaction implements Transaction {
 
@@ -143,31 +145,20 @@ public class PgConnectionPool extends PgConnectible {
 
         @Override
         public Promise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                              Consumer<Row> onRow,
-                                              Consumer<Integer> onAffected,
-                                              String sql) {
+                                    Consumer<Row> onRow,
+                                    Consumer<Integer> onAffected,
+                                    String sql) {
             return delegate.script(onColumns, onRow, onAffected, sql);
         }
 
         @Override
         public Promise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                                Consumer<Row> onRow,
-                                                String sql,
-                                                Object... params) {
+                                      Consumer<Row> onRow,
+                                      String sql,
+                                      Object... params) {
             return prepareStatement(sql, dataConverter.assumeTypes(params))
-                .thenApply(stmt ->
-                               stmt.fetch(onColumns, onRow, params)
-                                   .handle((affected, th) ->
-                                               stmt.close()
-                                                   .thenApply(v -> {
-                                                       if (th == null) {
-                                                           return affected;
-                                                       } else {
-                                                           throw new RuntimeException(th);
-                                                       }
-                                                   })
-                                   ).thenCompose(Function.identity())
-                ).thenCompose(Function.identity());
+                .flatMap(stmt -> stmt.fetch(onColumns, onRow, params)
+                                     .onResultDo(_ -> stmt.close()));
         }
 
         @Override
@@ -185,7 +176,7 @@ public class PgConnectionPool extends PgConnectible {
 
             private static final String
                 DUPLICATED_PREPARED_STATEMENT_DETECTED =
-                "Duplicated prepared statement detected. Closing extra instance. \n{0}";
+                "Duplicated prepared statement detected. Closing extra instance. \n{}";
             private final String sql;
             private final PgConnection.PgPreparedStatement delegate;
 
@@ -201,9 +192,7 @@ public class PgConnectionPool extends PgConnectible {
                 if (evicted != null) {
                     try {
                         if (already != null && already != evicted) {
-                            Logger.getLogger(PgConnectionPool.class.getName()).log(Level.WARNING,
-                                                                                   DUPLICATED_PREPARED_STATEMENT_DETECTED,
-                                                                                   already.sql);
+                            log.warn(DUPLICATED_PREPARED_STATEMENT_DETECTED, already.sql);
                             return evicted.delegate.close()
                                                    .onResultDo(already.delegate::close);
                         } else {
@@ -214,7 +203,7 @@ public class PgConnectionPool extends PgConnectible {
                     }
                 } else {
                     if (already != null) {
-                        Logger.getLogger(PgConnectionPool.class.getName()).log(Level.WARNING, DUPLICATED_PREPARED_STATEMENT_DETECTED, already.sql);
+                        log.warn(DUPLICATED_PREPARED_STATEMENT_DETECTED, already.sql);
                         return already.delegate.close();
                     } else {
                         return Promise.resolved(unitResult());
@@ -229,8 +218,8 @@ public class PgConnectionPool extends PgConnectible {
 
             @Override
             public Promise<Integer> fetch(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                                    Consumer<Row> processor,
-                                                    Object... params) {
+                                          Consumer<Row> processor,
+                                          Object... params) {
                 return delegate.fetch(onColumns, processor, params);
             }
         }
@@ -241,7 +230,7 @@ public class PgConnectionPool extends PgConnectible {
 
     private final Lock guard = new ReentrantLock();
     private int size;
-    private final Queue<Promise<? super Connection>> pending = new LinkedList<>();
+    private final Queue<Promise<Connection>> pending = new LinkedList<>();
     private final Queue<PooledPgConnection> connections = new LinkedList<>();
     private Promise<Unit> closing;
 
@@ -265,16 +254,8 @@ public class PgConnectionPool extends PgConnectible {
         if (connection == null) {
             throw new IllegalArgumentException("'connection' should be not null");
         }
-        Runnable lucky = locked(() -> {
-            CompletableFuture<? super Connection> nextUser = pending.poll();
-            if (nextUser != null) {
-                return () -> nextUser.complete(connection);
-            } else {
-                connections.add(connection);
-                return checkClosed();
-            }
-        });
-        Promise.runAsync(lucky);
+        locked(() -> option(pending.poll()).onPresent(promise -> promise.success(connection))
+                                           .onEmpty(() -> connections.add(connection)));
     }
 
     @Override
@@ -313,19 +294,22 @@ public class PgConnectionPool extends PgConnectible {
                                     } else {
                                         return Promise.successful(pooledConnection);
                                     }
-                                }).onResult(result -> result.onSuccess(connection -> release((PooledPgConnection) connection))
-                                                            .onFailureDo(() -> {
-                                                                var promises = locked(() -> {
-                                                                    List<Promise<? super Connection>> unlucky = new ArrayList<>(pending);
-                                                                    pending.clear();
-                                                                    return unlucky;
-                                                                });
-                                                                Promise.cancelAll(promises);
-                                                            }));
+                                })
+                                .onSuccess(connection -> release((PooledPgConnection) connection))
+                                .onFailureDo(this::cancelPending);
                 }
                 return deferred;
             }
         }
+    }
+
+    private void cancelPending() {
+        var promises = locked(() -> {
+            var unlucky = new ArrayList<>(pending);
+            pending.clear();
+            return unlucky;
+        });
+        Promise.cancelAll(promises);
     }
 
     @Override
@@ -335,7 +319,7 @@ public class PgConnectionPool extends PgConnectible {
                 closing = Promise.allOf(connections.stream()
                                                    .map(PooledPgConnection::shutdown)
                                                    .toList())
-                                 .map(Unit::unit);
+                                 .mapToUnit();
             }
             return closing;
         });

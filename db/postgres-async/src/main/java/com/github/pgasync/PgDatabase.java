@@ -2,45 +2,37 @@ package com.github.pgasync;
 
 import com.github.pgasync.net.ConnectibleBuilder;
 import com.github.pgasync.net.Connection;
+import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 import java.util.function.Supplier;
+
+import static org.pragmatica.lang.Result.unitResult;
 
 public class PgDatabase extends PgConnectible {
 
-    public PgDatabase(ConnectibleBuilder.ConnectibleConfiguration properties, Supplier<CompletableFuture<ProtocolStream>> obtainStream) {
+    public PgDatabase(ConnectibleBuilder.ConnectibleConfiguration properties, Supplier<Promise<ProtocolStream>> obtainStream) {
         super(properties, obtainStream);
     }
 
     @Override
-    public CompletableFuture<Connection> connection() {
+    public Promise<Connection> connection() {
         return obtainStream.get()
-                .thenApply(stream -> new PgConnection(stream, dataConverter).connect(username, password, database))
-                .thenCompose(Function.identity())
-                .thenApply(connection -> {
-                    if (validationQuery != null && !validationQuery.isBlank()) {
-                        return connection.completeScript(validationQuery)
-                                .handle((rss, th) -> {
-                                    if (th != null) {
-                                        return connection.close()
-                                                .thenApply(v -> CompletableFuture.<Connection>failedFuture(th))
-                                                .thenCompose(Function.identity());
-                                    } else {
-                                        return CompletableFuture.completedFuture(connection);
-                                    }
-                                })
-                                .thenCompose(Function.identity());
-                    } else {
-                        return CompletableFuture.completedFuture(connection);
-                    }
-                })
-                .thenCompose(Function.identity());
+                           .flatMap(stream -> new PgConnection(stream, dataConverter).connect(username, password, database))
+                           .flatMap(connection -> {
+                               if (validationQuery != null && !validationQuery.isBlank()) {
+                                   return connection.completeScript(validationQuery)
+                                                          .map(_ -> connection)
+                                                          .onFailureDo(connection::close);
+                               } else {
+                                   return Promise.successful(connection);
+                               }
+                           });
     }
 
     @Override
-    public CompletableFuture<Void> close() {
-        return CompletableFuture.completedFuture(null);
+    public Promise<Unit> close() {
+        return Promise.resolved(unitResult());
     }
 
 }

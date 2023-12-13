@@ -32,7 +32,6 @@ import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import org.pragmatica.lang.Promise;
-import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.net.transport.api.TransportConfiguration;
 
@@ -40,10 +39,8 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 
-import static org.pragmatica.lang.Unit.unitResult;
+import static org.pragmatica.lang.Result.unitResult;
 
 /**
  * Netty messages stream to Postgres backend.
@@ -94,7 +91,7 @@ public class NettyPgProtocolStream extends PgProtocolStream {
 
     @Override
     public Promise<Unit> close() {
-        Promise<Unit> uponClose = new CompletableFuture<>();
+        Promise<Unit> uponClose = Promise.unitPromise();
         ctx.writeAndFlush(Terminate.INSTANCE)
            .addListener(written -> {
                if (written.isSuccess()) {

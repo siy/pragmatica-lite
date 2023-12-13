@@ -29,7 +29,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.pragmatica.lang.Tuple.*;
-import static org.pragmatica.lang.Unit.unitResult;
+import static org.pragmatica.lang.Result.unitResult;
 
 
 /**
@@ -364,6 +364,16 @@ public sealed interface Result<T> permits Success, Failure {
                 successConsumer.accept(success);
                 return this;
             });
+    }
+
+    default Result<Unit> mapToUnit() {
+        return map(Unit::unit);
+    }
+
+    Result<Unit> UNIT_RESULT = success(Unit.aUnit());
+
+    static Result<Unit> unitResult() {
+        return UNIT_RESULT;
     }
 
     /**

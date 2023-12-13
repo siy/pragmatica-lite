@@ -33,6 +33,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
+import static org.pragmatica.lang.Result.unitResult;
 import static org.pragmatica.lang.utils.ActionableThreshold.threshold;
 import static org.pragmatica.lang.utils.ResultCollector.resultCollector;
 
@@ -211,6 +212,11 @@ public interface Promise<T> {
         return onResult(_ -> action.run());
     }
 
+    default <U> Promise<T> onResultDo(Fn1<Promise<U>, Result<? super T>> mapper) {
+        return fold(result -> mapper.apply(result)
+                                    .flatMap(_ -> Promise.this));
+    }
+
     /**
      * Attach a side effect action which will be executed upon resolution of the current instance with {@link Result} containing
      * {@link Result.Success}. If instance is resolved with {@link Result} containing {@link Result.Failure}, then action will not be invoked. If
@@ -239,6 +245,12 @@ public interface Promise<T> {
         return onResult(result -> result.onSuccessDo(action));
     }
 
+    default <U> Promise<T> onSuccessDo(Fn1<Promise<U>, ? super T> mapper) {
+        return fold(result -> result.fold(_ -> Promise.this,
+                                          value -> mapper.apply(value)
+                                                         .flatMap(_ -> Promise.this)));
+    }
+
     /**
      * Attach a side effect action which will be executed upon resolution of the current instance with {@link Result} containing
      * {@link Result.Failure}. If instance is resolved with {@link Result} containing {@link Result.Success}, then action will not be invoked. If
@@ -265,6 +277,23 @@ public interface Promise<T> {
      */
     default Promise<T> onFailureDo(Runnable action) {
         return onResult(result -> result.onFailureDo(action));
+    }
+
+    /**
+     * Attach a side effect action which will be executed upon resolution of the current instance with {@link Result} containing
+     * {@link Result.Failure}. Unlike {@link Promise#onFailureDo(Runnable)}, the action passed to this method returns yet another
+     * {@link Promise} and the instance of the {@link Promise} returned by this method will be resolved only after resolution of
+     * the instance returned by the action. This is useful, for example, for resource cleanup.
+     *
+     * @param mapper the action to execute
+     *
+     * @return Current instance
+     */
+
+    default <U> Promise<T> onFailureDo(Fn1<Promise<U>, ? super Cause> mapper) {
+        return fold(result -> result.fold(cause -> mapper.apply(cause)
+                                                         .flatMap(_ -> Promise.this),
+                                          _ -> Promise.this));
     }
 
     /**
@@ -330,6 +359,17 @@ public interface Promise<T> {
 
     static <R> Promise<R> failed(Cause failure) {
         return new PromiseImpl<>(Result.failure(failure));
+    }
+
+    Promise<?> UNIT = Promise.resolved(unitResult());
+
+    @SuppressWarnings("unchecked")
+    static <R> Promise<R> unitPromise() {
+        return (Promise<R>) UNIT;
+    }
+
+    default Promise<Unit> mapToUnit() {
+        return map(Unit::unit);
     }
 
     /**
