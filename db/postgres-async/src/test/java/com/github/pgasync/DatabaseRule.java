@@ -7,18 +7,19 @@ import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.netty.NettyConnectibleBuilder;
 import org.junit.jupiter.api.Tag;
 import org.junit.rules.ExternalResource;
+import org.pragmatica.lang.Promise;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
+
+import static org.pragmatica.lang.io.Timeout.timeout;
 
 /**
  * @author Antti Laisi
  */
 @Tag("Slow")
-class DatabaseRule extends ExternalResource {
+public class DatabaseRule extends ExternalResource {
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
         "postgres:15-alpine"
     );
@@ -76,23 +77,20 @@ class DatabaseRule extends ExternalResource {
     }
 
     ResultSet query(String sql) {
-        return block(pool().completeQuery(sql));
+        return await(pool().completeQuery(sql));
     }
 
     ResultSet query(String sql, List<?> params) {
-        return block(pool().completeQuery(sql, params.toArray()));
+        return await(pool().completeQuery(sql, params.toArray()));
     }
 
     Collection<ResultSet> script(String sql) {
-        return block(pool().completeScript(sql));
+        return await(pool().completeScript(sql));
     }
 
-    private <T> T block(CompletableFuture<T> future) {
-        try {
-            return future.get(50_000_000, TimeUnit.SECONDS);
-        } catch (Throwable th) {
-            throw new RuntimeException(th);
-        }
+    @SuppressWarnings("deprecation")
+    private <T> T await(Promise<T> promise) {
+        return promise.await(timeout(1).hours()).unwrap();
     }
 
     Connectible pool() {

@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.pragmatica.http.util.ulid;
+package org.pragmatica.id.ulid;
 
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.io.CoreError;

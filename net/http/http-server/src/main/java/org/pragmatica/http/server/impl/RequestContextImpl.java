@@ -12,7 +12,7 @@ import org.pragmatica.http.server.routing.Redirect;
 import org.pragmatica.http.server.routing.RequestContext;
 import org.pragmatica.http.server.routing.Route;
 import org.pragmatica.http.util.Utils;
-import org.pragmatica.http.util.ulid.ULID;
+import org.pragmatica.id.ulid.ULID;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
 import org.slf4j.MDC;

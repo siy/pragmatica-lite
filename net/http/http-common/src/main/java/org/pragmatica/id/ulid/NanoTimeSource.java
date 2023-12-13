@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.pragmatica.http.util.ulid;
+package org.pragmatica.id.ulid;
 
 import java.time.Instant;
 

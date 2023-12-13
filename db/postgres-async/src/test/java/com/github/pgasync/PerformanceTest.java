@@ -15,6 +15,8 @@
 package com.github.pgasync;
 
 import com.github.pgasync.net.Connectible;
+import com.github.pgasync.net.Connection;
+import com.github.pgasync.net.PreparedStatement;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -23,12 +25,16 @@ import org.junit.jupiter.api.Tag;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.io.AsyncCloseable;
+import org.testcontainers.shaded.org.checkerframework.checker.units.qual.A;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.IntStream;
@@ -52,7 +58,7 @@ public class PerformanceTest {
 
     @Parameters(name = "{index}: maxConnections={0}, threads={1}")
     public static Iterable<Object[]> data() {
-        ArrayList<Object[]> testData = new ArrayList<>();
+        var testData = new ArrayList<Object[]>();
         var numbers = List.of(1, 6, 12);
 
         for (var poolSize : numbers) {
@@ -77,7 +83,7 @@ public class PerformanceTest {
         this.numThreads = numThreads;
     }
 
-
+    @SuppressWarnings("deprecation")
     @Before
     public void setup() {
         DatabaseRule.postgres.start();
@@ -90,16 +96,17 @@ public class PerformanceTest {
             .username(DatabaseRule.postgres.getUsername())
             .pool();
         var connections = IntStream.range(0, poolSize)
-                                   .mapToObj(i -> pool.connection().join()).toList();
+                                   .mapToObj(i -> pool.connection().await().unwrap())
+                                   .toList();
         connections.forEach(connection -> {
-            connection.prepareStatement(SELECT_42).join().close().join();
-            connection.close().join();
+            connection.prepareStatement(SELECT_42).await().unwrap().close().await();
+            connection.close().await();
         });
     }
 
     @After
     public void tearDown() {
-        pool.close().join();
+        pool.close().await();
     }
 
     @Test
@@ -130,7 +137,7 @@ public class PerformanceTest {
     private class Batch {
 
         private final long batchSize;
-        private long performed;
+        private AtomicLong performed = new AtomicLong(0L);
         private long startedAt;
         private CompletableFuture<Long> onBatch;
 
@@ -154,51 +161,30 @@ public class PerformanceTest {
 
         private void nextSamplePreparedStatement() {
             pool.connection()
-                .thenApply(connection ->
-                               connection.prepareStatement(SELECT_42)
-                                         .thenApply(stmt -> stmt.query()
-                                                                .thenApply(rs -> stmt.close())
-                                                                .exceptionally(th -> stmt.close().whenComplete((v, _th) -> {
-                                                                    throw new RuntimeException(th);
-                                                                }))
-                                                                .thenCompose(Function.identity())
-                                                                .thenApply(v -> connection.close())
-                                                                .exceptionally(th -> connection.close().whenComplete((v, _th) -> {
-                                                                    throw new RuntimeException(th);
-                                                                }))
-                                                                .thenCompose(Function.identity())
-                                         )
-                                         .thenCompose(Function.identity())
-                )
-                .thenCompose(Function.identity())
-                .thenAccept(v -> {
-                    if (++performed < batchSize) {
-                        nextSamplePreparedStatement();
+                .onSuccessDo(connection ->
+                                 connection.prepareStatement(SELECT_42)
+                                           .onSuccessDo(PreparedStatement::query)
+                                           .onSuccessDo(AsyncCloseable::close))
+                .onSuccessDo(Connection::close)
+                .onResultDo(() -> {
+                    if (performed.incrementAndGet() < batchSize) {
+                        Promise.runAsync(this::nextSamplePreparedStatement);
                     } else {
                         long duration = currentTimeMillis() - startedAt;
                         onBatch.complete(duration);
                     }
-                })
-                .exceptionally(th -> {
-                    onBatch.completeExceptionally(th);
-                    return null;
                 });
-
         }
 
         private void nextSampleSimpleQuery() {
             pool.completeScript(SELECT_42)
-                .thenAccept(v -> {
-                    if (++performed < batchSize) {
-                        nextSamplePreparedStatement();
+                .onResultDo(() -> {
+                    if (performed.incrementAndGet() < batchSize) {
+                        Promise.runAsync(this::nextSamplePreparedStatement);
                     } else {
                         long duration = currentTimeMillis() - startedAt;
                         onBatch.complete(duration);
                     }
-                })
-                .exceptionally(th -> {
-                    onBatch.completeExceptionally(th);
-                    return null;
                 });
         }
     }
