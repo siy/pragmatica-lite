@@ -35,7 +35,6 @@ import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.net.transport.api.TransportConfiguration;
 
-import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.util.*;
@@ -56,7 +55,7 @@ public class NettyPgProtocolStream extends PgProtocolStream {
 
     private final GenericFutureListener<Future<? super Object>> outboundErrorListener = written -> {
         if (!written.isSuccess()) {
-            gotException(written.cause());
+            gotError(SqlError.fromThrowable(written.cause()));
         }
     };
 
@@ -189,12 +188,12 @@ public class NettyPgProtocolStream extends PgProtocolStream {
 
             @Override
             public void channelInactive(ChannelHandlerContext context) {
-                exceptionCaught(context, new IOException("Channel state changed to inactive"));
+                gotError(new SqlError.CommunicationError("Channel state changed to inactive"));
             }
 
             @Override
             public void exceptionCaught(ChannelHandlerContext context, Throwable cause) {
-                gotException(cause);
+                gotError(SqlError.fromThrowable(cause));
             }
         };
     }

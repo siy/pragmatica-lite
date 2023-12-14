@@ -26,67 +26,69 @@ public class PreparedStatementsCacheTest {
     @Before
     public void setup() {
         pool = dbr.builder
-                .maxConnections(1)
-                .maxStatements(1)
-                .pool();
+            .maxConnections(1)
+            .maxStatements(1)
+            .pool();
     }
 
     @After
     public void shutdown() {
-        pool.close().join();
+        pool.close().await();
     }
 
+    @SuppressWarnings("deprecation")
     @Test
-    public void shouldEvictedStatementBeReallyClosed() {
-        Connection conn = pool.connection().join();
+    public void shouldEvictedStatementBeReallyClosed() { //TODO: what is this test for?
+        var conn = pool.connection().await().unwrap();
         try {
-            PreparedStatement evictor = conn.prepareStatement(SELECT_52).join();
+            var evictor = conn.prepareStatement(SELECT_52).await().unwrap();
             try {
-                PreparedStatement evicted = conn.prepareStatement(SELECT_32).join();
-                evicted.close().join();
+                var evicted = conn.prepareStatement(SELECT_32).await().unwrap();
+                evicted.close().await();
             } finally {
-                evictor.close().join();
+                evictor.close().await();
             }
         } finally {
-            conn.close().join();
+            conn.close().await();
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void shouldDuplicatedStatementBeReallyClosed() {
-        Connection conn = pool.connection().join();
+        var conn = pool.connection().await().unwrap();
         try {
-            PreparedStatement stmt = conn.prepareStatement(SELECT_52).join();
+            var stmt = conn.prepareStatement(SELECT_52).await().unwrap();
             try {
-                PreparedStatement duplicated = conn.prepareStatement(SELECT_52).join();
-                duplicated.close().join();
+                var duplicated = conn.prepareStatement(SELECT_52).await().unwrap();
+                duplicated.close().await().unwrap();
             } finally {
-                stmt.close().join();
+                stmt.close().await();
             }
         } finally {
-            conn.close().join();
+            conn.close().await();
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void shouldDuplicatedAndEvictedStatementsBeReallyClosed() {
-        Connection conn = pool.connection().join();
+        var conn = pool.connection().await().unwrap();
         try {
-            PreparedStatement stmt = conn.prepareStatement(SELECT_52).join();
+            var stmt = conn.prepareStatement(SELECT_52).await().unwrap();
             try {
-                PreparedStatement duplicated = conn.prepareStatement(SELECT_52).join();
+                var duplicated = conn.prepareStatement(SELECT_52).await().unwrap();
                 try {
-                    PreparedStatement evicted = conn.prepareStatement(SELECT_32).join();
-                    evicted.close().join();
+                    var evicted = conn.prepareStatement(SELECT_32).await().unwrap();
+                    evicted.close().await();
                 } finally {
-                    duplicated.close().join();
+                    duplicated.close().await();
                 }
             } finally {
-                stmt.close().join();
+                stmt.close().await();
             }
         } finally {
-            conn.close().join();
+            conn.close().await();
         }
     }
-
 }

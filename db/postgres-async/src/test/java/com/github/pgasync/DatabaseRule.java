@@ -8,6 +8,7 @@ import com.github.pgasync.net.netty.NettyConnectibleBuilder;
 import org.junit.jupiter.api.Tag;
 import org.junit.rules.ExternalResource;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Result;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.util.Collection;
@@ -76,21 +77,16 @@ public class DatabaseRule extends ExternalResource {
         }
     }
 
-    ResultSet query(String sql) {
-        return await(pool().completeQuery(sql));
+    Result<ResultSet> query(String sql) {
+        return pool().completeQuery(sql).await();
     }
 
-    ResultSet query(String sql, List<?> params) {
-        return await(pool().completeQuery(sql, params.toArray()));
+    Result<ResultSet> query(String sql, List<?> params) {
+        return pool().completeQuery(sql, params.toArray()).await();
     }
 
-    Collection<ResultSet> script(String sql) {
-        return await(pool().completeScript(sql));
-    }
-
-    @SuppressWarnings("deprecation")
-    private <T> T await(Promise<T> promise) {
-        return promise.await(timeout(1).hours()).unwrap();
+    Result<Collection<ResultSet>> script(String sql) {
+        return pool().completeScript(sql).await();
     }
 
     Connectible pool() {

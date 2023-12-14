@@ -64,7 +64,7 @@ public class PlainConnectionTest {
                  .mapToObj(value -> STR."\{value}")
                  .forEach(value -> plain.completeQuery("INSERT INTO PC_TEST_1 VALUES($1)", value).await());
 
-        assertEquals(count, dbr.query("SELECT COUNT(*) FROM PC_TEST_1").index(0).getLong(0).longValue());
+        assertEquals(count, dbr.query("SELECT COUNT(*) FROM PC_TEST_1").unwrap().index(0).getLong(0).longValue());
     }
 
     @Test
@@ -74,6 +74,6 @@ public class PlainConnectionTest {
             STR."INSERT INTO PC_TEST_2 VALUES('\{value}');INSERT INTO PC_TEST_2 VALUES('_\{value}');INSERT INTO PC_TEST_2 VALUES('__\{value}');INSERT INTO PC_TEST_2 VALUES('___\{value}');"
         ).await());
 
-        assertEquals(count * 4, dbr.query("SELECT COUNT(*) FROM PC_TEST_2").index(0).getLong(0).longValue());
+        assertEquals(count * 4, dbr.query("SELECT COUNT(*) FROM PC_TEST_2").unwrap().index(0).getLong(0).longValue());
     }
 }

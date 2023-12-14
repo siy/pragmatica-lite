@@ -56,16 +56,20 @@ public class CustomConverterTest {
         dbr.query("DROP TABLE IF EXISTS CC_TEST");
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void shouldConvertColumnDataToType() {
         dbr.query("INSERT INTO CC_TEST VALUES (1, $1)", List.of(new Json("{\"a\": 1}")));
-        assertEquals("{\"a\": 1}", dbr.query("SELECT * FROM CC_TEST WHERE ID = 1").index(0).get("js", Json.class).json);
+        assertEquals("{\"a\": 1}", dbr.query("SELECT * FROM CC_TEST WHERE ID = 1")
+                                      .unwrap().index(0).get("js", Json.class).json);
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void shouldConvertParameter() {
         dbr.query("INSERT INTO CC_TEST VALUES (2, $1)", List.of(new Json("{\"b\": 2}")));
-        assertEquals("{\"b\": 2}", dbr.query("SELECT * FROM CC_TEST WHERE ID = 2").index(0).get("js", Json.class).json);
+        assertEquals("{\"b\": 2}", dbr.query("SELECT * FROM CC_TEST WHERE ID = 2")
+                                      .unwrap().index(0).get("js", Json.class).json);
     }
 
 }

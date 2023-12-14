@@ -89,11 +89,11 @@ public class TransactionTest {
                                        }));
 
         assertEquals(10L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 10")
-                             .index(0).getLong(0).longValue());
+            .unwrap().index(0).getLong(0).longValue());
     }
 
     @Test
-    public void shouldCommitParameterizedInsertInTransaction() throws Exception {
+    public void shouldCommitParameterizedInsertInTransaction() {
         // Ref: https://github.com/alaisi/postgres-async-driver/issues/34
         withTransaction(transaction ->
                             transaction.completeQuery("INSERT INTO TX_TEST (ID) VALUES ($1) RETURNING ID",
@@ -106,7 +106,7 @@ public class TransactionTest {
     }
 
     @Test
-    public void shouldRollbackTransaction() throws Exception {
+    public void shouldRollbackTransaction() {
         withTransaction(transaction ->
                             transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(9)")
                                        .flatMap(result -> {
@@ -114,12 +114,12 @@ public class TransactionTest {
                                            return transaction.rollback();
                                        }));
 
-        assertEquals(0L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 9").size());
+        assertEquals(0L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 9").unwrap().size());
     }
 
 
     @Test(expected = SqlException.class)
-    public void shouldRollbackTransactionOnBackendError() throws Exception {
+    public void shouldRollbackTransactionOnBackendError() {
         // Insert duplicate key
         withTransaction(transaction ->
                             transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(11)")
@@ -128,11 +128,11 @@ public class TransactionTest {
                                            return transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(11)");
                                        }))
             .onSuccessDo(() -> Assert.fail("Should not succeed"))
-            .onFailureDo(() -> assertEquals(0, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 11").size()));
+            .onFailureDo(() -> assertEquals(0, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 11").unwrap().size()));
     }
 
     @Test
-    public void shouldRollbackTransactionAfterBackendError() throws Exception {
+    public void shouldRollbackTransactionAfterBackendError() {
         withTransaction(transaction ->
                             transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(22)")
                                        .flatMap(result -> {
@@ -142,11 +142,11 @@ public class TransactionTest {
                                                                                   .failure(Causes.cause("The transaction should fail")));
                                        }));
 
-        assertEquals(0, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 22").size());
+        assertEquals(0, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 22").unwrap().size());
     }
 
     @Test
-    public void shouldSupportNestedTransactions() throws Exception {
+    public void shouldSupportNestedTransactions() {
         withTransaction(transaction ->
                             transaction.begin()
                                        .flatMap(nested ->
@@ -157,11 +157,11 @@ public class TransactionTest {
                                                           })
                                                           .flatMap(_ -> transaction.commit())));
 
-        assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 19").size());
+        assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 19").unwrap().size());
     }
 
     @Test
-    public void shouldRollbackNestedTransaction() throws Exception {
+    public void shouldRollbackNestedTransaction() {
         withTransaction(transaction ->
                             transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(24)")
                                        .flatMap(result -> {
@@ -176,12 +176,12 @@ public class TransactionTest {
                                                                                     return nested.rollback();
                                                                                 }));
                                        }));
-        assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 24").size());
-        assertEquals(0L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 23").size());
+        assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 24").unwrap().size());
+        assertEquals(0L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 23").unwrap().size());
     }
 
     @Test
-    public void shouldRollbackNestedTransactionOnBackendError() throws Exception {
+    public void shouldRollbackNestedTransactionOnBackendError() {
         withTransaction(transaction ->
                             transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(25)")
                                        .flatMap(result -> {
@@ -195,7 +195,7 @@ public class TransactionTest {
                                                                                     "INSERT INTO TX_TEST(ID) VALUES(26)"))
                                                                                 .onResultDo(_ -> transaction.commit()));
                                        }));
-        assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 25").size());
-        assertEquals(0L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 26").size());
+        assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 25").unwrap().size());
+        assertEquals(0L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 26").unwrap().size());
     }
 }

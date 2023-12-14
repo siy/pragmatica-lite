@@ -16,15 +16,14 @@ package com.github.pgasync;
 
 import com.github.pgasync.net.Connectible;
 import com.github.pgasync.net.Connection;
-import com.github.pgasync.net.SqlException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.jupiter.api.Tag;
+import org.pragmatica.lang.Promise;
 
 import java.util.Deque;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.SynchronousQueue;
 import java.util.stream.IntStream;
@@ -32,7 +31,7 @@ import java.util.stream.IntStream;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -56,12 +55,12 @@ public class PipelineTest {
     }
 
     @After
-    public void closePool() throws Exception {
+    public void closePool() {
         if (c != null) {
-            c.close().get();
+            c.close().await();
         }
         if (pool != null) {
-            pool.close().get();
+            pool.close().await();
         }
     }
 
@@ -72,14 +71,11 @@ public class PipelineTest {
         Deque<Long> results = new LinkedBlockingDeque<>();
         long startWrite = currentTimeMillis();
         for (int i = 0; i < count; ++i) {
-            pool.completeQuery("select " + i + ", pg_sleep(" + sleep + ")")
-                    .thenAccept(r -> results.add(currentTimeMillis()))
-                    .exceptionally(th -> {
-                        throw new AssertionError("failed", th);
-                    });
+            pool.completeQuery(STR."select \{i}, pg_sleep(\{sleep})")
+                .onSuccessDo(() -> results.add(currentTimeMillis()));
         }
-        long writeTime = currentTimeMillis() - startWrite;
 
+        long writeTime = currentTimeMillis() - startWrite;
         long remoteWaitTimeSeconds = (long) (sleep * count);
         SECONDS.sleep(2 + remoteWaitTimeSeconds);
         long readTime = results.getLast() - results.getFirst();
@@ -89,30 +85,24 @@ public class PipelineTest {
         assertThat(MILLISECONDS.toSeconds(readTime + 999) >= remoteWaitTimeSeconds, is(true));
     }
 
-    private Connection getConnection() throws InterruptedException {
-        SynchronousQueue<Connection> connQueue = new SynchronousQueue<>();
+    private Connection getConnection() {
+        var connQueue = new SynchronousQueue<Connection>();
         pool.connection()
-                .thenAccept(connQueue::offer);
-        return c = connQueue.take();
-    }
-
-    @Test(expected = SqlException.class)
-    public void messageStreamEnsuresSequentialAccess() throws Exception {
-        Connection connection = getConnection();
+            .onSuccess(connQueue::offer);
         try {
-            CompletableFuture.allOf(IntStream.range(0, 10).mapToObj(i -> connection.completeQuery("select " + i + ", pg_sleep(" + 10 + ")")
-                            .exceptionally(th -> {
-                                throw new IllegalStateException(new SqlException(th));
-                            })
-                    ).toArray(size -> new CompletableFuture<?>[size])
-            ).get();
-        } catch (Exception ex) {
-            SqlException.ifCause(ex, sqlException -> {
-                throw sqlException;
-            }, () -> {
-                throw ex;
-            });
+            return c = connQueue.take();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
+    @Test //TODO: what is this test for?
+    public void messageStreamEnsuresSequentialAccess() {
+        Connection connection = getConnection();
+
+        Promise.allOf(IntStream.range(0, 10)
+                               .mapToObj(i -> connection.completeQuery(STR."select \{i}, pg_sleep(10)"))
+                               .toList())
+               .await();
+    }
 }

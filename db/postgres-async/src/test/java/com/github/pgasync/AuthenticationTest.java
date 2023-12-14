@@ -3,11 +3,13 @@ package com.github.pgasync;
 import com.github.pgasync.net.Connectible;
 import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.SqlException;
+import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.jupiter.api.Tag;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Tag("Slow")
 public class AuthenticationTest {
@@ -15,37 +17,30 @@ public class AuthenticationTest {
     @ClassRule
     public static DatabaseRule dbr = DatabaseRule.defaultConfiguration();
 
-    @Test(expected = SqlException.class)
-    public void shouldThrowExceptionOnInvalidCredentials() throws Exception {
-        Connectible pool = dbr.builder
-                .password("_invalid_")
-                .pool();
-        try {
-            pool.completeQuery("SELECT 1").get();
-        } catch (Exception ex) {
-            SqlException.ifCause(ex,
-                    sqlException -> {
-                        assertEquals("28P01", sqlException.getCode());
-                        throw sqlException;
-                    },
-                    () -> {
-                        throw ex;
-                    });
-        } finally {
-            pool.close().get();
-        }
+    @Test
+    public void shouldReturnCorrespondingErrorOnInvalidCredentials() {
+        var pool = dbr.builder
+            .password("_invalid_")
+            .pool();
+
+        pool.completeQuery("SELECT 1").await()
+            .onSuccessDo(Assert::fail)
+            .onFailure(cause -> assertTrue(cause instanceof SqlError.InvalidCredentials));
+
+        pool.close().await();
     }
 
+    @SuppressWarnings("deprecation")
     @Test
-    public void shouldGetResultOnValidCredentials() throws Exception {
-        Connectible pool = dbr.builder
-                .password(DatabaseRule.postgres.getPassword())
-                .pool();
+    public void shouldGetResultOnValidCredentials() {
+        var pool = dbr.builder
+            .password(DatabaseRule.postgres.getPassword())
+            .pool();
         try {
-            ResultSet rs = pool.completeQuery("SELECT 1").get();
+            var rs = pool.completeQuery("SELECT 1").await().unwrap();
             assertEquals(1L, (long) rs.index(0).getInt(0));
         } finally {
-            pool.close().get();
+                pool.close().await();
         }
     }
 

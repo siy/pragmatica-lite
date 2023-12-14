@@ -17,6 +17,7 @@ package com.github.pgasync;
 import com.github.pgasync.net.Connectible;
 import com.github.pgasync.net.Connection;
 import com.github.pgasync.net.SqlException;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Tag;
@@ -34,61 +35,54 @@ public class ValidatedConnectionTest {
     @Rule
     public final DatabaseRule dbr = DatabaseRule.defaultConfiguration();
 
-    private void withSource(Connectible source, Consumer<Connectible> action) throws Exception {
+    private void withSource(Connectible source, Consumer<Connectible> action) {
         try {
             action.accept(source);
-        } catch (Exception ex) {
-            SqlException.ifCause(ex,
-                    sqlException -> {
-                        throw sqlException;
-                    },
-                    () -> {
-                        throw ex;
-                    });
         } finally {
-            source.close().join();
+            source.close().await();
         }
     }
 
-    private void withPlain(String clause, Consumer<Connectible> action) throws Exception {
+    private void withPlain(String clause, Consumer<Connectible> action) {
         withSource(dbr.builder
-                        .validationQuery(clause)
-                        .plain(),
-                action
+                       .validationQuery(clause)
+                       .plain(),
+                   action);
+    }
+
+    private void withPool(String clause, Consumer<Connectible> action) {
+        withSource(dbr.builder
+                       .validationQuery(clause)
+                       .pool(),
+                   action
         );
     }
 
-    private void withPool(String clause, Consumer<Connectible> action) throws Exception {
-        withSource(dbr.builder
-                        .validationQuery(clause)
-                        .pool(),
-                action
-        );
-    }
-
+    @SuppressWarnings("deprecation")
     @Test
-    public void shouldReturnValidPlainConnection() throws Exception {
+    public void shouldReturnValidPlainConnection() {
         withPlain("Select 89", plain -> {
-            Connection conn = plain.connection().join();
-            conn.close().join();
+            var conn = plain.connection().await().unwrap();
+            conn.close().await();
         });
-    }
-
-    @Test(expected = SqlException.class)
-    public void shouldNotReturnInvalidPlainConnection() throws Exception {
-        withPlain("Selec t 89", plain -> plain.connection().join());
     }
 
     @Test
-    public void shouldReturnValidPooledConnection() throws Exception {
+    public void shouldNotReturnInvalidPlainConnection() {
+        withPlain("Selec t 89", plain -> plain.connection().await().onSuccessDo(Assert::fail));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void shouldReturnValidPooledConnection() {
         withPool("Select 89", source -> {
-            Connection conn = source.connection().join();
-            conn.close().join();
+            var conn = source.connection().await().unwrap();
+            conn.close().await().onFailureDo(Assert::fail);
         });
     }
 
-    @Test(expected = SqlException.class)
-    public void shouldNotReturnInvalidPooledConnection() throws Exception {
-        withPool("Selec t 89", source -> source.connection().join());
+    @Test
+    public void shouldNotReturnInvalidPooledConnection() {
+        withPool("Selec t 89", source -> source.connection().await().onSuccessDo(Assert::fail));
     }
 }

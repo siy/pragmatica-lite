@@ -50,12 +50,11 @@ public class ScriptResultsTest {
 
     @Test
     public void shouldReturnMultipleResultSets() {
-        List<ResultSet> results = new ArrayList<>(dbr.script("" +
-                "INSERT INTO SCRIPT_TEST (ID) VALUES (1),(2);" +
-                "SELECT SCRIPT_TEST.ID first_id FROM SCRIPT_TEST WHERE ID <= 2 ORDER BY ID;" +
-                "INSERT INTO SCRIPT_TEST (ID) VALUES (3),(4),(5);" +
-                "SELECT SCRIPT_TEST.ID second_id FROM SCRIPT_TEST WHERE ID > 2 ORDER BY ID;" +
-                ""));
+        var results = new ArrayList<>(dbr.script("INSERT INTO SCRIPT_TEST (ID) VALUES (1),(2);" +
+                                                 "SELECT SCRIPT_TEST.ID first_id FROM SCRIPT_TEST WHERE ID <= 2 ORDER BY ID;" +
+                                                 "INSERT INTO SCRIPT_TEST (ID) VALUES (3),(4),(5);" +
+                                                 "SELECT SCRIPT_TEST.ID second_id FROM SCRIPT_TEST WHERE ID > 2 ORDER BY ID;")
+                                         .unwrap());
         Assert.assertEquals(4, results.size());
 
         ResultSet firstInsertResult = results.get(0);

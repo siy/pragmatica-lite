@@ -37,9 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * Messages stream to Postgres backend.
@@ -130,9 +128,9 @@ public abstract class PgProtocolStream implements ProtocolStream {
 
     @Override
     public Promise<Integer> send(Bind bind,
-                                           Describe describe,
-                                           Consumer<RowDescription.ColumnDescription[]> onColumns,
-                                           Consumer<DataRow> onRow) {
+                                 Describe describe,
+                                 Consumer<RowDescription.ColumnDescription[]> onColumns,
+                                 Consumer<DataRow> onRow) {
         this.onColumns = onColumns;
         this.onRow = onRow;
         this.onAffected = null;
@@ -171,7 +169,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
         });
     }
 
-    protected void gotException(Throwable th) {
+    protected void gotError(SqlError cause) {
         onColumns = null;
         onRow = null;
         onAffected = null;
@@ -179,7 +177,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
         lastSentMessage = null;
 
         if (onResponse != null) {
-            consumeOnResponse().failure(SqlError.fromThrowable(th));
+            consumeOnResponse().failure(cause);
         }
     }
 
@@ -195,7 +193,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
                 if (seenReadyForQuery) {
                     readyForQueryPendingMessage = message;
                 } else {
-                    gotException(toSqlException(errorResponse));
+                    gotError(toSqlError(errorResponse));
                 }
             }
             case CommandComplete commandComplete -> {
@@ -218,7 +216,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
             case ReadyForQuery _ -> {
                 seenReadyForQuery = true;
                 if (readyForQueryPendingMessage instanceof ErrorResponse errorResponse) {
-                    gotException(toSqlException(errorResponse));
+                    gotError(toSqlError(errorResponse));
                 } else {
                     onColumns = null;
                     onRow = null;
@@ -244,11 +242,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
         if (!assumeConnected || isConnected()) {
             if (onResponse == null) {
                 onResponse = uponResponse;
-                try {
-                    requestAction.run();
-                } catch (Throwable th) {
-                    gotException(th);
-                }
+                requestAction.run();
             } else {
                 uponResponse.failure(new SqlError.SimultaneousUseDetected("Postgres messages stream simultaneous use detected"));
             }
@@ -273,7 +267,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
         return lastSentMessage instanceof ExtendedQueryMessage;
     }
 
-    private static SqlException toSqlException(ErrorResponse error) {
-        return new SqlException(error.level(), error.code(), error.message());
+    private static SqlError toSqlError(ErrorResponse error) {
+        return new SqlError.ServerErrorResponse(STR."Server responded with error: \{error.level()} code \{error.code()}, message [\{error.message()}]");
     }
 }
