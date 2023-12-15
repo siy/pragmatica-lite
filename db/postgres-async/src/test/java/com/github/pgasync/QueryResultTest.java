@@ -15,8 +15,6 @@
 package com.github.pgasync;
 
 import com.github.pgasync.net.ResultSet;
-import com.github.pgasync.net.Row;
-import com.github.pgasync.net.SqlException;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -25,12 +23,10 @@ import org.junit.Test;
 import org.junit.jupiter.api.Tag;
 
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -58,11 +54,11 @@ public class QueryResultTest {
     @Test
     public void shouldReturnResultSetSize() {
         dbr.query("INSERT INTO CONN_TEST (ID) VALUES (1),(2)")
-           .onFailureDo(Assert::fail)
+           .onFailure(Assert::fail)
            .onSuccess(rs -> assertEquals(2, rs.affectedRows()));
 
         dbr.query("SELECT * FROM CONN_TEST WHERE ID <= 2 ORDER BY ID")
-           .onFailureDo(Assert::fail)
+           .onFailure(Assert::fail)
            .onSuccess(rs -> assertEquals(2, rs.size()))
            .onSuccess(rs -> assertEquals("ID", rs.orderedColumns().getFirst().name().toUpperCase()))
            .map(ResultSet::iterator)
@@ -135,6 +131,6 @@ public class QueryResultTest {
                                    .collect(Collectors.toList()))
            .await()
            .onSuccess(series -> assertEquals(List.of(1, 2, 3, 4, 5), series))
-           .onFailureDo(Assert::fail);
+           .onFailure(Assert::fail);
     }
 }

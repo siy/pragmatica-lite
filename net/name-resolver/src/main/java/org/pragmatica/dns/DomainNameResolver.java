@@ -55,7 +55,7 @@ public interface DomainNameResolver extends AsyncCloseable {
                 var promise = cache.computeIfAbsent(name, this::fireRequest);
 
                 // Do not cache failed requests and observe TTL for successful ones
-                return promise.onFailureDo(() -> cache.remove(name))
+                return promise.onFailure(() -> cache.remove(name))
                               .onSuccess(domainAddress -> {
                                   log.debug("TTL for {} is {}", domainAddress.name(), domainAddress.ttl());
                                   promise.async(Timeout.fromDuration(domainAddress.ttl()),

@@ -147,7 +147,7 @@ record DnsClientImpl(Bootstrap bootstrap, ConcurrentHashMap<Integer, Request> re
                          .map(inetAddress -> DomainAddress.domainAddress(request.domainName(), inetAddress,
                                                                          Duration.ofSeconds(raw.timeToLive())))
                          .onSuccess(addresses::add)
-                         .onFailureDo(() -> log.warn("Response for {} contains incorrectly formatted IP address", request.domainName()));
+                         .onFailure(() -> log.warn("Response for {} contains incorrectly formatted IP address", request.domainName()));
             }
         }
         return addresses;
@@ -181,7 +181,7 @@ record DnsClientImpl(Bootstrap bootstrap, ConcurrentHashMap<Integer, Request> re
 
             if (requestMap().putIfAbsent(requestId, request) == null) {
                 // Ensure slot for this ID is freed regardless of the outcome
-                promise.onResultDo(() -> requestMap().remove(requestId));
+                promise.onResult(() -> requestMap().remove(requestId));
                 return request;
             }
         }

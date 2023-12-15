@@ -63,14 +63,14 @@ class ResultTest {
     @Test
     void successResultCanBeTransformedWithMap() {
         Result.success(123).map(Objects::toString)
-              .onFailureDo(Assertions::fail)
+              .onFailure(Assertions::fail)
               .onSuccess(value -> assertEquals("123", value));
     }
 
     @Test
     void successResultCanBeTransformedWithFlatMap() {
         Result.success(123).flatMap(v -> Result.success(v.toString()))
-              .onFailureDo(Assertions::fail)
+              .onFailure(Assertions::fail)
               .onSuccess(value -> assertEquals("123", value));
     }
 
@@ -78,14 +78,14 @@ class ResultTest {
     void failureResultRemainsUnchangedAfterMap() {
         Result.<Integer>failure(Causes.cause("Some error")).map(Objects::toString)
               .onFailure(cause -> assertEquals("Some error", cause.message()))
-              .onSuccessDo(Assertions::fail);
+              .onSuccess(Assertions::fail);
     }
 
     @Test
     void failureResultRemainsUnchangedAfterFlatMap() {
         Result.<Integer>failure(Causes.cause("Some error")).flatMap(v -> Result.success(v.toString()))
               .onFailure(cause -> assertEquals("Some error", cause.message()))
-              .onSuccessDo(Assertions::fail);
+              .onSuccess(Assertions::fail);
     }
 
     @Test
@@ -104,7 +104,7 @@ class ResultTest {
     @Test
     void onSuccessIsInvokedForSuccessResult() {
         Result.success(123)
-              .onFailureDo(Assertions::fail)
+              .onFailure(Assertions::fail)
               .onSuccess(value -> assertEquals(123, value));
         Result.<Integer>failure(Causes.cause("123"))
               .onFailure(cause -> assertEquals("123", cause.message()))
@@ -116,16 +116,16 @@ class ResultTest {
         var flag1 = new AtomicBoolean(false);
 
         Result.success(123)
-              .onFailureDo(Assertions::fail)
-              .onSuccessDo(() -> flag1.set(true));
+              .onFailure(Assertions::fail)
+              .onSuccess(() -> flag1.set(true));
 
         assertTrue(flag1.get());
 
         var flag2 = new AtomicBoolean(false);
 
         Result.<Integer>failure(Causes.cause("123"))
-              .onFailureDo(() -> flag2.set(true))
-              .onSuccessDo(Assertions::fail);
+              .onFailure(() -> flag2.set(true))
+              .onSuccess(Assertions::fail);
 
         assertTrue(flag2.get());
     }
@@ -145,16 +145,16 @@ class ResultTest {
         var flag1 = new AtomicBoolean(false);
 
         Result.success(123)
-              .onFailureDo(Assertions::fail)
-              .onSuccessDo(() -> flag1.set(true));
+              .onFailure(Assertions::fail)
+              .onSuccess(() -> flag1.set(true));
 
         assertTrue(flag1.get());
 
         var flag2 = new AtomicBoolean(false);
 
         Result.<Integer>failure(Causes.cause("123"))
-              .onFailureDo(() -> flag2.set(true))
-              .onSuccessDo(Assertions::fail);
+              .onFailure(() -> flag2.set(true))
+              .onSuccess(Assertions::fail);
 
         assertTrue(flag2.get());
     }
@@ -186,9 +186,9 @@ class ResultTest {
     void successResultCanBeFiltered() {
         Result.success(231)
               .onSuccess(value -> assertEquals(231, value))
-              .onFailureDo(Assertions::fail)
+              .onFailure(Assertions::fail)
               .filter(Causes.with1("Value {0} is below threshold"), value -> value > 321)
-              .onSuccessDo(Assertions::fail)
+              .onSuccess(Assertions::fail)
               .onFailure(cause -> assertEquals("Value 231 is below threshold", cause.message()));
     }
 

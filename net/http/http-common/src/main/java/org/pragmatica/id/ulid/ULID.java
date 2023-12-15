@@ -237,7 +237,7 @@ public final class ULID implements Comparable<ULID> {
             }
         }
 
-        return Result.ok(input);
+        return Result.success(input);
     }
 
     /**

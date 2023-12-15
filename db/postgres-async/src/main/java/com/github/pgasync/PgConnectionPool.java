@@ -21,14 +21,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.logging.Level;
 
 import static org.pragmatica.lang.Option.option;
 import static org.pragmatica.lang.Result.unitResult;
@@ -194,7 +191,7 @@ public class PgConnectionPool extends PgConnectible {
                         if (already != null && already != evicted) {
                             log.warn(DUPLICATED_PREPARED_STATEMENT_DETECTED, already.sql);
                             return evicted.delegate.close()
-                                                   .onResultDo(already.delegate::close);
+                                                   .onResult(already.delegate::close);
                         } else {
                             return evicted.delegate.close();
                         }
@@ -290,13 +287,13 @@ public class PgConnectionPool extends PgConnectible {
                                     if (validationQuery != null && !validationQuery.isBlank()) {
                                         return pooledConnection.completeScript(validationQuery)
                                                                .map(_ -> pooledConnection)
-                                                               .onFailureDo(() -> ((PooledPgConnection) pooledConnection).delegate.close());
+                                                               .onFailure(() -> ((PooledPgConnection) pooledConnection).delegate.close());
                                     } else {
                                         return Promise.successful(pooledConnection);
                                     }
                                 })
                                 .onSuccess(connection -> release((PooledPgConnection) connection))
-                                .onFailureDo(this::cancelPending);
+                                .onFailure(this::cancelPending);
                 }
                 return deferred;
             }

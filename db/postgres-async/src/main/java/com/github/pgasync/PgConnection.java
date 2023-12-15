@@ -17,15 +17,10 @@ package com.github.pgasync;
 import static com.github.pgasync.message.backend.RowDescription.ColumnDescription;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import com.github.pgasync.message.backend.DataRow;
 import com.github.pgasync.net.Connection;
@@ -196,7 +191,7 @@ public class PgConnection implements Connection {
                                   Object... params) {
         return prepareStatement(sql, dataConverter.assumeTypes(params))
             .flatMap(ps -> ps.fetch(onColumns, onRow, params)
-                             .onResultDo(ps::close));
+                             .onResult(ps::close));
     }
 
     @Override
@@ -211,7 +206,7 @@ public class PgConnection implements Connection {
             .map(() -> {
 
                 return () -> completeScript(STR."UNLISTEN \{channel}")
-                    .onResultDo(() -> stream.subscribe(channel, onNotification))
+                    .onResult(() -> stream.subscribe(channel, onNotification))
                     .mapToUnit();
             });
     }

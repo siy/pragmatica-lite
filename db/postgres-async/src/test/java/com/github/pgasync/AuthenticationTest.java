@@ -1,8 +1,5 @@
 package com.github.pgasync;
 
-import com.github.pgasync.net.Connectible;
-import com.github.pgasync.net.ResultSet;
-import com.github.pgasync.net.SqlException;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -24,7 +21,7 @@ public class AuthenticationTest {
             .pool();
 
         pool.completeQuery("SELECT 1").await()
-            .onSuccessDo(Assert::fail)
+            .onSuccess(Assert::fail)
             .onFailure(cause -> assertTrue(cause instanceof SqlError.InvalidCredentials));
 
         pool.close().await();

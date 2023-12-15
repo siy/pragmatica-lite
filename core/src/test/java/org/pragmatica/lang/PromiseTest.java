@@ -103,7 +103,7 @@ public class PromiseTest {
         var ref2 = new AtomicBoolean(false);
         var promise = Promise.<Integer>promise()
                              .onFailure(ref1::set)
-                             .onFailureDo(() -> ref2.set(true));
+                             .onFailure(() -> ref2.set(true));
 
         assertNull(ref1.get());
         assertFalse(ref2.get());
@@ -120,7 +120,7 @@ public class PromiseTest {
         var ref2 = new AtomicBoolean(false);
         var promise = Promise.<Integer>promise()
                              .onFailure(ref1::set)
-                             .onFailureDo(() -> ref2.set(true));
+                             .onFailure(() -> ref2.set(true));
 
         assertNull(ref1.get());
         assertFalse(ref2.get());
@@ -137,7 +137,7 @@ public class PromiseTest {
         var ref2 = new AtomicBoolean(false);
         var promise = Promise.<Integer>promise()
                              .onResult(ref1::set)
-                             .onResultDo(() -> ref2.set(true));
+                             .onResult(() -> ref2.set(true));
 
         assertNull(ref1.get());
         assertFalse(ref2.get());
@@ -154,7 +154,7 @@ public class PromiseTest {
         var ref2 = new AtomicBoolean(false);
         var promise = Promise.<Integer>promise()
                              .onResult(ref1::set)
-                             .onResultDo(() -> ref2.set(true));
+                             .onResult(() -> ref2.set(true));
 
         assertNull(ref1.get());
         assertFalse(ref2.get());
@@ -173,7 +173,7 @@ public class PromiseTest {
         var ref2 = new AtomicBoolean(false);
         var promise = Promise.<Integer>promise()
                              .onResult(ref1::set)
-                             .onResultDo(() -> ref2.set(true));
+                             .onResult(() -> ref2.set(true));
 
         assertNull(ref1.get());
         assertFalse(ref2.get());
@@ -196,7 +196,7 @@ public class PromiseTest {
                              .async(Timeout.timeout(10).millis(), p -> {
                                  ref2.set(System.nanoTime());
                                  p.resolve(Result.success(1))
-                                  .onResultDo(() -> ref3.set(System.nanoTime()));
+                                  .onResult(() -> ref3.set(System.nanoTime()));
                              });
 
         promise.await();
@@ -259,7 +259,7 @@ public class PromiseTest {
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1), tuple))
-                  .onFailureDo(Assertions::fail);
+                  .onFailure(Assertions::fail);
     }
 
     @Test
@@ -276,7 +276,7 @@ public class PromiseTest {
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2), tuple))
-                  .onFailureDo(Assertions::fail);
+                  .onFailure(Assertions::fail);
     }
 
     @Test
@@ -295,7 +295,7 @@ public class PromiseTest {
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3), tuple))
-                  .onFailureDo(Assertions::fail);
+                  .onFailure(Assertions::fail);
     }
 
     @Test
@@ -317,7 +317,7 @@ public class PromiseTest {
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4), tuple))
-                  .onFailureDo(Assertions::fail);
+                  .onFailure(Assertions::fail);
     }
 
     @Test
@@ -341,7 +341,7 @@ public class PromiseTest {
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5), tuple))
-                  .onFailureDo(Assertions::fail);
+                  .onFailure(Assertions::fail);
     }
 
     @Test
@@ -367,7 +367,7 @@ public class PromiseTest {
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5, 6), tuple))
-                  .onFailureDo(Assertions::fail);
+                  .onFailure(Assertions::fail);
     }
 
     @Test
@@ -395,7 +395,7 @@ public class PromiseTest {
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5, 6, 7), tuple))
-                  .onFailureDo(Assertions::fail);
+                  .onFailure(Assertions::fail);
     }
 
     @Test
@@ -426,7 +426,7 @@ public class PromiseTest {
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5, 6, 7, 8), tuple))
-                  .onFailureDo(Assertions::fail);
+                  .onFailure(Assertions::fail);
     }
 
     @Test
@@ -459,7 +459,7 @@ public class PromiseTest {
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5, 6, 7, 8, 9), tuple))
-                  .onFailureDo(Assertions::fail);
+                  .onFailure(Assertions::fail);
     }
 
     @Test

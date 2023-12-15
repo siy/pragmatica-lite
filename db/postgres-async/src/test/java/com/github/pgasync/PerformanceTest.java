@@ -27,7 +27,6 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.io.AsyncCloseable;
-import org.testcontainers.shaded.org.checkerframework.checker.units.qual.A;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +34,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -166,7 +164,7 @@ public class PerformanceTest {
                                            .onSuccessDo(PreparedStatement::query)
                                            .onSuccessDo(AsyncCloseable::close))
                 .onSuccessDo(Connection::close)
-                .onResultDo(() -> {
+                .onResult(() -> {
                     if (performed.incrementAndGet() < batchSize) {
                         Promise.runAsync(this::nextSamplePreparedStatement);
                     } else {
@@ -178,7 +176,7 @@ public class PerformanceTest {
 
         private void nextSampleSimpleQuery() {
             pool.completeScript(SELECT_42)
-                .onResultDo(() -> {
+                .onResult(() -> {
                     if (performed.incrementAndGet() < batchSize) {
                         Promise.runAsync(this::nextSamplePreparedStatement);
                     } else {

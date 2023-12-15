@@ -115,7 +115,7 @@ public class RequestContextImpl implements RequestContext {
     private void sendResponse(Result<?> result) {
         result
             .flatMap(this::serializeResponse)
-            .onSuccessDo(this::setKeepAlive)        // Set keepAlive only for successful responses
+            .onSuccess(this::setKeepAlive)        // Set keepAlive only for successful responses
             .recover(HttpServerHandler::decodeError)
             .onSuccess(this::sendResponse);
     }

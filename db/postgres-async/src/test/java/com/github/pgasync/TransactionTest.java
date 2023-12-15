@@ -14,7 +14,6 @@
 
 package com.github.pgasync;
 
-import com.github.pgasync.net.Connection;
 import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.SqlException;
 import com.github.pgasync.net.Transaction;
@@ -24,16 +23,10 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.jupiter.api.Tag;
-import org.pragmatica.lang.Functions;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
-import org.pragmatica.lang.io.Timeout;
 import org.pragmatica.lang.utils.Causes;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 import static org.pragmatica.lang.io.Timeout.timeout;
@@ -102,7 +95,7 @@ public class TransactionTest {
                                        .map(row -> row.getLong(0))
                                        .onResultDo(_ -> transaction.commit()))
             .onSuccess(id -> assertEquals(35L, (long) id))
-            .onFailureDo(Assert::fail);
+            .onFailure(Assert::fail);
     }
 
     @Test
@@ -127,8 +120,8 @@ public class TransactionTest {
                                            assertEquals(1, result.affectedRows());
                                            return transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(11)");
                                        }))
-            .onSuccessDo(() -> Assert.fail("Should not succeed"))
-            .onFailureDo(() -> assertEquals(0, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 11").unwrap().size()));
+            .onSuccess(() -> Assert.fail("Should not succeed"))
+            .onFailure(() -> assertEquals(0, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 11").unwrap().size()));
     }
 
     @Test

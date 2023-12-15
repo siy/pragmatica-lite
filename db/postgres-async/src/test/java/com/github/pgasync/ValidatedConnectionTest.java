@@ -15,8 +15,6 @@
 package com.github.pgasync;
 
 import com.github.pgasync.net.Connectible;
-import com.github.pgasync.net.Connection;
-import com.github.pgasync.net.SqlException;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -69,7 +67,7 @@ public class ValidatedConnectionTest {
 
     @Test
     public void shouldNotReturnInvalidPlainConnection() {
-        withPlain("Selec t 89", plain -> plain.connection().await().onSuccessDo(Assert::fail));
+        withPlain("Selec t 89", plain -> plain.connection().await().onSuccess(Assert::fail));
     }
 
     @SuppressWarnings("deprecation")
@@ -77,12 +75,12 @@ public class ValidatedConnectionTest {
     public void shouldReturnValidPooledConnection() {
         withPool("Select 89", source -> {
             var conn = source.connection().await().unwrap();
-            conn.close().await().onFailureDo(Assert::fail);
+            conn.close().await().onFailure(Assert::fail);
         });
     }
 
     @Test
     public void shouldNotReturnInvalidPooledConnection() {
-        withPool("Selec t 89", source -> source.connection().await().onSuccessDo(Assert::fail));
+        withPool("Selec t 89", source -> source.connection().await().onSuccess(Assert::fail));
     }
 }

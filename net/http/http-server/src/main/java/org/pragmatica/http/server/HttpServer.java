@@ -56,7 +56,7 @@ public class HttpServer {
     public Promise<Unit> start() {
         var transportConfiguration = transportConfiguration();
         var promise = Promise.<Unit>promise()
-                             .onResultDo(() -> gracefulShutdown(transportConfiguration));
+                             .onResult(() -> gracefulShutdown(transportConfiguration));
 
         try {
             var bindAddress = configuration.bindAddress()

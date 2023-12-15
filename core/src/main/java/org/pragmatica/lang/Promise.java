@@ -208,7 +208,7 @@ public interface Promise<T> {
      *
      * @return Current instance
      */
-    default Promise<T> onResultDo(Runnable action) {
+    default Promise<T> onResult(Runnable action) {
         return onResult(_ -> action.run());
     }
 
@@ -242,7 +242,7 @@ public interface Promise<T> {
      * @return Current instance
      */
     default Promise<T> onSuccessDo(Runnable action) {
-        return onResult(result -> result.onSuccessDo(action));
+        return onResult(result -> result.onSuccess(action));
     }
 
     default <U> Promise<T> onSuccessDo(Fn1<Promise<U>, ? super T> mapper) {
@@ -275,13 +275,13 @@ public interface Promise<T> {
      *
      * @return Current instance
      */
-    default Promise<T> onFailureDo(Runnable action) {
-        return onResult(result -> result.onFailureDo(action));
+    default Promise<T> onFailure(Runnable action) {
+        return onResult(result -> result.onFailure(action));
     }
 
     /**
      * Attach a side effect action which will be executed upon resolution of the current instance with {@link Result} containing
-     * {@link Result.Failure}. Unlike {@link Promise#onFailureDo(Runnable)}, the action passed to this method returns yet another
+     * {@link Result.Failure}. Unlike {@link Promise#onFailure(Runnable)}, the action passed to this method returns yet another
      * {@link Promise} and the instance of the {@link Promise} returned by this method will be resolved only after resolution of
      * the instance returned by the action. This is useful, for example, for resource cleanup.
      *
@@ -383,7 +383,7 @@ public interface Promise<T> {
     static <R> Promise<R> any(Promise<R>... promises) {
         return Promise.promise(result -> List.of(promises)
                                              .forEach(promise -> promise.onResult(result::resolve)
-                                                                        .onResultDo(() -> cancelAll(promises))));
+                                                                        .onResult(() -> cancelAll(promises))));
     }
 
     /**
@@ -400,15 +400,15 @@ public interface Promise<T> {
         return Promise.promise(anySuccess -> threshold(promises.length, () -> anySuccess.resolve(failureResult))
             .apply(at -> List.of(promises)
                              .forEach(promise -> promise.onResult(result -> result.onSuccess(anySuccess::success)
-                                                                                  .onSuccessDo(() -> cancelAll(promises)))
-                                                        .onResultDo(at::registerEvent))));
+                                                                                  .onSuccess(() -> cancelAll(promises)))
+                                                        .onResult(at::registerEvent))));
     }
 
     static <T> Promise<T> anySuccess(Result<T> failureResult, List<Promise<T>> promises) {
         return Promise.promise(anySuccess -> threshold(promises.size(), () -> anySuccess.resolve(failureResult))
             .apply(at -> promises.forEach(promise -> promise.onResult(result -> result.onSuccess(anySuccess::success)
-                                                                                      .onSuccessDo(() -> cancelAll(promises)))
-                                                            .onResultDo(at::registerEvent))));
+                                                                                      .onSuccess(() -> cancelAll(promises)))
+                                                            .onResult(at::registerEvent))));
     }
 
     /**

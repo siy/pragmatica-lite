@@ -211,7 +211,7 @@ class OptionTest {
     void presentOptionCanBeConvertedToSuccessResult() {
         Option.option(1).toResult(Causes.cause("Not expected"))
               .onSuccess(value -> assertEquals(1, value))
-              .onFailureDo(Assertions::fail);
+              .onFailure(Assertions::fail);
     }
 
     @Test

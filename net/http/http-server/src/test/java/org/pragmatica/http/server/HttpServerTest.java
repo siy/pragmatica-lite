@@ -30,7 +30,7 @@ class HttpServerTest {
 
     @AfterAll
     public static void cleanup() {
-        serverPromise.resolve(unitResult()).await().onResultDo(() -> log.info("Server stopped"));
+        serverPromise.resolve(unitResult()).await().onResult(() -> log.info("Server stopped"));
     }
 
     @Test

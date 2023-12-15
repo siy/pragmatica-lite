@@ -23,7 +23,7 @@ public class PgDatabase extends PgConnectible {
                                if (validationQuery != null && !validationQuery.isBlank()) {
                                    return connection.completeScript(validationQuery)
                                                           .map(_ -> connection)
-                                                          .onFailureDo(connection::close);
+                                                          .onFailure(connection::close);
                                } else {
                                    return Promise.successful(connection);
                                }
