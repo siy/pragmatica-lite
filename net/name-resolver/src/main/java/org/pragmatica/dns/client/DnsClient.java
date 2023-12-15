@@ -181,7 +181,7 @@ record DnsClientImpl(Bootstrap bootstrap, ConcurrentHashMap<Integer, Request> re
 
             if (requestMap().putIfAbsent(requestId, request) == null) {
                 // Ensure slot for this ID is freed regardless of the outcome
-                promise.onResult(() -> requestMap().remove(requestId));
+                promise.onResultRun(() -> requestMap().remove(requestId));
                 return request;
             }
         }

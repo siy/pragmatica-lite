@@ -106,17 +106,6 @@ public interface Promise<T> {
     Promise<T> mapError(Fn1<Cause, Cause> mapper);
 
     /**
-     * Handle both outcomes of resolution of current instance (success and failure), transform them and produce new instance with the result of the
-     * transformation.
-     *
-     * @param failureMapper the mapper for the case of resolution with failure
-     * @param successMapper the mapper for the case of resolution with success
-     *
-     * @return Transformed instance
-     */
-    <U> Promise<U> fold(Fn1<Promise<U>, ? super Cause> failureMapper, Fn1<Promise<U>, ? super T> successMapper);
-
-    /**
      * Compose current instance with the function which returns a Promise of another type. Unlike {@link Promise#flatMap(Fn1)}, the function will be
      * invoked in any case, regardless of the result of the current instance.
      *
@@ -208,7 +197,7 @@ public interface Promise<T> {
      *
      * @return Current instance
      */
-    default Promise<T> onResult(Runnable action) {
+    default Promise<T> onResultRun(Runnable action) {
         return onResult(_ -> action.run());
     }
 
@@ -241,7 +230,7 @@ public interface Promise<T> {
      *
      * @return Current instance
      */
-    default Promise<T> onSuccessDo(Runnable action) {
+    default Promise<T> onSuccessRun(Runnable action) {
         return onResult(result -> result.onSuccessRun(action));
     }
 
@@ -275,13 +264,13 @@ public interface Promise<T> {
      *
      * @return Current instance
      */
-    default Promise<T> onFailure(Runnable action) {
+    default Promise<T> onFailureRun(Runnable action) {
         return onResult(result -> result.onFailureRun(action));
     }
 
     /**
      * Attach a side effect action which will be executed upon resolution of the current instance with {@link Result} containing
-     * {@link Result.Failure}. Unlike {@link Promise#onFailure(Runnable)}, the action passed to this method returns yet another
+     * {@link Result.Failure}. Unlike {@link Promise#onFailureRun(Runnable)}, the action passed to this method returns yet another
      * {@link Promise} and the instance of the {@link Promise} returned by this method will be resolved only after resolution of
      * the instance returned by the action. This is useful, for example, for resource cleanup.
      *
@@ -391,7 +380,7 @@ public interface Promise<T> {
     static <R> Promise<R> any(Promise<R>... promises) {
         return Promise.promise(result -> List.of(promises)
                                              .forEach(promise -> promise.onResult(result::resolve)
-                                                                        .onResult(() -> cancelAll(promises))));
+                                                                        .onResultRun(() -> cancelAll(promises))));
     }
 
     /**
@@ -409,14 +398,14 @@ public interface Promise<T> {
             .apply(at -> List.of(promises)
                              .forEach(promise -> promise.onResult(result -> result.onSuccess(anySuccess::success)
                                                                                   .onSuccessRun(() -> cancelAll(promises)))
-                                                        .onResult(at::registerEvent))));
+                                                        .onResultRun(at::registerEvent))));
     }
 
     static <T> Promise<T> anySuccess(Result<T> failureResult, List<Promise<T>> promises) {
         return Promise.promise(anySuccess -> threshold(promises.size(), () -> anySuccess.resolve(failureResult))
             .apply(at -> promises.forEach(promise -> promise.onResult(result -> result.onSuccess(anySuccess::success)
                                                                                       .onSuccessRun(() -> cancelAll(promises)))
-                                                            .onResult(at::registerEvent))));
+                                                            .onResultRun(at::registerEvent))));
     }
 
     /**
@@ -923,21 +912,6 @@ public interface Promise<T> {
         }
 
         @Override
-        public <U> Promise<U> fold(Fn1<Promise<U>, ? super Cause> failureMapper, Fn1<Promise<U>, ? super T> successMapper) {
-            if (value != null) {
-                return value.fold(failureMapper, successMapper);
-            }
-
-            var result = new PromiseImpl<U>(null);
-
-            push(new CompletionAction<>(value -> value.fold(failureMapper, successMapper)
-                                                      .onResult(result::resolve),
-                                        result));
-
-            return result;
-        }
-
-        @Override
         public <U> Promise<U> fold(Fn1<Promise<U>, Result<T>> mapper) {
             if (value != null) {
                 return mapper.apply(value);
@@ -1011,7 +985,9 @@ public interface Promise<T> {
 
         @Override
         public String toString() {
-            return "Promise(" + (value == null ? "<>" : value.toString()) + ')';
+            var string = value == null ? "<>"
+                                       : value.toString();
+            return STR."Promise(\{string}\{')'}";
         }
 
         @SuppressWarnings("unchecked")

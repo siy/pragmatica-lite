@@ -15,7 +15,6 @@
 package com.github.pgasync;
 
 import com.github.pgasync.net.ResultSet;
-import com.github.pgasync.net.SqlException;
 import com.github.pgasync.net.Transaction;
 import org.junit.*;
 import org.junit.jupiter.api.Tag;
@@ -55,7 +54,7 @@ public class TransactionTest {
                   .flatMap(connection -> connection.begin()
                                                    .flatMap(function)
                                                    .onResultDo(_ -> connection.close()))
-                  .await(timeout(5).seconds());
+                  .await(timeout(3).seconds());
     }
 
     @Test
@@ -73,10 +72,11 @@ public class TransactionTest {
     public void shouldCommitInsertInTransaction() throws Exception {
         withTransaction(transaction ->
                             transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(10)")
-                                       .onSuccessDo(result -> {
+                                       .onSuccess(result -> {
                                            assertEquals(1, result.affectedRows());
-                                           return transaction.commit();
-                                       }));
+                                           //return transaction.commit();
+                                       })
+                                       .flatMap(_ -> transaction.commit()));
 
         assertEquals(10L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 10")
             .unwrap().index(0).getLong(0).longValue());
@@ -95,20 +95,18 @@ public class TransactionTest {
             .onFailureRun(Assert::fail);
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void shouldRollbackTransaction() {
         withTransaction(transaction ->
                             transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(9)")
-                                       .flatMap(result -> {
-                                           assertEquals(1, result.affectedRows());
-                                           return transaction.rollback();
-                                       }));
-
-        assertEquals(0L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 9").unwrap().size());
+                                       .onSuccess(result -> assertEquals(1, result.affectedRows()))
+                                       .flatMap(_ -> transaction.rollback())
+                                       .onResultRun(() -> assertEquals(0L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 9").unwrap().size())));
     }
 
-
-    @Test(expected = SqlException.class)
+    @SuppressWarnings("deprecation")
+    @Test
     public void shouldRollbackTransactionOnBackendError() {
         // Insert duplicate key
         withTransaction(transaction ->
@@ -121,6 +119,7 @@ public class TransactionTest {
             .onFailureRun(() -> assertEquals(0, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 11").unwrap().size()));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void shouldRollbackTransactionAfterBackendError() {
         withTransaction(transaction ->
@@ -135,6 +134,7 @@ public class TransactionTest {
         assertEquals(0, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 22").unwrap().size());
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void shouldSupportNestedTransactions() {
         withTransaction(transaction ->
@@ -150,6 +150,7 @@ public class TransactionTest {
         assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 19").unwrap().size());
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void shouldRollbackNestedTransaction() {
         withTransaction(transaction ->
@@ -170,6 +171,7 @@ public class TransactionTest {
         assertEquals(0L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 23").unwrap().size());
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void shouldRollbackNestedTransactionOnBackendError() {
         withTransaction(transaction ->

@@ -4,6 +4,8 @@ import com.github.pgasync.PgColumn;
 import com.github.pgasync.PgResultSet;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,6 +21,8 @@ import java.util.function.Consumer;
  * @author Antti Laisi
  */
 public interface QueryExecutor {
+    Logger log = LoggerFactory.getLogger(QueryExecutor.class);
+
     /**
      * Sends parameter less query script. The script may be multi query. Queries are separated with semicolons. Accumulates fetched columns, rows and
      * affected rows counts into memory and transforms them into a ResultSet when each {@link ResultSet} is fetched. Completes returned
@@ -72,7 +76,9 @@ public interface QueryExecutor {
     default Promise<ResultSet> completeQuery(String sql, Object... params) {
         var assembly = new ResultSetAssembly();
 
-        return query(assembly::start, assembly::add, sql, params).map(assembly::asResultSet);
+        return query(assembly::start, assembly::add, sql, params)
+            .onFailure(cause -> log.debug("Query failed: {}", cause))
+            .map(assembly::asResultSet);
     }
 
     /**

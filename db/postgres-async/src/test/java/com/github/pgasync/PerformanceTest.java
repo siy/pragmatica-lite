@@ -164,7 +164,7 @@ public class PerformanceTest {
                                            .onSuccessDo(PreparedStatement::query)
                                            .onSuccessDo(AsyncCloseable::close))
                 .onSuccessDo(Connection::close)
-                .onResult(() -> {
+                .onResultRun(() -> {
                     if (performed.incrementAndGet() < batchSize) {
                         Promise.runAsync(this::nextSamplePreparedStatement);
                     } else {
@@ -176,7 +176,7 @@ public class PerformanceTest {
 
         private void nextSampleSimpleQuery() {
             pool.completeScript(SELECT_42)
-                .onResult(() -> {
+                .onResultRun(() -> {
                     if (performed.incrementAndGet() < batchSize) {
                         Promise.runAsync(this::nextSamplePreparedStatement);
                     } else {

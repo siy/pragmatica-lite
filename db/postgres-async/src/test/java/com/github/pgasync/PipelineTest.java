@@ -72,7 +72,7 @@ public class PipelineTest {
         long startWrite = currentTimeMillis();
         for (int i = 0; i < count; ++i) {
             pool.completeQuery(STR."select \{i}, pg_sleep(\{sleep})")
-                .onSuccessDo(() -> results.add(currentTimeMillis()));
+                .onSuccessRun(() -> results.add(currentTimeMillis()));
         }
 
         long writeTime = currentTimeMillis() - startWrite;

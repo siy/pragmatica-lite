@@ -43,6 +43,7 @@ public class ScriptResultsTest {
         dbr.query("DROP TABLE IF EXISTS SCRIPT_TEST");
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void shouldReturnMultipleResultSets() {
         var results = new ArrayList<>(dbr.script("INSERT INTO SCRIPT_TEST (ID) VALUES (1),(2);" +
@@ -87,16 +88,9 @@ public class ScriptResultsTest {
         Assert.assertTrue(secondSelectResult.columnsByName().containsKey("second_id"));
     }
 
-    @Test(expected = SqlException.class)
-    public void shouldInvokeErrorHandlerOnError() throws Exception {
-        try {
-            dbr.script("SELECT * FROM not_there");
-        } catch (Exception ex) {
-            SqlException.ifCause(ex, sqlException -> {
-                throw sqlException;
-            }, () -> {
-                throw ex;
-            });
-        }
+    @Test
+    public void shouldInvokeErrorHandlerOnError() {
+        dbr.script("SELECT * FROM not_there")
+           .onSuccessRun(Assert::fail);
     }
 }

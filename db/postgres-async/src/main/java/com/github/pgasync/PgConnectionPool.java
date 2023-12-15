@@ -192,7 +192,7 @@ public class PgConnectionPool extends PgConnectible {
                         if (already != null && already != evicted) {
                             log.warn(DUPLICATED_PREPARED_STATEMENT_DETECTED, already.sql);
                             return evicted.delegate.close()
-                                                   .onResult(already.delegate::close);
+                                                   .onResultRun(already.delegate::close);
                         } else {
                             return evicted.delegate.close();
                         }
@@ -288,7 +288,7 @@ public class PgConnectionPool extends PgConnectible {
                                     if (validationQuery != null && !validationQuery.isBlank()) {
                                         return pooledConnection.completeScript(validationQuery)
                                                                .map(_ -> pooledConnection)
-                                                               .onFailure(() -> ((PooledPgConnection) pooledConnection).delegate.close());
+                                                               .onFailureRun(() -> ((PooledPgConnection) pooledConnection).delegate.close());
                                     } else {
                                         return Promise.successful(pooledConnection);
                                     }

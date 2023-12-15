@@ -69,7 +69,7 @@ public class PromiseTest {
         var ref2 = new AtomicBoolean(false);
         var promise = Promise.<Integer>promise()
                              .onSuccess(ref1::set)
-                             .onSuccessDo(() -> ref2.set(true));
+                             .onSuccessRun(() -> ref2.set(true));
 
         assertEquals(0, ref1.get());
         assertFalse(ref2.get());
@@ -86,7 +86,7 @@ public class PromiseTest {
         var ref2 = new AtomicBoolean(false);
         var promise = Promise.<Integer>promise()
                              .onSuccess(ref1::set)
-                             .onSuccessDo(() -> ref2.set(true));
+                             .onSuccessRun(() -> ref2.set(true));
 
         assertEquals(0, ref1.get());
         assertFalse(ref2.get());
@@ -103,7 +103,7 @@ public class PromiseTest {
         var ref2 = new AtomicBoolean(false);
         var promise = Promise.<Integer>promise()
                              .onFailure(ref1::set)
-                             .onFailure(() -> ref2.set(true));
+                             .onFailureRun(() -> ref2.set(true));
 
         assertNull(ref1.get());
         assertFalse(ref2.get());
@@ -120,7 +120,7 @@ public class PromiseTest {
         var ref2 = new AtomicBoolean(false);
         var promise = Promise.<Integer>promise()
                              .onFailure(ref1::set)
-                             .onFailure(() -> ref2.set(true));
+                             .onFailureRun(() -> ref2.set(true));
 
         assertNull(ref1.get());
         assertFalse(ref2.get());
@@ -137,7 +137,7 @@ public class PromiseTest {
         var ref2 = new AtomicBoolean(false);
         var promise = Promise.<Integer>promise()
                              .onResult(ref1::set)
-                             .onResult(() -> ref2.set(true));
+                             .onResultRun(() -> ref2.set(true));
 
         assertNull(ref1.get());
         assertFalse(ref2.get());
@@ -154,7 +154,7 @@ public class PromiseTest {
         var ref2 = new AtomicBoolean(false);
         var promise = Promise.<Integer>promise()
                              .onResult(ref1::set)
-                             .onResult(() -> ref2.set(true));
+                             .onResultRun(() -> ref2.set(true));
 
         assertNull(ref1.get());
         assertFalse(ref2.get());
@@ -173,7 +173,7 @@ public class PromiseTest {
         var ref2 = new AtomicBoolean(false);
         var promise = Promise.<Integer>promise()
                              .onResult(ref1::set)
-                             .onResult(() -> ref2.set(true));
+                             .onResultRun(() -> ref2.set(true));
 
         assertNull(ref1.get());
         assertFalse(ref2.get());
@@ -196,7 +196,7 @@ public class PromiseTest {
                              .async(Timeout.timeout(10).millis(), p -> {
                                  ref2.set(System.nanoTime());
                                  p.resolve(Result.success(1))
-                                  .onResult(() -> ref3.set(System.nanoTime()));
+                                  .onResultRun(() -> ref3.set(System.nanoTime()));
                              });
 
         promise.await();
@@ -226,7 +226,7 @@ public class PromiseTest {
             .onSuccess(ref2::set)
             .map(Long::parseLong)
             .onSuccess(ref3::set)
-            .onSuccessDo(() -> {
+            .onSuccessRun(() -> {
                 try {
                     Thread.sleep(50);
                     ref4.incrementAndGet();
@@ -467,7 +467,7 @@ public class PromiseTest {
         var ref = new AtomicInteger(0);
         var latch = new CountDownLatch(1);
 
-        var promise = Promise.<Integer>promise(p -> p.onSuccess(ref::set).onSuccessDo(latch::countDown));
+        var promise = Promise.<Integer>promise(p -> p.onSuccess(ref::set).onSuccessRun(latch::countDown));
 
         promise.success(1);
         latch.await();

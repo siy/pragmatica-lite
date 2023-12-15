@@ -187,7 +187,7 @@ public class PgConnection implements Connection {
                                   Object... params) {
         return prepareStatement(sql, dataConverter.assumeTypes(params))
             .flatMap(ps -> ps.fetch(onColumns, onRow, params)
-                             .onResult(ps::close));
+                             .onResultRun(ps::close));
     }
 
     @Override
@@ -200,7 +200,7 @@ public class PgConnection implements Connection {
         // TODO: wait for commit before sending unlisten as otherwise it can be rolled back
         return completeScript(STR."LISTEN \{channel}")
             .map(() -> () -> completeScript(STR."UNLISTEN \{channel}")
-                .onResult(() -> stream.subscribe(channel, onNotification))
+                .onResultRun(() -> stream.subscribe(channel, onNotification))
                 .mapToUnit());
     }
 
