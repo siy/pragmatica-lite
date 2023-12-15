@@ -17,11 +17,11 @@
 package org.pragmatica.uri;
 
 import org.pragmatica.dns.DomainName;
+import org.pragmatica.http.protocol.QueryParameters;
 import org.pragmatica.lang.Option;
 import org.pragmatica.net.InetPort;
 import org.pragmatica.uri.util.Decoder;
 import org.pragmatica.uri.util.Encoder;
-import org.pragmatica.http.protocol.QueryParameters;
 
 import java.util.regex.Pattern;
 

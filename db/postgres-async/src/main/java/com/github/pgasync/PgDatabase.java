@@ -34,5 +34,4 @@ public class PgDatabase extends PgConnectible {
     public Promise<Unit> close() {
         return Promise.resolved(unitResult());
     }
-
 }

@@ -15,8 +15,8 @@
 package com.github.pgasync.io.frontend;
 
 import com.github.pgasync.Oid;
-import com.github.pgasync.message.frontend.Parse;
 import com.github.pgasync.io.IO;
+import com.github.pgasync.message.frontend.Parse;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

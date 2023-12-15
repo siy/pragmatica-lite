@@ -27,9 +27,7 @@ import static org.pragmatica.dns.DomainName.domainName;
 import static org.pragmatica.http.HttpError.httpError;
 import static org.pragmatica.http.protocol.HttpStatus.NOT_IMPLEMENTED;
 import static org.pragmatica.lang.Promise.resolved;
-import static org.pragmatica.lang.Result.failure;
-import static org.pragmatica.lang.Result.success;
-import static org.pragmatica.lang.Result.unitResult;
+import static org.pragmatica.lang.Result.*;
 
 //TODO: add customisation for name resolver
 @SuppressWarnings("unused")

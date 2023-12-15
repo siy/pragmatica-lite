@@ -17,7 +17,9 @@ package com.github.pgasync;
 import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.Row;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * {@link ResultSet} constructed from Query/Execute response messages.

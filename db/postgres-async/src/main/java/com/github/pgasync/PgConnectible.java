@@ -9,7 +9,6 @@ import org.pragmatica.lang.Unit;
 
 import java.nio.charset.Charset;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;

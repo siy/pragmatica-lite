@@ -28,8 +28,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static org.pragmatica.lang.Tuple.*;
 import static org.pragmatica.lang.Result.unitResult;
+import static org.pragmatica.lang.Tuple.*;
 
 
 /**
@@ -138,7 +138,7 @@ public sealed interface Result<T> permits Success, Failure {
      *
      * @return current instance for fluent call chaining
      */
-    default Result<T> onSuccess(Runnable action) {
+    default Result<T> onSuccessRun(Runnable action) {
         fold(Functions::toNull, _ -> {
             action.run();
             return null;
@@ -166,7 +166,7 @@ public sealed interface Result<T> permits Success, Failure {
      *
      * @return current instance for fluent call chaining
      */
-    default Result<T> onFailure(Runnable action) {
+    default Result<T> onFailureRun(Runnable action) {
         fold(_ -> {
             action.run();
             return null;

@@ -23,7 +23,7 @@ class DomainNameResolverTest {
         ).map(Stream::of)
          .await(timeout(15).seconds())
          .onSuccess(list -> list.forEach(System.out::println))
-         .onFailure(Assertions::fail);
+         .onFailureRun(Assertions::fail);
     }
 
     @Tag("Slow")
@@ -32,12 +32,12 @@ class DomainNameResolverTest {
     void resultIsCachedAndTtlIsObserver() throws InterruptedException {
         resolver.resolve("www.ibm.com")
                 .await(timeout(15).seconds())
-                .onFailure(Assertions::fail);
+                .onFailureRun(Assertions::fail);
 
         // Immediate request should return resolved value immediately
         var ttl = resolver.resolveCached("www.ibm.com")
                           .await(timeout(1).millis())
-                          .onFailure(Assertions::fail)
+                          .onFailureRun(Assertions::fail)
                           .map(DomainAddress::ttl)
                           .unwrap();
 
@@ -47,7 +47,7 @@ class DomainNameResolverTest {
         // After TTL is expired, request for cached value should fail with UnknownDomain error
         resolver.resolveCached("www.ibm.com")
                 .await(timeout(1).millis())
-                .onSuccess(Assertions::fail)
+                .onSuccessRun(Assertions::fail)
                 .onFailure(err -> assertEquals(UnknownDomain.class, err.getClass()));
     }
 }

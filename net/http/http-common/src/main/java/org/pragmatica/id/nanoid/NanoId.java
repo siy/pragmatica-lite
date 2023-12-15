@@ -28,7 +28,7 @@ public sealed interface NanoId {
                 if (index < ALPHABET.length) {
                     bytes[cursor++] = ALPHABET[index];
                     if (cursor == SIZE) {
-                        return new String(bytes, StandardCharsets.UTF_8);
+                        return new String(bytes, StandardCharsets.US_ASCII);
                     }
                 }
             }
@@ -37,7 +37,7 @@ public sealed interface NanoId {
 
     Random SECURE_RANDOM = new SecureRandom();
     Random NON_SECURE_RANDOM = new Random();
-    byte[] ALPHABET = "_-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".getBytes(StandardCharsets.UTF_8);
+    byte[] ALPHABET = "_-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".getBytes(StandardCharsets.US_ASCII);
     int SIZE = 21;
     int MASK = (2 << (int) Math.floor(Math.log(ALPHABET.length - 1) / Math.log(2))) - 1;
     int STEP = (int) Math.ceil(1.6 * MASK * SIZE / ALPHABET.length);

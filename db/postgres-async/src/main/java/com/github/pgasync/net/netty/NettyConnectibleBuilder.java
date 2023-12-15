@@ -23,7 +23,6 @@ import org.pragmatica.lang.Promise;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Builder for creating {@link Connectible} instances.

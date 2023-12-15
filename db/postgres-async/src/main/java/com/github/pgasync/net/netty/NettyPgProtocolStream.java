@@ -37,7 +37,7 @@ import org.pragmatica.net.transport.api.TransportConfiguration;
 
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.List;
 
 import static org.pragmatica.lang.Result.unitResult;
 
@@ -90,12 +90,12 @@ public class NettyPgProtocolStream extends PgProtocolStream {
 
     @Override
     public Promise<Unit> close() {
-        Promise<Unit> uponClose = Promise.unitPromise();
+        var uponClose = Promise.<Unit>promise();
+
         ctx.writeAndFlush(Terminate.INSTANCE)
            .addListener(written -> {
                if (written.isSuccess()) {
                    ctx.close()
-
                       .addListener(closed -> {
                           if (closed.isSuccess()) {
                               uponClose.resolve(unitResult());

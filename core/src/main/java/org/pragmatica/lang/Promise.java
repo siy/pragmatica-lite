@@ -58,7 +58,7 @@ public interface Promise<T> {
      * @return Current instance
      */
     default Promise<T> cancel() {
-        return resolve(new CoreError.Cancelled("Promise cancelled").result());
+        return failure(new CoreError.Cancelled("Promise cancelled"));
     }
 
     boolean isResolved();
@@ -242,7 +242,7 @@ public interface Promise<T> {
      * @return Current instance
      */
     default Promise<T> onSuccessDo(Runnable action) {
-        return onResult(result -> result.onSuccess(action));
+        return onResult(result -> result.onSuccessRun(action));
     }
 
     default <U> Promise<T> onSuccessDo(Fn1<Promise<U>, ? super T> mapper) {
@@ -276,7 +276,7 @@ public interface Promise<T> {
      * @return Current instance
      */
     default Promise<T> onFailure(Runnable action) {
-        return onResult(result -> result.onFailure(action));
+        return onResult(result -> result.onFailureRun(action));
     }
 
     /**
@@ -318,6 +318,14 @@ public interface Promise<T> {
      */
     default Promise<T> failure(Cause cause) {
         return resolve(cause.result());
+    }
+
+    static <T> void failAll(Cause cause, Promise<T> ... promises) {
+        failAll(cause, List.of(promises));
+    }
+
+    static <T> void failAll(Cause cause, List<Promise<T>> promises) {
+        promises.forEach(promise -> promise.failure(cause));
     }
 
     /**
@@ -400,14 +408,14 @@ public interface Promise<T> {
         return Promise.promise(anySuccess -> threshold(promises.length, () -> anySuccess.resolve(failureResult))
             .apply(at -> List.of(promises)
                              .forEach(promise -> promise.onResult(result -> result.onSuccess(anySuccess::success)
-                                                                                  .onSuccess(() -> cancelAll(promises)))
+                                                                                  .onSuccessRun(() -> cancelAll(promises)))
                                                         .onResult(at::registerEvent))));
     }
 
     static <T> Promise<T> anySuccess(Result<T> failureResult, List<Promise<T>> promises) {
         return Promise.promise(anySuccess -> threshold(promises.size(), () -> anySuccess.resolve(failureResult))
             .apply(at -> promises.forEach(promise -> promise.onResult(result -> result.onSuccess(anySuccess::success)
-                                                                                      .onSuccess(() -> cancelAll(promises)))
+                                                                                      .onSuccessRun(() -> cancelAll(promises)))
                                                             .onResult(at::registerEvent))));
     }
 
@@ -444,7 +452,7 @@ public interface Promise<T> {
      * @param promises Input promises.
      */
     static <T> void cancelAll(List<Promise<T>> promises) {
-        promises.forEach(Promise::cancel);
+        failAll(new CoreError.Cancelled("Promise cancelled"), promises);
     }
 
     @SuppressWarnings("unchecked")

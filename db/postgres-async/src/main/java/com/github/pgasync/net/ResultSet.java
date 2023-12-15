@@ -25,6 +25,7 @@ import java.util.Map;
  *
  * @author Antti Laisi
  */
+//TODO: generalize on row type
 public interface ResultSet extends Iterable<Row> {
     Map<String, PgColumn> columnsByName();
 

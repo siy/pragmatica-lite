@@ -17,11 +17,7 @@ package com.github.pgasync;
 import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.SqlException;
 import com.github.pgasync.net.Transaction;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.jupiter.api.Tag;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Promise;
@@ -72,6 +68,7 @@ public class TransactionTest {
                                        }));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void shouldCommitInsertInTransaction() throws Exception {
         withTransaction(transaction ->
@@ -95,7 +92,7 @@ public class TransactionTest {
                                        .map(row -> row.getLong(0))
                                        .onResultDo(_ -> transaction.commit()))
             .onSuccess(id -> assertEquals(35L, (long) id))
-            .onFailure(Assert::fail);
+            .onFailureRun(Assert::fail);
     }
 
     @Test
@@ -120,8 +117,8 @@ public class TransactionTest {
                                            assertEquals(1, result.affectedRows());
                                            return transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(11)");
                                        }))
-            .onSuccess(() -> Assert.fail("Should not succeed"))
-            .onFailure(() -> assertEquals(0, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 11").unwrap().size()));
+            .onSuccessRun(() -> Assert.fail("Should not succeed"))
+            .onFailureRun(() -> assertEquals(0, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 11").unwrap().size()));
     }
 
     @Test

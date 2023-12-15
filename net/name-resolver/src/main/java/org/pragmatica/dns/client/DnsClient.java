@@ -147,7 +147,7 @@ record DnsClientImpl(Bootstrap bootstrap, ConcurrentHashMap<Integer, Request> re
                          .map(inetAddress -> DomainAddress.domainAddress(request.domainName(), inetAddress,
                                                                          Duration.ofSeconds(raw.timeToLive())))
                          .onSuccess(addresses::add)
-                         .onFailure(() -> log.warn("Response for {} contains incorrectly formatted IP address", request.domainName()));
+                         .onFailureRun(() -> log.warn("Response for {} contains incorrectly formatted IP address", request.domainName()));
             }
         }
         return addresses;

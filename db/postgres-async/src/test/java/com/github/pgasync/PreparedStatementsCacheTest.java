@@ -1,8 +1,6 @@
 package com.github.pgasync;
 
 import com.github.pgasync.net.Connectible;
-import com.github.pgasync.net.Connection;
-import com.github.pgasync.net.PreparedStatement;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;

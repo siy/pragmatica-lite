@@ -29,6 +29,6 @@ class DnsClientTest {
             .map(Stream::of)
             .await(timeout(15).seconds())
             .onSuccess(list -> list.forEach(System.out::println))
-            .onFailure(Assertions::fail);
+            .onFailureRun(Assertions::fail);
     }
 }

@@ -19,7 +19,7 @@ package org.pragmatica.uri;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.pragmatica.dns.DomainName.domainName;
 import static org.pragmatica.lang.Option.option;
 

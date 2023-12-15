@@ -15,11 +15,7 @@
 package com.github.pgasync;
 
 import com.github.pgasync.net.ResultSet;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.jupiter.api.Tag;
 
 import java.util.Arrays;
@@ -54,11 +50,11 @@ public class QueryResultTest {
     @Test
     public void shouldReturnResultSetSize() {
         dbr.query("INSERT INTO CONN_TEST (ID) VALUES (1),(2)")
-           .onFailure(Assert::fail)
+           .onFailureRun(Assert::fail)
            .onSuccess(rs -> assertEquals(2, rs.affectedRows()));
 
         dbr.query("SELECT * FROM CONN_TEST WHERE ID <= 2 ORDER BY ID")
-           .onFailure(Assert::fail)
+           .onFailureRun(Assert::fail)
            .onSuccess(rs -> assertEquals(2, rs.size()))
            .onSuccess(rs -> assertEquals("ID", rs.orderedColumns().getFirst().name().toUpperCase()))
            .map(ResultSet::iterator)
@@ -131,6 +127,6 @@ public class QueryResultTest {
                                    .collect(Collectors.toList()))
            .await()
            .onSuccess(series -> assertEquals(List.of(1, 2, 3, 4, 5), series))
-           .onFailure(Assert::fail);
+           .onFailureRun(Assert::fail);
     }
 }

@@ -1,5 +1,6 @@
 package com.github.pgasync;
 
+import com.github.pgasync.SqlError.ServerErrorInvalidAuthorizationSpecification;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -21,8 +22,8 @@ public class AuthenticationTest {
             .pool();
 
         pool.completeQuery("SELECT 1").await()
-            .onSuccess(Assert::fail)
-            .onFailure(cause -> assertTrue(cause instanceof SqlError.InvalidCredentials));
+            .onSuccessRun(Assert::fail)
+            .onFailure(cause -> assertTrue(cause instanceof ServerErrorInvalidAuthorizationSpecification));
 
         pool.close().await();
     }
@@ -37,7 +38,7 @@ public class AuthenticationTest {
             var rs = pool.completeQuery("SELECT 1").await().unwrap();
             assertEquals(1L, (long) rs.index(0).getInt(0));
         } finally {
-                pool.close().await();
+            pool.close().await();
         }
     }
 

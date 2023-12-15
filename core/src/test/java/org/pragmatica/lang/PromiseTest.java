@@ -259,7 +259,7 @@ public class PromiseTest {
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1), tuple))
-                  .onFailure(Assertions::fail);
+                  .onFailureRun(Assertions::fail);
     }
 
     @Test
@@ -276,7 +276,7 @@ public class PromiseTest {
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2), tuple))
-                  .onFailure(Assertions::fail);
+                  .onFailureRun(Assertions::fail);
     }
 
     @Test
@@ -295,7 +295,7 @@ public class PromiseTest {
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3), tuple))
-                  .onFailure(Assertions::fail);
+                  .onFailureRun(Assertions::fail);
     }
 
     @Test
@@ -317,7 +317,7 @@ public class PromiseTest {
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4), tuple))
-                  .onFailure(Assertions::fail);
+                  .onFailureRun(Assertions::fail);
     }
 
     @Test
@@ -341,7 +341,7 @@ public class PromiseTest {
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5), tuple))
-                  .onFailure(Assertions::fail);
+                  .onFailureRun(Assertions::fail);
     }
 
     @Test
@@ -367,7 +367,7 @@ public class PromiseTest {
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5, 6), tuple))
-                  .onFailure(Assertions::fail);
+                  .onFailureRun(Assertions::fail);
     }
 
     @Test
@@ -395,7 +395,7 @@ public class PromiseTest {
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5, 6, 7), tuple))
-                  .onFailure(Assertions::fail);
+                  .onFailureRun(Assertions::fail);
     }
 
     @Test
@@ -426,7 +426,7 @@ public class PromiseTest {
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5, 6, 7, 8), tuple))
-                  .onFailure(Assertions::fail);
+                  .onFailureRun(Assertions::fail);
     }
 
     @Test
@@ -459,7 +459,7 @@ public class PromiseTest {
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5, 6, 7, 8, 9), tuple))
-                  .onFailure(Assertions::fail);
+                  .onFailureRun(Assertions::fail);
     }
 
     @Test

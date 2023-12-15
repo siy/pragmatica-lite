@@ -2,13 +2,10 @@ package org.pragmatica.http.client;
 
 import org.junit.jupiter.api.Test;
 import org.pragmatica.http.CommonContentTypes;
-import org.pragmatica.http.ContentType;
 import org.pragmatica.http.protocol.HttpHeaders;
 import org.pragmatica.http.protocol.HttpMethod;
 import org.pragmatica.lang.Option;
 import org.pragmatica.uri.IRI;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class HttpClientTest {
     @Test

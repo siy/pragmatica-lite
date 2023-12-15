@@ -16,8 +16,8 @@ package com.github.pgasync.io.backend;
 
 import com.github.pgasync.Oid;
 import com.github.pgasync.io.Decoder;
-import com.github.pgasync.message.backend.RowDescription;
 import com.github.pgasync.io.IO;
+import com.github.pgasync.message.backend.RowDescription;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

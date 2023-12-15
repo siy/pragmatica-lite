@@ -16,6 +16,7 @@ package com.github.pgasync;
 
 import com.github.pgasync.net.*;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -300,19 +301,23 @@ public class PgConnectionPool extends PgConnectible {
         }
     }
 
-    private void cancelPending() {
+    private void cancelPending(Result.Cause cause) {
         var promises = locked(() -> {
             var unlucky = new ArrayList<>(pending);
             pending.clear();
             return unlucky;
         });
-        Promise.cancelAll(promises);
+        Promise.runAsync(() -> Promise.failAll(cause, promises));
     }
 
     @Override
     public Promise<Unit> close() {
         return locked(() -> {
             if (closing == null) {
+                if (connections.isEmpty()) {
+                    return closing = Promise.unitPromise();
+                }
+
                 closing = Promise.allOf(connections.stream()
                                                    .map(PooledPgConnection::shutdown)
                                                    .toList())

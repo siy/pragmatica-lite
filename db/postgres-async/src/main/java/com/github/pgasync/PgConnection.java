@@ -14,7 +14,16 @@
 
 package com.github.pgasync;
 
-import static com.github.pgasync.message.backend.RowDescription.ColumnDescription;
+import com.github.pgasync.conversion.DataConverter;
+import com.github.pgasync.message.Message;
+import com.github.pgasync.message.backend.Authentication;
+import com.github.pgasync.message.backend.DataRow;
+import com.github.pgasync.message.frontend.*;
+import com.github.pgasync.net.*;
+import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,24 +31,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import com.github.pgasync.message.backend.DataRow;
-import com.github.pgasync.net.Connection;
-import com.github.pgasync.net.Listening;
-import com.github.pgasync.net.PreparedStatement;
-import com.github.pgasync.net.ResultSet;
-import com.github.pgasync.net.Row;
-import com.github.pgasync.net.Transaction;
-import com.github.pgasync.conversion.DataConverter;
-import com.github.pgasync.message.backend.Authentication;
-import com.github.pgasync.message.frontend.Bind;
-import com.github.pgasync.message.frontend.Close;
-import com.github.pgasync.message.frontend.Describe;
-import com.github.pgasync.message.Message;
-import com.github.pgasync.message.frontend.Parse;
-import com.github.pgasync.message.frontend.Query;
-import com.github.pgasync.message.frontend.StartupMessage;
-import org.pragmatica.lang.Promise;
-import org.pragmatica.lang.Unit;
+import static com.github.pgasync.message.backend.RowDescription.ColumnDescription;
 
 /**
  * A connection to Postgres backend. The postmaster forks a backend process for each connection. A connection can process only a single query at a
@@ -48,6 +40,8 @@ import org.pragmatica.lang.Unit;
  * @author Antti Laisi
  */
 public class PgConnection implements Connection {
+    private static final Logger log = LoggerFactory.getLogger(PgConnection.class);
+
     /**
      * Uses named server side prepared statement and named portal.
      */
@@ -88,7 +82,9 @@ public class PgConnection implements Connection {
 
         @Override
         public Promise<Unit> close() {
+            log.debug("Closing prepared statement {}", sname);
             return stream.send(Close.statement(sname))
+                         .onResult(res -> log.debug("Prepared statement {} closed with {}", sname, res))
                          .mapToUnit();
         }
     }
@@ -203,16 +199,14 @@ public class PgConnection implements Connection {
     public Promise<Listening> subscribe(String channel, Consumer<String> onNotification) {
         // TODO: wait for commit before sending unlisten as otherwise it can be rolled back
         return completeScript(STR."LISTEN \{channel}")
-            .map(() -> {
-
-                return () -> completeScript(STR."UNLISTEN \{channel}")
-                    .onResult(() -> stream.subscribe(channel, onNotification))
-                    .mapToUnit();
-            });
+            .map(() -> () -> completeScript(STR."UNLISTEN \{channel}")
+                .onResult(() -> stream.subscribe(channel, onNotification))
+                .mapToUnit());
     }
 
     @Override
     public Promise<Unit> close() {
+        log.debug("Closing stream");
         return stream.close();
     }
 
@@ -261,6 +255,7 @@ public class PgConnection implements Connection {
 
         @Override
         public Promise<Unit> close() {
+            log.debug("Closing transaction");
             return sendCommit();
         }
 

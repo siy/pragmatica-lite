@@ -1,7 +1,8 @@
 package com.github.pgasync.sasl;
 
 import java.text.Normalizer;
-import java.util.*;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.function.BiConsumer;
 
 /**

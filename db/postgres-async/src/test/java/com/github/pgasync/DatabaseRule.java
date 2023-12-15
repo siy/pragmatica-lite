@@ -7,14 +7,11 @@ import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.netty.NettyConnectibleBuilder;
 import org.junit.jupiter.api.Tag;
 import org.junit.rules.ExternalResource;
-import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.util.Collection;
 import java.util.List;
-
-import static org.pragmatica.lang.io.Timeout.timeout;
 
 /**
  * @author Antti Laisi

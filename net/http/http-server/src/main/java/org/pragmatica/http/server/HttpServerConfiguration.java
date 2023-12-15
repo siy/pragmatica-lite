@@ -2,9 +2,9 @@ package org.pragmatica.http.server;
 
 import io.netty.handler.codec.http.cors.CorsConfig;
 import io.netty.handler.ssl.SslContext;
+import org.pragmatica.codec.json.JsonCodecFactory;
 import org.pragmatica.http.codec.CustomCodec;
 import org.pragmatica.http.codec.JsonCodec;
-import org.pragmatica.codec.json.JsonCodecFactory;
 import org.pragmatica.lang.Option;
 
 import java.net.InetAddress;

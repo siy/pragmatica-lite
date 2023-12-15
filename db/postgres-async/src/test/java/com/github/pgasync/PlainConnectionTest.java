@@ -57,6 +57,7 @@ public class PlainConnectionTest {
         plain.close().await();
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void shouldRunAllQueries() {
         final int count = 100;
@@ -67,6 +68,7 @@ public class PlainConnectionTest {
         assertEquals(count, dbr.query("SELECT COUNT(*) FROM PC_TEST_1").unwrap().index(0).getLong(0).longValue());
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void shouldRunScript() {
         final int count = 25;
