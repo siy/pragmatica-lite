@@ -14,7 +14,13 @@
 
 package com.github.pgasync.message.backend;
 
+import com.github.pgasync.SqlError;
+
 /**
  * @author Antti Laisi
  */
-public record ErrorResponse(String level, String code, String message) implements LogResponse {}
+public record ErrorResponse(String level, String code, String message) implements LogResponse {
+    public SqlError.ServerResponse asServerResponse() {
+        return new SqlError.ServerResponse(level, code, message);
+    }
+}

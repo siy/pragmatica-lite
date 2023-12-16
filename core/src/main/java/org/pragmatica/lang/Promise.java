@@ -21,15 +21,19 @@ import org.pragmatica.lang.Functions.*;
 import org.pragmatica.lang.Result.Cause;
 import org.pragmatica.lang.io.CoreError;
 import org.pragmatica.lang.io.Timeout;
+import org.pragmatica.lang.utils.ResultCollector;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
+import static org.pragmatica.lang.Result.unitResult;
 import static org.pragmatica.lang.utils.ActionableThreshold.threshold;
 import static org.pragmatica.lang.utils.ResultCollector.resultCollector;
 
@@ -54,7 +58,7 @@ public interface Promise<T> {
      * @return Current instance
      */
     default Promise<T> cancel() {
-        return resolve(new CoreError.Cancelled("Promise cancelled").result());
+        return failure(new CoreError.Cancelled("Promise cancelled"));
     }
 
     boolean isResolved();
@@ -101,6 +105,15 @@ public interface Promise<T> {
 
     Promise<T> mapError(Fn1<Cause, Cause> mapper);
 
+    /**
+     * Compose current instance with the function which returns a Promise of another type. Unlike {@link Promise#flatMap(Fn1)}, the function will be
+     * invoked in any case, regardless of the result of the current instance.
+     *
+     * @param mapper the mapper
+     *
+     * @return Transformed instance
+     */
+    <U> Promise<U> fold(Fn1<Promise<U>, Result<T>> mapper);
 
     /**
      * General purpose method to start new virtual thread.
@@ -184,8 +197,13 @@ public interface Promise<T> {
      *
      * @return Current instance
      */
-    default Promise<T> onResultDo(Runnable action) {
+    default Promise<T> onResultRun(Runnable action) {
         return onResult(_ -> action.run());
+    }
+
+    default <U> Promise<T> onResultDo(Fn1<Promise<U>, Result<? super T>> mapper) {
+        return fold(result -> mapper.apply(result)
+                                    .flatMap(_ -> Promise.this));
     }
 
     /**
@@ -212,8 +230,14 @@ public interface Promise<T> {
      *
      * @return Current instance
      */
-    default Promise<T> onSuccessDo(Runnable action) {
-        return onResult(result -> result.onSuccessDo(action));
+    default Promise<T> onSuccessRun(Runnable action) {
+        return onResult(result -> result.onSuccessRun(action));
+    }
+
+    default <U> Promise<T> onSuccessDo(Fn1<Promise<U>, ? super T> mapper) {
+        return fold(result -> result.fold(_ -> Promise.this,
+                                          value -> mapper.apply(value)
+                                                         .flatMap(_ -> Promise.this)));
     }
 
     /**
@@ -240,8 +264,25 @@ public interface Promise<T> {
      *
      * @return Current instance
      */
-    default Promise<T> onFailureDo(Runnable action) {
-        return onResult(result -> result.onFailureDo(action));
+    default Promise<T> onFailureRun(Runnable action) {
+        return onResult(result -> result.onFailureRun(action));
+    }
+
+    /**
+     * Attach a side effect action which will be executed upon resolution of the current instance with {@link Result} containing
+     * {@link Result.Failure}. Unlike {@link Promise#onFailureRun(Runnable)}, the action passed to this method returns yet another
+     * {@link Promise} and the instance of the {@link Promise} returned by this method will be resolved only after resolution of
+     * the instance returned by the action. This is useful, for example, for resource cleanup.
+     *
+     * @param mapper the action to execute
+     *
+     * @return Current instance
+     */
+
+    default <U> Promise<T> onFailureDo(Fn1<Promise<U>, ? super Cause> mapper) {
+        return fold(result -> result.fold(cause -> mapper.apply(cause)
+                                                         .flatMap(_ -> Promise.this),
+                                          _ -> Promise.this));
     }
 
     /**
@@ -266,6 +307,14 @@ public interface Promise<T> {
      */
     default Promise<T> failure(Cause cause) {
         return resolve(cause.result());
+    }
+
+    static <T> void failAll(Cause cause, Promise<T> ... promises) {
+        failAll(cause, List.of(promises));
+    }
+
+    static <T> void failAll(Cause cause, List<Promise<T>> promises) {
+        promises.forEach(promise -> promise.failure(cause));
     }
 
     /**
@@ -309,6 +358,17 @@ public interface Promise<T> {
         return new PromiseImpl<>(Result.failure(failure));
     }
 
+    Promise<?> UNIT = Promise.resolved(unitResult());
+
+    @SuppressWarnings("unchecked")
+    static <R> Promise<R> unitPromise() {
+        return (Promise<R>) UNIT;
+    }
+
+    default Promise<Unit> mapToUnit() {
+        return map(Unit::unit);
+    }
+
     /**
      * Return promise which will be resolved when any of the provided promises will be resolved. Remaining promises will be cancelled.
      *
@@ -320,7 +380,7 @@ public interface Promise<T> {
     static <R> Promise<R> any(Promise<R>... promises) {
         return Promise.promise(result -> List.of(promises)
                                              .forEach(promise -> promise.onResult(result::resolve)
-                                                                        .onResultDo(() -> cancelAll(promises))));
+                                                                        .onResultRun(() -> cancelAll(promises))));
     }
 
     /**
@@ -337,15 +397,15 @@ public interface Promise<T> {
         return Promise.promise(anySuccess -> threshold(promises.length, () -> anySuccess.resolve(failureResult))
             .apply(at -> List.of(promises)
                              .forEach(promise -> promise.onResult(result -> result.onSuccess(anySuccess::success)
-                                                                                  .onSuccessDo(() -> cancelAll(promises)))
-                                                        .onResultDo(at::registerEvent))));
+                                                                                  .onSuccessRun(() -> cancelAll(promises)))
+                                                        .onResultRun(at::registerEvent))));
     }
 
     static <T> Promise<T> anySuccess(Result<T> failureResult, List<Promise<T>> promises) {
         return Promise.promise(anySuccess -> threshold(promises.size(), () -> anySuccess.resolve(failureResult))
             .apply(at -> promises.forEach(promise -> promise.onResult(result -> result.onSuccess(anySuccess::success)
-                                                                                      .onSuccessDo(() -> cancelAll(promises)))
-                                                            .onResultDo(at::registerEvent))));
+                                                                                      .onSuccessRun(() -> cancelAll(promises)))
+                                                            .onResultRun(at::registerEvent))));
     }
 
     /**
@@ -381,7 +441,19 @@ public interface Promise<T> {
      * @param promises Input promises.
      */
     static <T> void cancelAll(List<Promise<T>> promises) {
-        promises.forEach(Promise::cancel);
+        failAll(new CoreError.Cancelled("Promise cancelled"), promises);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T> Promise<List<Result<T>>> allOf(Collection<Promise<T>> promises) {
+        var array = promises.toArray(new Promise[0]);
+        var promise = Promise.promise();
+        var collector = ResultCollector.resultCollector(promises.size(),
+                                                        values -> promise.success(List.of(values)));
+        IntStream.range(0, promises.size())
+                 .forEach(index -> array[index].onResult(result -> collector.registerEvent(index, result)));
+
+        return promise.map(list -> (List<Result<T>>) list);
     }
 
     /**
@@ -778,7 +850,7 @@ public interface Promise<T> {
 
             @Override
             public String toString() {
-                return this == NOP ? "NOP" : "Action(" + (dependency == null ? "free" : dependency.toString()) + ')';
+                return this == NOP ? "NOP" : STR."Action(\{dependency == null ? "free" : dependency.toString()}\{')'}";
             }
         }
 
@@ -836,6 +908,20 @@ public interface Promise<T> {
                                                       .onResult(result::resolve),
                                         result));
 
+            return result;
+        }
+
+        @Override
+        public <U> Promise<U> fold(Fn1<Promise<U>, Result<T>> mapper) {
+            if (value != null) {
+                return mapper.apply(value);
+            }
+
+            var result = new PromiseImpl<U>(null);
+
+            push(new CompletionAction<>(value -> mapper.apply(value)
+                                                       .onResult(result::resolve),
+                                        result));
             return result;
         }
 
@@ -899,7 +985,9 @@ public interface Promise<T> {
 
         @Override
         public String toString() {
-            return "Promise(" + (value == null ? "<>" : value.toString()) + ')';
+            var string = value == null ? "<>"
+                                       : value.toString();
+            return STR."Promise(\{string}\{')'}";
         }
 
         @SuppressWarnings("unchecked")

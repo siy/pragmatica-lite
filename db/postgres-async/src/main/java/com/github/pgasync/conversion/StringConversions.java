@@ -1,7 +1,7 @@
 package com.github.pgasync.conversion;
 
-import com.github.pgasync.net.SqlException;
 import com.github.pgasync.Oid;
+import com.github.pgasync.net.SqlException;
 
 /**
  * @author Antti Laisi

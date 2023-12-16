@@ -3,16 +3,16 @@ package org.pragmatica.http.server.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
+import org.pragmatica.http.HttpError;
 import org.pragmatica.http.codec.CustomCodec;
 import org.pragmatica.http.codec.TypeToken;
-import org.pragmatica.http.HttpError;
 import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.http.server.HttpServerConfiguration;
 import org.pragmatica.http.server.routing.Redirect;
 import org.pragmatica.http.server.routing.RequestContext;
 import org.pragmatica.http.server.routing.Route;
 import org.pragmatica.http.util.Utils;
-import org.pragmatica.http.util.ulid.ULID;
+import org.pragmatica.id.ulid.ULID;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
 import org.slf4j.MDC;
@@ -115,7 +115,7 @@ public class RequestContextImpl implements RequestContext {
     private void sendResponse(Result<?> result) {
         result
             .flatMap(this::serializeResponse)
-            .onSuccessDo(this::setKeepAlive)        // Set keepAlive only for successful responses
+            .onSuccessRun(this::setKeepAlive)        // Set keepAlive only for successful responses
             .recover(HttpServerHandler::decodeError)
             .onSuccess(this::sendResponse);
     }

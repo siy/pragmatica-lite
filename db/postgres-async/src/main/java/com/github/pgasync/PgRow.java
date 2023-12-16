@@ -14,10 +14,10 @@
 
 package com.github.pgasync;
 
-import com.github.pgasync.net.Row;
-import com.github.pgasync.net.SqlException;
 import com.github.pgasync.conversion.DataConverter;
 import com.github.pgasync.message.backend.DataRow;
+import com.github.pgasync.net.Row;
+import com.github.pgasync.net.SqlException;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

@@ -36,7 +36,7 @@ import org.pragmatica.net.transport.api.TransportConfiguration;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -90,7 +90,7 @@ public class NettyPgProtocolStream extends PgProtocolStream {
 
     @Override
     public CompletableFuture<Void> close() {
-        CompletableFuture<Void> uponClose = new CompletableFuture<>();
+        var uponClose = new CompletableFuture<Void>();
         ctx.writeAndFlush(Terminate.INSTANCE)
            .addListener(written -> {
                if (written.isSuccess()) {
@@ -99,12 +99,12 @@ public class NettyPgProtocolStream extends PgProtocolStream {
                           if (closed.isSuccess()) {
                               uponClose.completeAsync(() -> null);
                           } else {
-                              Throwable th = closed.cause();
+                              var th = closed.cause();
                               Promise.runAsync(() -> uponClose.completeExceptionally(th));
                           }
                       });
                } else {
-                   Throwable th = written.cause();
+                   var th = written.cause();
                    Promise.runAsync(() -> uponClose.completeExceptionally(th));
                }
            });
@@ -124,13 +124,16 @@ public class NettyPgProtocolStream extends PgProtocolStream {
         return new ChannelInitializer<>() {
             @Override
             protected void initChannel(Channel channel) {
+                var pipeline = channel.pipeline();
+
                 if (useSsl) {
-                    channel.pipeline().addLast(newSslInitiator());
+                    pipeline.addLast(newSslInitiator());
                 }
-                channel.pipeline().addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 1, 4, -4, 0, true));
-                channel.pipeline().addLast(new NettyMessageDecoder(encoding));
-                channel.pipeline().addLast(new NettyMessageEncoder(encoding));
-                channel.pipeline().addLast(newProtocolHandler());
+                pipeline
+                    .addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 1, 4, -4, 0, true))
+                    .addLast(new NettyMessageDecoder(encoding))
+                    .addLast(new NettyMessageEncoder(encoding))
+                    .addLast(newProtocolHandler());
             }
         };
     }

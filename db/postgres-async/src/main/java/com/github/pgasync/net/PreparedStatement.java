@@ -13,7 +13,6 @@ import java.util.function.Consumer;
  * It lives during database session. It should be reused multiple times and it should be closed after using.
  * Doesn't support function call feature because of its deprecation.
  * @see <a href="https://www.postgresql.org/docs/11/protocol-flow.html#id-1.10.5.7.6"/>.
- *
  * Concurrent using of implementations is impossible.
  * {@link PreparedStatement} implementations are never thread-safe.
  * They are designed to be used in context of single {@link CompletableFuture} completion at a time.
@@ -47,5 +46,4 @@ public interface PreparedStatement {
      * Closing of such evicted statement is network activity, we should be aware of.
      */
     CompletableFuture<Void> close();
-
 }

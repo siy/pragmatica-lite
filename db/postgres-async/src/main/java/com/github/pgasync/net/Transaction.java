@@ -46,5 +46,4 @@ public interface Transaction extends QueryExecutor {
     Connection getConnection();
 
     CompletableFuture<Transaction> begin();
-
 }

@@ -14,23 +14,19 @@
 
 package com.github.pgasync;
 
-import com.github.pgasync.net.ConnectibleBuilder;
-import com.github.pgasync.net.Connection;
-import com.github.pgasync.net.Listening;
-import com.github.pgasync.net.PreparedStatement;
-import com.github.pgasync.net.Row;
-import com.github.pgasync.net.SqlException;
-import com.github.pgasync.net.ResultSet;
-import com.github.pgasync.net.Transaction;
+import com.github.pgasync.net.*;
 import org.pragmatica.lang.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -39,9 +35,9 @@ import java.util.stream.Collectors;
  * @author Antti Laisi
  */
 public class PgConnectionPool extends PgConnectible {
+    private static final Logger log = LoggerFactory.getLogger(PgConnectionPool.class);
 
     private class PooledPgConnection implements Connection {
-
         private class PooledPgTransaction implements Transaction {
 
             private final Transaction delegate;
@@ -106,7 +102,7 @@ public class PgConnectionPool extends PgConnectible {
         }
 
         CompletableFuture<Connection> connect(String username, String password, String database) {
-            return delegate.connect(username, password, database).thenApply(conn -> PooledPgConnection.this);
+            return delegate.connect(username, password, database).thenApply(_ -> PooledPgConnection.this);
         }
 
         public boolean isConnected() {
@@ -116,7 +112,7 @@ public class PgConnectionPool extends PgConnectible {
         private void closeNextStatement(Iterator<PooledPgPreparedStatement> statementsSource, CompletableFuture<Void> onComplete) {
             if (statementsSource.hasNext()) {
                 statementsSource.next().delegate.close()
-                                                .thenAccept(v -> {
+                                                .thenAccept(_ -> {
                                                     statementsSource.remove();
                                                     closeNextStatement(statementsSource, onComplete);
                                                 })
@@ -133,7 +129,7 @@ public class PgConnectionPool extends PgConnectible {
             CompletableFuture<Void> onComplete = new CompletableFuture<>();
             closeNextStatement(statements.values().iterator(), onComplete);
             return onComplete
-                .thenApply(v -> {
+                .thenApply(_ -> {
                     if (!statements.isEmpty()) {
                         throw new IllegalStateException(STR."Stale prepared statements detected (\{statements.size()})");
                     }
@@ -176,7 +172,7 @@ public class PgConnectionPool extends PgConnectible {
                                stmt.fetch(onColumns, onRow, params)
                                    .handle((affected, th) ->
                                                stmt.close()
-                                                   .thenApply(v -> {
+                                                   .thenApply(_ -> {
                                                        if (th == null) {
                                                            return affected;
                                                        } else {
@@ -202,7 +198,7 @@ public class PgConnectionPool extends PgConnectible {
 
             private static final String
                 DUPLICATED_PREPARED_STATEMENT_DETECTED =
-                "Duplicated prepared statement detected. Closing extra instance. \n{0}";
+                "Duplicated prepared statement detected. Closing extra instance. \n{}";
             private final String sql;
             private final PgConnection.PgPreparedStatement delegate;
 
@@ -217,11 +213,9 @@ public class PgConnectionPool extends PgConnectible {
                 if (evicted != null) {
                     try {
                         if (already != null && already != evicted) {
-                            Logger.getLogger(PgConnectionPool.class.getName()).log(Level.WARNING,
-                                                                                   DUPLICATED_PREPARED_STATEMENT_DETECTED,
-                                                                                   already.sql);
+                            log.warn(DUPLICATED_PREPARED_STATEMENT_DETECTED, already.sql);
                             return evicted.delegate.close()
-                                                   .thenApply(v -> already.delegate.close())
+                                                   .thenApply(_ -> already.delegate.close())
                                                    .thenCompose(Function.identity());
                         } else {
                             return evicted.delegate.close();
@@ -231,7 +225,7 @@ public class PgConnectionPool extends PgConnectible {
                     }
                 } else {
                     if (already != null) {
-                        Logger.getLogger(PgConnectionPool.class.getName()).log(Level.WARNING, DUPLICATED_PREPARED_STATEMENT_DETECTED, already.sql);
+                        log.warn(DUPLICATED_PREPARED_STATEMENT_DETECTED, already.sql);
                         return already.delegate.close();
                     } else {
                         return CompletableFuture.completedFuture(null);
@@ -262,11 +256,11 @@ public class PgConnectionPool extends PgConnectible {
     private final Queue<PooledPgConnection> connections = new LinkedList<>();
     private CompletableFuture<Void> closing;
 
-    public PgConnectionPool(ConnectibleBuilder.ConnectibleProperties properties,
+    public PgConnectionPool(ConnectibleBuilder.ConnectibleConfiguration properties,
                             Supplier<CompletableFuture<ProtocolStream>> obtainStream) {
         super(properties, obtainStream);
-        this.maxConnections = properties.getMaxConnections();
-        this.maxStatements = properties.getMaxStatements();
+        this.maxConnections = properties.maxConnections();
+        this.maxStatements = properties.maxStatements();
     }
 
     private <T> T locked(Supplier<T> action) {
@@ -321,11 +315,10 @@ public class PgConnectionPool extends PgConnectible {
                                 .thenApply(pooledConnection -> {
                                     if (validationQuery != null && !validationQuery.isBlank()) {
                                         return pooledConnection.completeScript(validationQuery)
-                                                               .handle((rss, th) -> {
+                                                               .handle((_, th) -> {
                                                                    if (th != null) {
                                                                        return ((PooledPgConnection) pooledConnection).delegate.close()
-                                                                                                                              .thenApply(v -> CompletableFuture.<Connection>failedFuture(
-                                                                                                                                  th))
+                                                                                                                              .thenApply(_ -> CompletableFuture.<Connection>failedFuture(th))
                                                                                                                               .thenCompose(Function.identity());
                                                                    } else {
                                                                        return CompletableFuture.completedFuture(pooledConnection);
@@ -396,6 +389,7 @@ public class PgConnectionPool extends PgConnectible {
 
     private Connection firstAliveConnection() {
         Connection connection = connections.poll();
+
         while (connection != null && !connection.isConnected()) {
             size--;
             connection = connections.poll();

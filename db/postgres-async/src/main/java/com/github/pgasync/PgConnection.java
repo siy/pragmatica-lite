@@ -14,36 +14,22 @@
 
 package com.github.pgasync;
 
-import static com.github.pgasync.message.backend.RowDescription.ColumnDescription;
+import com.github.pgasync.conversion.DataConverter;
+import com.github.pgasync.message.Message;
+import com.github.pgasync.message.backend.Authentication;
+import com.github.pgasync.message.backend.DataRow;
+import com.github.pgasync.message.frontend.*;
+import com.github.pgasync.net.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-import com.github.pgasync.message.backend.DataRow;
-import com.github.pgasync.net.Connection;
-import com.github.pgasync.net.Listening;
-import com.github.pgasync.net.PreparedStatement;
-import com.github.pgasync.net.ResultSet;
-import com.github.pgasync.net.Row;
-import com.github.pgasync.net.Transaction;
-import com.github.pgasync.conversion.DataConverter;
-import com.github.pgasync.message.backend.Authentication;
-import com.github.pgasync.message.frontend.Bind;
-import com.github.pgasync.message.frontend.Close;
-import com.github.pgasync.message.frontend.Describe;
-import com.github.pgasync.message.Message;
-import com.github.pgasync.message.frontend.Parse;
-import com.github.pgasync.message.frontend.Query;
-import com.github.pgasync.message.frontend.StartupMessage;
+import static com.github.pgasync.message.backend.RowDescription.ColumnDescription;
 
 /**
  * A connection to Postgres backend. The postmaster forks a backend process for each connection. A connection can process only a single query at a
@@ -52,6 +38,8 @@ import com.github.pgasync.message.frontend.StartupMessage;
  * @author Antti Laisi
  */
 public class PgConnection implements Connection {
+    private static final Logger log = LoggerFactory.getLogger(PgConnection.class);
+
     /**
      * Uses named server side prepared statement and named portal.
      */
@@ -66,11 +54,12 @@ public class PgConnection implements Connection {
         @Override
         public CompletableFuture<ResultSet> query(Object... params) {
             var rows = new ArrayList<Row>();
-            return fetch((columnsByName, orderedColumns) -> {
-            }, rows::add, params)
-                .thenApply(v -> new PgResultSet(columns.byName, List.of(columns.ordered), rows, 0));
+
+            return fetch((_, _) -> {}, rows::add, params)
+                .thenApply(_ -> new PgResultSet(columns.byName, columns.ordered, rows, 0));
         }
 
+        //TODO: consider conversion to "reducer" style to eliminate externally stored state
         @Override
         public CompletableFuture<Integer> fetch(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns, Consumer<Row> processor, Object... params) {
             var bind = new Bind(sname, dataConverter.fromParameters(params));
@@ -96,18 +85,9 @@ public class PgConnection implements Connection {
         }
     }
 
-    public static class Columns {
-        private final Map<String, PgColumn> byName;
-        private final PgColumn[] ordered;
-
-        Columns(Map<String, PgColumn> byName, PgColumn[] ordered) {
-            this.byName = byName;
-            this.ordered = ordered;
-        }
-    }
+    public record Columns(Map<String, PgColumn> byName, PgColumn[] ordered) {}
 
     private static class NameSequence {
-
         private long counter;
         private String prefix;
 
@@ -118,7 +98,7 @@ public class PgConnection implements Connection {
         private String next() {
             if (counter == Long.MAX_VALUE) {
                 counter = 0;
-                prefix = "_" + prefix;
+                prefix = STR."_\{prefix}";
             }
             return prefix + ++counter;
         }
@@ -205,7 +185,7 @@ public class PgConnection implements Connection {
         return prepareStatement(sql, dataConverter.assumeTypes(params))
             .thenApply(ps -> ps.fetch(onColumns, onRow, params)
                                .handle((affected, th) -> ps.close()
-                                                           .thenApply(v -> {
+                                                           .thenApply(_ -> {
                                                                if (th != null) {
                                                                    throw new RuntimeException(th);
                                                                } else {
@@ -221,16 +201,17 @@ public class PgConnection implements Connection {
     @Override
     public CompletableFuture<Transaction> begin() {
         return completeScript("BEGIN")
-            .thenApply(rs -> new PgConnectionTransaction());
+            .thenApply(_ -> new PgConnectionTransaction());
     }
 
     public CompletableFuture<Listening> subscribe(String channel, Consumer<String> onNotification) {
         // TODO: wait for commit before sending unlisten as otherwise it can be rolled back
-        return completeScript("LISTEN " + channel)
-            .thenApply(results -> {
-                Runnable unsubscribe = stream.subscribe(channel, onNotification);
-                return () -> completeScript("UNLISTEN " + channel)
-                    .thenAccept(res -> unsubscribe.run());
+        return completeScript(STR."LISTEN \{channel}")
+            .thenApply(_ -> {
+                var unsubscribe = stream.subscribe(channel, onNotification);
+
+                return () -> completeScript(STR."UNLISTEN \{channel}")
+                    .thenAccept(_ -> unsubscribe.run());
             });
     }
 
@@ -240,41 +221,41 @@ public class PgConnection implements Connection {
     }
 
     private static Columns calcColumns(ColumnDescription[] descriptions) {
-        Map<String, PgColumn> byName = new HashMap<>();
-        PgColumn[] ordered = new PgColumn[descriptions.length];
+        var byName = new HashMap<String, PgColumn>();
+        var ordered = new PgColumn[descriptions.length];
+
         for (int i = 0; i < descriptions.length; i++) {
-            PgColumn column = new PgColumn(i, descriptions[i].getName(), descriptions[i].getType());
+            var column = new PgColumn(i, descriptions[i].getName(), descriptions[i].getType());
+
             byName.put(descriptions[i].getName(), column);
             ordered[i] = column;
         }
-        return new Columns(Collections.unmodifiableMap(byName), ordered);
+        return new Columns(Map.copyOf(byName), ordered);
     }
 
     /**
      * Transaction that rollbacks the tx on backend error and closes the connection on COMMIT/ROLLBACK failure.
      */
     class PgConnectionTransaction implements Transaction {
-
         @Override
         public CompletableFuture<Transaction> begin() {
             return completeScript("SAVEPOINT sp_1")
-                .thenApply(rs -> new PgConnectionNestedTransaction(1));
+                .thenApply(_ -> new PgConnectionNestedTransaction(1));
         }
 
         CompletableFuture<Void> sendCommit() {
-            return PgConnection.this.completeScript("COMMIT").thenAccept(readyForQuery -> {
-            });
+            return PgConnection.this.completeScript("COMMIT")
+                                    .thenAccept(_ -> {});
         }
 
         CompletableFuture<Void> sendRollback() {
-            return PgConnection.this.completeScript("ROLLBACK").thenAccept(readyForQuery -> {
-            });
+            return PgConnection.this.completeScript("ROLLBACK")
+                                    .thenAccept(_ -> {});
         }
 
         @Override
         public CompletableFuture<Void> commit() {
-            return sendCommit().thenAccept(rs -> {
-            });
+            return sendCommit().thenAccept(_ -> {});
         }
 
         @Override
@@ -287,7 +268,7 @@ public class PgConnection implements Connection {
             return sendCommit()
                 .handle((v, th) -> {
                     if (th != null) {
-                        Logger.getLogger(PgConnectionTransaction.class.getName()).log(Level.SEVERE, null, th);
+                        log.error("Error during closing of the connection", th);
                         return sendRollback();
                     } else {
                         return CompletableFuture.completedFuture(v);
@@ -307,10 +288,10 @@ public class PgConnection implements Connection {
                                               Consumer<Integer> onAffected,
                                               String sql) {
             return PgConnection.this.script(onColumns, onRow, onAffected, sql)
-                                    .handle((v, th) -> {
+                                    .handle((_, th) -> {
                                         if (th != null) {
                                             return rollback()
-                                                .thenAccept(_v -> {
+                                                .thenAccept(_ -> {
                                                     throw new RuntimeException(th);
                                                 });
                                         } else {
@@ -328,7 +309,7 @@ public class PgConnection implements Connection {
                                     .handle((affected, th) -> {
                                         if (th != null) {
                                             return rollback()
-                                                .<Integer>thenApply(v -> {
+                                                .<Integer>thenApply(_ -> {
                                                     throw new RuntimeException(th);
                                                 });
                                         } else {
@@ -337,14 +318,12 @@ public class PgConnection implements Connection {
                                     })
                                     .thenCompose(Function.identity());
         }
-
     }
 
     /**
      * Nested transaction using savepoints.
      */
     class PgConnectionNestedTransaction extends PgConnectionTransaction {
-
         final int depth;
 
         PgConnectionNestedTransaction(int depth) {
@@ -353,22 +332,20 @@ public class PgConnection implements Connection {
 
         @Override
         public CompletableFuture<Transaction> begin() {
-            return completeScript("SAVEPOINT sp_" + (depth + 1))
-                .thenApply(rs -> new PgConnectionNestedTransaction(depth + 1));
+            return completeScript(STR."SAVEPOINT sp_\{depth + 1}")
+                .thenApply(_ -> new PgConnectionNestedTransaction(depth + 1));
         }
 
         @Override
         public CompletableFuture<Void> commit() {
-            return PgConnection.this.completeScript("RELEASE SAVEPOINT sp_" + depth)
-                                    .thenAccept(rs -> {
-                                    });
+            return PgConnection.this.completeScript(STR."RELEASE SAVEPOINT sp_\{depth}")
+                                    .thenAccept(_ -> {});
         }
 
         @Override
         public CompletableFuture<Void> rollback() {
-            return PgConnection.this.completeScript("ROLLBACK TO SAVEPOINT sp_" + depth)
-                                    .thenAccept(rs -> {
-                                    });
+            return PgConnection.this.completeScript(STR."ROLLBACK TO SAVEPOINT sp_\{depth}")
+                                    .thenAccept(_ -> {});
         }
     }
 }

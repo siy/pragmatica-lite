@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.pragmatica.lang.Option.option;
-import static org.pragmatica.lang.Unit.unitResult;
+import static org.pragmatica.lang.Result.unitResult;
 import static org.pragmatica.lang.io.Timeout.timeout;
 
 public interface DnsClient extends AsyncCloseable {
@@ -147,7 +147,7 @@ record DnsClientImpl(Bootstrap bootstrap, ConcurrentHashMap<Integer, Request> re
                          .map(inetAddress -> DomainAddress.domainAddress(request.domainName(), inetAddress,
                                                                          Duration.ofSeconds(raw.timeToLive())))
                          .onSuccess(addresses::add)
-                         .onFailureDo(() -> log.warn("Response for {} contains incorrectly formatted IP address", request.domainName()));
+                         .onFailureRun(() -> log.warn("Response for {} contains incorrectly formatted IP address", request.domainName()));
             }
         }
         return addresses;
@@ -181,7 +181,7 @@ record DnsClientImpl(Bootstrap bootstrap, ConcurrentHashMap<Integer, Request> re
 
             if (requestMap().putIfAbsent(requestId, request) == null) {
                 // Ensure slot for this ID is freed regardless of the outcome
-                promise.onResultDo(() -> requestMap().remove(requestId));
+                promise.onResultRun(() -> requestMap().remove(requestId));
                 return request;
             }
         }

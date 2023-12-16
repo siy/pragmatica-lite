@@ -1,8 +1,9 @@
 package com.github.pgasync;
 
 import com.github.pgasync.conversion.DataConverter;
-import com.github.pgasync.net.ConnectibleBuilder;
 import com.github.pgasync.net.Connectible;
+import com.github.pgasync.net.ConnectibleBuilder;
+import com.github.pgasync.net.Connection;
 import com.github.pgasync.net.Row;
 
 import java.nio.charset.Charset;
@@ -24,14 +25,14 @@ public abstract class PgConnectible implements Connectible {
     protected final String database;
     protected final Charset encoding;
 
-    PgConnectible(ConnectibleBuilder.ConnectibleProperties properties,
+    PgConnectible(ConnectibleBuilder.ConnectibleConfiguration properties,
                   Supplier<CompletableFuture<ProtocolStream>> obtainStream) {
-        this.username = properties.getUsername();
-        this.password = properties.getPassword();
-        this.database = properties.getDatabase();
-        this.dataConverter = properties.getDataConverter();
-        this.validationQuery = properties.getValidationQuery();
-        this.encoding = Charset.forName(properties.getEncoding());
+        this.username = properties.username();
+        this.password = properties.password();
+        this.database = properties.database();
+        this.dataConverter = properties.dataConverter();
+        this.validationQuery = properties.validationQuery();
+        this.encoding = Charset.forName(properties.encoding());
         this.obtainStream = obtainStream;
     }
 
@@ -43,17 +44,9 @@ public abstract class PgConnectible implements Connectible {
         return getConnection()
             .thenApply(connection ->
                            connection.script(onColumns, onRow, onAffected, sql)
-                                     .handle((message, th) ->
-                                                 connection.close()
-                                                           .thenApply(v -> {
-                                                               if (th == null) {
-                                                                   return message;
-                                                               } else {
-                                                                   throw new RuntimeException(th);
-                                                               }
-                                                           })
-                                     ).thenCompose(Function.identity())
-            ).thenCompose(Function.identity());
+                                     .handle((message, th) -> closeConnection(connection, message, th))
+                                     .thenCompose(Function.identity()))
+            .thenCompose(Function.identity());
     }
 
     @Override
@@ -64,18 +57,20 @@ public abstract class PgConnectible implements Connectible {
         return getConnection()
             .thenApply(connection ->
                            connection.query(onColumns, onRow, sql, params)
-                                     .handle((affected, th) ->
-                                                 connection.close()
-                                                           .thenApply(v -> {
-                                                               if (th == null) {
-                                                                   return affected;
-                                                               } else {
-                                                                   throw new RuntimeException(th);
-                                                               }
-                                                           })
-                                     ).thenCompose(Function.identity())
-            )
+                                     .handle((affected, th) -> closeConnection(connection, affected, th))
+                                     .thenCompose(Function.identity()))
             .thenCompose(Function.identity());
+    }
+
+    private static <T> CompletableFuture<T> closeConnection(Connection connection, T value, Throwable th) {
+        return connection.close()
+                         .thenApply(_ -> {
+                             if (th == null) {
+                                 return value;
+                             } else {
+                                 throw new RuntimeException(th);
+                             }
+                         });
     }
 
 }

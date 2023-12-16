@@ -9,7 +9,7 @@ import java.util.function.Supplier;
 
 public class PgDatabase extends PgConnectible {
 
-    public PgDatabase(ConnectibleBuilder.ConnectibleProperties properties, Supplier<CompletableFuture<ProtocolStream>> obtainStream) {
+    public PgDatabase(ConnectibleBuilder.ConnectibleConfiguration properties, Supplier<CompletableFuture<ProtocolStream>> obtainStream) {
         super(properties, obtainStream);
     }
 
@@ -21,10 +21,10 @@ public class PgDatabase extends PgConnectible {
                 .thenApply(connection -> {
                     if (validationQuery != null && !validationQuery.isBlank()) {
                         return connection.completeScript(validationQuery)
-                                .handle((rss, th) -> {
+                                .handle((_, th) -> {
                                     if (th != null) {
                                         return connection.close()
-                                                .thenApply(v -> CompletableFuture.<Connection>failedFuture(th))
+                                                .thenApply(_ -> CompletableFuture.<Connection>failedFuture(th))
                                                 .thenCompose(Function.identity());
                                     } else {
                                         return CompletableFuture.completedFuture(connection);
@@ -42,5 +42,4 @@ public class PgDatabase extends PgConnectible {
     public CompletableFuture<Void> close() {
         return CompletableFuture.completedFuture(null);
     }
-
 }

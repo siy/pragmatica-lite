@@ -28,8 +28,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static org.pragmatica.lang.Result.unitResult;
 import static org.pragmatica.lang.Tuple.*;
-import static org.pragmatica.lang.Unit.unitResult;
 
 
 /**
@@ -133,28 +133,12 @@ public sealed interface Result<T> permits Success, Failure {
         return this;
     }
 
-    default Result<T> onOk(Consumer<T> consumer) {
-        fold(Functions::toNull, v -> {
-            consumer.accept(v);
-            return null;
-        });
-        return this;
-    }
-
     /**
      * Run provided action in case of success.
      *
      * @return current instance for fluent call chaining
      */
-    default Result<T> onSuccessDo(Runnable action) {
-        fold(Functions::toNull, _ -> {
-            action.run();
-            return null;
-        });
-        return this;
-    }
-
-    default Result<T> onOkDo(Runnable action) {
+    default Result<T> onSuccessRun(Runnable action) {
         fold(Functions::toNull, _ -> {
             action.run();
             return null;
@@ -177,28 +161,12 @@ public sealed interface Result<T> permits Success, Failure {
         return this;
     }
 
-    default Result<T> onError(Consumer<? super Cause> consumer) {
-        fold(v -> {
-            consumer.accept(v);
-            return null;
-        }, Functions::toNull);
-        return this;
-    }
-
     /**
      * Run provided action in case of failure.
      *
      * @return current instance for fluent call chaining
      */
-    default Result<T> onFailureDo(Runnable action) {
-        fold(_ -> {
-            action.run();
-            return null;
-        }, Functions::toNull);
-        return this;
-    }
-
-    default Result<T> onErrorDo(Runnable action) {
+    default Result<T> onFailureRun(Runnable action) {
         fold(_ -> {
             action.run();
             return null;
@@ -325,7 +293,7 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(_ -> supplier.get(), _ -> this);
     }
 
-    default Result<T> onResultDo(Runnable runnable) {
+    default Result<T> onResult(Runnable runnable) {
         runnable.run();
         return this;
     }
@@ -366,6 +334,16 @@ public sealed interface Result<T> permits Success, Failure {
             });
     }
 
+    default Result<Unit> mapToUnit() {
+        return map(Unit::unit);
+    }
+
+    Result<Unit> UNIT_RESULT = success(Unit.aUnit());
+
+    static Result<Unit> unitResult() {
+        return UNIT_RESULT;
+    }
+
     /**
      * Create an instance of successful operation result.
      *
@@ -374,10 +352,6 @@ public sealed interface Result<T> permits Success, Failure {
      * @return created instance
      */
     static <R> Result<R> success(R value) {
-        return new Success<>(value);
-    }
-
-    static <R> Result<R> ok(R value) {
         return new Success<>(value);
     }
 
