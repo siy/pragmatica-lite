@@ -1,9 +1,6 @@
 package com.github.pgasync;
 
-import com.github.pgasync.net.Connectible;
-import com.github.pgasync.net.ConnectibleBuilder;
-import com.github.pgasync.net.Converter;
-import com.github.pgasync.net.ResultSet;
+import com.github.pgasync.net.*;
 import com.github.pgasync.net.netty.NettyConnectibleBuilder;
 import org.junit.jupiter.api.Tag;
 import org.junit.rules.ExternalResource;
@@ -13,12 +10,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * @author Antti Laisi
  */
 @Tag("Slow")
-class DatabaseRule extends ExternalResource {
+public class DatabaseRule extends ExternalResource {
+    private static final int MAX_CAUSE_DEPTH = 100;
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
         "postgres:15-alpine"
     );
@@ -45,6 +44,20 @@ class DatabaseRule extends ExternalResource {
 
     public static <T> DatabaseRule withConverter(Converter<T> converter) {
         return new DatabaseRule(defaultBuilder().maxConnections(1).converters(converter));
+    }
+
+    public static boolean ifCause(Throwable th, Consumer<SqlException> action, CheckedRunnable others) throws Exception {
+        int depth = 1;
+        while (depth++ < MAX_CAUSE_DEPTH && th != null && !(th instanceof SqlException)) {
+            th = th.getCause();
+        }
+        if (th instanceof SqlException sqlException) {
+            action.accept(sqlException);
+            return true;
+        } else {
+            others.run();
+            return false;
+        }
     }
 
     @Override
@@ -98,5 +111,11 @@ class DatabaseRule extends ExternalResource {
     Connectible pool() {
         before();
         return pool;
+    }
+
+    @FunctionalInterface
+    public interface CheckedRunnable {
+
+        void run() throws Exception;
     }
 }

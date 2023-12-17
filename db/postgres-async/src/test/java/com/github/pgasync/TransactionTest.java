@@ -189,7 +189,7 @@ public class TransactionTest {
                     .thenCompose(Function.identity())
                     .get(5, TimeUnit.SECONDS);
         } catch (Exception ex) {
-            SqlException.ifCause(ex, sqlException -> {
+            DatabaseRule.ifCause(ex, sqlException -> {
                 Assert.assertEquals(0, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 11").size());
                 throw sqlException;
             }, () -> {

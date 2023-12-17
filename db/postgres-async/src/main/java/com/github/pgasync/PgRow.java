@@ -53,8 +53,7 @@ public class PgRow implements Row {
 
     @Override
     public String getString(String column) {
-        PgColumn pgColumn = getColumn(column);
-        return getString(pgColumn.index());
+        return getString(getColumn(column).index());
     }
 
     @Override
@@ -64,8 +63,7 @@ public class PgRow implements Row {
 
     @Override
     public Character getChar(String column) {
-        PgColumn pgColumn = getColumn(column);
-        return getChar(pgColumn.index());
+        return getChar(getColumn(column).index());
     }
 
     @Override
@@ -75,8 +73,7 @@ public class PgRow implements Row {
 
     @Override
     public Byte getByte(String column) {
-        PgColumn pgColumn = getColumn(column);
-        return getByte(pgColumn.index());
+        return getByte(getColumn(column).index());
     }
 
     @Override
@@ -86,8 +83,7 @@ public class PgRow implements Row {
 
     @Override
     public Short getShort(String column) {
-        PgColumn pgColumn = getColumn(column);
-        return getShort(pgColumn.index());
+        return getShort(getColumn(column).index());
     }
 
     @Override
@@ -97,8 +93,7 @@ public class PgRow implements Row {
 
     @Override
     public Integer getInt(String column) {
-        PgColumn pgColumn = getColumn(column);
-        return getInt(pgColumn.index());
+        return getInt(getColumn(column).index());
     }
 
     @Override
@@ -108,8 +103,7 @@ public class PgRow implements Row {
 
     @Override
     public Long getLong(String column) {
-        PgColumn pgColumn = getColumn(column);
-        return getLong(pgColumn.index());
+        return getLong(getColumn(column).index());
     }
 
     @Override
@@ -119,8 +113,7 @@ public class PgRow implements Row {
 
     @Override
     public BigInteger getBigInteger(String column) {
-        PgColumn pgColumn = getColumn(column);
-        return getBigInteger(pgColumn.index());
+        return getBigInteger(getColumn(column).index());
     }
 
     @Override
@@ -130,8 +123,7 @@ public class PgRow implements Row {
 
     @Override
     public BigDecimal getBigDecimal(String column) {
-        PgColumn pgColumn = getColumn(column);
-        return getBigDecimal(pgColumn.index());
+        return getBigDecimal(getColumn(column).index());
     }
 
     @Override
@@ -141,8 +133,7 @@ public class PgRow implements Row {
 
     @Override
     public Double getDouble(String column) {
-        PgColumn pgColumn = getColumn(column);
-        return getDouble(pgColumn.index());
+        return getDouble(getColumn(column).index());
     }
 
     @Override
@@ -152,8 +143,7 @@ public class PgRow implements Row {
 
     @Override
     public LocalDate getLocalDate(String column) {
-        PgColumn pgColumn = getColumn(column);
-        return getLocalDate(pgColumn.index());
+        return getLocalDate(getColumn(column).index());
     }
 
     @Override
@@ -163,8 +153,7 @@ public class PgRow implements Row {
 
     @Override
     public Time getTime(String column) {
-        PgColumn pgColumn = getColumn(column);
-        return getTime(pgColumn.index());
+        return getTime(getColumn(column).index());
     }
 
     @Override
@@ -174,8 +163,7 @@ public class PgRow implements Row {
 
     @Override
     public Date getDate(String column) {
-        PgColumn pgColumn = getColumn(column);
-        return getDate(pgColumn.index());
+        return getDate(getColumn(column).index());
     }
 
     @Override
@@ -185,8 +173,7 @@ public class PgRow implements Row {
 
     @Override
     public Timestamp getTimestamp(String column) {
-        PgColumn pgColumn = getColumn(column);
-        return getTimestamp(pgColumn.index());
+        return getTimestamp(getColumn(column).index());
     }
 
     @Override
@@ -196,8 +183,7 @@ public class PgRow implements Row {
 
     @Override
     public Instant getInstant(String column) {
-        PgColumn pgColumn = getColumn(column);
-        return getInstant(pgColumn.index());
+        return getInstant(getColumn(column).index());
     }
 
     @Override
@@ -207,8 +193,7 @@ public class PgRow implements Row {
 
     @Override
     public byte[] getBytes(String column) {
-        PgColumn pgColumn = getColumn(column);
-        return getBytes(pgColumn.index());
+        return getBytes(getColumn(column).index());
     }
 
     @Override
@@ -218,8 +203,7 @@ public class PgRow implements Row {
 
     @Override
     public Boolean getBoolean(String column) {
-        PgColumn pgColumn = getColumn(column);
-        return getBoolean(pgColumn.index());
+        return getBoolean(getColumn(column).index());
     }
 
     @Override
@@ -229,8 +213,7 @@ public class PgRow implements Row {
 
     @Override
     public <TArray> TArray getArray(String column, Class<TArray> arrayType) {
-        PgColumn pgColumn = getColumn(column);
-        return getArray(pgColumn.index(), arrayType);
+        return getArray(getColumn(column).index(), arrayType);
     }
 
     @Override
@@ -240,8 +223,7 @@ public class PgRow implements Row {
 
     @Override
     public <T> T get(String column, Class<T> type) {
-        PgColumn pgColumn = getColumn(column);
-        return get(pgColumn.index(), type);
+        return get(getColumn(column).index(), type);
     }
 
     public Object get(int index) {
@@ -249,18 +231,20 @@ public class PgRow implements Row {
     }
 
     public Object get(String column) {
-        PgColumn pgColumn = getColumn(column);
-        return get(pgColumn.index());
+        return get(getColumn(column).index());
     }
 
     private PgColumn getColumn(String name) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Column name is required");
         }
-        PgColumn column = columnsByName.get(name);
+
+        var column = columnsByName.get(name);
+
         if (column == null) {
-            throw new SqlException("Unknown column '" + name + "'");
+            throw new SqlException(STR."Unknown column '\{name}'");
         }
+
         return column;
     }
 

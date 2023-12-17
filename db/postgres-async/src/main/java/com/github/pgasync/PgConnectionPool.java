@@ -168,19 +168,19 @@ public class PgConnectionPool extends PgConnectible {
                                                 String sql,
                                                 Object... params) {
             return prepareStatement(sql, dataConverter.assumeTypes(params))
-                .thenApply(stmt ->
-                               stmt.fetch(onColumns, onRow, params)
-                                   .handle((affected, th) ->
-                                               stmt.close()
-                                                   .thenApply(_ -> {
-                                                       if (th == null) {
-                                                           return affected;
-                                                       } else {
-                                                           throw new RuntimeException(th);
-                                                       }
-                                                   })
-                                   ).thenCompose(Function.identity())
-                ).thenCompose(Function.identity());
+                .thenCompose(stmt ->
+                                 stmt.fetch(onColumns, onRow, params)
+                                     .handle((affected, th) ->
+                                                 stmt.close()
+                                                     .thenApply(_ -> {
+                                                         if (th == null) {
+                                                             return affected;
+                                                         } else {
+                                                             throw new RuntimeException(th);
+                                                         }
+                                                     })
+                                     ).thenCompose(Function.identity()));
+//                ).thenCompose(Function.identity());
         }
 
         @Override
@@ -215,8 +215,8 @@ public class PgConnectionPool extends PgConnectible {
                         if (already != null && already != evicted) {
                             log.warn(DUPLICATED_PREPARED_STATEMENT_DETECTED, already.sql);
                             return evicted.delegate.close()
-                                                   .thenApply(_ -> already.delegate.close())
-                                                   .thenCompose(Function.identity());
+                                                   .thenCompose(_ -> already.delegate.close());
+//                                                   .thenCompose(Function.identity());
                         } else {
                             return evicted.delegate.close();
                         }
@@ -277,7 +277,8 @@ public class PgConnectionPool extends PgConnectible {
             throw new IllegalArgumentException("'connection' should be not null");
         }
         Runnable lucky = locked(() -> {
-            CompletableFuture<? super Connection> nextUser = pending.poll();
+            var nextUser = pending.poll();
+
             if (nextUser != null) {
                 return () -> nextUser.complete(connection);
             } else {
@@ -297,7 +298,7 @@ public class PgConnectionPool extends PgConnectible {
             if (cached != null) {
                 return CompletableFuture.completedFuture(cached);
             } else {
-                CompletableFuture<Connection> deferred = new CompletableFuture<>();
+                var deferred = new CompletableFuture<Connection>();
                 boolean makeNewConnection = locked(() -> {
                     pending.add(deferred);
                     if (size < maxConnections) {
@@ -309,17 +310,16 @@ public class PgConnectionPool extends PgConnectible {
                 });
                 if (makeNewConnection) {
                     obtainStream.get()
-                                .thenApply(stream -> new PooledPgConnection(new PgConnection(stream, dataConverter))
+                                .thenCompose(stream -> new PooledPgConnection(new PgConnection(stream, dataConverter))
                                     .connect(username, password, database))
-                                .thenCompose(Function.identity())
-                                .thenApply(pooledConnection -> {
+                                .thenCompose(pooledConnection -> {
                                     if (validationQuery != null && !validationQuery.isBlank()) {
                                         return pooledConnection.completeScript(validationQuery)
                                                                .handle((_, th) -> {
                                                                    if (th != null) {
-                                                                       return ((PooledPgConnection) pooledConnection).delegate.close()
-                                                                                                                              .thenApply(_ -> CompletableFuture.<Connection>failedFuture(th))
-                                                                                                                              .thenCompose(Function.identity());
+                                                                       return ((PooledPgConnection) pooledConnection).delegate
+                                                                           .close()
+                                                                           .thenCompose(_ -> CompletableFuture.<Connection>failedFuture(th));
                                                                    } else {
                                                                        return CompletableFuture.completedFuture(pooledConnection);
                                                                    }
@@ -329,7 +329,6 @@ public class PgConnectionPool extends PgConnectible {
                                         return CompletableFuture.completedFuture(pooledConnection);
                                     }
                                 })
-                                .thenCompose(Function.identity())
                                 .whenComplete((connected, th) -> {
                                     if (th == null) {
                                         release((PooledPgConnection) connected);
@@ -359,12 +358,11 @@ public class PgConnectionPool extends PgConnectible {
         var tuple = locked(() -> {
             if (closing == null) {
                 closing = new CompletableFuture<>()
-                    .thenApply(_ -> locked(() ->
-                                               CompletableFuture.allOf(connections.stream()
-                                                                                  .map(PooledPgConnection::shutdown)
-                                                                                  .toArray(CompletableFuture[]::new))
-                    ))
-                    .thenCompose(Function.identity());
+                    .thenCompose(_ -> locked(() ->
+                                                 CompletableFuture.allOf(connections.stream()
+                                                                                    .map(PooledPgConnection::shutdown)
+                                                                                    .toArray(CompletableFuture[]::new))
+                    ));
                 return new CloseTuple(closing, checkClosed());
             } else {
                 return new CloseTuple(CompletableFuture.failedFuture(new IllegalStateException("PG pool is already shutting down")), NO_OP);

@@ -115,7 +115,7 @@ public class QueryResultTest {
         try {
             dbr.query("SELECT * FROM not_there");
         } catch (Exception ex) {
-            SqlException.ifCause(ex, sqlException -> {
+            DatabaseRule.ifCause(ex, sqlException -> {
                 throw sqlException;
             }, () -> {
                 throw ex;

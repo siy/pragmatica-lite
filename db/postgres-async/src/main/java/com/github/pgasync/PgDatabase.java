@@ -16,26 +16,23 @@ public class PgDatabase extends PgConnectible {
     @Override
     public CompletableFuture<Connection> getConnection() {
         return obtainStream.get()
-                .thenApply(stream -> new PgConnection(stream, dataConverter).connect(username, password, database))
-                .thenCompose(Function.identity())
-                .thenApply(connection -> {
-                    if (validationQuery != null && !validationQuery.isBlank()) {
-                        return connection.completeScript(validationQuery)
-                                .handle((_, th) -> {
-                                    if (th != null) {
-                                        return connection.close()
-                                                .thenApply(_ -> CompletableFuture.<Connection>failedFuture(th))
-                                                .thenCompose(Function.identity());
-                                    } else {
-                                        return CompletableFuture.completedFuture(connection);
-                                    }
-                                })
-                                .thenCompose(Function.identity());
-                    } else {
-                        return CompletableFuture.completedFuture(connection);
-                    }
-                })
-                .thenCompose(Function.identity());
+                           .thenCompose(stream -> new PgConnection(stream, dataConverter).connect(username, password, database))
+                           .thenCompose(connection -> {
+                               if (validationQuery != null && !validationQuery.isBlank()) {
+                                   return connection.completeScript(validationQuery)
+                                                    .handle((_, th) -> {
+                                                        if (th != null) {
+                                                            return connection.close()
+                                                                             .thenCompose(_ -> CompletableFuture.<Connection>failedFuture(th));
+                                                        } else {
+                                                            return CompletableFuture.completedFuture(connection);
+                                                        }
+                                                    })
+                                                    .thenCompose(Function.identity());
+                               } else {
+                                   return CompletableFuture.completedFuture(connection);
+                               }
+                           });
     }
 
     @Override

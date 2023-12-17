@@ -26,6 +26,9 @@ import org.junit.jupiter.api.Tag;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Tests for results of script execution.
  *
@@ -50,47 +53,46 @@ public class ScriptResultsTest {
 
     @Test
     public void shouldReturnMultipleResultSets() {
-        List<ResultSet> results = new ArrayList<>(dbr.script("" +
-                "INSERT INTO SCRIPT_TEST (ID) VALUES (1),(2);" +
-                "SELECT SCRIPT_TEST.ID first_id FROM SCRIPT_TEST WHERE ID <= 2 ORDER BY ID;" +
-                "INSERT INTO SCRIPT_TEST (ID) VALUES (3),(4),(5);" +
-                "SELECT SCRIPT_TEST.ID second_id FROM SCRIPT_TEST WHERE ID > 2 ORDER BY ID;" +
-                ""));
-        Assert.assertEquals(4, results.size());
+        var results = new ArrayList<>(dbr.script(
+            "INSERT INTO SCRIPT_TEST (ID) VALUES (1),(2);" +
+            "SELECT SCRIPT_TEST.ID first_id FROM SCRIPT_TEST WHERE ID <= 2 ORDER BY ID;" +
+            "INSERT INTO SCRIPT_TEST (ID) VALUES (3),(4),(5);" +
+            "SELECT SCRIPT_TEST.ID second_id FROM SCRIPT_TEST WHERE ID > 2 ORDER BY ID;"
+        ));
+        assertEquals(4, results.size());
 
-        ResultSet firstInsertResult = results.get(0);
-        Assert.assertEquals(2, firstInsertResult.affectedRows());
-        Assert.assertEquals(0, firstInsertResult.size());
-        Assert.assertTrue(firstInsertResult.orderedColumns().isEmpty());
-        Assert.assertTrue(firstInsertResult.columnsByName().isEmpty());
+        var firstInsertResult = results.get(0);
+        assertEquals(2, firstInsertResult.affectedRows());
+        assertEquals(0, firstInsertResult.size());
+        assertTrue(firstInsertResult.orderedColumns().isEmpty());
+        assertTrue(firstInsertResult.columnsByName().isEmpty());
 
-        ResultSet firstSelectResult = results.get(1);
-        Assert.assertEquals(0, firstSelectResult.affectedRows());
-        Assert.assertEquals(2, firstSelectResult.size());
-        Assert.assertEquals(1, firstSelectResult.index(0).getLong("first_id").intValue());
-        Assert.assertEquals(2, firstSelectResult.index(1).getLong("first_id").intValue());
-        Assert.assertEquals(1, firstSelectResult.orderedColumns().size());
-        Assert.assertEquals("first_id", firstSelectResult.orderedColumns().get(0).name());
-        Assert.assertEquals(1, firstSelectResult.columnsByName().size());
-        Assert.assertTrue(firstSelectResult.columnsByName().containsKey("first_id"));
+        var firstSelectResult = results.get(1);
+        assertEquals(0, firstSelectResult.affectedRows());
+        assertEquals(2, firstSelectResult.size());
+        assertEquals(1, firstSelectResult.index(0).getLong("first_id").intValue());
+        assertEquals(2, firstSelectResult.index(1).getLong("first_id").intValue());
+        assertEquals(1, firstSelectResult.orderedColumns().size());
+        assertEquals("first_id", firstSelectResult.orderedColumns().get(0).name());
+        assertEquals(1, firstSelectResult.columnsByName().size());
+        assertTrue(firstSelectResult.columnsByName().containsKey("first_id"));
 
+        var secondInsertResult = results.get(2);
+        assertEquals(3, secondInsertResult.affectedRows());
+        assertEquals(0, secondInsertResult.size());
+        assertTrue(secondInsertResult.orderedColumns().isEmpty());
+        assertTrue(secondInsertResult.columnsByName().isEmpty());
 
-        ResultSet secondInsertResult = results.get(2);
-        Assert.assertEquals(3, secondInsertResult.affectedRows());
-        Assert.assertEquals(0, secondInsertResult.size());
-        Assert.assertTrue(secondInsertResult.orderedColumns().isEmpty());
-        Assert.assertTrue(secondInsertResult.columnsByName().isEmpty());
-
-        ResultSet secondSelectResult = results.get(3);
-        Assert.assertEquals(0, secondSelectResult.affectedRows());
-        Assert.assertEquals(3, secondSelectResult.size());
-        Assert.assertEquals(3, secondSelectResult.index(0).getLong("second_id").intValue());
-        Assert.assertEquals(4, secondSelectResult.index(1).getLong("second_id").intValue());
-        Assert.assertEquals(5, secondSelectResult.index(2).getLong("second_id").intValue());
-        Assert.assertEquals(1, secondSelectResult.orderedColumns().size());
-        Assert.assertEquals("second_id", secondSelectResult.orderedColumns().get(0).name());
-        Assert.assertEquals(1, secondSelectResult.columnsByName().size());
-        Assert.assertTrue(secondSelectResult.columnsByName().containsKey("second_id"));
+        var secondSelectResult = results.get(3);
+        assertEquals(0, secondSelectResult.affectedRows());
+        assertEquals(3, secondSelectResult.size());
+        assertEquals(3, secondSelectResult.index(0).getLong("second_id").intValue());
+        assertEquals(4, secondSelectResult.index(1).getLong("second_id").intValue());
+        assertEquals(5, secondSelectResult.index(2).getLong("second_id").intValue());
+        assertEquals(1, secondSelectResult.orderedColumns().size());
+        assertEquals("second_id", secondSelectResult.orderedColumns().get(0).name());
+        assertEquals(1, secondSelectResult.columnsByName().size());
+        assertTrue(secondSelectResult.columnsByName().containsKey("second_id"));
     }
 
     @Test(expected = SqlException.class)
@@ -98,7 +100,7 @@ public class ScriptResultsTest {
         try {
             dbr.script("SELECT * FROM not_there");
         } catch (Exception ex) {
-            SqlException.ifCause(ex, sqlException -> {
+            DatabaseRule.ifCause(ex, sqlException -> {
                 throw sqlException;
             }, () -> {
                 throw ex;

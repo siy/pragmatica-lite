@@ -107,7 +107,7 @@ public class PipelineTest {
                     ).toArray(size -> new CompletableFuture<?>[size])
             ).get();
         } catch (Exception ex) {
-            SqlException.ifCause(ex, sqlException -> {
+            DatabaseRule.ifCause(ex, sqlException -> {
                 throw sqlException;
             }, () -> {
                 throw ex;

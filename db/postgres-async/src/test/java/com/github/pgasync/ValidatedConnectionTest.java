@@ -38,11 +38,11 @@ public class ValidatedConnectionTest {
         try {
             action.accept(source);
         } catch (Exception ex) {
-            SqlException.ifCause(ex,
+            DatabaseRule.ifCause(ex,
                     sqlException -> {
                         throw sqlException;
                     },
-                    () -> {
+                                 () -> {
                         throw ex;
                     });
         } finally {

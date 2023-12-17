@@ -224,7 +224,8 @@ public abstract class PgProtocolStream implements ProtocolStream {
     }
 
     protected CompletableFuture<Message> offerRoundTrip(Runnable requestAction, boolean assumeConnected) {
-        CompletableFuture<Message> uponResponse = new CompletableFuture<>();
+        var uponResponse = new CompletableFuture<Message>();
+
         if (!assumeConnected || isConnected()) {
             if (onResponse == null) {
                 onResponse = uponResponse;
@@ -259,10 +260,10 @@ public abstract class PgProtocolStream implements ProtocolStream {
     }
 
     private static SqlException toSqlException(ErrorResponse error) {
-        return new SqlException(error.level(), error.code(), error.message());
+        return new SqlException(toSqlError(error));
     }
 
-    private static SqlError toSqlError(ErrorResponse error) {
+    private static ServerError toSqlError(ErrorResponse error) {
         return ERROR_MAPPER.getOrDefault(error.code(),
                                          response -> new SqlError.ServerUnknownError(response, "unknown_error"))
                            .apply(error.asServerResponse());
@@ -382,7 +383,8 @@ public abstract class PgProtocolStream implements ProtocolStream {
         ERROR_MAPPER.put("25002", response -> new ServerErrorInvalidTransactionState(response, "branch_transaction_already_active"));
         ERROR_MAPPER.put("25008", response -> new ServerErrorInvalidTransactionState(response, "held_cursor_requires_same_isolation_level"));
         ERROR_MAPPER.put("25003", response -> new ServerErrorInvalidTransactionState(response, "inappropriate_access_mode_for_branch_transaction"));
-        ERROR_MAPPER.put("25004", response -> new ServerErrorInvalidTransactionState(response, "inappropriate_isolation_level_for_branch_transaction"));
+        ERROR_MAPPER.put("25004",
+                         response -> new ServerErrorInvalidTransactionState(response, "inappropriate_isolation_level_for_branch_transaction"));
         ERROR_MAPPER.put("25005", response -> new ServerErrorInvalidTransactionState(response, "no_active_sql_transaction_for_branch_transaction"));
         ERROR_MAPPER.put("25006", response -> new ServerErrorInvalidTransactionState(response, "read_only_sql_transaction"));
         ERROR_MAPPER.put("25007", response -> new ServerErrorInvalidTransactionState(response, "schema_and_data_statement_mixing_not_supported"));
@@ -393,7 +395,8 @@ public abstract class PgProtocolStream implements ProtocolStream {
         ERROR_MAPPER.put("27000", response -> new ServerErrorTriggeredDataChangeViolation(response, "triggered_data_change_violation"));
         ERROR_MAPPER.put("28000", response -> new ServerErrorInvalidAuthorizationSpecification(response, "invalid_authorization_specification"));
         ERROR_MAPPER.put("28P01", response -> new ServerErrorInvalidAuthorizationSpecification(response, "invalid_password"));
-        ERROR_MAPPER.put("2B000", response -> new ServerErrorDependentPrivilegeDescriptorsStillExist(response, "dependent_privilege_descriptors_still_exist"));
+        ERROR_MAPPER.put("2B000",
+                         response -> new ServerErrorDependentPrivilegeDescriptorsStillExist(response, "dependent_privilege_descriptors_still_exist"));
         ERROR_MAPPER.put("2BP01", response -> new ServerErrorDependentPrivilegeDescriptorsStillExist(response, "dependent_objects_still_exist"));
         ERROR_MAPPER.put("2D000", response -> new ServerErrorInvalidTransactionTermination(response, "invalid_transaction_termination"));
         ERROR_MAPPER.put("2F000", response -> new ServerSQLRoutineException(response, "sql_routine_exception"));

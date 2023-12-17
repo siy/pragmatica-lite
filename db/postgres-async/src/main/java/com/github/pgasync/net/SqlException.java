@@ -14,8 +14,9 @@
 
 package com.github.pgasync.net;
 
+import com.github.pgasync.SqlError.ServerError;
+
 import java.io.Serial;
-import java.util.function.Consumer;
 
 /**
  * Backend or client error. If the error is sent by backend, SQLSTATE error code
@@ -27,46 +28,25 @@ public class SqlException extends RuntimeException {
 
     @Serial
     private static final long serialVersionUID = 1L;
-    private static final int MAX_CAUSE_DEPTH = 100;
 
-    final String code;
+    private final ServerError serverError;
 
-    public SqlException(String level, String code, String message) {
-        super(STR."\{level}: SQLSTATE=\{code}, MESSAGE=\{message}");
-        this.code = code;
+    public SqlException(ServerError serverError) {
+        super(serverError.message());
+        this.serverError = serverError;
     }
 
     public SqlException(String message) {
         super(message);
-        this.code = null;
+        this.serverError = null;
     }
 
     public SqlException(Throwable cause) {
         super(cause);
-        this.code = null;
+        this.serverError = null;
     }
 
-    public String getCode() {
-        return code;
-    }
-
-    @FunctionalInterface
-    public interface CheckedRunnable {
-
-        void run() throws Exception;
-    }
-
-    public static boolean ifCause(Throwable th, Consumer<SqlException> action, CheckedRunnable others) throws Exception {
-        int depth = 1;
-        while (depth++ < MAX_CAUSE_DEPTH && th != null && !(th instanceof SqlException)) {
-            th = th.getCause();
-        }
-        if (th instanceof SqlException) {
-            action.accept((SqlException) th);
-            return true;
-        } else {
-            others.run();
-            return false;
-        }
+    public ServerError error() {
+        return serverError;
     }
 }
