@@ -20,10 +20,10 @@ import com.github.pgasync.message.backend.Authentication;
 import com.github.pgasync.message.backend.DataRow;
 import com.github.pgasync.message.frontend.*;
 import com.github.pgasync.net.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -38,8 +38,6 @@ import static com.github.pgasync.message.backend.RowDescription.ColumnDescriptio
  * @author Antti Laisi
  */
 public class PgConnection implements Connection {
-    private static final Logger log = LoggerFactory.getLogger(PgConnection.class);
-
     /**
      * Uses named server side prepared statement and named portal.
      */
@@ -118,8 +116,7 @@ public class PgConnection implements Connection {
 
     CompletableFuture<Connection> connect(String username, String password, String database) {
         return stream.connect(new StartupMessage(username, database))
-                     .thenApply(authentication -> authenticate(username, password, authentication))
-                     .thenCompose(Function.identity())
+                     .thenCompose(authentication -> authenticate(username, password, authentication))
                      .thenApply(_ -> PgConnection.this);
     }
 
@@ -183,19 +180,20 @@ public class PgConnection implements Connection {
                                             String sql,
                                             Object... params) {
         return prepareStatement(sql, dataConverter.assumeTypes(params))
-            .thenApply(ps -> ps.fetch(onColumns, onRow, params)
-                               .handle((affected, th) -> ps.close()
-                                                           .thenApply(_ -> {
-                                                               if (th != null) {
-                                                                   throw new RuntimeException(th);
-                                                               } else {
-                                                                   return affected;
-                                                               }
-                                                           })
-                               )
-                               .thenCompose(Function.identity())
-            )
-            .thenCompose(Function.identity());
+            .thenCompose(ps -> ps.fetch(onColumns, onRow, params)
+                               .handle((affected, th) -> closePreparedStatement(ps, affected, th))
+                               .thenCompose(Function.identity()));
+    }
+
+    private static CompletableFuture<Integer> closePreparedStatement(PreparedStatement ps, Integer affected, Throwable th) {
+        return ps.close()
+                 .thenApply(_ -> {
+                     if (th != null) {
+                         throw new RuntimeException(th);
+                     } else {
+                         return affected;
+                     }
+                 });
     }
 
     @Override
@@ -266,15 +264,7 @@ public class PgConnection implements Connection {
         @Override
         public CompletableFuture<Void> close() {
             return sendCommit()
-                .handle((v, th) -> {
-                    if (th != null) {
-                        log.error("Error during closing of the connection", th);
-                        return sendRollback();
-                    } else {
-                        return CompletableFuture.completedFuture(v);
-                    }
-                })
-                .thenCompose(Function.identity());
+                .whenComplete(this::handleException);
         }
 
         @Override
@@ -288,16 +278,7 @@ public class PgConnection implements Connection {
                                               Consumer<Integer> onAffected,
                                               String sql) {
             return PgConnection.this.script(onColumns, onRow, onAffected, sql)
-                                    .handle((_, th) -> {
-                                        if (th != null) {
-                                            return rollback()
-                                                .thenAccept(_ -> {
-                                                    throw new RuntimeException(th);
-                                                });
-                                        } else {
-                                            return CompletableFuture.<Void>completedFuture(null);
-                                        }
-                                    })
+                                    .handle(this::handleException)
                                     .thenCompose(Function.identity());
         }
 
@@ -306,17 +287,18 @@ public class PgConnection implements Connection {
                                                 String sql,
                                                 Object... params) {
             return PgConnection.this.query(onColumns, onRow, sql, params)
-                                    .handle((affected, th) -> {
-                                        if (th != null) {
-                                            return rollback()
-                                                .<Integer>thenApply(_ -> {
-                                                    throw new RuntimeException(th);
-                                                });
-                                        } else {
-                                            return CompletableFuture.completedFuture(affected);
-                                        }
-                                    })
+                                    .handle(this::handleException)
                                     .thenCompose(Function.identity());
+        }
+
+        private <T> CompletableFuture<T> handleException(T unused, Throwable th) {
+            if (th != null) {
+                return rollback().thenApply(_ -> {
+                    throw new RuntimeException(th);
+                });
+            } else {
+                return CompletableFuture.completedFuture(unused);
+            }
         }
     }
 

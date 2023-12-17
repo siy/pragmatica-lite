@@ -15,10 +15,7 @@
 package com.github.pgasync;
 
 import com.github.pgasync.net.Connectible;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.jupiter.api.Tag;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -90,7 +87,7 @@ public class PerformanceTest {
             .username(DatabaseRule.postgres.getUsername())
             .pool();
         var connections = IntStream.range(0, poolSize)
-                                   .mapToObj(i -> pool.getConnection().join()).toList();
+                                   .mapToObj(_ -> pool.getConnection().join()).toList();
         connections.forEach(connection -> {
             connection.prepareStatement(SELECT_42).join().close().join();
             connection.close().join();
@@ -104,10 +101,11 @@ public class PerformanceTest {
 
     @Test
     public void observeBatches() {
-        performBatches(simpleQueryResults, i -> new Batch(batchSize).startWithSimpleQuery());
-        performBatches(preparedStatementResults, i -> new Batch(batchSize).startWithPreparedStatement());
+        performBatches(simpleQueryResults, _ -> new Batch(batchSize).startWithSimpleQuery());
+        performBatches(preparedStatementResults, _ -> new Batch(batchSize).startWithPreparedStatement());
     }
 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     private void performBatches(SortedMap<Integer, SortedMap<Integer, Long>> results, IntFunction<CompletableFuture<Long>> batchStarter) {
         double mean = LongStream.range(0, repeats)
                                 .map(_ -> {
@@ -123,7 +121,7 @@ public class PerformanceTest {
                                 })
                                 .average()
                                 .getAsDouble();
-        results.computeIfAbsent(poolSize, k -> new TreeMap<>())
+        results.computeIfAbsent(poolSize, _ -> new TreeMap<>())
                .put(numThreads, Math.round(mean));
     }
 
@@ -157,13 +155,15 @@ public class PerformanceTest {
                 .thenApply(connection ->
                                connection.prepareStatement(SELECT_42)
                                          .thenApply(stmt -> stmt.query()
-                                                                .thenApply(rs -> stmt.close())
-                                                                .exceptionally(th -> stmt.close().whenComplete((v, _th) -> {
+                                                                .thenApply(_ -> stmt.close())
+                                                                .exceptionally(th -> stmt.close()
+                                                                                         .whenComplete((_, _) -> {
                                                                     throw new RuntimeException(th);
                                                                 }))
                                                                 .thenCompose(Function.identity())
-                                                                .thenApply(v -> connection.close())
-                                                                .exceptionally(th -> connection.close().whenComplete((v, _th) -> {
+                                                                .thenApply(_ -> connection.close())
+                                                                .exceptionally(th -> connection.close()
+                                                                                               .whenComplete((_, _) -> {
                                                                     throw new RuntimeException(th);
                                                                 }))
                                                                 .thenCompose(Function.identity())
@@ -171,7 +171,7 @@ public class PerformanceTest {
                                          .thenCompose(Function.identity())
                 )
                 .thenCompose(Function.identity())
-                .thenAccept(v -> {
+                .thenAccept(_ -> {
                     if (++performed < batchSize) {
                         nextSamplePreparedStatement();
                     } else {
@@ -188,7 +188,7 @@ public class PerformanceTest {
 
         private void nextSampleSimpleQuery() {
             pool.completeScript(SELECT_42)
-                .thenAccept(v -> {
+                .thenAccept(_ -> {
                     if (++performed < batchSize) {
                         nextSamplePreparedStatement();
                     } else {

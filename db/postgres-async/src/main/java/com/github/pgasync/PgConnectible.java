@@ -11,11 +11,9 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 public abstract class PgConnectible implements Connectible {
-
     final String validationQuery;
     final String username;
     final DataConverter dataConverter;
@@ -42,11 +40,9 @@ public abstract class PgConnectible implements Connectible {
                                           Consumer<Integer> onAffected,
                                           String sql) {
         return getConnection()
-            .thenApply(connection ->
-                           connection.script(onColumns, onRow, onAffected, sql)
-                                     .handle((message, th) -> closeConnection(connection, message, th))
-                                     .thenCompose(Function.identity()))
-            .thenCompose(Function.identity());
+            .thenCompose(connection ->
+                             connection.script(onColumns, onRow, onAffected, sql)
+                                       .whenComplete((message, th) -> closeConnection(connection, message, th)));
     }
 
     @Override
@@ -55,22 +51,19 @@ public abstract class PgConnectible implements Connectible {
                                             String sql,
                                             Object... params) {
         return getConnection()
-            .thenApply(connection ->
-                           connection.query(onColumns, onRow, sql, params)
-                                     .handle((affected, th) -> closeConnection(connection, affected, th))
-                                     .thenCompose(Function.identity()))
-            .thenCompose(Function.identity());
+            .thenCompose(connection ->
+                             connection.query(onColumns, onRow, sql, params)
+                                       .whenComplete((affected, th) -> closeConnection(connection, affected, th)));
     }
 
-    private static <T> CompletableFuture<T> closeConnection(Connection connection, T value, Throwable th) {
-        return connection.close()
-                         .thenApply(_ -> {
-                             if (th == null) {
-                                 return value;
-                             } else {
-                                 throw new RuntimeException(th);
-                             }
-                         });
+    private static <T> void closeConnection(Connection connection, T value, Throwable th) {
+        connection.close()
+                  .thenApply(_ -> {
+                      if (th == null) {
+                          return value;
+                      } else {
+                          throw new RuntimeException(th);
+                      }
+                  });
     }
-
 }
