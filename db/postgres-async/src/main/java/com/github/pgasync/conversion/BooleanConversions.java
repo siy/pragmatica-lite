@@ -1,7 +1,8 @@
 package com.github.pgasync.conversion;
 
 import com.github.pgasync.Oid;
-import com.github.pgasync.net.SqlException;
+
+import static com.github.pgasync.conversion.Common.returnError;
 
 /**
  * @author Antti Laisi
@@ -15,7 +16,7 @@ final class BooleanConversions {
     static boolean toBoolean(Oid oid, String value) {
         return switch (oid) {
             case UNSPECIFIED, BOOL -> TRUE.equals(value);
-            default -> throw new SqlException(STR."Unsupported conversion \{oid.name()} -> boolean");
+            default -> returnError(oid, "boolean");
         };
     }
 

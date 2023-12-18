@@ -41,11 +41,6 @@ public class SqlException extends RuntimeException {
         this.serverError = null;
     }
 
-    public SqlException(Throwable cause) {
-        super(cause);
-        this.serverError = null;
-    }
-
     public ServerError error() {
         return serverError;
     }

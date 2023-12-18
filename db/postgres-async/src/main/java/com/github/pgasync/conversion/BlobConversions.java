@@ -1,8 +1,8 @@
 package com.github.pgasync.conversion;
 
 import com.github.pgasync.Oid;
-import com.github.pgasync.net.SqlException;
 
+import static com.github.pgasync.conversion.Common.returnError;
 import static com.github.pgasync.util.HexConverter.parseHexBinary;
 import static com.github.pgasync.util.HexConverter.printHexBinary;
 
@@ -17,9 +17,8 @@ final class BlobConversions {
             // TODO: Add theses considerations somewhere to the code:
             //  1. (2, length-2)
             //  2. According to postgres rules bytea should be encoded as ASCII sequence
-            case UNSPECIFIED, BYTEA ->
-                parseHexBinary(value);
-            default -> throw new SqlException(STR."Unsupported conversion \{oid.name()} -> byte[]");
+            case UNSPECIFIED, BYTEA -> parseHexBinary(value);
+            default -> returnError(oid, "byte[]");
         };
     }
 

@@ -3,16 +3,13 @@ package com.github.pgasync.conversion;
 import com.github.pgasync.Oid;
 import com.github.pgasync.net.SqlException;
 
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 
-import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
-import static java.time.format.DateTimeFormatter.ISO_LOCAL_TIME;
+import static com.github.pgasync.conversion.Common.returnError;
+import static java.time.format.DateTimeFormatter.*;
 
 /**
  * @author Antti Laisi
@@ -47,43 +44,31 @@ final class TemporalConversions {
         try {
             return switch (oid) {
                 case UNSPECIFIED, DATE -> LocalDate.parse(value, ISO_LOCAL_DATE);
-                default -> throw new SqlException(STR."Unsupported conversion \{oid.name()} -> Date");
+                default -> returnError(oid, "LocalDate");
             };
         } catch (DateTimeParseException e) {
             throw new SqlException(STR."Invalid date: \{value}");
         }
     }
 
-    static Time toTime(Oid oid, String value) {
+    static LocalTime toTime(Oid oid, String value) {
         try {
             return switch (oid) {
-                case UNSPECIFIED, TIME -> Time.valueOf(LocalTime.parse(value, ISO_LOCAL_TIME));
-                case TIMETZ -> Time.valueOf(OffsetTime.parse(value, TIMEZ_FORMAT).toLocalTime());
-                default -> throw new SqlException(STR."Unsupported conversion \{oid.name()} -> Time");
+                case UNSPECIFIED, TIME -> LocalTime.parse(value, ISO_LOCAL_TIME);
+                case TIMETZ -> OffsetTime.parse(value, TIMEZ_FORMAT).toLocalTime();
+                default -> returnError(oid, "Time");
             };
         } catch (DateTimeParseException e) {
             throw new SqlException(STR."Invalid time: \{value}");
         }
     }
 
-    static Timestamp toTimestamp(Oid oid, String value) {
-        try {
-            return switch (oid) { // fallthrough
-                case UNSPECIFIED, TIMESTAMP -> Timestamp.from(LocalDateTime.parse(value, TIMESTAMP_FORMAT).toInstant(ZoneOffset.UTC));
-                case TIMESTAMPTZ -> Timestamp.from(OffsetDateTime.parse(value, TIMESTAMPTZ_FORMAT).toInstant());
-                default -> throw new SqlException(STR."Unsupported conversion \{oid.name()} -> Time");
-            };
-        } catch (DateTimeParseException e) {
-            throw new SqlException(STR."Invalid time: \{value}");
-        }
-    }
-
-    static Date toDate(Oid oid, String value) {
+    static LocalDateTime toDate(Oid oid, String value) {
         try {
             return switch (oid) {
-                case UNSPECIFIED, TIMESTAMP -> new Date(LocalDateTime.parse(value, TIMESTAMP_FORMAT).toInstant(ZoneOffset.UTC).toEpochMilli());
-                case TIMESTAMPTZ -> new Date(OffsetDateTime.parse(value, TIMESTAMPTZ_FORMAT).toInstant().toEpochMilli());
-                default -> throw new SqlException(STR."Unsupported conversion \{oid.name()} -> Time");
+                case UNSPECIFIED, TIMESTAMP -> LocalDateTime.parse(value, TIMESTAMP_FORMAT);
+                case TIMESTAMPTZ -> OffsetDateTime.parse(value, TIMESTAMPTZ_FORMAT).toLocalDateTime();
+                default -> returnError(oid, "Date");
             };
         } catch (DateTimeParseException e) {
             throw new SqlException(STR."Invalid time: \{value}");
@@ -95,7 +80,7 @@ final class TemporalConversions {
             return switch (oid) {
                 case UNSPECIFIED, TIMESTAMP -> LocalDateTime.parse(value, TIMESTAMP_FORMAT).toInstant(ZoneOffset.UTC);
                 case TIMESTAMPTZ -> OffsetDateTime.parse(value, TIMESTAMPTZ_FORMAT).toInstant();
-                default -> throw new SqlException(STR."Unsupported conversion \{oid.name()} -> Time");
+                default -> returnError(oid, "Instant");
             };
         } catch (DateTimeParseException e) {
             throw new SqlException(STR."Invalid time: \{value}");
@@ -106,19 +91,19 @@ final class TemporalConversions {
         return ISO_LOCAL_DATE.format(localDate);
     }
 
-    static String fromTime(Time time) {
-        return ISO_LOCAL_TIME.format(time.toLocalTime());
+    static String fromLocalTime(LocalTime localTime) {
+        return ISO_LOCAL_TIME.format(localTime);
+    }
+
+    static String fromLocalDateTime(LocalDateTime localDate) {
+        return TIMESTAMP_FORMAT.format(localDate);
+    }
+
+    static String fromZoneDateTime(ZonedDateTime zonedDateTime) {
+        return TIMESTAMPTZ_FORMAT.format(zonedDateTime);
     }
 
     static String fromInstant(Instant instant) {
         return TIMESTAMP_FORMAT.format(OffsetDateTime.ofInstant(instant, ZoneOffset.UTC));
-    }
-
-    static String fromDate(Date date) {
-        return fromInstant(Instant.ofEpochMilli(date.getTime()));
-    }
-
-    static String fromTimestamp(Timestamp ts) {
-        return fromInstant(Instant.ofEpochMilli(ts.getTime()));
     }
 }

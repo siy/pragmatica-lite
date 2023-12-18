@@ -16,11 +16,10 @@ package com.github.pgasync.net;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 /**
  * Row in a query result set. A row consist of 0-n columns of a single type.
@@ -70,17 +69,13 @@ public interface Row {
 
     LocalDate getLocalDate(String column);
 
-    Time getTime(int index);
+    LocalTime getLocalTime(int index);
 
-    Time getTime(String column);
+    LocalTime getLocalTime(String column);
 
-    Date getDate(int index);
+    LocalDateTime getLocalDateTime(int index);
 
-    Date getDate(String column);
-
-    Timestamp getTimestamp(int index);
-
-    Timestamp getTimestamp(String column);
+    LocalDateTime getLocalDateTime(String column);
 
     Instant getInstant(int index);
 

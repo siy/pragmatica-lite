@@ -20,8 +20,6 @@ import org.junit.jupiter.api.Tag;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.time.*;
 import java.util.Collections;
 import java.util.List;
@@ -124,7 +122,7 @@ public class TypeConverterTest {
     @Test
     public void shouldConvertInt8ToBigInteger() {
         assertEquals(new BigInteger("9223372036854775807"), dbr.query("select 9223372036854775807::INT8").index(0)
-                .getBigInteger(0));
+                                                               .getBigInteger(0));
     }
 
     @Test
@@ -160,55 +158,55 @@ public class TypeConverterTest {
     @Test
     public void shouldConvertDateToDate() {
         assertEquals(LocalDate.parse("2014-01-31"),
-                dbr.query("select '2014-01-31'::DATE").index(0).getLocalDate(0));
+                     dbr.query("select '2014-01-31'::DATE").index(0).getLocalDate(0));
     }
 
     @Test
     public void shouldConvertDateToDateWithName() {
         assertEquals(LocalDate.parse("2014-02-21"), dbr.query("select '2014-02-21'::DATE as D").index(0)
-                .getLocalDate("d"));
+                                                       .getLocalDate("d"));
     }
 
     @Test
     public void shouldConvertTimeToTime() {
-        assertEquals(Time.valueOf(LocalTime.parse("10:15:31.123")), dbr.query("select '10:15:31.123'::TIME").index(0)
-                .getTime(0));
+        assertEquals(LocalTime.parse("10:15:31.123"), dbr.query("select '10:15:31.123'::TIME").index(0)
+                                                         .getLocalTime(0));
     }
 
     @Test
     public void shouldConvertZonedTimeToTime() {
-        assertEquals(Time.valueOf(OffsetTime.parse("23:59:59.999Z").toLocalTime()), dbr.query("select '23:59:59.999Z'::TIMETZ as zoned")
-                                                                                       .index(0).getTime("zoned"));
+        assertEquals(OffsetTime.parse("23:59:59.999Z").toLocalTime(), dbr.query("select '23:59:59.999Z'::TIMETZ as zoned")
+                                                                         .index(0).getLocalTime("zoned"));
     }
 
     @Test
     public void shouldConvertTimestampToTimestamp() {
-        assertEquals(Timestamp.from(LocalDateTime.parse("2014-02-21T23:59:59.999").toInstant(ZoneOffset.UTC)),
-                dbr.query("select '2014-02-21 23:59:59.999'::TIMESTAMP as ts").index(0).getTimestamp("ts"));
+        assertEquals(LocalDateTime.parse("2014-02-21T23:59:59.999").toInstant(ZoneOffset.UTC),
+                     dbr.query("select '2014-02-21 23:59:59.999'::TIMESTAMP as ts").index(0).getInstant("ts"));
     }
 
     @Test
     public void shouldConvertTimestampWithShortMillisToTimestamp() {
-        assertEquals(Timestamp.from(LocalDateTime.parse("2014-02-21T23:59:59.990").toInstant(ZoneOffset.UTC)),
-                dbr.query("select '2014-02-21 23:59:59.99'::TIMESTAMP as ts").index(0).getTimestamp("ts"));
+        assertEquals(LocalDateTime.parse("2014-02-21T23:59:59.990").toInstant(ZoneOffset.UTC),
+                     dbr.query("select '2014-02-21 23:59:59.99'::TIMESTAMP as ts").index(0).getInstant("ts"));
     }
 
     @Test
     public void shouldConvertTimestampWithNoMillisToTimestamp() {
-        assertEquals(Timestamp.from(LocalDateTime.parse("2014-02-21T23:59:59").toInstant(ZoneOffset.UTC)),
-                dbr.query("select '2014-02-21 23:59:59'::TIMESTAMP as ts").index(0).getTimestamp("ts"));
+        assertEquals(LocalDateTime.parse("2014-02-21T23:59:59").toInstant(ZoneOffset.UTC),
+                     dbr.query("select '2014-02-21 23:59:59'::TIMESTAMP as ts").index(0).getInstant("ts"));
     }
 
     @Test
     public void shouldConvertZonedTimestampToTimestamp() {
-        assertEquals(Timestamp.from(Instant.from(ZonedDateTime.parse("2014-02-21T23:59:59.999Z"))),
-                dbr.query("select '2014-02-21 23:59:59.999Z'::TIMESTAMPTZ as ts").index(0).getTimestamp("ts"));
+        assertEquals(Instant.from(ZonedDateTime.parse("2014-02-21T23:59:59.999Z")),
+                     dbr.query("select '2014-02-21 23:59:59.999Z'::TIMESTAMPTZ as ts").index(0).getInstant("ts"));
     }
 
     @Test
     public void shouldConvertZonedTimestampWithNanosToTimestamp() {
-        assertEquals(Timestamp.from(Instant.parse("2014-02-21T23:59:59.000999Z")),
-                dbr.query("select '2014-02-21 23:59:59.000999+00'::TIMESTAMPTZ as ts").index(0).getTimestamp("ts"));
+        assertEquals(Instant.parse("2014-02-21T23:59:59.000999Z"),
+                     dbr.query("select '2014-02-21 23:59:59.000999+00'::TIMESTAMPTZ as ts").index(0).getInstant("ts"));
     }
 
     @Test
@@ -219,7 +217,7 @@ public class TypeConverterTest {
     @Test
     public void shouldConvertByteAToBytesWithName() {
         assertArrayEquals(new byte[]{0x41, 0x41}, dbr.query("select $1::BYTEA as bytes", List.of("AA")).index(0)
-                .getBytes("bytes"));
+                                                     .getBytes("bytes"));
     }
 
     @Test
@@ -236,5 +234,4 @@ public class TypeConverterTest {
         PgRow row = (PgRow) dbr.query("select $1::UUID as uuid", singletonList(uuid)).index(0);
         assertEquals(uuid, row.get("uuid"));
     }
-
 }

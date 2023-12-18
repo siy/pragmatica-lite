@@ -32,8 +32,8 @@ import java.util.stream.IntStream;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for statements pipelining.
@@ -72,11 +72,11 @@ public class PipelineTest {
         Deque<Long> results = new LinkedBlockingDeque<>();
         long startWrite = currentTimeMillis();
         for (int i = 0; i < count; ++i) {
-            pool.completeQuery("select " + i + ", pg_sleep(" + sleep + ")")
-                    .thenAccept(r -> results.add(currentTimeMillis()))
-                    .exceptionally(th -> {
-                        throw new AssertionError("failed", th);
-                    });
+            pool.completeQuery(STR."select \{i}, pg_sleep(\{sleep})")
+                .thenAccept(_ -> results.add(currentTimeMillis()))
+                .exceptionally(th -> {
+                    throw new AssertionError("failed", th);
+                });
         }
         long writeTime = currentTimeMillis() - startWrite;
 
@@ -84,27 +84,31 @@ public class PipelineTest {
         SECONDS.sleep(2 + remoteWaitTimeSeconds);
         long readTime = results.getLast() - results.getFirst();
 
-        assertThat(results.size(), is(count));
-        assertThat(MILLISECONDS.toSeconds(writeTime), is(0L));
-        assertThat(MILLISECONDS.toSeconds(readTime + 999) >= remoteWaitTimeSeconds, is(true));
+        assertEquals(count, results.size());
+        assertEquals(0L, MILLISECONDS.toSeconds(writeTime));
+        assertTrue(MILLISECONDS.toSeconds(readTime + 999) >= remoteWaitTimeSeconds);
     }
 
     private Connection getConnection() throws InterruptedException {
-        SynchronousQueue<Connection> connQueue = new SynchronousQueue<>();
+        var connQueue = new SynchronousQueue<Connection>();
+
         pool.getConnection()
-                .thenAccept(connQueue::offer);
+            .thenAccept(connQueue::offer);
+
         return c = connQueue.take();
     }
 
     @Test(expected = SqlException.class)
     public void messageStreamEnsuresSequentialAccess() throws Exception {
-        Connection connection = getConnection();
+        var connection = getConnection();
+
         try {
-            CompletableFuture.allOf(IntStream.range(0, 10).mapToObj(i -> connection.completeQuery("select " + i + ", pg_sleep(" + 10 + ")")
-                            .exceptionally(th -> {
-                                throw new IllegalStateException(new SqlException(th));
-                            })
-                    ).toArray(size -> new CompletableFuture<?>[size])
+            CompletableFuture.allOf(IntStream.range(0, 10)
+                                             .mapToObj(i -> connection.completeQuery(STR."select \{i}, pg_sleep(10)")
+                                                                      .exceptionally(th -> {
+                                                                          throw new IllegalStateException(new SqlException(th.getMessage()));
+                                                                      }))
+                                             .toArray(size -> new CompletableFuture<?>[size])
             ).get();
         } catch (Exception ex) {
             DatabaseRule.ifCause(ex, sqlException -> {

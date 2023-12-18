@@ -21,11 +21,10 @@ import com.github.pgasync.net.SqlException;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Map;
 
 /**
@@ -147,33 +146,23 @@ public class PgRow implements Row {
     }
 
     @Override
-    public Time getTime(int index) {
+    public LocalTime getLocalTime(int index) {
         return dataConverter.toTime(columns[index].type(), data.getValue(index));
     }
 
     @Override
-    public Time getTime(String column) {
-        return getTime(getColumn(column).index());
+    public LocalTime getLocalTime(String column) {
+        return getLocalTime(getColumn(column).index());
     }
 
     @Override
-    public Date getDate(int index) {
+    public LocalDateTime getLocalDateTime(int index) {
         return dataConverter.toDate(columns[index].type(), data.getValue(index));
     }
 
     @Override
-    public Date getDate(String column) {
-        return getDate(getColumn(column).index());
-    }
-
-    @Override
-    public Timestamp getTimestamp(int index) {
-        return dataConverter.toTimestamp(columns[index].type(), data.getValue(index));
-    }
-
-    @Override
-    public Timestamp getTimestamp(String column) {
-        return getTimestamp(getColumn(column).index());
+    public LocalDateTime getLocalDateTime(String column) {
+        return getLocalDateTime(getColumn(column).index());
     }
 
     @Override

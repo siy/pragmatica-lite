@@ -21,9 +21,6 @@ import org.junit.Test;
 import org.junit.jupiter.api.Tag;
 
 import java.nio.charset.StandardCharsets;
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -104,53 +101,42 @@ public class ParametersBindingTest {
 
     @Test
     public void shouldBindClob() {
-        StringBuilder s = new StringBuilder();
-        for (int i = 0; i < 10000; i++) {
-            s.append(getClass());
-        }
-        String text = s.toString();
+        var text = getClass().toString().repeat(1000);
         dbr.query("INSERT INTO PS_TEST(CLOB) VALUES ($1)", List.of(text));
         assertEquals(text, dbr.query("SELECT CLOB FROM PS_TEST WHERE CLOB = $1", List.of(text)).index(0).getString(0));
     }
 
     @Test
     public void shouldBindTime() {
-        Time time = Time.valueOf(LocalTime.parse("16:47:59.897"));
+        var time = LocalTime.parse("16:47:59.897");
         dbr.query("INSERT INTO PS_TEST(TIME) VALUES ($1)", List.of(time));
-        assertEquals(time, dbr.query("SELECT TIME FROM PS_TEST WHERE TIME = $1", List.of(time)).index(0).getTime(0));
-    }
-
-    @Test
-    public void shouldBindTimestamp() {
-        Timestamp ts = Timestamp.valueOf(LocalDateTime.parse("2016-05-01T12:00:00"));
-        dbr.query("INSERT INTO PS_TEST(TS) VALUES ($1)", singletonList(ts));
-        assertEquals(ts, dbr.query("SELECT TS FROM PS_TEST WHERE TS = $1", List.of(ts)).index(0).getTimestamp(0));
+        assertEquals(time, dbr.query("SELECT TIME FROM PS_TEST WHERE TIME = $1", List.of(time)).index(0).getLocalTime(0));
     }
 
     @Test
     public void shouldBindInstant() {
-        Instant inst = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+        var inst = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         dbr.query("INSERT INTO PS_TEST(TSWTZ) VALUES ($1)", singletonList(inst));
         assertEquals(inst, dbr.query("SELECT TSWTZ FROM PS_TEST WHERE TSWTZ = $1", List.of(inst)).index(0).getInstant(0));
     }
 
     @Test
     public void shouldBindDate() {
-        Date date = new Date(System.currentTimeMillis());
+        var date = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS);
         dbr.query("INSERT INTO PS_TEST(TS) VALUES ($1)", List.of(date));
-        assertEquals(date, dbr.query("SELECT TS FROM PS_TEST WHERE TS = $1", List.of(date)).index(0).getDate(0));
+        assertEquals(date, dbr.query("SELECT TS FROM PS_TEST WHERE TS = $1", List.of(date)).index(0).getLocalDateTime(0));
     }
 
     @Test
     public void shouldBindLocalDate() {
-        LocalDate localDate = LocalDate.parse("2014-01-19");
+        var localDate = LocalDate.parse("2014-01-19");
         dbr.query("INSERT INTO PS_TEST(DATE) VALUES ($1)", List.of(localDate));
         assertEquals(localDate, dbr.query("SELECT DATE FROM PS_TEST WHERE DATE = $1", List.of(localDate)).index(0).getLocalDate(0));
     }
 
     @Test
     public void shouldBindBytes() {
-        byte[] b = "blob content".getBytes(StandardCharsets.UTF_8); // UTF-8 is hard coded here only because the ascii compatible data
+        var b = "blob content".getBytes(StandardCharsets.UTF_8); // UTF-8 is hard coded here only because the ascii compatible data
         dbr.query("INSERT INTO PS_TEST(BYTEA) VALUES ($1)", List.of(b));
         assertArrayEquals(b, dbr.query("SELECT BYTEA FROM PS_TEST WHERE BYTEA = $1", List.of(b)).index(0).getBytes(0));
     }
@@ -162,5 +148,4 @@ public class ParametersBindingTest {
                 List.of(true)).index(0)).get("boolean"));
 
     }
-
 }

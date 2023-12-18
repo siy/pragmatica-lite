@@ -1,7 +1,8 @@
 package com.github.pgasync.conversion;
 
 import com.github.pgasync.Oid;
-import com.github.pgasync.net.SqlException;
+
+import static com.github.pgasync.conversion.Common.returnError;
 
 /**
  * @author Antti Laisi
@@ -12,14 +13,14 @@ final class StringConversions {
     static String toString(Oid oid, String value) {
         return switch (oid) {
             case UNSPECIFIED, TEXT, CHAR, BPCHAR, UUID, VARCHAR -> value;
-            default -> throw new SqlException(STR."Unsupported conversion \{oid.name()} -> String");
+            default -> returnError(oid, "String");
         };
     }
 
     static Character toChar(Oid oid, String value) {
         return switch (oid) {
             case UNSPECIFIED, CHAR, BPCHAR -> value.charAt(0);
-            default -> throw new SqlException(STR."Unsupported conversion \{oid.name()} -> Char");
+            default -> returnError(oid, "Character");
         };
     }
 }

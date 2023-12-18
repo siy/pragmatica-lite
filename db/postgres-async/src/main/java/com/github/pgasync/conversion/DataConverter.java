@@ -6,9 +6,6 @@ import com.github.pgasync.net.Converter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.time.*;
 import java.util.List;
 import java.util.Map;
@@ -74,16 +71,12 @@ public class DataConverter {
     }
 
     //TODO: get rid of it
-    public Date toDate(Oid oid, byte[] value) {
+    public LocalDateTime toDate(Oid oid, byte[] value) {
         return value == null ? null : TemporalConversions.toDate(oid, new String(value, encoding));
     }
 
-    public Time toTime(Oid oid, byte[] value) {
+    public LocalTime toTime(Oid oid, byte[] value) {
         return value == null ? null : TemporalConversions.toTime(oid, new String(value, encoding));
-    }
-
-    public Timestamp toTimestamp(Oid oid, byte[] value) {
-        return value == null ? null : TemporalConversions.toTimestamp(oid, new String(value, encoding));
     }
 
     public Instant toInstant(Oid oid, byte[] value) {
@@ -113,7 +106,7 @@ public class DataConverter {
             case INT8_ARRAY -> NumericConversions::toLong;
             case TEXT_ARRAY, CHAR_ARRAY, BPCHAR_ARRAY, VARCHAR_ARRAY -> StringConversions::toString;
             case NUMERIC_ARRAY, FLOAT4_ARRAY, FLOAT8_ARRAY -> NumericConversions::toBigDecimal;
-            case TIMESTAMP_ARRAY, TIMESTAMPTZ_ARRAY -> TemporalConversions::toTimestamp;
+            case TIMESTAMP_ARRAY, TIMESTAMPTZ_ARRAY -> TemporalConversions::toInstant;
             case TIMETZ_ARRAY, TIME_ARRAY -> TemporalConversions::toTime;
             case DATE_ARRAY -> TemporalConversions::toLocalDate;
             case BOOL_ARRAY -> BooleanConversions::toBoolean;
@@ -146,10 +139,10 @@ public class DataConverter {
     private String fromObject(Object o) {
         return switch (o) {
             case null -> null;
-            case Time time -> fromTime(time);
-            case Timestamp timestamp -> fromTimestamp(timestamp);
             case LocalDate localDate -> fromLocalDate(localDate);
-            case Date date -> fromDate(date);
+            case LocalTime localTime -> fromLocalTime(localTime);
+            case LocalDateTime localDateTime -> fromLocalDateTime(localDateTime);
+            case ZonedDateTime zonedDateTime -> fromZoneDateTime(zonedDateTime);
             case Instant instant -> fromInstant(instant);
             case byte[] bytes -> BlobConversions.fromBytes(bytes);
             case Boolean bool -> BooleanConversions.fromBoolean(bool);
@@ -196,7 +189,7 @@ public class DataConverter {
             case BYTEA -> toBytes(oid, value);
             case DATE -> toLocalDate(oid, value);
             case TIMETZ, TIME -> toTime(oid, value);
-            case TIMESTAMP, TIMESTAMPTZ -> toTimestamp(oid, value);
+            case TIMESTAMP, TIMESTAMPTZ -> toInstant(oid, value);
             case UUID -> UUID.fromString(toString(oid, value));
             case BOOL -> toBoolean(oid, value);
             case INT2_ARRAY, INT4_ARRAY, INT8_ARRAY, NUMERIC_ARRAY, FLOAT4_ARRAY, FLOAT8_ARRAY,
@@ -215,31 +208,27 @@ public class DataConverter {
 
         for (int i = 0; i < params.length; i++) {
             switch (params[i]) {
+                case byte[] _ -> types[i] = Oid.BYTEA;
+                case Short _, Byte _ -> types[i] = Oid.INT2;
+                case Integer _ -> types[i] = Oid.INT4;
+                case Long _ -> types[i] = Oid.INT8;
+                case Float _ -> types[i] = Oid.FLOAT4;
                 case Double _ -> types[i] = Oid.FLOAT8;
                 case double[] _ -> types[i] = Oid.FLOAT8_ARRAY;
-                case Float _ -> types[i] = Oid.FLOAT4;
                 case float[] _ -> types[i] = Oid.FLOAT4_ARRAY;
-                case Long _ -> types[i] = Oid.INT8;
                 case long[] _ -> types[i] = Oid.INT8_ARRAY;
-                case Integer _ -> types[i] = Oid.INT4;
                 case int[] _ -> types[i] = Oid.INT4_ARRAY;
-                case Short _ -> types[i] = Oid.INT2;
                 case short[] _ -> types[i] = Oid.INT2_ARRAY;
-                case Byte _ -> types[i] = Oid.INT2;
-                case byte[] _ -> types[i] = Oid.BYTEA;
                 case byte[][] _ -> types[i] = Oid.BYTEA_ARRAY;
-                case BigInteger _ -> types[i] = Oid.NUMERIC;
-                case BigInteger[] _ -> types[i] = Oid.NUMERIC_ARRAY;
-                case BigDecimal _ -> types[i] = Oid.NUMERIC;
-                case BigDecimal[] _ -> types[i] = Oid.NUMERIC_ARRAY;
+                case BigInteger _, BigDecimal _ -> types[i] = Oid.NUMERIC;
+                case BigInteger[] _, BigDecimal[] _ -> types[i] = Oid.NUMERIC_ARRAY;
                 case Boolean _ -> types[i] = Oid.BOOL;
                 case Boolean[] _ -> types[i] = Oid.BOOL_ARRAY;
                 case CharSequence _, Character _ -> types[i] = Oid.VARCHAR;
-                case Date _, Timestamp _, Instant _ -> types[i] = Oid.TIMESTAMP;
-                case OffsetDateTime _ -> types[i] = Oid.TIMESTAMPTZ;
-                case LocalDateTime _ -> types[i] = Oid.TIMESTAMP;
+                case LocalDateTime _, Instant _ -> types[i] = Oid.TIMESTAMP;
+                case ZonedDateTime _, OffsetDateTime _ -> types[i] = Oid.TIMESTAMPTZ;
                 case LocalDate _ -> types[i] = Oid.DATE;
-                case Time _, OffsetTime _ -> types[i] = Oid.TIME;
+                case OffsetTime _ -> types[i] = Oid.TIME;
                 case LocalTime _ -> types[i] = Oid.TIMETZ;
                 case UUID _ -> types[i] = Oid.UUID;
                 case null, default -> types[i] = Oid.UNSPECIFIED;
