@@ -334,6 +334,19 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
      * returns this to caller, depending on mode.
      */
     final CompletableFuture<T> postFire(CompletableFuture<?> a, int mode) {
+        preparePostFire(a, mode);
+
+        if (result != null && stack != null) {
+            if (mode < 0) {
+                return this;
+            } else {
+                postComplete();
+            }
+        }
+        return null;
+    }
+
+    private static void preparePostFire(CompletableFuture<?> a, int mode) {
         if (a != null && a.stack != null) {
             Object r;
             if ((r = a.result) == null) {
@@ -343,14 +356,6 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
                 a.postComplete();
             }
         }
-        if (result != null && stack != null) {
-            if (mode < 0) {
-                return this;
-            } else {
-                postComplete();
-            }
-        }
-        return null;
     }
 
     static final class UniApply<T, V> extends UniCompletion<T, V> {
@@ -728,8 +733,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
     static final class UniCompose<T, V> extends UniCompletion<T, V> {
         Function<? super T, ? extends CompletableFuture<V>> fn;
 
-        UniCompose(Executor executor, CompletableFuture<V> dep,
-                   CompletableFuture<T> src,
+        UniCompose(CompletableFuture<V> dep, CompletableFuture<T> src,
                    Function<? super T, ? extends CompletableFuture<V>> fn) {
             super(dep, src);
             this.fn = fn;
@@ -779,15 +783,12 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         }
     }
 
-    private <V> CompletableFuture<V> uniComposeStage(Executor e, Function<? super T, ? extends CompletableFuture<V>> f) {
-        if (f == null) {
-            throw new NullPointerException();
-        }
+    private <V> CompletableFuture<V> uniComposeStage(Function<? super T, ? extends CompletableFuture<V>> f) {
         CompletableFuture<V> d = newIncompleteFuture();
         Object r, s;
         Throwable x;
         if ((r = result) == null) {
-            unipush(new UniCompose<>(e, d, this, f));
+            unipush(new UniCompose<>(d, this, f));
         } else {
             if (r instanceof AltResult) {
                 if ((x = ((AltResult) r).ex) != null) {
@@ -797,16 +798,12 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
                 r = null;
             }
             try {
-                if (e != null) {
-                    e.execute(new UniCompose<>(null, d, this, f));
+                @SuppressWarnings("unchecked") T t = (T) r;
+                CompletableFuture<V> g = f.apply(t).toCompletableFuture();
+                if ((s = g.result) != null) {
+                    d.result = encodeRelay(s);
                 } else {
-                    @SuppressWarnings("unchecked") T t = (T) r;
-                    CompletableFuture<V> g = f.apply(t).toCompletableFuture();
-                    if ((s = g.result) != null) {
-                        d.result = encodeRelay(s);
-                    } else {
-                        g.unipush(new UniRelay<>(d, g));
-                    }
+                    g.unipush(new UniRelay<>(d, g));
                 }
             } catch (Throwable ex) {
                 d.result = encodeThrowable(ex);
@@ -881,15 +878,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
      */
     final CompletableFuture<T> postFire(CompletableFuture<?> a,
                                         CompletableFuture<?> b, int mode) {
-        if (b != null && b.stack != null) { // clean second source
-            Object r;
-            if ((r = b.result) == null) {
-                b.cleanStack();
-            }
-            if (mode >= 0 && (r != null || b.result != null)) {
-                b.postComplete();
-            }
-        }
+        preparePostFire(b, mode);
         return postFire(a, mode);
     }
 
@@ -1097,7 +1086,11 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
     @SuppressWarnings("unchecked")
     @Override
     public <U> CompletableFuture<U> thenCompose(Function<? super T, ? extends IntermediateFuture<U>> fn) {
-        return uniComposeStage(null, (Function<? super T, ? extends CompletableFuture<U>>) fn);
+        if (fn == null) {
+            throw new NullPointerException();
+        }
+
+        return uniComposeStage((Function<? super T, ? extends CompletableFuture<U>>) fn);
     }
 
     @Override
@@ -1105,6 +1098,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         if (action == null) {
             throw new NullPointerException();
         }
+
         return uniWhenCompleteStage(action);
     }
 
