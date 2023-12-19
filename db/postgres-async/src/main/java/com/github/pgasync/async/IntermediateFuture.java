@@ -34,11 +34,11 @@ public interface IntermediateFuture<T> {
 
     IntermediateFuture<Void> thenAccept(Consumer<? super T> action);
 
-    boolean completeExceptionally(Throwable ex);
+    void completeExceptionally(Throwable ex);
 
-    default IntermediateFuture<T> completeAsync(Supplier<? extends T> supplier) {
-        ((CompletableFuture<T>) this).defaultExecutor().execute(() -> this.complete(supplier.get()));
-        return this;
+    default void completeAsync(Supplier<? extends T> supplier) {
+        ((CompletableFuture<T>) this).defaultExecutor()
+                                     .execute(() -> this.complete(supplier.get()));
     }
 
     //recover and replace exception with new completion stage

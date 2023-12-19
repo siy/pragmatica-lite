@@ -13,14 +13,13 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class CompletableFuture<T> implements IntermediateFuture<T> {
     volatile Object result;       // Either the result or boxed AltResult
     volatile Completion stack;    // Top of Treiber stack of dependent actions
 
-    final boolean internalComplete(Object r) { // CAS from null to r
-        return RESULT.compareAndSet(this, null, r);
+    final void internalComplete(Object r) { // CAS from null to r
+        RESULT.compareAndSet(this, null, r);
     }
 
     /**
@@ -129,8 +128,8 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
     /**
      * Completes with r or a copy of r, unless already completed. If exceptional, r is first coerced to a CompletionException.
      */
-    final boolean completeRelay(Object r) {
-        return RESULT.compareAndSet(this, null, encodeRelay(r));
+    final void completeRelay(Object r) {
+        RESULT.compareAndSet(this, null, encodeRelay(r));
     }
 
     /**
@@ -182,18 +181,6 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         }
     }
 
-    /**
-     * Null-checks user executor argument, and translates uses of commonPool to ASYNC_POOL in case parallelism disabled.
-     */
-    static Executor screenExecutor(Executor e) {
-        if (!USE_COMMON_POOL && e == ForkJoinPool.commonPool()) {
-            return ASYNC_POOL;
-        }
-        if (e == null) {
-            throw new NullPointerException();
-        }
-        return e;
-    }
 
     // Modes for Completion.tryFire. Signedness matters.
     static final int SYNC = 0;
@@ -424,8 +411,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         }
     }
 
-    private <V> CompletableFuture<V> uniApplyStage(
-        Executor e, Function<? super T, ? extends V> f) {
+    private <V> CompletableFuture<V> uniApplyStage(Executor e, Function<? super T, ? extends V> f) {
         if (f == null) {
             throw new NullPointerException();
         }
@@ -434,7 +420,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
             return uniApplyNow(r, e, f);
         }
         CompletableFuture<V> d = newIncompleteFuture();
-        unipush(new UniApply<T, V>(e, d, this, f));
+        unipush(new UniApply<>(e, d, this, f));
         return d;
     }
 
@@ -451,7 +437,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         }
         try {
             if (e != null) {
-                e.execute(new UniApply<T, V>(null, d, this, f));
+                e.execute(new UniApply<>(null, d, this, f));
             } else {
                 @SuppressWarnings("unchecked") T t = (T) r;
                 d.result = d.encodeValue(f.apply(t));
@@ -462,7 +448,6 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         return d;
     }
 
-    @SuppressWarnings("serial")
     static final class UniAccept<T> extends UniCompletion<T, Void> {
         Consumer<? super T> fn;
 
@@ -510,8 +495,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         }
     }
 
-    private CompletableFuture<Void> uniAcceptStage(Executor e,
-                                                   Consumer<? super T> f) {
+    private CompletableFuture<Void> uniAcceptStage(Executor e, Consumer<? super T> f) {
         if (f == null) {
             throw new NullPointerException();
         }
@@ -520,7 +504,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
             return uniAcceptNow(r, e, f);
         }
         CompletableFuture<Void> d = newIncompleteFuture();
-        unipush(new UniAccept<T>(e, d, this, f));
+        unipush(new UniAccept<>(e, d, this, f));
         return d;
     }
 
@@ -537,7 +521,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         }
         try {
             if (e != null) {
-                e.execute(new UniAccept<T>(null, d, this, f));
+                e.execute(new UniAccept<>(null, d, this, f));
             } else {
                 @SuppressWarnings("unchecked") T t = (T) r;
                 f.accept(t);
@@ -547,48 +531,6 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
             d.result = encodeThrowable(ex);
         }
         return d;
-    }
-
-    static final class UniRun<T> extends UniCompletion<T, Void> {
-        Runnable fn;
-
-        UniRun(Executor executor, CompletableFuture<Void> dep,
-               CompletableFuture<T> src, Runnable fn) {
-            super(executor, dep, src);
-            this.fn = fn;
-        }
-
-        final CompletableFuture<Void> tryFire(int mode) {
-            CompletableFuture<Void> d;
-            CompletableFuture<T> a;
-            Object r;
-            Throwable x;
-            Runnable f;
-            if ((a = src) == null || (r = a.result) == null
-                || (d = dep) == null || (f = fn) == null) {
-                return null;
-            }
-            if (d.result == null) {
-                if (r instanceof AltResult && (x = ((AltResult) r).ex) != null) {
-                    d.completeThrowable(x, r);
-                } else {
-                    try {
-                        if (mode <= 0 && !claim()) {
-                            return null;
-                        } else {
-                            f.run();
-                            d.completeNull();
-                        }
-                    } catch (Throwable ex) {
-                        d.completeThrowable(ex);
-                    }
-                }
-            }
-            src = null;
-            dep = null;
-            fn = null;
-            return d.postFire(a, mode);
-        }
     }
 
     static final class UniWhenComplete<T> extends UniCompletion<T, T> {
@@ -652,20 +594,19 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         return true;
     }
 
-    private CompletableFuture<T> uniWhenCompleteStage(
-        Executor e, BiConsumer<? super T, ? super Throwable> f) {
+    private CompletableFuture<T> uniWhenCompleteStage(Executor e, BiConsumer<? super T, ? super Throwable> f) {
         if (f == null) {
             throw new NullPointerException();
         }
         CompletableFuture<T> d = newIncompleteFuture();
         Object r;
         if ((r = result) == null) {
-            unipush(new UniWhenComplete<T>(e, d, this, f));
+            unipush(new UniWhenComplete<>(e, d, this, f));
         } else if (e == null) {
             d.uniWhenComplete(r, f, null);
         } else {
             try {
-                e.execute(new UniWhenComplete<T>(null, d, this, f));
+                e.execute(new UniWhenComplete<>(null, d, this, f));
             } catch (Throwable ex) {
                 d.result = encodeThrowable(ex);
             }
@@ -726,20 +667,19 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         return true;
     }
 
-    private <V> CompletableFuture<V> uniHandleStage(
-        Executor e, BiFunction<? super T, Throwable, ? extends V> f) {
+    private <V> CompletableFuture<V> uniHandleStage(Executor e, BiFunction<? super T, Throwable, ? extends V> f) {
         if (f == null) {
             throw new NullPointerException();
         }
         CompletableFuture<V> d = newIncompleteFuture();
         Object r;
         if ((r = result) == null) {
-            unipush(new UniHandle<T, V>(e, d, this, f));
+            unipush(new UniHandle<>(e, d, this, f));
         } else if (e == null) {
             d.uniHandle(r, f, null);
         } else {
             try {
-                e.execute(new UniHandle<T, V>(null, d, this, f));
+                e.execute(new UniHandle<>(null, d, this, f));
             } catch (Throwable ex) {
                 d.result = encodeThrowable(ex);
             }
@@ -803,12 +743,12 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         CompletableFuture<T> d = newIncompleteFuture();
         Object r;
         if ((r = result) == null) {
-            unipush(new UniExceptionally<T>(e, d, this, f));
+            unipush(new UniExceptionally<>(e, d, this, f));
         } else if (e == null) {
             d.uniExceptionally(r, f, null);
         } else {
             try {
-                e.execute(new UniExceptionally<T>(null, d, this, f));
+                e.execute(new UniExceptionally<>(null, d, this, f));
             } catch (Throwable ex) {
                 d.result = encodeThrowable(ex);
             }
@@ -821,7 +761,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
             super(null, dep, src);
         }
 
-        final CompletableFuture<U> tryFire(int mode) {
+        CompletableFuture<U> tryFire(int mode) {
             CompletableFuture<U> d;
             CompletableFuture<T> a;
             Object r;
@@ -876,7 +816,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
                     if ((r = g.result) != null) {
                         d.completeRelay(r);
                     } else {
-                        g.unipush(new UniRelay<V, V>(d, g));
+                        g.unipush(new UniRelay<>(d, g));
                         if (d.result == null) {
                             return null;
                         }
@@ -892,8 +832,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         }
     }
 
-    private <V> CompletableFuture<V> uniComposeStage(
-        Executor e, Function<? super T, ? extends CompletableFuture<V>> f) {
+    private <V> CompletableFuture<V> uniComposeStage(Executor e, Function<? super T, ? extends CompletableFuture<V>> f) {
         if (f == null) {
             throw new NullPointerException();
         }
@@ -901,7 +840,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         Object r, s;
         Throwable x;
         if ((r = result) == null) {
-            unipush(new UniCompose<T, V>(e, d, this, f));
+            unipush(new UniCompose<>(e, d, this, f));
         } else {
             if (r instanceof AltResult) {
                 if ((x = ((AltResult) r).ex) != null) {
@@ -912,14 +851,14 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
             }
             try {
                 if (e != null) {
-                    e.execute(new UniCompose<T, V>(null, d, this, f));
+                    e.execute(new UniCompose<>(null, d, this, f));
                 } else {
                     @SuppressWarnings("unchecked") T t = (T) r;
                     CompletableFuture<V> g = f.apply(t).toCompletableFuture();
                     if ((s = g.result) != null) {
                         d.result = encodeRelay(s);
                     } else {
-                        g.unipush(new UniRelay<V, V>(d, g));
+                        g.unipush(new UniRelay<>(d, g));
                     }
                 }
             } catch (Throwable ex) {
@@ -954,7 +893,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
             this.base = base;
         }
 
-        final CompletableFuture<?> tryFire(int mode) {
+        CompletableFuture<?> tryFire(int mode) {
             BiCompletion<?, ?, ?> c;
             CompletableFuture<?> d;
             if ((c = base) == null || (d = c.tryFire(mode)) == null) {
@@ -964,7 +903,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
             return d;
         }
 
-        final boolean isLive() {
+        boolean isLive() {
             BiCompletion<?, ?, ?> c;
             return (c = base) != null
                    // && c.isLive()
@@ -1230,9 +1169,8 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
      */
     static CompletableFuture<Void> andTree(CompletableFuture<?>[] cfs,
                                            int lo, int hi) {
-        CompletableFuture<Void> d = new CompletableFuture<Void>();
-        if (lo > hi) // empty
-        {
+        var d = new CompletableFuture<Void>();
+        if (lo > hi) {  // empty
             d.result = NIL;
         } else {
             CompletableFuture<?> a, b;
@@ -1261,252 +1199,6 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         return d;
     }
 
-    /* ------------- Projected (Ored) BiCompletions -------------- */
-
-    /**
-     * Pushes completion to this and b unless either done. Caller should first check that result and b.result are both null.
-     */
-    final void orpush(CompletableFuture<?> b, BiCompletion<?, ?, ?> c) {
-        if (c != null) {
-            while (!tryPushStack(c)) {
-                if (result != null) {
-                    NEXT.set(c, null);
-                    break;
-                }
-            }
-            if (result != null) {
-                c.tryFire(SYNC);
-            } else {
-                b.unipush(new CoCompletion(c));
-            }
-        }
-    }
-
-    static final class OrApply<T, U extends T, V> extends BiCompletion<T, U, V> {
-        Function<? super T, ? extends V> fn;
-
-        OrApply(Executor executor, CompletableFuture<V> dep,
-                CompletableFuture<T> src, CompletableFuture<U> snd,
-                Function<? super T, ? extends V> fn) {
-            super(executor, dep, src, snd);
-            this.fn = fn;
-        }
-
-        CompletableFuture<V> tryFire(int mode) {
-            CompletableFuture<V> d;
-            CompletableFuture<? extends T> a, b;
-            Object r;
-            Throwable x;
-            Function<? super T, ? extends V> f;
-            if ((a = src) == null || (b = snd) == null
-                || ((r = a.result) == null && (r = b.result) == null)
-                || (d = dep) == null || (f = fn) == null) {
-                return null;
-            }
-            tryComplete:
-            if (d.result == null) {
-                try {
-                    if (mode <= 0 && !claim()) {
-                        return null;
-                    }
-                    if (r instanceof AltResult) {
-                        if ((x = ((AltResult) r).ex) != null) {
-                            d.completeThrowable(x, r);
-                            break tryComplete;
-                        }
-                        r = null;
-                    }
-                    @SuppressWarnings("unchecked") T t = (T) r;
-                    d.completeValue(f.apply(t));
-                } catch (Throwable ex) {
-                    d.completeThrowable(ex);
-                }
-            }
-            src = null;
-            snd = null;
-            dep = null;
-            fn = null;
-            return d.postFire(a, b, mode);
-        }
-    }
-
-    static final class OrAccept<T, U extends T> extends BiCompletion<T, U, Void> {
-        Consumer<? super T> fn;
-
-        OrAccept(Executor executor, CompletableFuture<Void> dep,
-                 CompletableFuture<T> src, CompletableFuture<U> snd,
-                 Consumer<? super T> fn) {
-            super(executor, dep, src, snd);
-            this.fn = fn;
-        }
-
-        CompletableFuture<Void> tryFire(int mode) {
-            CompletableFuture<Void> d;
-            CompletableFuture<? extends T> a, b;
-            Object r;
-            Throwable x;
-            Consumer<? super T> f;
-            if ((a = src) == null || (b = snd) == null
-                || ((r = a.result) == null && (r = b.result) == null)
-                || (d = dep) == null || (f = fn) == null) {
-                return null;
-            }
-            tryComplete:
-            if (d.result == null) {
-                try {
-                    if (mode <= 0 && !claim()) {
-                        return null;
-                    }
-                    if (r instanceof AltResult) {
-                        if ((x = ((AltResult) r).ex) != null) {
-                            d.completeThrowable(x, r);
-                            break tryComplete;
-                        }
-                        r = null;
-                    }
-                    @SuppressWarnings("unchecked") T t = (T) r;
-                    f.accept(t);
-                    d.completeNull();
-                } catch (Throwable ex) {
-                    d.completeThrowable(ex);
-                }
-            }
-            src = null;
-            snd = null;
-            dep = null;
-            fn = null;
-            return d.postFire(a, b, mode);
-        }
-    }
-
-    static final class OrRun<T, U> extends BiCompletion<T, U, Void> {
-        Runnable fn;
-
-        OrRun(Executor executor, CompletableFuture<Void> dep,
-              CompletableFuture<T> src, CompletableFuture<U> snd,
-              Runnable fn) {
-            super(executor, dep, src, snd);
-            this.fn = fn;
-        }
-
-        CompletableFuture<Void> tryFire(int mode) {
-            CompletableFuture<Void> d;
-            CompletableFuture<?> a, b;
-            Object r;
-            Throwable x;
-            Runnable f;
-            if ((a = src) == null || (b = snd) == null
-                || ((r = a.result) == null && (r = b.result) == null)
-                || (d = dep) == null || (f = fn) == null) {
-                return null;
-            }
-            if (d.result == null) {
-                try {
-                    if (mode <= 0 && !claim()) {
-                        return null;
-                    } else if (r instanceof AltResult
-                               && (x = ((AltResult) r).ex) != null) {
-                        d.completeThrowable(x, r);
-                    } else {
-                        f.run();
-                        d.completeNull();
-                    }
-                } catch (Throwable ex) {
-                    d.completeThrowable(ex);
-                }
-            }
-            src = null;
-            snd = null;
-            dep = null;
-            fn = null;
-            return d.postFire(a, b, mode);
-        }
-    }
-
-    /* ------------- Zero-input Async forms -------------- */
-
-    static final class AsyncSupply<T> extends ForkJoinTask<Void>
-        implements Runnable, AsynchronousCompletionTask {
-        CompletableFuture<T> dep;
-        Supplier<? extends T> fn;
-
-        AsyncSupply(CompletableFuture<T> dep, Supplier<? extends T> fn) {
-            this.dep = dep;
-            this.fn = fn;
-        }
-
-        public Void getRawResult() {
-            return null;
-        }
-
-        public void setRawResult(Void v) {
-        }
-
-        public boolean exec() {
-            run();
-            return false;
-        }
-
-        public void run() {
-            CompletableFuture<T> d;
-            Supplier<? extends T> f;
-            if ((d = dep) != null && (f = fn) != null) {
-                dep = null;
-                fn = null;
-                if (d.result == null) {
-                    try {
-                        d.completeValue(f.get());
-                    } catch (Throwable ex) {
-                        d.completeThrowable(ex);
-                    }
-                }
-                d.postComplete();
-            }
-        }
-    }
-
-    static final class AsyncRun extends ForkJoinTask<Void>
-        implements Runnable, AsynchronousCompletionTask {
-        CompletableFuture<Void> dep;
-        Runnable fn;
-
-        AsyncRun(CompletableFuture<Void> dep, Runnable fn) {
-            this.dep = dep;
-            this.fn = fn;
-        }
-
-        public final Void getRawResult() {
-            return null;
-        }
-
-        public final void setRawResult(Void v) {
-        }
-
-        public final boolean exec() {
-            run();
-            return false;
-        }
-
-        public void run() {
-            CompletableFuture<Void> d;
-            Runnable f;
-            if ((d = dep) != null && (f = fn) != null) {
-                dep = null;
-                fn = null;
-                if (d.result == null) {
-                    try {
-                        f.run();
-                        d.completeNull();
-                    } catch (Throwable ex) {
-                        d.completeThrowable(ex);
-                    }
-                }
-                d.postComplete();
-            }
-        }
-    }
-
-
     /* ------------- Signallers -------------- */
 
     /**
@@ -1521,14 +1213,13 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         boolean interrupted;
         volatile Thread thread;
 
-        Signaller(boolean interruptible, long nanos, long deadline) {
+        Signaller(long nanos, long deadline) {
             this.thread = Thread.currentThread();
-//            this.interruptible = interruptible;
             this.nanos = nanos;
             this.deadline = deadline;
         }
 
-        final CompletableFuture<?> tryFire(int ignore) {
+        CompletableFuture<?> tryFire(int ignore) {
             Thread w; // no need to atomically claim
             if ((w = thread) != null) {
                 thread = null;
@@ -1541,11 +1232,8 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
             if (Thread.interrupted()) {
                 interrupted = true;
             }
-            return (//(interrupted && interruptible) ||
-                (deadline != 0L &&
-                 (nanos <= 0L ||
-                  (nanos = deadline - System.nanoTime()) <= 0L)) ||
-                thread == null);
+            return ((deadline != 0L
+                     && (nanos <= 0L || (nanos = deadline - System.nanoTime()) <= 0L)) || thread == null);
         }
 
         public boolean block() {
@@ -1559,30 +1247,20 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
             return true;
         }
 
-        final boolean isLive() {
+        boolean isLive() {
             return thread != null;
         }
     }
 
-    /**
-     * Returns raw result after waiting, or null if interruptible and interrupted.
-     */
-    private Object waitingGet(boolean interruptible) {
-//        if (interruptible && Thread.interrupted()) {
-//            return null;
-//        }
+    private Object waitingGet() {
         Signaller q = null;
         boolean queued = false;
         Object r;
         while ((r = result) == null) {
             if (q == null) {
-                q = new Signaller(interruptible, 0L, 0L);
+                q = new Signaller(0L, 0L);
             } else if (!queued) {
                 queued = tryPushStack(q);
-//            } else if (interruptible && q.interrupted) {
-//                q.thread = null;
-//                cleanStack();
-//                return null;
             } else {
                 try {
                     ForkJoinPool.managedBlock(q);
@@ -1614,7 +1292,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
     public T join() {
         Object r;
         if ((r = result) == null) {
-            r = waitingGet(false);
+            r = waitingGet();
         }
         return (T) reportJoin(r);
     }
@@ -1626,21 +1304,14 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         return this;
     }
 
-    /**
-     * If not already completed, causes invocations of {@link #get()} and related methods to throw the given exception.
-     *
-     * @param ex the exception
-     *
-     * @return {@code true} if this invocation caused this CompletableFuture to transition to a completed state, else {@code false}
-     */
     @Override
-    public boolean completeExceptionally(Throwable ex) {
+    public void completeExceptionally(Throwable ex) {
         if (ex == null) {
             throw new NullPointerException();
         }
-        boolean triggered = internalComplete(new AltResult(ex));
+
+        internalComplete(new AltResult(ex));
         postComplete();
-        return triggered;
     }
 
     @Override
@@ -1654,6 +1325,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         return uniAcceptStage(null, action);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <U> CompletableFuture<U> thenCompose(Function<? super T, ? extends IntermediateFuture<U>> fn) {
         return uniComposeStage(null, (Function<? super T, ? extends CompletableFuture<U>>) fn);
@@ -1712,7 +1384,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
      * @since 9
      */
     public <U> CompletableFuture<U> newIncompleteFuture() {
-        return new CompletableFuture<U>();
+        return new CompletableFuture<>();
     }
 
     /**
@@ -1743,6 +1415,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
 
         // Reduce the risk of rare disastrous classloading in first call to
         // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773
+        @SuppressWarnings("unused")
         Class<?> ensureLoaded = LockSupport.class;
     }
 }

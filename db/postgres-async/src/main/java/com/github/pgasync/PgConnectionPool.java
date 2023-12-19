@@ -24,8 +24,6 @@ import com.github.pgasync.net.Row;
 import com.github.pgasync.net.SqlException;
 import com.github.pgasync.net.Transaction;
 import org.pragmatica.lang.Promise;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -46,8 +44,6 @@ import java.util.stream.Stream;
  * @author Antti Laisi
  */
 public class PgConnectionPool extends PgConnectible {
-    private static final Logger log = LoggerFactory.getLogger(PgConnectionPool.class);
-
     private class PooledPgConnection implements Connection {
         private class PooledPgTransaction implements Transaction {
 
@@ -228,7 +224,6 @@ public class PgConnectionPool extends PgConnectible {
                             log.warn(DUPLICATED_PREPARED_STATEMENT_DETECTED, already.sql);
                             return evicted.delegate.close()
                                                    .thenCompose(_ -> already.delegate.close());
-//                                                   .thenCompose(Function.identity());
                         } else {
                             return evicted.delegate.close();
                         }
@@ -371,10 +366,11 @@ public class PgConnectionPool extends PgConnectible {
         var tuple = locked(() -> {
             if (closing == null) {
                 closing = IntermediateFuture.create()
-                                            .thenCompose(_ -> locked(() ->
-                                                                         IntermediateFuture.allOf(connections.stream()
-                                                                                                             .map(PooledPgConnection::shutdown))
-                                            ));
+                                            .thenCompose(_ ->
+                                                             locked(() ->
+                                                                        IntermediateFuture.allOf(connections.stream()
+                                                                                                            .map(PooledPgConnection::shutdown))
+                                                             ));
                 return new CloseTuple(closing, checkClosed());
             } else {
                 return new CloseTuple(IntermediateFuture.failedFuture(new IllegalStateException("PG pool is already shutting down")), NO_OP);
@@ -385,8 +381,7 @@ public class PgConnectionPool extends PgConnectible {
         return tuple.closing;
     }
 
-    private static final Runnable NO_OP = () -> {
-    };
+    private static final Runnable NO_OP = () -> {};
 
     private Runnable checkClosed() {
         if (closing != null && size <= connections.size()) {
