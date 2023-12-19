@@ -36,7 +36,10 @@ public interface IntermediateFuture<T> {
 
     boolean completeExceptionally(Throwable ex);
 
-    IntermediateFuture<T> completeAsync(Supplier<? extends T> supplier);
+    default IntermediateFuture<T> completeAsync(Supplier<? extends T> supplier) {
+        ((CompletableFuture<T>) this).defaultExecutor().execute(() -> this.complete(supplier.get()));
+        return this;
+    }
 
     //recover and replace exception with new completion stage
     IntermediateFuture<T> exceptionally(Function<Throwable, ? extends T> fn);

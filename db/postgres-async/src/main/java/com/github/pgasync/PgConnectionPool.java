@@ -14,22 +14,31 @@
 
 package com.github.pgasync;
 
-import com.github.pgasync.net.*;
+import com.github.pgasync.async.IntermediateFuture;
+import com.github.pgasync.net.ConnectibleBuilder;
+import com.github.pgasync.net.Connection;
+import com.github.pgasync.net.Listening;
+import com.github.pgasync.net.PreparedStatement;
+import com.github.pgasync.net.ResultSet;
+import com.github.pgasync.net.Row;
+import com.github.pgasync.net.SqlException;
+import com.github.pgasync.net.Transaction;
 import org.pragmatica.lang.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-
-import com.github.pgasync.async.IntermediateFuture;
-
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Resource pool for backend connections.
@@ -173,18 +182,17 @@ public class PgConnectionPool extends PgConnectible {
                                                  Object... params) {
             return prepareStatement(sql, dataConverter.assumeTypes(params))
                 .thenCompose(stmt ->
-                                    stmt.fetch(onColumns, onRow, params)
-                                        .handle((affected, th) ->
-                                                       stmt.close()
-                                                           .thenApply(_ -> {
-                                                               if (th == null) {
-                                                                   return affected;
-                                                               } else {
-                                                                   throw new RuntimeException(th);
-                                                               }
-                                                           })
-                                        ).thenCompose(Function.identity()));
-//                ).thenCompose(Function.identity());
+                                 stmt.fetch(onColumns, onRow, params)
+                                     .handle((affected, th) ->
+                                                 stmt.close()
+                                                     .thenApply(_ -> {
+                                                         if (th == null) {
+                                                             return affected;
+                                                         } else {
+                                                             throw new RuntimeException(th);
+                                                         }
+                                                     })
+                                     ).thenCompose(Function.identity()));
         }
 
         @Override
@@ -337,12 +345,13 @@ public class PgConnectionPool extends PgConnectible {
                                     if (th == null) {
                                         release((PooledPgConnection) connected);
                                     } else {
-                                        Collection<Runnable> actions = locked(() -> {
+                                        var actions = locked(() -> {
                                             size--;
-                                            var unlucky = pending.stream()
-                                                                 .<Runnable>map(item -> () -> item.completeExceptionally(th))
-                                                                 .collect(Collectors.toList());
-                                            unlucky.add(checkClosed());
+                                            var unlucky = Stream.concat(
+                                                                    pending.stream()
+                                                                           .map(item -> () -> item.completeExceptionally(th)),
+                                                                    Stream.of(checkClosed()))
+                                                                .toList();
                                             pending.clear();
                                             return unlucky;
                                         });
@@ -363,8 +372,8 @@ public class PgConnectionPool extends PgConnectible {
             if (closing == null) {
                 closing = IntermediateFuture.create()
                                             .thenCompose(_ -> locked(() ->
-                                                                            IntermediateFuture.allOf(connections.stream()
-                                                                                                                .map(PooledPgConnection::shutdown))
+                                                                         IntermediateFuture.allOf(connections.stream()
+                                                                                                             .map(PooledPgConnection::shutdown))
                                             ));
                 return new CloseTuple(closing, checkClosed());
             } else {

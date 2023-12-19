@@ -14,17 +14,27 @@
 
 package com.github.pgasync;
 
+import com.github.pgasync.async.IntermediateFuture;
 import com.github.pgasync.conversion.DataConverter;
 import com.github.pgasync.message.Message;
 import com.github.pgasync.message.backend.Authentication;
 import com.github.pgasync.message.backend.DataRow;
-import com.github.pgasync.message.frontend.*;
-import com.github.pgasync.net.*;
+import com.github.pgasync.message.frontend.Bind;
+import com.github.pgasync.message.frontend.Close;
+import com.github.pgasync.message.frontend.Describe;
+import com.github.pgasync.message.frontend.Parse;
+import com.github.pgasync.message.frontend.Query;
+import com.github.pgasync.message.frontend.StartupMessage;
+import com.github.pgasync.net.Connection;
+import com.github.pgasync.net.Listening;
+import com.github.pgasync.net.PreparedStatement;
+import com.github.pgasync.net.ResultSet;
+import com.github.pgasync.net.Row;
+import com.github.pgasync.net.Transaction;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import com.github.pgasync.async.IntermediateFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -181,8 +191,8 @@ public class PgConnection implements Connection {
                                              Object... params) {
         return prepareStatement(sql, dataConverter.assumeTypes(params))
             .thenCompose(ps -> ps.fetch(onColumns, onRow, params)
-                                 .handle((affected, th) -> closePreparedStatement(ps, affected, th))
-                                 .thenCompose(Function.identity()));
+                                 .handle((affected, th) -> closePreparedStatement(ps, affected, th)))
+            .thenCompose(Function.identity()); //Avoid race conditions
     }
 
     private static IntermediateFuture<Integer> closePreparedStatement(PreparedStatement ps, Integer affected, Throwable th) {
@@ -241,29 +251,21 @@ public class PgConnection implements Connection {
                 .thenApply(_ -> new PgConnectionNestedTransaction(1));
         }
 
-        IntermediateFuture<Void> sendCommit() {
-            return PgConnection.this.completeScript("COMMIT")
-                                    .thenAccept(_ -> {});
-        }
-
-        IntermediateFuture<Void> sendRollback() {
-            return PgConnection.this.completeScript("ROLLBACK")
-                                    .thenAccept(_ -> {});
-        }
-
         @Override
         public IntermediateFuture<Void> commit() {
-            return sendCommit().thenAccept(_ -> {});
+            return PgConnection.this.completeScript("COMMIT")
+                                    .thenApply(_ -> null);
         }
 
         @Override
         public IntermediateFuture<Void> rollback() {
-            return sendRollback();
+            return PgConnection.this.completeScript("ROLLBACK")
+                                    .thenApply(_ -> null);
         }
 
         @Override
         public IntermediateFuture<Void> close() {
-            return sendCommit()
+            return commit()
                 .whenComplete(this::handleException);
         }
 
@@ -293,9 +295,10 @@ public class PgConnection implements Connection {
 
         private <T> IntermediateFuture<T> handleException(T unused, Throwable th) {
             if (th != null) {
-                return rollback().thenApply(_ -> {
-                    throw new RuntimeException(th);
-                });
+                return rollback()
+                    .thenApply(_ -> {
+                        throw new RuntimeException(th);
+                    });
             } else {
                 return IntermediateFuture.completedFuture(unused);
             }
@@ -321,13 +324,13 @@ public class PgConnection implements Connection {
         @Override
         public IntermediateFuture<Void> commit() {
             return PgConnection.this.completeScript(STR."RELEASE SAVEPOINT sp_\{depth}")
-                                    .thenAccept(_ -> {});
+                                    .thenApply(_ -> null);
         }
 
         @Override
         public IntermediateFuture<Void> rollback() {
             return PgConnection.this.completeScript(STR."ROLLBACK TO SAVEPOINT sp_\{depth}")
-                                    .thenAccept(_ -> {});
+                                    .thenApply(_ -> null);
         }
     }
 }

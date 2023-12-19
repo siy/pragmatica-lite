@@ -5,12 +5,9 @@ import java.lang.invoke.VarHandle;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -594,26 +591,6 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         }
     }
 
-    private CompletableFuture<Void> uniRunNow(Object r, Executor e, Runnable f) {
-        Throwable x;
-        CompletableFuture<Void> d = newIncompleteFuture();
-        if (r instanceof AltResult && (x = ((AltResult) r).ex) != null) {
-            d.result = encodeThrowable(x, r);
-        } else {
-            try {
-                if (e != null) {
-                    e.execute(new UniRun<T>(null, d, this, f));
-                } else {
-                    f.run();
-                    d.result = NIL;
-                }
-            } catch (Throwable ex) {
-                d.result = encodeThrowable(ex);
-            }
-        }
-        return d;
-    }
-
     static final class UniWhenComplete<T> extends UniCompletion<T, T> {
         BiConsumer<? super T, ? super Throwable> fn;
 
@@ -706,7 +683,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
             this.fn = fn;
         }
 
-        final CompletableFuture<V> tryFire(int mode) {
+        CompletableFuture<V> tryFire(int mode) {
             CompletableFuture<V> d;
             CompletableFuture<T> a;
             Object r;
@@ -780,7 +757,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
             this.fn = fn;
         }
 
-        final CompletableFuture<T> tryFire(int mode) {
+        CompletableFuture<T> tryFire(int mode) {
             CompletableFuture<T> d;
             CompletableFuture<T> a;
             Object r;
@@ -839,57 +816,6 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         return d;
     }
 
-    static final class UniComposeExceptionally<T> extends UniCompletion<T, T> {
-        Function<Throwable, ? extends CompletableFuture<T>> fn;
-
-        UniComposeExceptionally(Executor executor, CompletableFuture<T> dep,
-                                CompletableFuture<T> src,
-                                Function<Throwable, ? extends CompletableFuture<T>> fn) {
-            super(executor, dep, src);
-            this.fn = fn;
-        }
-
-        final CompletableFuture<T> tryFire(int mode) {
-            CompletableFuture<T> d;
-            CompletableFuture<T> a;
-            Function<Throwable, ? extends CompletableFuture<T>> f;
-            Object r;
-            Throwable x;
-            if ((a = src) == null || (r = a.result) == null
-                || (d = dep) == null || (f = fn) == null) {
-                return null;
-            }
-            if (d.result == null) {
-                if ((r instanceof AltResult) &&
-                    (x = ((AltResult) r).ex) != null) {
-                    try {
-                        if (mode <= 0 && !claim()) {
-                            return null;
-                        }
-                        CompletableFuture<T> g = f.apply(x).toCompletableFuture();
-                        if ((r = g.result) != null) {
-                            d.completeRelay(r);
-                        } else {
-                            g.unipush(new UniRelay<T, T>(d, g));
-                            if (d.result == null) {
-                                return null;
-                            }
-                        }
-                    } catch (Throwable ex) {
-                        d.completeThrowable(ex);
-                    }
-                } else {
-                    d.internalComplete(r);
-                }
-            }
-            src = null;
-            dep = null;
-            fn = null;
-            return d.postFire(a, mode);
-        }
-    }
-
-
     static final class UniRelay<U, T extends U> extends UniCompletion<T, U> {
         UniRelay(CompletableFuture<U> dep, CompletableFuture<T> src) {
             super(null, dep, src);
@@ -910,18 +836,6 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
             dep = null;
             return d.postFire(a, mode);
         }
-    }
-
-    private static <U, T extends U> CompletableFuture<U> uniCopyStage(
-        CompletableFuture<T> src) {
-        Object r;
-        CompletableFuture<U> d = src.newIncompleteFuture();
-        if ((r = src.result) != null) {
-            d.result = encodeRelay(r);
-        } else {
-            src.unipush(new UniRelay<U, T>(d, src));
-        }
-        return d;
     }
 
     static final class UniCompose<T, V> extends UniCompletion<T, V> {
@@ -1695,13 +1609,6 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
     public CompletableFuture() {
     }
 
-    /**
-     * Creates a new complete CompletableFuture with given encoded result.
-     */
-    CompletableFuture(Object r) {
-        RESULT.setRelease(this, r);
-    }
-
     @SuppressWarnings("unchecked")
     @Override
     public T join() {
@@ -1820,51 +1727,6 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         return ASYNC_POOL;
     }
 
-    /**
-     * Returns a new CompletableFuture that is completed normally with the same value as this CompletableFuture when it completes normally. If this
-     * CompletableFuture completes exceptionally, then the returned CompletableFuture completes exceptionally with a CompletionException with this
-     * exception as cause. The behavior is equivalent to {@code thenApply(x -> x)}. This method may be useful as a form of "defensive copying", to
-     * prevent clients from completing, while still being able to arrange dependent actions.
-     *
-     * @return the new CompletableFuture
-     * @since 9
-     */
-    public CompletableFuture<T> copy() {
-        return uniCopyStage(this);
-    }
-
-    /**
-     * Completes this CompletableFuture with the result of the given Supplier function invoked from an asynchronous task using the given executor.
-     *
-     * @param supplier a function returning the value to be used to complete this CompletableFuture
-     * @param executor the executor to use for asynchronous execution
-     *
-     * @return this CompletableFuture
-     * @since 9
-     */
-    public CompletableFuture<T> completeAsync(Supplier<? extends T> supplier,
-                                              Executor executor) {
-        if (supplier == null || executor == null) {
-            throw new NullPointerException();
-        }
-        executor.execute(new AsyncSupply<T>(this, supplier));
-        return this;
-    }
-
-    /**
-     * Completes this CompletableFuture with the result of the given Supplier function invoked from an asynchronous task using the default executor.
-     *
-     * @param supplier a function returning the value to be used to complete this CompletableFuture
-     *
-     * @return this CompletableFuture
-     * @since 9
-     */
-    @Override
-    public CompletableFuture<T> completeAsync(Supplier<? extends T> supplier) {
-        return completeAsync(supplier, defaultExecutor());
-    }
-
-    // VarHandle mechanics
     private static final VarHandle RESULT;
     private static final VarHandle STACK;
     private static final VarHandle NEXT;

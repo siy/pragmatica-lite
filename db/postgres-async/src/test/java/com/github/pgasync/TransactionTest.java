@@ -14,18 +14,16 @@
 
 package com.github.pgasync;
 
+import com.github.pgasync.async.IntermediateFuture;
 import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.SqlException;
+import com.github.pgasync.net.Transaction;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.jupiter.api.Tag;
 
-import com.github.pgasync.async.IntermediateFuture;
-
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
@@ -52,153 +50,90 @@ public class TransactionTest {
         dbr.query("DROP TABLE IF EXISTS TX_TEST");
     }
 
-    @Test
-    public void shouldCommitSelectInTransaction() throws Exception {
-        dbr.pool().getConnection()
-           .thenApply(connection -> connection.begin()
-                                              .thenApply(transaction -> transaction.completeQuery("SELECT 1")
-                                                                                   .thenApply(result -> {
-                                                                                       Assert.assertEquals(1L,
-                                                                                                           result.index(0).getLong(0).longValue());
-                                                                                       return transaction.commit();
-                                                                                   })
-                                                                                   .thenCompose(Function.identity())
-                                              )
-                                              .thenCompose(Function.identity())
-                                              .handle((v, th) -> connection.close()
-                                                                           .thenAccept(_v -> {
-                                                                               if (th != null) {
-                                                                                   throw new RuntimeException(th);
-                                                                               }
-                                                                           })
-                                              )
-                                              .thenCompose(Function.identity())
-           )
-           .thenCompose(Function.identity())
-//                .get(5, TimeUnit.SECONDS);
-           .join();
+    private static <T> IntermediateFuture<T> withinTransaction(Function<Transaction, IntermediateFuture<T>> fn) {
+        return dbr.pool()
+                  .getConnection()
+                  .thenCompose(connection ->
+                                   connection.begin()
+                                             .thenCompose(fn)
+                                             .handle((value, th) -> connection.close()
+                                                                              .thenApply(_ -> {
+                                                                                  if (th == null) {
+                                                                                      return value;
+                                                                                  } else {
+                                                                                      throw new RuntimeException(th);
+                                                                                  }
+                                                                              }))
+                                             .thenCompose(Function.identity()));
     }
 
     @Test
-    public void shouldCommitInsertInTransaction() throws Exception {
-        dbr.pool().getConnection()
-           .thenApply(connection -> connection.begin()
-                                              .thenApply(transaction ->
-                                                             transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(10)")
-                                                                        .thenApply(result -> {
-                                                                            Assert.assertEquals(1, result.affectedRows());
-                                                                            return transaction.commit();
-                                                                        })
-                                                                        .thenCompose(Function.identity())
-                                              )
-                                              .thenCompose(Function.identity())
-                                              .handle((v, th) -> connection.close()
-                                                                           .thenAccept(_v -> {
-                                                                               if (th != null) {
-                                                                                   throw new RuntimeException(th);
-                                                                               }
-                                                                           })
-                                              )
-                                              .thenCompose(Function.identity())
-           )
-           .thenCompose(Function.identity())
-//                .get(5, TimeUnit.SECONDS);
-           .join();
-
-        Assert.assertEquals(10L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 10").index(0).getLong(0).longValue());
+    public void shouldCommitSelectInTransaction() {
+        withinTransaction(transaction -> transaction.completeQuery("SELECT 1")
+                                                    .thenApply(result -> {
+                                                        assertEquals(1L, result.index(0).getLong(0).longValue());
+                                                        return transaction.commit();
+                                                    })
+                                                    .thenCompose(Function.identity()))
+            .join();
     }
 
     @Test
-    public void shouldCommitParameterizedInsertInTransaction() throws Exception {
+    public void shouldCommitInsertInTransaction() {
+        withinTransaction(transaction ->
+                              transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(10)")
+                                         .thenCompose(result -> {
+                                             assertEquals(1, result.affectedRows());
+                                             return transaction.commit();
+                                         }))
+            .join();
+
+        assertEquals(10L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 10").index(0).getLong(0).longValue());
+    }
+
+    @Test
+    public void shouldCommitParameterizedInsertInTransaction() {
         // Ref: https://github.com/alaisi/postgres-async-driver/issues/34
-        long id = dbr.pool().getConnection()
-                     .thenApply(connection -> connection.begin()
-                                                        .thenApply(transaction ->
-                                                                       transaction.completeQuery("INSERT INTO TX_TEST (ID) VALUES ($1) RETURNING ID",
-                                                                                                 35)
-                                                                                  .thenApply(rs -> rs.index(0))
-                                                                                  .thenApply(row -> {
-                                                                                      Long value = row.getLong(0);
-                                                                                      return transaction.commit().thenApply(v -> value);
-                                                                                  })
-                                                                                  .thenCompose(Function.identity())
-                                                        )
-                                                        .thenCompose(Function.identity())
-                                                        .handle((_id, th) -> connection.close()
-                                                                                       .thenApply(v -> {
-                                                                                           if (th == null) {
-                                                                                               return _id;
-                                                                                           } else {
-                                                                                               throw new RuntimeException(th);
-                                                                                           }
-                                                                                       }))
-                                                        .thenCompose(Function.identity())
-                     )
-                     .thenCompose(Function.identity())
-//                .get(5, TimeUnit.SECONDS);
-                     .join();
+        long id = withinTransaction(transaction ->
+                                        transaction.completeQuery("INSERT INTO TX_TEST (ID) VALUES ($1) RETURNING ID", 35)
+                                                   .thenApply(rs -> rs.index(0))
+                                                   .thenApply(row -> {
+                                                       var value = row.getLong(0);
+                                                       return transaction.commit()
+                                                                         .thenApply(_ -> value);
+                                                   })
+                                                   .thenCompose(Function.identity()))
+            .join();
         assertEquals(35L, id);
     }
 
     @Test
-    public void shouldRollbackTransaction() throws Exception {
-        dbr.pool().getConnection()
-           .thenApply(connection -> connection.begin()
-                                              .thenApply(transaction ->
-                                                             transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(9)")
-                                                                        .thenApply(result -> {
-                                                                            Assert.assertEquals(1, result.affectedRows());
-                                                                            return transaction.rollback();
-                                                                        })
-                                                                        .thenCompose(Function.identity())
-                                              )
-                                              .thenCompose(Function.identity())
-                                              .handle((v, th) -> connection.close()
-                                                                           .thenAccept(_v -> {
-                                                                               if (th != null) {
-                                                                                   throw new RuntimeException(th);
-                                                                               }
-                                                                           })
-                                              )
-                                              .thenCompose(Function.identity())
-           )
-           .thenCompose(Function.identity())
-//                .get(5, TimeUnit.SECONDS);
-           .join();
+    public void shouldRollbackTransaction() {
+        withinTransaction(transaction ->
+                              transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(9)")
+                                         .thenCompose(result -> {
+                                             assertEquals(1, result.affectedRows());
+                                             return transaction.rollback();
+                                         }))
+            .join();
 
-        Assert.assertEquals(0L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 9").size());
+        assertEquals(0L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 9").size());
     }
 
 
     @Test(expected = SqlException.class)
     public void shouldRollbackTransactionOnBackendError() throws Exception {
         try {
-            dbr.pool().getConnection()
-               .thenApply(connection -> connection.begin()
-                                                  .thenApply(transaction ->
-                                                                 transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(11)")
-                                                                            .thenApply(result -> {
-                                                                                Assert.assertEquals(1, result.affectedRows());
-                                                                                return transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(11)");
-                                                                            })
-                                                                            .thenCompose(Function.identity())
-                                                  )
-                                                  .thenCompose(Function.identity())
-                                                  .handle((v, th) -> connection.close()
-                                                                               .thenAccept(_v -> {
-                                                                                   if (th != null) {
-                                                                                       throw new RuntimeException(th);
-                                                                                   }
-                                                                               })
-                                                  )
-                                                  .thenCompose(Function.identity())
-               )
-               .thenCompose(Function.identity())
-//                .get(5, TimeUnit.SECONDS);
-               .join();
+            withinTransaction(transaction ->
+                                  transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(11)")
+                                             .thenCompose(result -> {
+                                                 assertEquals(1, result.affectedRows());
+                                                 return transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(11)");
+                                             }))
+                .join();
         } catch (Exception ex) {
             DatabaseRule.ifCause(ex, sqlException -> {
-                Assert.assertEquals(0, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 11").size());
+                assertEquals(0, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 11").size());
                 throw sqlException;
             }, () -> {
                 throw ex;
@@ -207,157 +142,79 @@ public class TransactionTest {
     }
 
     @Test
-    public void shouldRollbackTransactionAfterBackendError() throws Exception {
-        dbr.pool().getConnection()
-           .thenApply(connection -> connection.begin()
-                                              .thenApply(transaction ->
-                                                             transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(22)")
-                                                                        .thenApply(result -> {
-                                                                            Assert.assertEquals(1, result.affectedRows());
-                                                                            return transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(22)")
-                                                                                              .thenApply(rs -> IntermediateFuture.<ResultSet>failedFuture(
-                                                                                                  new IllegalStateException(
-                                                                                                      "The transaction should fail")))
-                                                                                              .exceptionally(th -> transaction.completeQuery(
-                                                                                                  "SELECT 1"))
-                                                                                              .thenCompose(Function.identity());
-                                                                        })
-                                                                        .thenCompose(Function.identity())
-                                              )
-                                              .thenCompose(Function.identity())
-                                              .handle((rs, th) -> connection.close()
-                                                                            .thenAccept(v -> {
-                                                                                if (th != null) {
-                                                                                    throw new RuntimeException(th);
-                                                                                }
-                                                                            })
-                                              )
-                                              .thenCompose(Function.identity())
-           )
-           .thenCompose(Function.identity())
-//                .get(5, TimeUnit.SECONDS);
-           .join();
-        Assert.assertEquals(0, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 22").size());
+    public void shouldRollbackTransactionAfterBackendError() {
+        withinTransaction(transaction ->
+                              transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(22)")
+                                         .thenCompose(result -> {
+                                             assertEquals(1, result.affectedRows());
+
+                                             return transaction
+                                                 .completeQuery("INSERT INTO TX_TEST(ID) VALUES(22)")
+                                                 .thenApply(_ -> IntermediateFuture.<ResultSet>failedFuture(
+                                                     new IllegalStateException("The transaction should fail")))
+                                                 .exceptionally(_ -> transaction.completeQuery("SELECT 1"))
+                                                 .thenCompose(Function.identity());
+                                         }))
+            .join();
+        assertEquals(0, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 22").size());
     }
 
     @Test
-    public void shouldSupportNestedTransactions() throws Exception {
-        dbr.pool().getConnection()
-           .thenApply(connection -> connection.begin()
-                                              .thenApply(transaction ->
-                                                             transaction.begin()
-                                                                        .thenApply(nested ->
-                                                                                       nested.completeQuery("INSERT INTO TX_TEST(ID) VALUES(19)")
-                                                                                             .thenApply(result -> {
-                                                                                                 Assert.assertEquals(1, result.affectedRows());
-                                                                                                 return nested.commit();
-                                                                                             })
-                                                                                             .thenCompose(Function.identity())
-                                                                                             .thenApply(v -> transaction.commit())
-                                                                                             .thenCompose(Function.identity())
-                                                                        )
-                                                                        .thenCompose(Function.identity())
-                                              )
-                                              .thenCompose(Function.identity())
-                                              .handle((v, th) -> connection.close()
-                                                                           .thenAccept(_v -> {
-                                                                               if (th != null) {
-                                                                                   throw new RuntimeException(th);
-                                                                               }
-                                                                           })
-                                              )
-                                              .thenCompose(Function.identity())
-           )
-           .thenCompose(Function.identity())
-//                .get(5, TimeUnit.SECONDS);
-           .join();
-        Assert.assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 19").size());
+    public void shouldSupportNestedTransactions() {
+        withinTransaction(transaction ->
+                              transaction.begin()
+                                         .thenCompose(nested ->
+                                                          nested
+                                                              .completeQuery("INSERT INTO TX_TEST(ID) VALUES(19)")
+                                                              .thenCompose(result -> {
+                                                                  assertEquals(1, result.affectedRows());
+                                                                  return nested.commit();
+                                                              })
+                                                              .thenCompose(_ -> transaction.commit())))
+            .join();
+        assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 19").size());
     }
 
     @Test
-    public void shouldRollbackNestedTransaction() throws Exception {
-        dbr.pool().getConnection()
-           .thenApply(connection -> connection.begin()
-                                              .thenApply(transaction ->
-                                                             transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(24)")
-                                                                        .thenApply(result -> {
-                                                                            Assert.assertEquals(1, result.affectedRows());
-                                                                            return transaction.begin()
-                                                                                              .thenApply(nested ->
-                                                                                                             nested.completeQuery(
-                                                                                                                       "INSERT INTO TX_TEST(ID) VALUES(23)")
-                                                                                                                   .thenApply(res2 -> {
-                                                                                                                       Assert.assertEquals(1,
-                                                                                                                                           res2.affectedRows());
-                                                                                                                       return nested.rollback();
-                                                                                                                   })
-                                                                                                                   .thenCompose(Function.identity())
-                                                                                              )
-                                                                                              .thenCompose(Function.identity())
-                                                                                              .thenApply(v -> transaction.commit())
-                                                                                              .thenCompose(Function.identity());
-                                                                        })
-                                                                        .thenCompose(Function.identity())
-                                              )
-                                              .thenCompose(Function.identity())
-                                              .handle((v, th) -> connection.close()
-                                                                           .thenAccept(_v -> {
-                                                                               if (th != null) {
-                                                                                   throw new RuntimeException(th);
-                                                                               }
-                                                                           })
-                                              )
-                                              .thenCompose(Function.identity())
-           )
-           .thenCompose(Function.identity())
-//                .get(5, TimeUnit.SECONDS);
-           .join();
-        Assert.assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 24").size());
-        Assert.assertEquals(0L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 23").size());
+    public void shouldRollbackNestedTransaction() {
+        withinTransaction(transaction ->
+                              transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(24)")
+                                         .thenCompose(result -> {
+                                             assertEquals(1, result.affectedRows());
+                                             return transaction.begin()
+                                                               .thenCompose(nested ->
+                                                                                nested
+                                                                                    .completeQuery("INSERT INTO TX_TEST(ID) VALUES(23)")
+                                                                                    .thenCompose(res2 -> {
+                                                                                        assertEquals(1, res2.affectedRows());
+                                                                                        return nested.rollback();
+                                                                                    }))
+                                                               .thenCompose(_ -> transaction.commit());
+                                         }))
+            .join();
+        assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 24").size());
+        assertEquals(0L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 23").size());
     }
 
     @Test
-    public void shouldRollbackNestedTransactionOnBackendError() throws Exception {
-        dbr.pool().getConnection()
-           .thenApply(connection -> connection.begin()
-                                              .thenApply(transaction ->
-                                                             transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(25)")
-                                                                        .thenApply(result -> {
-                                                                            Assert.assertEquals(1, result.affectedRows());
-                                                                            return transaction.begin()
-                                                                                              .thenApply(nested ->
-                                                                                                             nested.completeQuery(
-                                                                                                                       "INSERT INTO TX_TEST(ID) VALUES(26)")
-                                                                                                                   .thenAccept(res2 -> Assert.assertEquals(
-                                                                                                                       1,
-                                                                                                                       res2.affectedRows()))
-                                                                                                                   .thenApply(v -> nested.completeQuery(
-                                                                                                                       "INSERT INTO TX_TEST(ID) VALUES(26)"))
-                                                                                                                   .thenCompose(Function.identity())
-                                                                                                                   .thenApply(rs -> IntermediateFuture.<Void>failedFuture(
-                                                                                                                       new IllegalStateException(
-                                                                                                                           "The query should fail")))
-                                                                                                                   .exceptionally(th -> transaction.commit())
-                                                                                                                   .thenCompose(Function.identity())
-                                                                                              )
-                                                                                              .thenCompose(Function.identity());
-                                                                        })
-                                                                        .thenCompose(Function.identity())
-                                              )
-                                              .thenCompose(Function.identity())
-                                              .handle((v, th) -> connection.close()
-                                                                           .thenAccept(_v -> {
-                                                                               if (th != null) {
-                                                                                   throw new RuntimeException(th);
-                                                                               }
-                                                                           })
-                                              )
-                                              .thenCompose(Function.identity())
-           )
-           .thenCompose(Function.identity())
-//                .get(5, TimeUnit.SECONDS);
-           .join();
-        Assert.assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 25").size());
-        Assert.assertEquals(0L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 26").size());
+    public void shouldRollbackNestedTransactionOnBackendError() {
+        withinTransaction(transaction ->
+                              transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(25)")
+                                         .thenCompose(result -> {
+                                             assertEquals(1, result.affectedRows());
+                                             return transaction.begin()
+                                                               .thenCompose(nested ->
+                                                                                nested.completeQuery("INSERT INTO TX_TEST(ID) VALUES(26)")
+                                                                                      .thenAccept(res2 -> assertEquals(1, res2.affectedRows()))
+                                                                                      .thenCompose(_ -> nested.completeQuery(
+                                                                                          "INSERT INTO TX_TEST(ID) VALUES(26)"))
+                                                                                      .thenApply(_ -> IntermediateFuture.<Void>failedFuture(new IllegalStateException(
+                                                                                          "The query should fail")))
+                                                                                      .exceptionally(_ -> transaction.commit())
+                                                                                      .thenCompose(Function.identity()));
+                                         }))
+            .join();
+        assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 25").size());
+        assertEquals(0L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 26").size());
     }
 }

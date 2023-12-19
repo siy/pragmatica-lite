@@ -14,8 +14,12 @@
 
 package com.github.pgasync;
 
+import com.github.pgasync.async.IntermediateFuture;
 import com.github.pgasync.net.Connectible;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.jupiter.api.Tag;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -25,8 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import com.github.pgasync.async.IntermediateFuture;
-import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -115,7 +117,10 @@ public class PerformanceTest {
                                                                .toList();
                                         IntermediateFuture.allOf(batches.stream())
                                                           .join();
-                                        return batches.stream().map(IntermediateFuture::join).max(Long::compare).get();
+                                        return batches.stream()
+                                                      .map(IntermediateFuture::join)
+                                                      .max(Long::compare)
+                                                      .get();
                                     } catch (Exception ex) {
                                         throw new RuntimeException(ex);
                                     }
@@ -153,25 +158,12 @@ public class PerformanceTest {
 
         private void nextSamplePreparedStatement() {
             pool.getConnection()
-                .thenApply(connection ->
+                .thenCompose(connection ->
                                connection.prepareStatement(SELECT_42)
-                                         .thenApply(stmt -> stmt.query()
-                                                                .thenApply(_ -> stmt.close())
-                                                                .exceptionally(th -> stmt.close()
-                                                                                         .whenComplete((_, _) -> {
-                                                                    throw new RuntimeException(th);
-                                                                }))
-                                                                .thenCompose(Function.identity())
-                                                                .thenApply(_ -> connection.close())
-                                                                .exceptionally(th -> connection.close()
-                                                                                               .whenComplete((_, _) -> {
-                                                                    throw new RuntimeException(th);
-                                                                }))
-                                                                .thenCompose(Function.identity())
-                                         )
-                                         .thenCompose(Function.identity())
-                )
-                .thenCompose(Function.identity())
+                                         .thenCompose(stmt ->
+                                                        stmt.query()
+                                                            .handle((_, _) -> stmt.close())
+                                                            .handle((_, _) -> connection.close())))
                 .thenAccept(_ -> {
                     if (++performed < batchSize) {
                         nextSamplePreparedStatement();
