@@ -906,7 +906,6 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         boolean isLive() {
             BiCompletion<?, ?, ?> c;
             return (c = base) != null
-                   // && c.isLive()
                    && c.dep != null;
         }
     }
@@ -945,189 +944,6 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
             }
         }
         return postFire(a, mode);
-    }
-
-    static final class BiApply<T, U, V> extends BiCompletion<T, U, V> {
-        BiFunction<? super T, ? super U, ? extends V> fn;
-
-        BiApply(Executor executor, CompletableFuture<V> dep,
-                CompletableFuture<T> src, CompletableFuture<U> snd,
-                BiFunction<? super T, ? super U, ? extends V> fn) {
-            super(executor, dep, src, snd);
-            this.fn = fn;
-        }
-
-        CompletableFuture<V> tryFire(int mode) {
-            CompletableFuture<V> d;
-            CompletableFuture<T> a;
-            CompletableFuture<U> b;
-            Object r, s;
-            BiFunction<? super T, ? super U, ? extends V> f;
-            if ((a = src) == null || (r = a.result) == null
-                || (b = snd) == null || (s = b.result) == null
-                || (d = dep) == null || (f = fn) == null
-                || !d.biApply(r, s, f, mode > 0 ? null : this)) {
-                return null;
-            }
-            src = null;
-            snd = null;
-            dep = null;
-            fn = null;
-            return d.postFire(a, b, mode);
-        }
-    }
-
-    final <R, S> boolean biApply(Object r, Object s,
-                                 BiFunction<? super R, ? super S, ? extends T> f,
-                                 BiApply<R, S, T> c) {
-        Throwable x;
-        tryComplete:
-        if (result == null) {
-            if (r instanceof AltResult) {
-                if ((x = ((AltResult) r).ex) != null) {
-                    completeThrowable(x, r);
-                    break tryComplete;
-                }
-                r = null;
-            }
-            if (s instanceof AltResult) {
-                if ((x = ((AltResult) s).ex) != null) {
-                    completeThrowable(x, s);
-                    break tryComplete;
-                }
-                s = null;
-            }
-            try {
-                if (c != null && !c.claim()) {
-                    return false;
-                }
-                @SuppressWarnings("unchecked") R rr = (R) r;
-                @SuppressWarnings("unchecked") S ss = (S) s;
-                completeValue(f.apply(rr, ss));
-            } catch (Throwable ex) {
-                completeThrowable(ex);
-            }
-        }
-        return true;
-    }
-
-    static final class BiAccept<T, U> extends BiCompletion<T, U, Void> {
-        BiConsumer<? super T, ? super U> fn;
-
-        BiAccept(Executor executor, CompletableFuture<Void> dep,
-                 CompletableFuture<T> src, CompletableFuture<U> snd,
-                 BiConsumer<? super T, ? super U> fn) {
-            super(executor, dep, src, snd);
-            this.fn = fn;
-        }
-
-        CompletableFuture<Void> tryFire(int mode) {
-            CompletableFuture<Void> d;
-            CompletableFuture<T> a;
-            CompletableFuture<U> b;
-            Object r, s;
-            BiConsumer<? super T, ? super U> f;
-            if ((a = src) == null || (r = a.result) == null
-                || (b = snd) == null || (s = b.result) == null
-                || (d = dep) == null || (f = fn) == null
-                || !d.biAccept(r, s, f, mode > 0 ? null : this)) {
-                return null;
-            }
-            src = null;
-            snd = null;
-            dep = null;
-            fn = null;
-            return d.postFire(a, b, mode);
-        }
-    }
-
-    final <R, S> boolean biAccept(Object r, Object s,
-                                  BiConsumer<? super R, ? super S> f,
-                                  BiAccept<R, S> c) {
-        Throwable x;
-        tryComplete:
-        if (result == null) {
-            if (r instanceof AltResult) {
-                if ((x = ((AltResult) r).ex) != null) {
-                    completeThrowable(x, r);
-                    break tryComplete;
-                }
-                r = null;
-            }
-            if (s instanceof AltResult) {
-                if ((x = ((AltResult) s).ex) != null) {
-                    completeThrowable(x, s);
-                    break tryComplete;
-                }
-                s = null;
-            }
-            try {
-                if (c != null && !c.claim()) {
-                    return false;
-                }
-                @SuppressWarnings("unchecked") R rr = (R) r;
-                @SuppressWarnings("unchecked") S ss = (S) s;
-                f.accept(rr, ss);
-                completeNull();
-            } catch (Throwable ex) {
-                completeThrowable(ex);
-            }
-        }
-        return true;
-    }
-
-    static final class BiRun<T, U> extends BiCompletion<T, U, Void> {
-        Runnable fn;
-
-        BiRun(Executor executor, CompletableFuture<Void> dep,
-              CompletableFuture<T> src, CompletableFuture<U> snd,
-              Runnable fn) {
-            super(executor, dep, src, snd);
-            this.fn = fn;
-        }
-
-        CompletableFuture<Void> tryFire(int mode) {
-            CompletableFuture<Void> d;
-            CompletableFuture<T> a;
-            CompletableFuture<U> b;
-            Object r, s;
-            Runnable f;
-            if ((a = src) == null || (r = a.result) == null
-                || (b = snd) == null || (s = b.result) == null
-                || (d = dep) == null || (f = fn) == null
-                || !d.biRun(r, s, f, mode > 0 ? null : this)) {
-                return null;
-            }
-            src = null;
-            snd = null;
-            dep = null;
-            fn = null;
-            return d.postFire(a, b, mode);
-        }
-    }
-
-    final boolean biRun(Object r, Object s, Runnable f, BiRun<?, ?> c) {
-        Throwable x;
-        Object z;
-        if (result == null) {
-            if ((r instanceof AltResult
-                 && (x = ((AltResult) (z = r)).ex) != null) ||
-                (s instanceof AltResult
-                 && (x = ((AltResult) (z = s)).ex) != null)) {
-                completeThrowable(x, z);
-            } else {
-                try {
-                    if (c != null && !c.claim()) {
-                        return false;
-                    }
-                    f.run();
-                    completeNull();
-                } catch (Throwable ex) {
-                    completeThrowable(ex);
-                }
-            }
-        }
-        return true;
     }
 
     static final class BiRelay<T, U> extends BiCompletion<T, U, Void> { // for And
@@ -1209,7 +1025,6 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         implements ForkJoinPool.ManagedBlocker {
         long nanos;                    // remaining wait time if timed
         final long deadline;           // non-zero if timed
-        //        final boolean interruptible;
         boolean interrupted;
         volatile Thread thread;
 
@@ -1341,11 +1156,6 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         return uniHandleStage(null, fn);
     }
 
-    /**
-     * Returns this CompletableFuture.
-     *
-     * @return this CompletableFuture
-     */
     public CompletableFuture<T> toCompletableFuture() {
         return this;
     }
@@ -1355,46 +1165,14 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         return uniExceptionallyStage(null, fn);
     }
 
-    /**
-     * Returns a new CompletableFuture that is completed when all of the given CompletableFutures complete.  If any of the given CompletableFutures
-     * complete exceptionally, then the returned CompletableFuture also does so, with a CompletionException holding this exception as its cause.
-     * Otherwise, the results, if any, of the given CompletableFutures are not reflected in the returned CompletableFuture, but may be obtained by
-     * inspecting them individually. If no CompletableFutures are provided, returns a CompletableFuture completed with the value {@code null}.
-     *
-     * <p>Among the applications of this method is to await completion
-     * of a set of independent CompletableFutures before continuing a program, as in: {@code CompletableFuture.allOf(c1, c2, c3).join();}.
-     *
-     * @param cfs the CompletableFutures
-     *
-     * @return a new CompletableFuture that is completed when all of the given CompletableFutures complete
-     * @throws NullPointerException if the array or any of its elements are {@code null}
-     */
     public static CompletableFuture<Void> allOf(CompletableFuture<?>... cfs) {
         return andTree(cfs, 0, cfs.length - 1);
     }
 
-    /**
-     * Returns a new incomplete CompletableFuture of the type to be returned by a CompletableFuture method. Subclasses should normally override this
-     * method to return an instance of the same class as this CompletableFuture. The default implementation returns an instance of class
-     * CompletableFuture.
-     *
-     * @param <U> the type of the value
-     *
-     * @return a new CompletableFuture
-     * @since 9
-     */
     public <U> CompletableFuture<U> newIncompleteFuture() {
         return new CompletableFuture<>();
     }
 
-    /**
-     * Returns the default Executor used for async methods that do not specify an Executor. This class uses the {@link ForkJoinPool#commonPool()} if
-     * it supports more than one parallel thread, or else an Executor using one thread per async task.  This method may be overridden in subclasses to
-     * return an Executor that provides at least one independent thread.
-     *
-     * @return the executor
-     * @since 9
-     */
     public Executor defaultExecutor() {
         return ASYNC_POOL;
     }
