@@ -820,8 +820,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
     abstract static class BiCompletion<T, U, V> extends UniCompletion<T, V> {
         CompletableFuture<U> snd; // second source for action
 
-        BiCompletion(Executor executor, CompletableFuture<V> dep,
-                     CompletableFuture<T> src, CompletableFuture<U> snd) {
+        BiCompletion(CompletableFuture<V> dep, CompletableFuture<T> src, CompletableFuture<U> snd) {
             super(dep, src);
             this.snd = snd;
         }
@@ -885,7 +884,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
     static final class BiRelay<T, U> extends BiCompletion<T, U, Void> { // for And
         BiRelay(CompletableFuture<Void> dep,
                 CompletableFuture<T> src, CompletableFuture<U> snd) {
-            super(null, dep, src, snd);
+            super(dep, src, snd);
         }
 
         CompletableFuture<Void> tryFire(int mode) {
