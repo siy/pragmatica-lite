@@ -1,6 +1,6 @@
 package com.github.pgasync.net;
 
-import java.util.concurrent.CompletableFuture;
+import com.github.pgasync.async.IntermediateFuture;
 
 /**
  * General container of connections.
@@ -8,7 +8,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Marat Gainullin
  */
 public interface Connectible extends QueryExecutor {
-    CompletableFuture<Connection> getConnection();
+    IntermediateFuture<Connection> getConnection();
 
-    CompletableFuture<Void> close();
+    IntermediateFuture<Void> close();
 }

@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.CompletableFuture;
+import com.github.pgasync.async.IntermediateFuture;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.IntStream;
@@ -106,15 +106,16 @@ public class PerformanceTest {
     }
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    private void performBatches(SortedMap<Integer, SortedMap<Integer, Long>> results, IntFunction<CompletableFuture<Long>> batchStarter) {
+    private void performBatches(SortedMap<Integer, SortedMap<Integer, Long>> results, IntFunction<IntermediateFuture<Long>> batchStarter) {
         double mean = LongStream.range(0, repeats)
                                 .map(_ -> {
                                     try {
                                         var batches = IntStream.range(0, poolSize)
                                                                .mapToObj(batchStarter)
                                                                .toList();
-                                        CompletableFuture.allOf(batches.toArray(new CompletableFuture<?>[]{})).get();
-                                        return batches.stream().map(CompletableFuture::join).max(Long::compare).get();
+                                        IntermediateFuture.allOf(batches.stream())
+                                                          .join();
+                                        return batches.stream().map(IntermediateFuture::join).max(Long::compare).get();
                                     } catch (Exception ex) {
                                         throw new RuntimeException(ex);
                                     }
@@ -130,21 +131,21 @@ public class PerformanceTest {
         private final long batchSize;
         private long performed;
         private long startedAt;
-        private CompletableFuture<Long> onBatch;
+        private IntermediateFuture<Long> onBatch;
 
         Batch(long batchSize) {
             this.batchSize = batchSize;
         }
 
-        private CompletableFuture<Long> startWithPreparedStatement() {
-            onBatch = new CompletableFuture<>();
+        private IntermediateFuture<Long> startWithPreparedStatement() {
+            onBatch = IntermediateFuture.create();
             startedAt = System.currentTimeMillis();
             nextSamplePreparedStatement();
             return onBatch;
         }
 
-        private CompletableFuture<Long> startWithSimpleQuery() {
-            onBatch = new CompletableFuture<>();
+        private IntermediateFuture<Long> startWithSimpleQuery() {
+            onBatch = IntermediateFuture.create();
             startedAt = System.currentTimeMillis();
             nextSampleSimpleQuery();
             return onBatch;

@@ -22,7 +22,7 @@ import com.github.pgasync.net.ConnectibleBuilder;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
-import java.util.concurrent.CompletableFuture;
+import com.github.pgasync.async.IntermediateFuture;
 
 /**
  * Builder for creating {@link Connectible} instances.
@@ -31,8 +31,8 @@ import java.util.concurrent.CompletableFuture;
  * @author Marat Gainullin
  */
 public class NettyConnectibleBuilder extends ConnectibleBuilder {
-    private CompletableFuture<ProtocolStream> obtainStream() {
-        return CompletableFuture.completedFuture(new NettyPgProtocolStream(
+    private IntermediateFuture<ProtocolStream> obtainStream() {
+        return IntermediateFuture.completedFuture(new NettyPgProtocolStream(
             //TODO: use resolver
             new InetSocketAddress(properties.hostname(), properties.port()),
             properties.useSsl(),

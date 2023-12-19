@@ -24,7 +24,7 @@ import com.github.pgasync.net.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import com.github.pgasync.async.IntermediateFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -50,7 +50,7 @@ public class PgConnection implements Connection {
         }
 
         @Override
-        public CompletableFuture<ResultSet> query(Object... params) {
+        public IntermediateFuture<ResultSet> query(Object... params) {
             var rows = new ArrayList<Row>();
 
             return fetch((_, _) -> {}, rows::add, params)
@@ -59,7 +59,7 @@ public class PgConnection implements Connection {
 
         //TODO: consider conversion to "reducer" style to eliminate externally stored state
         @Override
-        public CompletableFuture<Integer> fetch(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns, Consumer<Row> processor, Object... params) {
+        public IntermediateFuture<Integer> fetch(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns, Consumer<Row> processor, Object... params) {
             var bind = new Bind(sname, dataConverter.fromParameters(params));
             Consumer<DataRow> rowProcessor = dataRow -> processor.accept(new PgRow(dataRow, columns.byName, columns.ordered, dataConverter));
 
@@ -77,7 +77,7 @@ public class PgConnection implements Connection {
         }
 
         @Override
-        public CompletableFuture<Void> close() {
+        public IntermediateFuture<Void> close() {
             return stream.send(Close.statement(sname))
                          .thenAccept(_ -> {});
         }
@@ -114,16 +114,16 @@ public class PgConnection implements Connection {
         this.dataConverter = dataConverter;
     }
 
-    CompletableFuture<Connection> connect(String username, String password, String database) {
+    IntermediateFuture<Connection> connect(String username, String password, String database) {
         return stream.connect(new StartupMessage(username, database))
                      .thenCompose(authentication -> authenticate(username, password, authentication))
                      .thenApply(_ -> PgConnection.this);
     }
 
-    private CompletableFuture<? extends Message> authenticate(String username, String password, Message message) {
+    private IntermediateFuture<? extends Message> authenticate(String username, String password, Message message) {
         return message instanceof Authentication authentication && !authentication.authenticationOk()
                ? stream.authenticate(username, password, authentication)
-               : CompletableFuture.completedFuture(message);
+               : IntermediateFuture.completedFuture(message);
     }
 
     public boolean isConnected() {
@@ -131,12 +131,12 @@ public class PgConnection implements Connection {
     }
 
     @Override
-    public CompletableFuture<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes) {
+    public IntermediateFuture<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes) {
         return preparedStatementOf(sql, parametersTypes)
             .thenApply(Function.identity());
     }
 
-    CompletableFuture<PgPreparedStatement> preparedStatementOf(String sql, Oid... parametersTypes) {
+    IntermediateFuture<PgPreparedStatement> preparedStatementOf(String sql, Oid... parametersTypes) {
         if (sql == null || sql.isBlank()) {
             throw new IllegalArgumentException("'sql' shouldn't be null or empty or blank string");
         }
@@ -152,10 +152,10 @@ public class PgConnection implements Connection {
     }
 
     @Override
-    public CompletableFuture<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                          Consumer<Row> onRow,
-                                          Consumer<Integer> onAffected,
-                                          String sql) {
+    public IntermediateFuture<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                           Consumer<Row> onRow,
+                                           Consumer<Integer> onAffected,
+                                           String sql) {
         if (sql == null || sql.isBlank()) {
             throw new IllegalArgumentException("'sql' shouldn't be null or empty or blank string");
         }
@@ -175,17 +175,17 @@ public class PgConnection implements Connection {
     }
 
     @Override
-    public CompletableFuture<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                            Consumer<Row> onRow,
-                                            String sql,
-                                            Object... params) {
+    public IntermediateFuture<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                             Consumer<Row> onRow,
+                                             String sql,
+                                             Object... params) {
         return prepareStatement(sql, dataConverter.assumeTypes(params))
             .thenCompose(ps -> ps.fetch(onColumns, onRow, params)
-                               .handle((affected, th) -> closePreparedStatement(ps, affected, th))
-                               .thenCompose(Function.identity()));
+                                 .handle((affected, th) -> closePreparedStatement(ps, affected, th))
+                                 .thenCompose(Function.identity()));
     }
 
-    private static CompletableFuture<Integer> closePreparedStatement(PreparedStatement ps, Integer affected, Throwable th) {
+    private static IntermediateFuture<Integer> closePreparedStatement(PreparedStatement ps, Integer affected, Throwable th) {
         return ps.close()
                  .thenApply(_ -> {
                      if (th != null) {
@@ -197,12 +197,12 @@ public class PgConnection implements Connection {
     }
 
     @Override
-    public CompletableFuture<Transaction> begin() {
+    public IntermediateFuture<Transaction> begin() {
         return completeScript("BEGIN")
             .thenApply(_ -> new PgConnectionTransaction());
     }
 
-    public CompletableFuture<Listening> subscribe(String channel, Consumer<String> onNotification) {
+    public IntermediateFuture<Listening> subscribe(String channel, Consumer<String> onNotification) {
         // TODO: wait for commit before sending unlisten as otherwise it can be rolled back
         return completeScript(STR."LISTEN \{channel}")
             .thenApply(_ -> {
@@ -214,7 +214,7 @@ public class PgConnection implements Connection {
     }
 
     @Override
-    public CompletableFuture<Void> close() {
+    public IntermediateFuture<Void> close() {
         return stream.close();
     }
 
@@ -236,33 +236,33 @@ public class PgConnection implements Connection {
      */
     class PgConnectionTransaction implements Transaction {
         @Override
-        public CompletableFuture<Transaction> begin() {
+        public IntermediateFuture<Transaction> begin() {
             return completeScript("SAVEPOINT sp_1")
                 .thenApply(_ -> new PgConnectionNestedTransaction(1));
         }
 
-        CompletableFuture<Void> sendCommit() {
+        IntermediateFuture<Void> sendCommit() {
             return PgConnection.this.completeScript("COMMIT")
                                     .thenAccept(_ -> {});
         }
 
-        CompletableFuture<Void> sendRollback() {
+        IntermediateFuture<Void> sendRollback() {
             return PgConnection.this.completeScript("ROLLBACK")
                                     .thenAccept(_ -> {});
         }
 
         @Override
-        public CompletableFuture<Void> commit() {
+        public IntermediateFuture<Void> commit() {
             return sendCommit().thenAccept(_ -> {});
         }
 
         @Override
-        public CompletableFuture<Void> rollback() {
+        public IntermediateFuture<Void> rollback() {
             return sendRollback();
         }
 
         @Override
-        public CompletableFuture<Void> close() {
+        public IntermediateFuture<Void> close() {
             return sendCommit()
                 .whenComplete(this::handleException);
         }
@@ -273,31 +273,31 @@ public class PgConnection implements Connection {
         }
 
         @Override
-        public CompletableFuture<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                              Consumer<Row> onRow,
-                                              Consumer<Integer> onAffected,
-                                              String sql) {
+        public IntermediateFuture<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                               Consumer<Row> onRow,
+                                               Consumer<Integer> onAffected,
+                                               String sql) {
             return PgConnection.this.script(onColumns, onRow, onAffected, sql)
                                     .handle(this::handleException)
                                     .thenCompose(Function.identity());
         }
 
-        public CompletableFuture<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                                Consumer<Row> onRow,
-                                                String sql,
-                                                Object... params) {
+        public IntermediateFuture<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                                 Consumer<Row> onRow,
+                                                 String sql,
+                                                 Object... params) {
             return PgConnection.this.query(onColumns, onRow, sql, params)
                                     .handle(this::handleException)
                                     .thenCompose(Function.identity());
         }
 
-        private <T> CompletableFuture<T> handleException(T unused, Throwable th) {
+        private <T> IntermediateFuture<T> handleException(T unused, Throwable th) {
             if (th != null) {
                 return rollback().thenApply(_ -> {
                     throw new RuntimeException(th);
                 });
             } else {
-                return CompletableFuture.completedFuture(unused);
+                return IntermediateFuture.completedFuture(unused);
             }
         }
     }
@@ -313,19 +313,19 @@ public class PgConnection implements Connection {
         }
 
         @Override
-        public CompletableFuture<Transaction> begin() {
+        public IntermediateFuture<Transaction> begin() {
             return completeScript(STR."SAVEPOINT sp_\{depth + 1}")
                 .thenApply(_ -> new PgConnectionNestedTransaction(depth + 1));
         }
 
         @Override
-        public CompletableFuture<Void> commit() {
+        public IntermediateFuture<Void> commit() {
             return PgConnection.this.completeScript(STR."RELEASE SAVEPOINT sp_\{depth}")
                                     .thenAccept(_ -> {});
         }
 
         @Override
-        public CompletableFuture<Void> rollback() {
+        public IntermediateFuture<Void> rollback() {
             return PgConnection.this.completeScript(STR."ROLLBACK TO SAVEPOINT sp_\{depth}")
                                     .thenAccept(_ -> {});
         }

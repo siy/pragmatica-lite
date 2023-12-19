@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import com.github.pgasync.async.IntermediateFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -41,7 +41,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
 
     protected final Charset encoding;
 
-    private CompletableFuture<? super Message> onResponse;
+    private IntermediateFuture<? super Message> onResponse;
     private final Map<String, Set<Consumer<String>>> subscriptions = new HashMap<>();
 
     private Consumer<RowDescription.ColumnDescription[]> onColumns;
@@ -56,14 +56,14 @@ public abstract class PgProtocolStream implements ProtocolStream {
         this.encoding = encoding;
     }
 
-    private CompletableFuture<? super Message> consumeOnResponse() {
+    private IntermediateFuture<? super Message> consumeOnResponse() {
         var wasOnResponse = onResponse;
         onResponse = null;
         return wasOnResponse;
     }
 
     @Override
-    public CompletableFuture<Message> authenticate(String userName, String password, Authentication authRequired) {
+    public IntermediateFuture<Message> authenticate(String userName, String password, Authentication authRequired) {
         if (authRequired.saslScramSha256()) {
             var clientNonce = UUID.randomUUID().toString();
             var saslInitialResponse = new SASLInitialResponse(Authentication.SUPPORTED_SASL,
@@ -95,7 +95,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
     protected abstract void write(Message... messages);
 
     @Override
-    public CompletableFuture<Message> send(Message message) {
+    public IntermediateFuture<Message> send(Message message) {
         return offerRoundTrip(() -> {
             lastSentMessage = message;
             write(message);
@@ -106,10 +106,10 @@ public abstract class PgProtocolStream implements ProtocolStream {
     }
 
     @Override
-    public CompletableFuture<Void> send(Query query,
-                                        Consumer<RowDescription.ColumnDescription[]> onColumns,
-                                        Consumer<DataRow> onRow,
-                                        Consumer<CommandComplete> onAffected) {
+    public IntermediateFuture<Void> send(Query query,
+                                         Consumer<RowDescription.ColumnDescription[]> onColumns,
+                                         Consumer<DataRow> onRow,
+                                         Consumer<CommandComplete> onAffected) {
         this.onColumns = onColumns;
         this.onRow = onRow;
         this.onAffected = onAffected;
@@ -117,10 +117,10 @@ public abstract class PgProtocolStream implements ProtocolStream {
     }
 
     @Override
-    public CompletableFuture<Integer> send(Bind bind,
-                                           Describe describe,
-                                           Consumer<RowDescription.ColumnDescription[]> onColumns,
-                                           Consumer<DataRow> onRow) {
+    public IntermediateFuture<Integer> send(Bind bind,
+                                            Describe describe,
+                                            Consumer<RowDescription.ColumnDescription[]> onColumns,
+                                            Consumer<DataRow> onRow) {
         this.onColumns = onColumns;
         this.onRow = onRow;
         this.onAffected = null;
@@ -132,7 +132,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
     }
 
     @Override
-    public CompletableFuture<Integer> send(Bind bind, Consumer<DataRow> onRow) {
+    public IntermediateFuture<Integer> send(Bind bind, Consumer<DataRow> onRow) {
         this.onColumns = null;
         this.onRow = onRow;
         this.onAffected = null;
@@ -219,12 +219,12 @@ public abstract class PgProtocolStream implements ProtocolStream {
         }
     }
 
-    private CompletableFuture<Message> offerRoundTrip(Runnable requestAction) {
+    private IntermediateFuture<Message> offerRoundTrip(Runnable requestAction) {
         return offerRoundTrip(requestAction, true);
     }
 
-    protected CompletableFuture<Message> offerRoundTrip(Runnable requestAction, boolean assumeConnected) {
-        var uponResponse = new CompletableFuture<Message>();
+    protected IntermediateFuture<Message> offerRoundTrip(Runnable requestAction, boolean assumeConnected) {
+        var uponResponse = IntermediateFuture.<Message>create();
 
         if (!assumeConnected || isConnected()) {
             if (onResponse == null) {

@@ -1,9 +1,9 @@
 package com.github.pgasync.net;
 
-import java.util.concurrent.CompletableFuture;
+import com.github.pgasync.async.IntermediateFuture;
 
 @FunctionalInterface
 public interface Listening {
 
-    CompletableFuture<Void> unlisten();
+    IntermediateFuture<Void> unlisten();
 }

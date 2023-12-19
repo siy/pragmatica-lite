@@ -16,7 +16,7 @@ package com.github.pgasync.net;
 
 import com.github.pgasync.Oid;
 
-import java.util.concurrent.CompletableFuture;
+import com.github.pgasync.async.IntermediateFuture;
 import java.util.function.Consumer;
 
 /**
@@ -24,14 +24,14 @@ import java.util.function.Consumer;
  *
  * Concurrent using of implementations is impossible.
  * {@link Connection} implementations are never thread-safe.
- * They are designed to be used in context of single {@link CompletableFuture} completion at a time.
+ * They are designed to be used in context of single {@link IntermediateFuture} completion at a time.
  *
  * @author Antti Laisi
  * @author Marat Gainullin
  */
 public interface Connection extends QueryExecutor {
 
-    CompletableFuture<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes);
+    IntermediateFuture<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes);
 
     /**
      * The typical scenario of using notifications is as follows:
@@ -43,11 +43,11 @@ public interface Connection extends QueryExecutor {
      * @param onNotification Callback, thar is invoked every time notification arrives.
      * @return CompletableFuture instance, completed when subscription will be registered at the backend.
      */
-    CompletableFuture<Listening> subscribe(String channel, Consumer<String> onNotification);
+    IntermediateFuture<Listening> subscribe(String channel, Consumer<String> onNotification);
 
-    CompletableFuture<Transaction> begin();
+    IntermediateFuture<Transaction> begin();
 
-    CompletableFuture<Void> close();
+    IntermediateFuture<Void> close();
 
     boolean isConnected();
 }

@@ -14,7 +14,7 @@
 
 package com.github.pgasync.net;
 
-import java.util.concurrent.CompletableFuture;
+import com.github.pgasync.async.IntermediateFuture;
 
 /**
  * A unit of work. Transactions must be committed or rolled back, otherwise a
@@ -28,22 +28,22 @@ public interface Transaction extends QueryExecutor {
     /**
      * Commits a transaction
      */
-    CompletableFuture<Void> commit();
+    IntermediateFuture<Void> commit();
 
     /**
      * Rollbacks a transaction.
      */
-    CompletableFuture<Void> rollback();
+    IntermediateFuture<Void> rollback();
 
     /**
      * Commits a transaction and rollbacks it if an error occurs.
      */
-    CompletableFuture<Void> close();
+    IntermediateFuture<Void> close();
 
     /**
      * Returns a connection, this transaction belongs to.
      */
     Connection getConnection();
 
-    CompletableFuture<Transaction> begin();
+    IntermediateFuture<Transaction> begin();
 }

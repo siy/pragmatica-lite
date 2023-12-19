@@ -23,7 +23,7 @@ public class AuthenticationTest {
             .password("_invalid_")
             .pool();
         try {
-            pool.completeQuery("SELECT 1").get();
+            pool.completeQuery("SELECT 1").join();
         } catch (Exception ex) {
             DatabaseRule.ifCause(ex,
                                  sqlException -> {
@@ -34,7 +34,7 @@ public class AuthenticationTest {
                                      throw ex;
                                  });
         } finally {
-            pool.close().get();
+            pool.close().join();
         }
     }
 
@@ -44,10 +44,10 @@ public class AuthenticationTest {
             .password(DatabaseRule.postgres.getPassword())
             .pool();
         try {
-            ResultSet rs = pool.completeQuery("SELECT 1").get();
+            ResultSet rs = pool.completeQuery("SELECT 1").join();
             assertEquals(1L, (long) rs.index(0).getInt(0));
         } finally {
-            pool.close().get();
+            pool.close().join();
         }
     }
 

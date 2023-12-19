@@ -24,7 +24,7 @@ import com.github.pgasync.message.frontend.Describe;
 import com.github.pgasync.message.frontend.Query;
 import com.github.pgasync.message.frontend.StartupMessage;
 
-import java.util.concurrent.CompletableFuture;
+import com.github.pgasync.async.IntermediateFuture;
 import java.util.function.Consumer;
 
 /**
@@ -34,22 +34,22 @@ import java.util.function.Consumer;
  */
 public interface ProtocolStream {
 
-    CompletableFuture<Message> connect(StartupMessage startup);
+    IntermediateFuture<Message> connect(StartupMessage startup);
 
-    CompletableFuture<Message> authenticate(String userName, String password, Authentication authRequired);
+    IntermediateFuture<Message> authenticate(String userName, String password, Authentication authRequired);
 
-    CompletableFuture<Message> send(Message message);
+    IntermediateFuture<Message> send(Message message);
 
-    CompletableFuture<Void> send(Query query, Consumer<RowDescription.ColumnDescription[]> onColumns, Consumer<DataRow> onRow, Consumer<CommandComplete> onAffected);
+    IntermediateFuture<Void> send(Query query, Consumer<RowDescription.ColumnDescription[]> onColumns, Consumer<DataRow> onRow, Consumer<CommandComplete> onAffected);
 
-    CompletableFuture<Integer> send(Bind bind, Describe describe, Consumer<RowDescription.ColumnDescription[]> onColumns, Consumer<DataRow> onRow);
+    IntermediateFuture<Integer> send(Bind bind, Describe describe, Consumer<RowDescription.ColumnDescription[]> onColumns, Consumer<DataRow> onRow);
 
-    CompletableFuture<Integer> send(Bind bind, Consumer<DataRow> onRow);
+    IntermediateFuture<Integer> send(Bind bind, Consumer<DataRow> onRow);
 
     Runnable subscribe(String channel, Consumer<String> onNotification);
 
     boolean isConnected();
 
-    CompletableFuture<Void> close();
+    IntermediateFuture<Void> close();
 
 }

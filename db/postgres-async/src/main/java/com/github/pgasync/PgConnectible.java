@@ -8,7 +8,7 @@ import com.github.pgasync.net.Row;
 
 import java.nio.charset.Charset;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import com.github.pgasync.async.IntermediateFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -17,14 +17,14 @@ public abstract class PgConnectible implements Connectible {
     final String validationQuery;
     final String username;
     final DataConverter dataConverter;
-    final Supplier<CompletableFuture<ProtocolStream>> obtainStream;
+    final Supplier<IntermediateFuture<ProtocolStream>> obtainStream;
 
     protected final String password;
     protected final String database;
     protected final Charset encoding;
 
     PgConnectible(ConnectibleBuilder.ConnectibleConfiguration properties,
-                  Supplier<CompletableFuture<ProtocolStream>> obtainStream) {
+                  Supplier<IntermediateFuture<ProtocolStream>> obtainStream) {
         this.username = properties.username();
         this.password = properties.password();
         this.database = properties.database();
@@ -35,10 +35,10 @@ public abstract class PgConnectible implements Connectible {
     }
 
     @Override
-    public CompletableFuture<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                          Consumer<Row> onRow,
-                                          Consumer<Integer> onAffected,
-                                          String sql) {
+    public IntermediateFuture<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                           Consumer<Row> onRow,
+                                           Consumer<Integer> onAffected,
+                                           String sql) {
         return getConnection()
             .thenCompose(connection ->
                              connection.script(onColumns, onRow, onAffected, sql)
@@ -46,10 +46,10 @@ public abstract class PgConnectible implements Connectible {
     }
 
     @Override
-    public CompletableFuture<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                            Consumer<Row> onRow,
-                                            String sql,
-                                            Object... params) {
+    public IntermediateFuture<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                             Consumer<Row> onRow,
+                                             String sql,
+                                             Object... params) {
         return getConnection()
             .thenCompose(connection ->
                              connection.query(onColumns, onRow, sql, params)

@@ -37,7 +37,7 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import com.github.pgasync.async.IntermediateFuture;
 import java.util.function.Function;
 
 /**
@@ -68,7 +68,7 @@ public class NettyPgProtocolStream extends PgProtocolStream {
     }
 
     @Override
-    public CompletableFuture<Message> connect(StartupMessage startup) {
+    public IntermediateFuture<Message> connect(StartupMessage startup) {
         startupWith = startup;
         return offerRoundTrip(() -> channelPipeline.connect(address).addListener(outboundErrorListener), false)
             .thenApply(this::send)
@@ -77,7 +77,7 @@ public class NettyPgProtocolStream extends PgProtocolStream {
                 if (message == SslHandshake.INSTANCE) {
                     return send(startup);
                 } else {
-                    return CompletableFuture.completedFuture(message);
+                    return IntermediateFuture.completedFuture(message);
                 }
             })
             .thenCompose(Function.identity());
@@ -89,8 +89,8 @@ public class NettyPgProtocolStream extends PgProtocolStream {
     }
 
     @Override
-    public CompletableFuture<Void> close() {
-        var uponClose = new CompletableFuture<Void>();
+    public IntermediateFuture<Void> close() {
+        var uponClose = IntermediateFuture.<Void>create();
         ctx.writeAndFlush(Terminate.INSTANCE)
            .addListener(written -> {
                if (written.isSuccess()) {

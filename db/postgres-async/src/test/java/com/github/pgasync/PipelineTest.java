@@ -24,7 +24,9 @@ import org.junit.Test;
 import org.junit.jupiter.api.Tag;
 
 import java.util.Deque;
-import java.util.concurrent.CompletableFuture;
+
+import com.github.pgasync.async.IntermediateFuture;
+
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.SynchronousQueue;
 import java.util.stream.IntStream;
@@ -58,10 +60,10 @@ public class PipelineTest {
     @After
     public void closePool() throws Exception {
         if (c != null) {
-            c.close().get();
+            c.close().join();
         }
         if (pool != null) {
-            pool.close().get();
+            pool.close().join();
         }
     }
 
@@ -103,13 +105,11 @@ public class PipelineTest {
         var connection = getConnection();
 
         try {
-            CompletableFuture.allOf(IntStream.range(0, 10)
-                                             .mapToObj(i -> connection.completeQuery(STR."select \{i}, pg_sleep(10)")
-                                                                      .exceptionally(th -> {
-                                                                          throw new IllegalStateException(new SqlException(th.getMessage()));
-                                                                      }))
-                                             .toArray(size -> new CompletableFuture<?>[size])
-            ).get();
+            IntermediateFuture.allOf(IntStream.range(0, 10)
+                                              .mapToObj(i -> connection.completeQuery(STR."select \{i}, pg_sleep(10)")
+                                                                          .exceptionally(th -> {
+                                                                              throw new IllegalStateException(new SqlException(th.getMessage()));
+                                                                          }))).join();
         } catch (Exception ex) {
             DatabaseRule.ifCause(ex, sqlException -> {
                 throw sqlException;
