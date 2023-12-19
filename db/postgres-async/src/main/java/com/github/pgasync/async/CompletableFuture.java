@@ -291,13 +291,10 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
      * A Completion with a source, dependent, and executor.
      */
     abstract static class UniCompletion<T, V> extends Completion {
-        Executor executor;                 // executor to use (null if none)
         CompletableFuture<V> dep;          // the dependent to complete
         CompletableFuture<T> src;          // source for action
 
-        UniCompletion(Executor executor, CompletableFuture<V> dep,
-                      CompletableFuture<T> src) {
-            this.executor = executor;
+        UniCompletion(CompletableFuture<V> dep, CompletableFuture<T> src) {
             this.dep = dep;
             this.src = src;
         }
@@ -307,15 +304,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
          * If async, starts as task -- a later call to tryFire will run action.
          */
         final boolean claim() {
-            Executor e = executor;
-            if (compareAndSetForkJoinTaskTag((short) 0, (short) 1)) {
-                if (e == null) {
-                    return true;
-                }
-                executor = null; // disable
-                e.execute(this);
-            }
-            return false;
+            return compareAndSetForkJoinTaskTag((short) 0, (short) 1);
         }
 
         final boolean isLive() {
@@ -367,10 +356,10 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
     static final class UniApply<T, V> extends UniCompletion<T, V> {
         Function<? super T, ? extends V> fn;
 
-        UniApply(Executor executor, CompletableFuture<V> dep,
+        UniApply(CompletableFuture<V> dep,
                  CompletableFuture<T> src,
                  Function<? super T, ? extends V> fn) {
-            super(executor, dep, src);
+            super(dep, src);
             this.fn = fn;
         }
 
@@ -411,23 +400,22 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         }
     }
 
-    private <V> CompletableFuture<V> uniApplyStage(Executor e, Function<? super T, ? extends V> f) {
-        if (f == null) {
-            throw new NullPointerException();
-        }
+    private <V> CompletableFuture<V> uniApplyStage(Function<? super T, ? extends V> f) {
         Object r;
+
         if ((r = result) != null) {
-            return uniApplyNow(r, e, f);
+            return uniApplyNow(r, f);
         }
+
         CompletableFuture<V> d = newIncompleteFuture();
-        unipush(new UniApply<>(e, d, this, f));
+        unipush(new UniApply<>(d, this, f));
         return d;
     }
 
-    private <V> CompletableFuture<V> uniApplyNow(
-        Object r, Executor e, Function<? super T, ? extends V> f) {
+    private <V> CompletableFuture<V> uniApplyNow(Object r, Function<? super T, ? extends V> f) {
         Throwable x;
         CompletableFuture<V> d = newIncompleteFuture();
+
         if (r instanceof AltResult) {
             if ((x = ((AltResult) r).ex) != null) {
                 d.result = encodeThrowable(x, r);
@@ -435,25 +423,22 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
             }
             r = null;
         }
+
         try {
-            if (e != null) {
-                e.execute(new UniApply<>(null, d, this, f));
-            } else {
-                @SuppressWarnings("unchecked") T t = (T) r;
-                d.result = d.encodeValue(f.apply(t));
-            }
+            @SuppressWarnings("unchecked") T t = (T) r;
+            d.result = d.encodeValue(f.apply(t));
         } catch (Throwable ex) {
             d.result = encodeThrowable(ex);
         }
+
         return d;
     }
 
     static final class UniAccept<T> extends UniCompletion<T, Void> {
         Consumer<? super T> fn;
 
-        UniAccept(Executor executor, CompletableFuture<Void> dep,
-                  CompletableFuture<T> src, Consumer<? super T> fn) {
-            super(executor, dep, src);
+        UniAccept(CompletableFuture<Void> dep, CompletableFuture<T> src, Consumer<? super T> fn) {
+            super(dep, src);
             this.fn = fn;
         }
 
@@ -495,21 +480,17 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         }
     }
 
-    private CompletableFuture<Void> uniAcceptStage(Executor e, Consumer<? super T> f) {
-        if (f == null) {
-            throw new NullPointerException();
-        }
+    private CompletableFuture<Void> uniAcceptStage(Consumer<? super T> f) {
         Object r;
         if ((r = result) != null) {
-            return uniAcceptNow(r, e, f);
+            return uniAcceptNow(r, f);
         }
         CompletableFuture<Void> d = newIncompleteFuture();
-        unipush(new UniAccept<>(e, d, this, f));
+        unipush(new UniAccept<>(d, this, f));
         return d;
     }
 
-    private CompletableFuture<Void> uniAcceptNow(
-        Object r, Executor e, Consumer<? super T> f) {
+    private CompletableFuture<Void> uniAcceptNow(Object r, Consumer<? super T> f) {
         Throwable x;
         CompletableFuture<Void> d = newIncompleteFuture();
         if (r instanceof AltResult) {
@@ -520,13 +501,9 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
             r = null;
         }
         try {
-            if (e != null) {
-                e.execute(new UniAccept<>(null, d, this, f));
-            } else {
-                @SuppressWarnings("unchecked") T t = (T) r;
-                f.accept(t);
-                d.result = NIL;
-            }
+            @SuppressWarnings("unchecked") T t = (T) r;
+            f.accept(t);
+            d.result = NIL;
         } catch (Throwable ex) {
             d.result = encodeThrowable(ex);
         }
@@ -536,10 +513,9 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
     static final class UniWhenComplete<T> extends UniCompletion<T, T> {
         BiConsumer<? super T, ? super Throwable> fn;
 
-        UniWhenComplete(Executor executor, CompletableFuture<T> dep,
-                        CompletableFuture<T> src,
+        UniWhenComplete(CompletableFuture<T> dep, CompletableFuture<T> src,
                         BiConsumer<? super T, ? super Throwable> fn) {
-            super(executor, dep, src);
+            super(dep, src);
             this.fn = fn;
         }
 
@@ -594,22 +570,14 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         return true;
     }
 
-    private CompletableFuture<T> uniWhenCompleteStage(Executor e, BiConsumer<? super T, ? super Throwable> f) {
-        if (f == null) {
-            throw new NullPointerException();
-        }
+    private CompletableFuture<T> uniWhenCompleteStage(BiConsumer<? super T, ? super Throwable> f) {
         CompletableFuture<T> d = newIncompleteFuture();
         Object r;
+
         if ((r = result) == null) {
-            unipush(new UniWhenComplete<>(e, d, this, f));
-        } else if (e == null) {
-            d.uniWhenComplete(r, f, null);
+            unipush(new UniWhenComplete<>(d, this, f));
         } else {
-            try {
-                e.execute(new UniWhenComplete<>(null, d, this, f));
-            } catch (Throwable ex) {
-                d.result = encodeThrowable(ex);
-            }
+            d.uniWhenComplete(r, f, null);
         }
         return d;
     }
@@ -617,10 +585,9 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
     static final class UniHandle<T, V> extends UniCompletion<T, V> {
         BiFunction<? super T, Throwable, ? extends V> fn;
 
-        UniHandle(Executor executor, CompletableFuture<V> dep,
-                  CompletableFuture<T> src,
+        UniHandle(CompletableFuture<V> dep, CompletableFuture<T> src,
                   BiFunction<? super T, Throwable, ? extends V> fn) {
-            super(executor, dep, src);
+            super(dep, src);
             this.fn = fn;
         }
 
@@ -667,22 +634,13 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         return true;
     }
 
-    private <V> CompletableFuture<V> uniHandleStage(Executor e, BiFunction<? super T, Throwable, ? extends V> f) {
-        if (f == null) {
-            throw new NullPointerException();
-        }
+    private <V> CompletableFuture<V> uniHandleStage(BiFunction<? super T, Throwable, ? extends V> f) {
         CompletableFuture<V> d = newIncompleteFuture();
         Object r;
         if ((r = result) == null) {
-            unipush(new UniHandle<>(e, d, this, f));
-        } else if (e == null) {
-            d.uniHandle(r, f, null);
+            unipush(new UniHandle<>(d, this, f));
         } else {
-            try {
-                e.execute(new UniHandle<>(null, d, this, f));
-            } catch (Throwable ex) {
-                d.result = encodeThrowable(ex);
-            }
+            d.uniHandle(r, f, null);
         }
         return d;
     }
@@ -690,10 +648,9 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
     static final class UniExceptionally<T> extends UniCompletion<T, T> {
         Function<? super Throwable, ? extends T> fn;
 
-        UniExceptionally(Executor executor,
-                         CompletableFuture<T> dep, CompletableFuture<T> src,
+        UniExceptionally(CompletableFuture<T> dep, CompletableFuture<T> src,
                          Function<? super Throwable, ? extends T> fn) {
-            super(executor, dep, src);
+            super(dep, src);
             this.fn = fn;
         }
 
@@ -735,30 +692,20 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         return true;
     }
 
-    private CompletableFuture<T> uniExceptionallyStage(
-        Executor e, Function<Throwable, ? extends T> f) {
-        if (f == null) {
-            throw new NullPointerException();
-        }
+    private CompletableFuture<T> uniExceptionallyStage(Function<Throwable, ? extends T> f) {
         CompletableFuture<T> d = newIncompleteFuture();
         Object r;
         if ((r = result) == null) {
-            unipush(new UniExceptionally<>(e, d, this, f));
-        } else if (e == null) {
-            d.uniExceptionally(r, f, null);
+            unipush(new UniExceptionally<>(d, this, f));
         } else {
-            try {
-                e.execute(new UniExceptionally<>(null, d, this, f));
-            } catch (Throwable ex) {
-                d.result = encodeThrowable(ex);
-            }
+            d.uniExceptionally(r, f, null);
         }
         return d;
     }
 
     static final class UniRelay<U, T extends U> extends UniCompletion<T, U> {
         UniRelay(CompletableFuture<U> dep, CompletableFuture<T> src) {
-            super(null, dep, src);
+            super(dep, src);
         }
 
         CompletableFuture<U> tryFire(int mode) {
@@ -784,7 +731,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         UniCompose(Executor executor, CompletableFuture<V> dep,
                    CompletableFuture<T> src,
                    Function<? super T, ? extends CompletableFuture<V>> fn) {
-            super(executor, dep, src);
+            super(dep, src);
             this.fn = fn;
         }
 
@@ -878,7 +825,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
 
         BiCompletion(Executor executor, CompletableFuture<V> dep,
                      CompletableFuture<T> src, CompletableFuture<U> snd) {
-            super(executor, dep, src);
+            super(dep, src);
             this.snd = snd;
         }
     }
@@ -1130,14 +1077,21 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
     }
 
     @Override
-    public <U> CompletableFuture<U> thenApply(
-        Function<? super T, ? extends U> fn) {
-        return uniApplyStage(null, fn);
+    public <U> CompletableFuture<U> thenApply(Function<? super T, ? extends U> fn) {
+        if (fn == null) {
+            throw new NullPointerException();
+        }
+
+        return uniApplyStage(fn);
     }
 
     @Override
     public CompletableFuture<Void> thenAccept(Consumer<? super T> action) {
-        return uniAcceptStage(null, action);
+        if (action == null) {
+            throw new NullPointerException();
+        }
+
+        return uniAcceptStage(action);
     }
 
     @SuppressWarnings("unchecked")
@@ -1148,12 +1102,19 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
 
     @Override
     public CompletableFuture<T> whenComplete(BiConsumer<? super T, ? super Throwable> action) {
-        return uniWhenCompleteStage(null, action);
+        if (action == null) {
+            throw new NullPointerException();
+        }
+        return uniWhenCompleteStage(action);
     }
 
     @Override
     public <U> CompletableFuture<U> handle(BiFunction<? super T, Throwable, ? extends U> fn) {
-        return uniHandleStage(null, fn);
+        if (fn == null) {
+            throw new NullPointerException();
+        }
+
+        return uniHandleStage(fn);
     }
 
     public CompletableFuture<T> toCompletableFuture() {
@@ -1162,7 +1123,10 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
 
     @Override
     public CompletableFuture<T> exceptionally(Function<Throwable, ? extends T> fn) {
-        return uniExceptionallyStage(null, fn);
+        if (fn == null) {
+            throw new NullPointerException();
+        }
+        return uniExceptionallyStage(fn);
     }
 
     public static CompletableFuture<Void> allOf(CompletableFuture<?>... cfs) {
