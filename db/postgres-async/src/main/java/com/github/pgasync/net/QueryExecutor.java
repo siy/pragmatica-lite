@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import com.github.pgasync.async.IntermediateFuture;
+import com.github.pgasync.async.IntermediatePromise;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -24,13 +24,13 @@ public interface QueryExecutor {
     /**
      * Sends parameter less query script. The script may be multi query. Queries are separated with semicolons.
      * Accumulates fetched columns, rows and affected rows counts into memory and transforms them into a ResultSet when each {@link ResultSet} is fetched.
-     * Completes returned {@link IntermediateFuture} when the whole process of multiple {@link ResultSet}s fetching ends.
+     * Completes returned {@link IntermediatePromise} when the whole process of multiple {@link ResultSet}s fetching ends.
      *
      * @param sql Sql Script text.
      *
-     * @return CompletableFuture that is completed with a collection of fetched {@link ResultSet}s.
+     * @return Promise that is completed with a collection of fetched {@link ResultSet}s.
      */
-    default IntermediateFuture<Collection<ResultSet>> completeScript(String sql) {
+    default IntermediatePromise<Collection<ResultSet>> completeScript(String sql) {
         var results = new ArrayList<ResultSet>();
         var assembly = new ResultSetAssembly();
 
@@ -38,14 +38,14 @@ public interface QueryExecutor {
                       assembly::add,
                       affected -> results.add(assembly.asResultSet(affected)),
                       sql)
-                .thenApply(_ -> results);
+                .map(_ -> results);
     }
 
     /**
      * Sends parameter less query script. The script may be multi query. Queries are separated with semicolons.
      * Unlike {@link #completeScript(String)} doesn't accumulate fetched columns, rows and affected rows counts into memory.
      * Instead it calls passed in consumers, when columns, or particular row or an affected rows count is fetched from Postgres.
-     * Completes returned {@link IntermediateFuture} when the whole process of multiple {@link ResultSet}s fetching ends.
+     * Completes returned {@link IntermediatePromise} when the whole process of multiple {@link ResultSet}s fetching ends.
      *
      * @param onColumns  Columns fetched callback consumer.
      * @param onRow      A row fetched callback consumer.
@@ -54,47 +54,47 @@ public interface QueryExecutor {
      *                   This callback should be used to create a {@link ResultSet} instance from already fetched columns, rows and affected rows count.
      * @param sql        Sql Script text.
      *
-     * @return CompletableFuture that is completed when the whole process of multiple {@link ResultSet}s fetching ends.
+     * @return Promise that is completed when the whole process of multiple {@link ResultSet}s fetching ends.
      */
-    IntermediateFuture<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                    Consumer<Row> onRow,
-                                    Consumer<Integer> onAffected,
-                                    String sql);
+    IntermediatePromise<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                     Consumer<Row> onRow,
+                                     Consumer<Integer> onAffected,
+                                     String sql);
 
     /**
      * Sends single query with parameters. Uses extended query protocol of Postgres.
      * Accumulates fetched columns, rows and affected rows count into memory and transforms them into a {@link ResultSet} when it is fetched.
-     * Completes returned {@link IntermediateFuture} when the whole process of {@link ResultSet} fetching ends.
+     * Completes returned {@link IntermediatePromise} when the whole process of {@link ResultSet} fetching ends.
      *
      * @param sql    Sql query text with parameters substituted with ?.
      * @param params Parameters of the query.
      *
-     * @return CompletableFuture of {@link ResultSet}.
+     * @return Promise with {@link ResultSet}.
      */
-    default IntermediateFuture<ResultSet> completeQuery(String sql, Object... params) {
+    default IntermediatePromise<ResultSet> completeQuery(String sql, Object... params) {
         var assembly = new ResultSetAssembly();
         return query(assembly::start, assembly::add, sql, params)
-                .thenApply(assembly::asResultSet);
+                .map(assembly::asResultSet);
     }
 
     /**
      * Sends single query with parameters. Uses extended query protocol of Postgres.
      * Unlike {@link #completeQuery(String, Object...)} doesn't accumulate columns, rows and affected rows counts into memory.
      * Instead it calls passed in consumers, when columns, or particular row is fetched from Postgres.
-     * Completes returned {@link IntermediateFuture} with affected rows count when the process of single {@link ResultSet}s fetching ends.
+     * Completes returned {@link IntermediatePromise} with affected rows count when the process of single {@link ResultSet}s fetching ends.
      *
      * @param onColumns Columns fetched callback consumer.
      * @param onRow     A row fetched callback consumer.
      * @param sql       Sql query text with parameters substituted with ?.
      * @param params    Parameters of the query
      *
-     * @return CompletableFuture of affected rows count. This future is used by implementation to create a {@link ResultSet} instance from already
-     *     fetched columns, rows and affected rows count. Affected rows count is this future's completion value.
+     * @return Promise with affected rows count. This promise is used by implementation to create a {@link ResultSet} instance from already
+     *     fetched columns, rows and affected rows count. Affected rows count is this promise's completion value.
      */
-    IntermediateFuture<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                      Consumer<Row> onRow,
-                                      String sql,
-                                      Object... params);
+    IntermediatePromise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                       Consumer<Row> onRow,
+                                       String sql,
+                                       Object... params);
 
 
     class ResultSetAssembly {

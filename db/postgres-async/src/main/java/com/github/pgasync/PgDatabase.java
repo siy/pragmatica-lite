@@ -3,40 +3,40 @@ package com.github.pgasync;
 import com.github.pgasync.net.ConnectibleBuilder;
 import com.github.pgasync.net.Connection;
 
-import com.github.pgasync.async.IntermediateFuture;
+import com.github.pgasync.async.IntermediatePromise;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class PgDatabase extends PgConnectible {
 
-    public PgDatabase(ConnectibleBuilder.ConnectibleConfiguration properties, Supplier<IntermediateFuture<ProtocolStream>> obtainStream) {
+    public PgDatabase(ConnectibleBuilder.ConnectibleConfiguration properties, Supplier<IntermediatePromise<ProtocolStream>> obtainStream) {
         super(properties, obtainStream);
     }
 
     @Override
-    public IntermediateFuture<Connection> getConnection() {
+    public IntermediatePromise<Connection> getConnection() {
         return obtainStream.get()
-                           .thenCompose(stream -> new PgConnection(stream, dataConverter).connect(username, password, database))
-                           .thenCompose(connection -> {
+                           .flatMap(stream -> new PgConnection(stream, dataConverter).connect(username, password, database))
+                           .flatMap(connection -> {
                                if (validationQuery != null && !validationQuery.isBlank()) {
                                    return connection.completeScript(validationQuery)
-                                                    .handle((_, th) -> {
+                                                    .fold((_, th) -> {
                                                         if (th != null) {
                                                             return connection.close()
-                                                                             .thenCompose(_ -> IntermediateFuture.<Connection>failedFuture(th));
+                                                                             .flatMap(_ -> IntermediatePromise.<Connection>failed(th));
                                                         } else {
-                                                            return IntermediateFuture.completedFuture(connection);
+                                                            return IntermediatePromise.successful(connection);
                                                         }
                                                     })
-                                                    .thenCompose(Function.identity());
+                                                    .flatMap(Function.identity());
                                } else {
-                                   return IntermediateFuture.completedFuture(connection);
+                                   return IntermediatePromise.successful(connection);
                                }
                            });
     }
 
     @Override
-    public IntermediateFuture<Void> close() {
-        return IntermediateFuture.completedFuture(null);
+    public IntermediatePromise<Void> close() {
+        return IntermediatePromise.successful(null);
     }
 }

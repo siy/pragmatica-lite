@@ -16,7 +16,7 @@ package com.github.pgasync.net;
 
 import com.github.pgasync.Oid;
 
-import com.github.pgasync.async.IntermediateFuture;
+import com.github.pgasync.async.IntermediatePromise;
 import java.util.function.Consumer;
 
 /**
@@ -24,14 +24,14 @@ import java.util.function.Consumer;
  *
  * Concurrent using of implementations is impossible.
  * {@link Connection} implementations are never thread-safe.
- * They are designed to be used in context of single {@link IntermediateFuture} completion at a time.
+ * They are designed to be used in context of single {@link IntermediatePromise} completion at a time.
  *
  * @author Antti Laisi
  * @author Marat Gainullin
  */
 public interface Connection extends QueryExecutor {
 
-    IntermediateFuture<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes);
+    IntermediatePromise<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes);
 
     /**
      * The typical scenario of using notifications is as follows:
@@ -41,13 +41,13 @@ public interface Connection extends QueryExecutor {
      *
      * @param channel Channel name to listen to.
      * @param onNotification Callback, thar is invoked every time notification arrives.
-     * @return CompletableFuture instance, completed when subscription will be registered at the backend.
+     * @return Promise instance, completed when subscription will be registered at the backend.
      */
-    IntermediateFuture<Listening> subscribe(String channel, Consumer<String> onNotification);
+    IntermediatePromise<Listening> subscribe(String channel, Consumer<String> onNotification);
 
-    IntermediateFuture<Transaction> begin();
+    IntermediatePromise<Transaction> begin();
 
-    IntermediateFuture<Void> close();
+    IntermediatePromise<Void> close();
 
     boolean isConnected();
 }

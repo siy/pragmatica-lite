@@ -14,7 +14,7 @@
 
 package com.github.pgasync.net;
 
-import com.github.pgasync.async.IntermediateFuture;
+import com.github.pgasync.async.IntermediatePromise;
 
 /**
  * A unit of work. Transactions must be committed or rolled back, otherwise a
@@ -28,22 +28,22 @@ public interface Transaction extends QueryExecutor {
     /**
      * Commits a transaction
      */
-    IntermediateFuture<Void> commit();
+    IntermediatePromise<Void> commit();
 
     /**
      * Rollbacks a transaction.
      */
-    IntermediateFuture<Void> rollback();
+    IntermediatePromise<Void> rollback();
 
     /**
      * Commits a transaction and rollbacks it if an error occurs.
      */
-    IntermediateFuture<Void> close();
+    IntermediatePromise<Void> close();
 
     /**
      * Returns a connection, this transaction belongs to.
      */
     Connection getConnection();
 
-    IntermediateFuture<Transaction> begin();
+    IntermediatePromise<Transaction> begin();
 }

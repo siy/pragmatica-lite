@@ -14,7 +14,7 @@
 
 package com.github.pgasync;
 
-import com.github.pgasync.async.IntermediateFuture;
+import com.github.pgasync.async.IntermediatePromise;
 import com.github.pgasync.conversion.DataConverter;
 import com.github.pgasync.message.Message;
 import com.github.pgasync.message.backend.Authentication;
@@ -60,16 +60,16 @@ public class PgConnection implements Connection {
         }
 
         @Override
-        public IntermediateFuture<ResultSet> query(Object... params) {
+        public IntermediatePromise<ResultSet> query(Object... params) {
             var rows = new ArrayList<Row>();
 
             return fetch((_, _) -> {}, rows::add, params)
-                .thenApply(_ -> new PgResultSet(columns.byName, columns.ordered, rows, 0));
+                .map(_ -> new PgResultSet(columns.byName, columns.ordered, rows, 0));
         }
 
         //TODO: consider conversion to "reducer" style to eliminate externally stored state
         @Override
-        public IntermediateFuture<Integer> fetch(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns, Consumer<Row> processor, Object... params) {
+        public IntermediatePromise<Integer> fetch(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns, Consumer<Row> processor, Object... params) {
             var bind = new Bind(sname, dataConverter.fromParameters(params));
             Consumer<DataRow> rowProcessor = dataRow -> processor.accept(new PgRow(dataRow, columns.byName, columns.ordered, dataConverter));
 
@@ -87,9 +87,9 @@ public class PgConnection implements Connection {
         }
 
         @Override
-        public IntermediateFuture<Void> close() {
+        public IntermediatePromise<Void> close() {
             return stream.send(Close.statement(sname))
-                         .thenAccept(_ -> {});
+                         .onSuccess(_ -> {});
         }
     }
 
@@ -124,16 +124,16 @@ public class PgConnection implements Connection {
         this.dataConverter = dataConverter;
     }
 
-    IntermediateFuture<Connection> connect(String username, String password, String database) {
+    IntermediatePromise<Connection> connect(String username, String password, String database) {
         return stream.connect(new StartupMessage(username, database))
-                     .thenCompose(authentication -> authenticate(username, password, authentication))
-                     .thenApply(_ -> PgConnection.this);
+                     .flatMap(authentication -> authenticate(username, password, authentication))
+                     .map(_ -> PgConnection.this);
     }
 
-    private IntermediateFuture<? extends Message> authenticate(String username, String password, Message message) {
+    private IntermediatePromise<? extends Message> authenticate(String username, String password, Message message) {
         return message instanceof Authentication authentication && !authentication.authenticationOk()
                ? stream.authenticate(username, password, authentication)
-               : IntermediateFuture.completedFuture(message);
+               : IntermediatePromise.successful(message);
     }
 
     public boolean isConnected() {
@@ -141,12 +141,12 @@ public class PgConnection implements Connection {
     }
 
     @Override
-    public IntermediateFuture<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes) {
+    public IntermediatePromise<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes) {
         return preparedStatementOf(sql, parametersTypes)
-            .thenApply(Function.identity());
+            .map(Function.identity());
     }
 
-    IntermediateFuture<PgPreparedStatement> preparedStatementOf(String sql, Oid... parametersTypes) {
+    IntermediatePromise<PgPreparedStatement> preparedStatementOf(String sql, Oid... parametersTypes) {
         if (sql == null || sql.isBlank()) {
             throw new IllegalArgumentException("'sql' shouldn't be null or empty or blank string");
         }
@@ -158,14 +158,14 @@ public class PgConnection implements Connection {
 
         return stream
             .send(new Parse(sql, statementName, parametersTypes))
-            .thenApply(_ -> new PgPreparedStatement(statementName));
+            .map(_ -> new PgPreparedStatement(statementName));
     }
 
     @Override
-    public IntermediateFuture<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                           Consumer<Row> onRow,
-                                           Consumer<Integer> onAffected,
-                                           String sql) {
+    public IntermediatePromise<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                            Consumer<Row> onRow,
+                                            Consumer<Integer> onAffected,
+                                            String sql) {
         if (sql == null || sql.isBlank()) {
             throw new IllegalArgumentException("'sql' shouldn't be null or empty or blank string");
         }
@@ -185,19 +185,19 @@ public class PgConnection implements Connection {
     }
 
     @Override
-    public IntermediateFuture<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                             Consumer<Row> onRow,
-                                             String sql,
-                                             Object... params) {
+    public IntermediatePromise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                              Consumer<Row> onRow,
+                                              String sql,
+                                              Object... params) {
         return prepareStatement(sql, dataConverter.assumeTypes(params))
-            .thenCompose(ps -> ps.fetch(onColumns, onRow, params)
-                                 .handle((affected, th) -> closePreparedStatement(ps, affected, th)))
-            .thenCompose(Function.identity()); //Avoid race conditions
+            .flatMap(ps -> ps.fetch(onColumns, onRow, params)
+                             .fold((affected, th) -> closePreparedStatement(ps, affected, th)))
+            .flatMap(Function.identity()); //Avoid race conditions
     }
 
-    private static IntermediateFuture<Integer> closePreparedStatement(PreparedStatement ps, Integer affected, Throwable th) {
+    private static IntermediatePromise<Integer> closePreparedStatement(PreparedStatement ps, Integer affected, Throwable th) {
         return ps.close()
-                 .thenApply(_ -> {
+                 .map(_ -> {
                      if (th != null) {
                          throw new RuntimeException(th);
                      } else {
@@ -207,24 +207,24 @@ public class PgConnection implements Connection {
     }
 
     @Override
-    public IntermediateFuture<Transaction> begin() {
+    public IntermediatePromise<Transaction> begin() {
         return completeScript("BEGIN")
-            .thenApply(_ -> new PgConnectionTransaction());
+            .map(_ -> new PgConnectionTransaction());
     }
 
-    public IntermediateFuture<Listening> subscribe(String channel, Consumer<String> onNotification) {
+    public IntermediatePromise<Listening> subscribe(String channel, Consumer<String> onNotification) {
         // TODO: wait for commit before sending unlisten as otherwise it can be rolled back
         return completeScript(STR."LISTEN \{channel}")
-            .thenApply(_ -> {
+            .map(_ -> {
                 var unsubscribe = stream.subscribe(channel, onNotification);
 
                 return () -> completeScript(STR."UNLISTEN \{channel}")
-                    .thenAccept(_ -> unsubscribe.run());
+                    .onSuccess(_ -> unsubscribe.run());
             });
     }
 
     @Override
-    public IntermediateFuture<Void> close() {
+    public IntermediatePromise<Void> close() {
         return stream.close();
     }
 
@@ -246,27 +246,27 @@ public class PgConnection implements Connection {
      */
     class PgConnectionTransaction implements Transaction {
         @Override
-        public IntermediateFuture<Transaction> begin() {
+        public IntermediatePromise<Transaction> begin() {
             return completeScript("SAVEPOINT sp_1")
-                .thenApply(_ -> new PgConnectionNestedTransaction(1));
+                .map(_ -> new PgConnectionNestedTransaction(1));
         }
 
         @Override
-        public IntermediateFuture<Void> commit() {
+        public IntermediatePromise<Void> commit() {
             return PgConnection.this.completeScript("COMMIT")
-                                    .thenApply(_ -> null);
+                                    .map(_ -> null);
         }
 
         @Override
-        public IntermediateFuture<Void> rollback() {
+        public IntermediatePromise<Void> rollback() {
             return PgConnection.this.completeScript("ROLLBACK")
-                                    .thenApply(_ -> null);
+                                    .map(_ -> null);
         }
 
         @Override
-        public IntermediateFuture<Void> close() {
+        public IntermediatePromise<Void> close() {
             return commit()
-                .whenComplete(this::handleException);
+                .onResult(this::handleException);
         }
 
         @Override
@@ -275,32 +275,32 @@ public class PgConnection implements Connection {
         }
 
         @Override
-        public IntermediateFuture<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                               Consumer<Row> onRow,
-                                               Consumer<Integer> onAffected,
-                                               String sql) {
+        public IntermediatePromise<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                                Consumer<Row> onRow,
+                                                Consumer<Integer> onAffected,
+                                                String sql) {
             return PgConnection.this.script(onColumns, onRow, onAffected, sql)
-                                    .handle(this::handleException)
-                                    .thenCompose(Function.identity());
+                                    .fold(this::handleException)
+                                    .flatMap(Function.identity());
         }
 
-        public IntermediateFuture<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                                 Consumer<Row> onRow,
-                                                 String sql,
-                                                 Object... params) {
+        public IntermediatePromise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                                  Consumer<Row> onRow,
+                                                  String sql,
+                                                  Object... params) {
             return PgConnection.this.query(onColumns, onRow, sql, params)
-                                    .handle(this::handleException)
-                                    .thenCompose(Function.identity());
+                                    .fold(this::handleException)
+                                    .flatMap(Function.identity());
         }
 
-        private <T> IntermediateFuture<T> handleException(T unused, Throwable th) {
+        private <T> IntermediatePromise<T> handleException(T unused, Throwable th) {
             if (th != null) {
                 return rollback()
-                    .thenApply(_ -> {
+                    .map(_ -> {
                         throw new RuntimeException(th);
                     });
             } else {
-                return IntermediateFuture.completedFuture(unused);
+                return IntermediatePromise.successful(unused);
             }
         }
     }
@@ -316,21 +316,21 @@ public class PgConnection implements Connection {
         }
 
         @Override
-        public IntermediateFuture<Transaction> begin() {
+        public IntermediatePromise<Transaction> begin() {
             return completeScript(STR."SAVEPOINT sp_\{depth + 1}")
-                .thenApply(_ -> new PgConnectionNestedTransaction(depth + 1));
+                .map(_ -> new PgConnectionNestedTransaction(depth + 1));
         }
 
         @Override
-        public IntermediateFuture<Void> commit() {
+        public IntermediatePromise<Void> commit() {
             return PgConnection.this.completeScript(STR."RELEASE SAVEPOINT sp_\{depth}")
-                                    .thenApply(_ -> null);
+                                    .map(_ -> null);
         }
 
         @Override
-        public IntermediateFuture<Void> rollback() {
+        public IntermediatePromise<Void> rollback() {
             return PgConnection.this.completeScript(STR."ROLLBACK TO SAVEPOINT sp_\{depth}")
-                                    .thenApply(_ -> null);
+                                    .map(_ -> null);
         }
     }
 }

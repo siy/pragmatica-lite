@@ -8,8 +8,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.util.Collection;
 import java.util.List;
-import com.github.pgasync.async.IntermediateFuture;
-import java.util.concurrent.TimeUnit;
+import com.github.pgasync.async.IntermediatePromise;
+
 import java.util.function.Consumer;
 
 /**
@@ -100,10 +100,9 @@ public class DatabaseRule extends ExternalResource {
         return block(pool().completeScript(sql));
     }
 
-    private <T> T block(IntermediateFuture<T> future) {
+    private <T> T block(IntermediatePromise<T> promise) {
         try {
-//            return future.get(5_0000000, TimeUnit.SECONDS);
-            return future.join();
+            return promise.await();
         } catch (Throwable th) {
             throw new RuntimeException(th);
         }

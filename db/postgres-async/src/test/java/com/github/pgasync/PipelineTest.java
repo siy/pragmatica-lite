@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Tag;
 
 import java.util.Deque;
 
-import com.github.pgasync.async.IntermediateFuture;
+import com.github.pgasync.async.IntermediatePromise;
 
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.SynchronousQueue;
@@ -60,10 +60,10 @@ public class PipelineTest {
     @After
     public void closePool() throws Exception {
         if (c != null) {
-            c.close().join();
+            c.close().await();
         }
         if (pool != null) {
-            pool.close().join();
+            pool.close().await();
         }
     }
 
@@ -75,8 +75,8 @@ public class PipelineTest {
         long startWrite = currentTimeMillis();
         for (int i = 0; i < count; ++i) {
             pool.completeQuery(STR."select \{i}, pg_sleep(\{sleep})")
-                .thenAccept(_ -> results.add(currentTimeMillis()))
-                .exceptionally(th -> {
+                .onSuccess(_ -> results.add(currentTimeMillis()))
+                .fail(th -> {
                     throw new AssertionError("failed", th);
                 });
         }
@@ -95,7 +95,7 @@ public class PipelineTest {
         var connQueue = new SynchronousQueue<Connection>();
 
         pool.getConnection()
-            .thenAccept(connQueue::offer);
+            .onSuccess(connQueue::offer);
 
         return c = connQueue.take();
     }
@@ -105,11 +105,11 @@ public class PipelineTest {
         var connection = getConnection();
 
         try {
-            IntermediateFuture.allOf(IntStream.range(0, 10)
-                                              .mapToObj(i -> connection.completeQuery(STR."select \{i}, pg_sleep(10)")
-                                                                          .exceptionally(th -> {
+            IntermediatePromise.allOf(IntStream.range(0, 10)
+                                               .mapToObj(i -> connection.completeQuery(STR."select \{i}, pg_sleep(10)")
+                                                                          .fail(th -> {
                                                                               throw new IllegalStateException(new SqlException(th.getMessage()));
-                                                                          }))).join();
+                                                                          }))).await();
         } catch (Exception ex) {
             DatabaseRule.ifCause(ex, sqlException -> {
                 throw sqlException;

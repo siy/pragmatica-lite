@@ -61,7 +61,7 @@ public class ConnectionPoolingTest {
     public void shouldRunAllQueuedCallbacks() throws Exception {
         final int count = 1000;
         IntFunction<Callable<ResultSet>> insert = value -> () -> dbr.query("INSERT INTO CP_TEST VALUES($1)", singletonList(value));
-        List<Callable<ResultSet>> tasks = IntStream.range(0, count).mapToObj(insert).collect(toList());
+        List<Callable<ResultSet>> tasks = IntStream.range(0, count).mapToObj(insert).toList();
 
         ExecutorService executor = Executors.newFixedThreadPool(20);
         executor.invokeAll(tasks).forEach(this::await);

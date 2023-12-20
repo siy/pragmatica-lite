@@ -1,6 +1,6 @@
 package com.github.pgasync.net;
 
-import com.github.pgasync.async.IntermediateFuture;
+import com.github.pgasync.async.IntermediatePromise;
 
 /**
  * General container of connections.
@@ -8,7 +8,7 @@ import com.github.pgasync.async.IntermediateFuture;
  * @author Marat Gainullin
  */
 public interface Connectible extends QueryExecutor {
-    IntermediateFuture<Connection> getConnection();
+    IntermediatePromise<Connection> getConnection();
 
-    IntermediateFuture<Void> close();
+    IntermediatePromise<Void> close();
 }

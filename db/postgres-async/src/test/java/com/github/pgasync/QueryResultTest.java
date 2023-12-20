@@ -126,10 +126,10 @@ public class QueryResultTest {
     @Test
     public void shouldStreamResultRows() throws Exception {
         List<Integer> series = dbr.pool().completeQuery("select generate_series(1, 5)")
-                .thenApply(rs -> StreamSupport.stream(rs.spliterator(), false)
-                                              .map(r -> r.getInt(0))
-                                              .collect(Collectors.toList()))
-                .join();
+                .map(rs -> StreamSupport.stream(rs.spliterator(), false)
+                                        .map(r -> r.getInt(0))
+                                        .collect(Collectors.toList()))
+                .await();
 
         assertEquals(List.of(1, 2, 3, 4, 5), series);
     }

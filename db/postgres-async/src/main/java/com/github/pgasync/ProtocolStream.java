@@ -24,7 +24,7 @@ import com.github.pgasync.message.frontend.Describe;
 import com.github.pgasync.message.frontend.Query;
 import com.github.pgasync.message.frontend.StartupMessage;
 
-import com.github.pgasync.async.IntermediateFuture;
+import com.github.pgasync.async.IntermediatePromise;
 import java.util.function.Consumer;
 
 /**
@@ -34,22 +34,22 @@ import java.util.function.Consumer;
  */
 public interface ProtocolStream {
 
-    IntermediateFuture<Message> connect(StartupMessage startup);
+    IntermediatePromise<Message> connect(StartupMessage startup);
 
-    IntermediateFuture<Message> authenticate(String userName, String password, Authentication authRequired);
+    IntermediatePromise<Message> authenticate(String userName, String password, Authentication authRequired);
 
-    IntermediateFuture<Message> send(Message message);
+    IntermediatePromise<Message> send(Message message);
 
-    IntermediateFuture<Void> send(Query query, Consumer<RowDescription.ColumnDescription[]> onColumns, Consumer<DataRow> onRow, Consumer<CommandComplete> onAffected);
+    IntermediatePromise<Void> send(Query query, Consumer<RowDescription.ColumnDescription[]> onColumns, Consumer<DataRow> onRow, Consumer<CommandComplete> onAffected);
 
-    IntermediateFuture<Integer> send(Bind bind, Describe describe, Consumer<RowDescription.ColumnDescription[]> onColumns, Consumer<DataRow> onRow);
+    IntermediatePromise<Integer> send(Bind bind, Describe describe, Consumer<RowDescription.ColumnDescription[]> onColumns, Consumer<DataRow> onRow);
 
-    IntermediateFuture<Integer> send(Bind bind, Consumer<DataRow> onRow);
+    IntermediatePromise<Integer> send(Bind bind, Consumer<DataRow> onRow);
 
     Runnable subscribe(String channel, Consumer<String> onNotification);
 
     boolean isConnected();
 
-    IntermediateFuture<Void> close();
+    IntermediatePromise<Void> close();
 
 }

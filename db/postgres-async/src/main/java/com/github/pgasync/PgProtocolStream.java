@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
 import java.util.*;
-import com.github.pgasync.async.IntermediateFuture;
+import com.github.pgasync.async.IntermediatePromise;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -41,7 +41,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
 
     protected final Charset encoding;
 
-    private IntermediateFuture<? super Message> onResponse;
+    private IntermediatePromise<? super Message> onResponse;
     private final Map<String, Set<Consumer<String>>> subscriptions = new HashMap<>();
 
     private Consumer<RowDescription.ColumnDescription[]> onColumns;
@@ -56,21 +56,21 @@ public abstract class PgProtocolStream implements ProtocolStream {
         this.encoding = encoding;
     }
 
-    private IntermediateFuture<? super Message> consumeOnResponse() {
+    private IntermediatePromise<? super Message> consumeOnResponse() {
         var wasOnResponse = onResponse;
         onResponse = null;
         return wasOnResponse;
     }
 
     @Override
-    public IntermediateFuture<Message> authenticate(String userName, String password, Authentication authRequired) {
+    public IntermediatePromise<Message> authenticate(String userName, String password, Authentication authRequired) {
         if (authRequired.saslScramSha256()) {
             var clientNonce = UUID.randomUUID().toString();
             var saslInitialResponse = new SASLInitialResponse(Authentication.SUPPORTED_SASL,
                                                               null, ""/*SaslPrep.asQueryString(userName) - Postgres requires an empty string here*/,
                                                               clientNonce);
             return send(saslInitialResponse)
-                .thenApply(message -> {
+                .map(message -> {
                     if (message instanceof Authentication authentication) {
                         var serverFirstMessage = authentication.saslContinueData();
                         if (serverFirstMessage != null) {
@@ -86,7 +86,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
                         throw new IllegalStateException("Bad SASL authentication sequence detected on 'server-first-message' step");
                     }
                 })
-                .thenCompose(Function.identity());
+                .flatMap(Function.identity());
         } else {
             return send(PasswordMessage.passwordMessage(userName, password, authRequired.md5salt(), encoding));
         }
@@ -95,7 +95,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
     protected abstract void write(Message... messages);
 
     @Override
-    public IntermediateFuture<Message> send(Message message) {
+    public IntermediatePromise<Message> send(Message message) {
         return offerRoundTrip(() -> {
             lastSentMessage = message;
             write(message);
@@ -106,21 +106,21 @@ public abstract class PgProtocolStream implements ProtocolStream {
     }
 
     @Override
-    public IntermediateFuture<Void> send(Query query,
-                                         Consumer<RowDescription.ColumnDescription[]> onColumns,
-                                         Consumer<DataRow> onRow,
-                                         Consumer<CommandComplete> onAffected) {
+    public IntermediatePromise<Void> send(Query query,
+                                          Consumer<RowDescription.ColumnDescription[]> onColumns,
+                                          Consumer<DataRow> onRow,
+                                          Consumer<CommandComplete> onAffected) {
         this.onColumns = onColumns;
         this.onRow = onRow;
         this.onAffected = onAffected;
-        return send(query).thenAccept(_ -> {});
+        return send(query).onSuccess(_ -> {});
     }
 
     @Override
-    public IntermediateFuture<Integer> send(Bind bind,
-                                            Describe describe,
-                                            Consumer<RowDescription.ColumnDescription[]> onColumns,
-                                            Consumer<DataRow> onRow) {
+    public IntermediatePromise<Integer> send(Bind bind,
+                                             Describe describe,
+                                             Consumer<RowDescription.ColumnDescription[]> onColumns,
+                                             Consumer<DataRow> onRow) {
         this.onColumns = onColumns;
         this.onRow = onRow;
         this.onAffected = null;
@@ -128,11 +128,11 @@ public abstract class PgProtocolStream implements ProtocolStream {
             Execute execute;
             lastSentMessage = execute = new Execute();
             write(bind, describe, execute, FIndicators.SYNC);
-        }).thenApply(commandComplete -> ((CommandComplete) commandComplete).affectedRows());
+        }).map(commandComplete -> ((CommandComplete) commandComplete).affectedRows());
     }
 
     @Override
-    public IntermediateFuture<Integer> send(Bind bind, Consumer<DataRow> onRow) {
+    public IntermediatePromise<Integer> send(Bind bind, Consumer<DataRow> onRow) {
         this.onColumns = null;
         this.onRow = onRow;
         this.onAffected = null;
@@ -140,7 +140,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
             Execute execute;
             lastSentMessage = execute = new Execute();
             write(bind, execute, FIndicators.SYNC);
-        }).thenApply(commandComplete -> ((CommandComplete) commandComplete).affectedRows());
+        }).map(commandComplete -> ((CommandComplete) commandComplete).affectedRows());
     }
 
     @Override
@@ -164,7 +164,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
 
         if (onResponse != null) {
             var uponResponse = consumeOnResponse();
-            Promise.runAsync(() -> uponResponse.completeExceptionally(th));
+            Promise.runAsync(() -> uponResponse.fail(th));
         }
     }
 
@@ -197,7 +197,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
                 if (authentication.authenticationOk() || authentication.saslServerFinalResponse()) {
                     readyForQueryPendingMessage = message;
                 } else {
-                    consumeOnResponse().completeAsync(() -> message);
+                    consumeOnResponse().resolveAsync(() -> message);
                 }
             }
             case ReadyForQuery _ -> {
@@ -209,22 +209,22 @@ public abstract class PgProtocolStream implements ProtocolStream {
                     onRow = null;
                     onAffected = null;
                     var response = readyForQueryPendingMessage != null ? readyForQueryPendingMessage : message;
-                    consumeOnResponse().completeAsync(() -> response);
+                    consumeOnResponse().resolveAsync(() -> response);
                 }
                 readyForQueryPendingMessage = null;
             }
             case ParameterStatus _, BackendKeyData _, UnknownMessage _ -> log.trace(message.toString());
             case NoticeResponse _ -> log.warn(message.toString());
-            case null, default -> consumeOnResponse().completeAsync(() -> message);
+            case null, default -> consumeOnResponse().resolveAsync(() -> message);
         }
     }
 
-    private IntermediateFuture<Message> offerRoundTrip(Runnable requestAction) {
+    private IntermediatePromise<Message> offerRoundTrip(Runnable requestAction) {
         return offerRoundTrip(requestAction, true);
     }
 
-    protected IntermediateFuture<Message> offerRoundTrip(Runnable requestAction, boolean assumeConnected) {
-        var uponResponse = IntermediateFuture.<Message>create();
+    protected IntermediatePromise<Message> offerRoundTrip(Runnable requestAction, boolean assumeConnected) {
+        var uponResponse = IntermediatePromise.<Message>create();
 
         if (!assumeConnected || isConnected()) {
             if (onResponse == null) {
@@ -235,11 +235,11 @@ public abstract class PgProtocolStream implements ProtocolStream {
                     gotException(th);
                 }
             } else {
-                Promise.runAsync(() -> uponResponse.completeExceptionally(new IllegalStateException(
+                Promise.runAsync(() -> uponResponse.fail(new IllegalStateException(
                     "Postgres messages stream simultaneous use detected")));
             }
         } else {
-            Promise.runAsync(() -> uponResponse.completeExceptionally(new IllegalStateException("Channel is closed")));
+            Promise.runAsync(() -> uponResponse.fail(new IllegalStateException("Channel is closed")));
         }
         return uponResponse;
     }

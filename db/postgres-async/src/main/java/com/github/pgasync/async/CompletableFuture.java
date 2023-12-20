@@ -14,7 +14,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class CompletableFuture<T> implements IntermediateFuture<T> {
+public class CompletableFuture<T> {
     volatile Object result;       // Either the result or boxed AltResult
     volatile Completion stack;    // Top of Treiber stack of dependent actions
 
@@ -1038,8 +1038,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
     }
 
     @SuppressWarnings("unchecked")
-    @Override
-    public T join() {
+    public T await() {
         Object r;
         if ((r = result) == null) {
             r = waitingGet();
@@ -1047,15 +1046,13 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         return (T) reportJoin(r);
     }
 
-    @Override
-    public CompletableFuture<T> complete(T value) {
+    public CompletableFuture<T> succeed(T value) {
         completeValue(value);
         postComplete();
         return this;
     }
 
-    @Override
-    public void completeExceptionally(Throwable ex) {
+    public void fail(Throwable ex) {
         if (ex == null) {
             throw new NullPointerException();
         }
@@ -1064,8 +1061,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         postComplete();
     }
 
-    @Override
-    public <U> CompletableFuture<U> thenApply(Function<? super T, ? extends U> fn) {
+    public <U> CompletableFuture<U> map(Function<? super T, ? extends U> fn) {
         if (fn == null) {
             throw new NullPointerException();
         }
@@ -1073,8 +1069,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         return uniApplyStage(fn);
     }
 
-    @Override
-    public CompletableFuture<Void> thenAccept(Consumer<? super T> action) {
+    public CompletableFuture<Void> onSuccess(Consumer<? super T> action) {
         if (action == null) {
             throw new NullPointerException();
         }
@@ -1082,18 +1077,15 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         return uniAcceptStage(action);
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public <U> CompletableFuture<U> thenCompose(Function<? super T, ? extends IntermediateFuture<U>> fn) {
+    public <U> CompletableFuture<U> flatMap(Function<? super T, ? extends CompletableFuture<U>> fn) {
         if (fn == null) {
             throw new NullPointerException();
         }
 
-        return uniComposeStage((Function<? super T, ? extends CompletableFuture<U>>) fn);
+        return uniComposeStage(fn);
     }
 
-    @Override
-    public CompletableFuture<T> whenComplete(BiConsumer<? super T, ? super Throwable> action) {
+    public CompletableFuture<T> onResult(BiConsumer<? super T, ? super Throwable> action) {
         if (action == null) {
             throw new NullPointerException();
         }
@@ -1101,8 +1093,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         return uniWhenCompleteStage(action);
     }
 
-    @Override
-    public <U> CompletableFuture<U> handle(BiFunction<? super T, Throwable, ? extends U> fn) {
+    public <U> CompletableFuture<U> fold(BiFunction<? super T, Throwable, ? extends U> fn) {
         if (fn == null) {
             throw new NullPointerException();
         }
@@ -1114,8 +1105,7 @@ public class CompletableFuture<T> implements IntermediateFuture<T> {
         return this;
     }
 
-    @Override
-    public CompletableFuture<T> exceptionally(Function<Throwable, ? extends T> fn) {
+    public CompletableFuture<T> fail(Function<Throwable, ? extends T> fn) {
         if (fn == null) {
             throw new NullPointerException();
         }

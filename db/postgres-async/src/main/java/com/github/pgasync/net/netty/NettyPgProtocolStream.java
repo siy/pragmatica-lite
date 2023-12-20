@@ -37,7 +37,7 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.util.List;
-import com.github.pgasync.async.IntermediateFuture;
+import com.github.pgasync.async.IntermediatePromise;
 import java.util.function.Function;
 
 /**
@@ -68,19 +68,19 @@ public class NettyPgProtocolStream extends PgProtocolStream {
     }
 
     @Override
-    public IntermediateFuture<Message> connect(StartupMessage startup) {
+    public IntermediatePromise<Message> connect(StartupMessage startup) {
         startupWith = startup;
         return offerRoundTrip(() -> channelPipeline.connect(address).addListener(outboundErrorListener), false)
-            .thenApply(this::send)
-            .thenCompose(Function.identity())
-            .thenApply(message -> {
+            .map(this::send)
+            .flatMap(Function.identity())
+            .map(message -> {
                 if (message == SslHandshake.INSTANCE) {
                     return send(startup);
                 } else {
-                    return IntermediateFuture.completedFuture(message);
+                    return IntermediatePromise.successful(message);
                 }
             })
-            .thenCompose(Function.identity());
+            .flatMap(Function.identity());
     }
 
     @Override
@@ -89,23 +89,23 @@ public class NettyPgProtocolStream extends PgProtocolStream {
     }
 
     @Override
-    public IntermediateFuture<Void> close() {
-        var uponClose = IntermediateFuture.<Void>create();
+    public IntermediatePromise<Void> close() {
+        var uponClose = IntermediatePromise.<Void>create();
         ctx.writeAndFlush(Terminate.INSTANCE)
            .addListener(written -> {
                if (written.isSuccess()) {
                    ctx.close()
                       .addListener(closed -> {
                           if (closed.isSuccess()) {
-                              uponClose.completeAsync(() -> null);
+                              uponClose.resolveAsync(() -> null);
                           } else {
                               var th = closed.cause();
-                              Promise.runAsync(() -> uponClose.completeExceptionally(th));
+                              Promise.runAsync(() -> uponClose.fail(th));
                           }
                       });
                } else {
                    var th = written.cause();
-                   Promise.runAsync(() -> uponClose.completeExceptionally(th));
+                   Promise.runAsync(() -> uponClose.fail(th));
                }
            });
         return uponClose;

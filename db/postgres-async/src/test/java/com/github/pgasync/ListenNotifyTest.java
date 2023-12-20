@@ -34,34 +34,34 @@ public class ListenNotifyTest {
 
     @After
     public void shutdown() {
-        pool.close().join();
+        pool.close().await();
     }
 
     @Test
     public void shouldReceiveNotificationsOnListenedChannel() throws InterruptedException {
         BlockingQueue<String> result = new LinkedBlockingQueue<>(5);
 
-        Connection conn = pool.getConnection().join();
+        Connection conn = pool.getConnection().await();
         try {
-            Listening subscription = conn.subscribe("example", result::offer).join();
+            Listening subscription = conn.subscribe("example", result::offer).await();
             try {
                 TimeUnit.SECONDS.sleep(2);
 
-                pool.completeScript("notify example, 'msg-1'").join();
-                pool.completeScript("notify example, 'msg-2'").join();
-                pool.completeScript("notify example, 'msg-3'").join();
+                pool.completeScript("notify example, 'msg-1'").await();
+                pool.completeScript("notify example, 'msg-2'").await();
+                pool.completeScript("notify example, 'msg-3'").await();
 
                 assertEquals("msg-1", result.poll(2, TimeUnit.SECONDS));
                 assertEquals("msg-2", result.poll(2, TimeUnit.SECONDS));
                 assertEquals("msg-3", result.poll(2, TimeUnit.SECONDS));
             } finally {
-                subscription.unlisten().join();
+                subscription.unlisten().await();
             }
         } finally {
-            conn.close().join();
+            conn.close().await();
         }
 
-        pool.completeQuery("notify example, 'msg'").join();
+        pool.completeQuery("notify example, 'msg'").await();
         assertNull(result.poll(2, TimeUnit.SECONDS));
     }
 

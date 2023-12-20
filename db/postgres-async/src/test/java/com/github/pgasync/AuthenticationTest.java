@@ -19,11 +19,12 @@ public class AuthenticationTest {
 
     @Test(expected = SqlException.class)
     public void shouldThrowExceptionOnInvalidCredentials() throws Exception {
-        Connectible pool = dbr.builder
+        var pool = dbr.builder
             .password("_invalid_")
             .pool();
         try {
-            pool.completeQuery("SELECT 1").join();
+            pool.completeQuery("SELECT 1")
+                .await();
         } catch (Exception ex) {
             DatabaseRule.ifCause(ex,
                                  sqlException -> {
@@ -34,20 +35,22 @@ public class AuthenticationTest {
                                      throw ex;
                                  });
         } finally {
-            pool.close().join();
+            pool.close()
+                .await();
         }
     }
 
     @Test
     public void shouldGetResultOnValidCredentials() throws Exception {
-        Connectible pool = dbr.builder
+        var pool = dbr.builder
             .password(DatabaseRule.postgres.getPassword())
             .pool();
         try {
-            ResultSet rs = pool.completeQuery("SELECT 1").join();
+            var rs = pool.completeQuery("SELECT 1").await();
             assertEquals(1L, (long) rs.index(0).getInt(0));
         } finally {
-            pool.close().join();
+            pool.close()
+                .await();
         }
     }
 

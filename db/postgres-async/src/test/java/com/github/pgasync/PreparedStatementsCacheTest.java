@@ -33,59 +33,59 @@ public class PreparedStatementsCacheTest {
 
     @After
     public void shutdown() {
-        pool.close().join();
+        pool.close().await();
     }
 
     @Test
     public void shouldEvictedStatementBeReallyClosed() {
-        Connection conn = pool.getConnection().join();
+        Connection conn = pool.getConnection().await();
         try {
-            PreparedStatement evictor = conn.prepareStatement(SELECT_52).join();
+            PreparedStatement evictor = conn.prepareStatement(SELECT_52).await();
             try {
-                PreparedStatement evicted = conn.prepareStatement(SELECT_32).join();
-                evicted.close().join();
+                PreparedStatement evicted = conn.prepareStatement(SELECT_32).await();
+                evicted.close().await();
             } finally {
-                evictor.close().join();
+                evictor.close().await();
             }
         } finally {
-            conn.close().join();
+            conn.close().await();
         }
     }
 
     @Test
     public void shouldDuplicatedStatementBeReallyClosed() {
-        Connection conn = pool.getConnection().join();
+        Connection conn = pool.getConnection().await();
         try {
-            PreparedStatement stmt = conn.prepareStatement(SELECT_52).join();
+            PreparedStatement stmt = conn.prepareStatement(SELECT_52).await();
             try {
-                PreparedStatement duplicated = conn.prepareStatement(SELECT_52).join();
-                duplicated.close().join();
+                PreparedStatement duplicated = conn.prepareStatement(SELECT_52).await();
+                duplicated.close().await();
             } finally {
-                stmt.close().join();
+                stmt.close().await();
             }
         } finally {
-            conn.close().join();
+            conn.close().await();
         }
     }
 
     @Test
     public void shouldDuplicatedAndEvictedStatementsBeReallyClosed() {
-        Connection conn = pool.getConnection().join();
+        Connection conn = pool.getConnection().await();
         try {
-            PreparedStatement stmt = conn.prepareStatement(SELECT_52).join();
+            PreparedStatement stmt = conn.prepareStatement(SELECT_52).await();
             try {
-                PreparedStatement duplicated = conn.prepareStatement(SELECT_52).join();
+                PreparedStatement duplicated = conn.prepareStatement(SELECT_52).await();
                 try {
-                    PreparedStatement evicted = conn.prepareStatement(SELECT_32).join();
-                    evicted.close().join();
+                    PreparedStatement evicted = conn.prepareStatement(SELECT_32).await();
+                    evicted.close().await();
                 } finally {
-                    duplicated.close().join();
+                    duplicated.close().await();
                 }
             } finally {
-                stmt.close().join();
+                stmt.close().await();
             }
         } finally {
-            conn.close().join();
+            conn.close().await();
         }
     }
 

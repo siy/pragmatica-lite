@@ -46,7 +46,7 @@ public class ValidatedConnectionTest {
                         throw ex;
                     });
         } finally {
-            source.close().join();
+            source.close().await();
         }
     }
 
@@ -69,26 +69,26 @@ public class ValidatedConnectionTest {
     @Test
     public void shouldReturnValidPlainConnection() throws Exception {
         withPlain("Select 89", plain -> {
-            Connection conn = plain.getConnection().join();
-            conn.close().join();
+            Connection conn = plain.getConnection().await();
+            conn.close().await();
         });
     }
 
     @Test(expected = SqlException.class)
     public void shouldNotReturnInvalidPlainConnection() throws Exception {
-        withPlain("Selec t 89", plain -> plain.getConnection().join());
+        withPlain("Selec t 89", plain -> plain.getConnection().await());
     }
 
     @Test
     public void shouldReturnValidPooledConnection() throws Exception {
         withPool("Select 89", source -> {
-            Connection conn = source.getConnection().join();
-            conn.close().join();
+            Connection conn = source.getConnection().await();
+            conn.close().await();
         });
     }
 
     @Test(expected = SqlException.class)
     public void shouldNotReturnInvalidPooledConnection() throws Exception {
-        withPool("Selec t 89", source -> source.getConnection().join());
+        withPool("Selec t 89", source -> source.getConnection().await());
     }
 }

@@ -14,7 +14,7 @@
 
 package com.github.pgasync;
 
-import com.github.pgasync.async.IntermediateFuture;
+import com.github.pgasync.async.IntermediatePromise;
 import com.github.pgasync.net.Connectible;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -89,16 +89,16 @@ public class PerformanceTest {
             .username(DatabaseRule.postgres.getUsername())
             .pool();
         var connections = IntStream.range(0, poolSize)
-                                   .mapToObj(_ -> pool.getConnection().join()).toList();
+                                   .mapToObj(_ -> pool.getConnection().await()).toList();
         connections.forEach(connection -> {
-            connection.prepareStatement(SELECT_42).join().close().join();
-            connection.close().join();
+            connection.prepareStatement(SELECT_42).await().close().await();
+            connection.close().await();
         });
     }
 
     @After
     public void tearDown() {
-        pool.close().join();
+        pool.close().await();
     }
 
     @Test
@@ -108,17 +108,17 @@ public class PerformanceTest {
     }
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    private void performBatches(SortedMap<Integer, SortedMap<Integer, Long>> results, IntFunction<IntermediateFuture<Long>> batchStarter) {
+    private void performBatches(SortedMap<Integer, SortedMap<Integer, Long>> results, IntFunction<IntermediatePromise<Long>> batchStarter) {
         double mean = LongStream.range(0, repeats)
                                 .map(_ -> {
                                     try {
                                         var batches = IntStream.range(0, poolSize)
                                                                .mapToObj(batchStarter)
                                                                .toList();
-                                        IntermediateFuture.allOf(batches.stream())
-                                                          .join();
+                                        IntermediatePromise.allOf(batches.stream())
+                                                           .await();
                                         return batches.stream()
-                                                      .map(IntermediateFuture::join)
+                                                      .map(IntermediatePromise::await)
                                                       .max(Long::compare)
                                                       .get();
                                     } catch (Exception ex) {
@@ -136,21 +136,21 @@ public class PerformanceTest {
         private final long batchSize;
         private long performed;
         private long startedAt;
-        private IntermediateFuture<Long> onBatch;
+        private IntermediatePromise<Long> onBatch;
 
         Batch(long batchSize) {
             this.batchSize = batchSize;
         }
 
-        private IntermediateFuture<Long> startWithPreparedStatement() {
-            onBatch = IntermediateFuture.create();
+        private IntermediatePromise<Long> startWithPreparedStatement() {
+            onBatch = IntermediatePromise.create();
             startedAt = System.currentTimeMillis();
             nextSamplePreparedStatement();
             return onBatch;
         }
 
-        private IntermediateFuture<Long> startWithSimpleQuery() {
-            onBatch = IntermediateFuture.create();
+        private IntermediatePromise<Long> startWithSimpleQuery() {
+            onBatch = IntermediatePromise.create();
             startedAt = System.currentTimeMillis();
             nextSampleSimpleQuery();
             return onBatch;
@@ -158,22 +158,22 @@ public class PerformanceTest {
 
         private void nextSamplePreparedStatement() {
             pool.getConnection()
-                .thenCompose(connection ->
+                .flatMap(connection ->
                                connection.prepareStatement(SELECT_42)
-                                         .thenCompose(stmt ->
+                                         .flatMap(stmt ->
                                                         stmt.query()
-                                                            .handle((_, _) -> stmt.close())
-                                                            .handle((_, _) -> connection.close())))
-                .thenAccept(_ -> {
+                                                            .fold((_, _) -> stmt.close())
+                                                            .fold((_, _) -> connection.close())))
+                .onSuccess(_ -> {
                     if (++performed < batchSize) {
                         nextSamplePreparedStatement();
                     } else {
                         long duration = currentTimeMillis() - startedAt;
-                        onBatch.complete(duration);
+                        onBatch.succeed(duration);
                     }
                 })
-                .exceptionally(th -> {
-                    onBatch.completeExceptionally(th);
+                .fail(th -> {
+                    onBatch.fail(th);
                     return null;
                 });
 
@@ -181,16 +181,16 @@ public class PerformanceTest {
 
         private void nextSampleSimpleQuery() {
             pool.completeScript(SELECT_42)
-                .thenAccept(_ -> {
+                .onSuccess(_ -> {
                     if (++performed < batchSize) {
                         nextSamplePreparedStatement();
                     } else {
                         long duration = currentTimeMillis() - startedAt;
-                        onBatch.complete(duration);
+                        onBatch.succeed(duration);
                     }
                 })
-                .exceptionally(th -> {
-                    onBatch.completeExceptionally(th);
+                .fail(th -> {
+                    onBatch.fail(th);
                     return null;
                 });
         }

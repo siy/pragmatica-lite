@@ -1,9 +1,9 @@
 package com.github.pgasync.net;
 
-import com.github.pgasync.async.IntermediateFuture;
+import com.github.pgasync.async.IntermediatePromise;
 
 @FunctionalInterface
 public interface Listening {
 
-    IntermediateFuture<Void> unlisten();
+    IntermediatePromise<Void> unlisten();
 }
