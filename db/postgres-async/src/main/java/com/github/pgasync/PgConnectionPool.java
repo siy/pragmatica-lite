@@ -15,6 +15,7 @@
 package com.github.pgasync;
 
 import com.github.pgasync.async.IntermediatePromise;
+import com.github.pgasync.async.ThrowableCause;
 import com.github.pgasync.net.ConnectibleBuilder;
 import com.github.pgasync.net.Connection;
 import com.github.pgasync.net.Listening;
@@ -179,17 +180,13 @@ public class PgConnectionPool extends PgConnectible {
                                                   Object... params) {
             return prepareStatement(sql, dataConverter.assumeTypes(params))
                 .flatMap(stmt ->
-                                 stmt.fetch(onColumns, onRow, params)
-                                     .fold((affected, th) ->
-                                                 stmt.close()
-                                                     .map(_ -> {
-                                                         if (th == null) {
-                                                             return affected;
-                                                         } else {
-                                                             throw new RuntimeException(th);
-                                                         }
-                                                     })
-                                     ).flatMap(Fn1.id()));
+                             stmt.fetch(onColumns, onRow, params)
+                                 .fold(result ->
+                                           stmt.close()
+                                               .map(_ -> result.fold(
+                                                   cause -> {throw new RuntimeException(((ThrowableCause) cause).throwable());},
+                                                   Fn1.id())))
+                                 .flatMap(Fn1.id()));
         }
 
         @Override
@@ -323,24 +320,21 @@ public class PgConnectionPool extends PgConnectible {
                                 .flatMap(pooledConnection -> {
                                     if (validationQuery != null && !validationQuery.isBlank()) {
                                         return pooledConnection.completeScript(validationQuery)
-                                                               .fold((_, th) -> {
-                                                                   if (th != null) {
-                                                                       return ((PooledPgConnection) pooledConnection).delegate
-                                                                           .close()
-                                                                           .flatMap(_ -> IntermediatePromise.<Connection>failed(th));
-                                                                   } else {
-                                                                       return IntermediatePromise.successful(pooledConnection);
-                                                                   }
-                                                               })
+                                                               .fold(result ->
+                                                                         result.fold(
+                                                                             cause -> ((PooledPgConnection) pooledConnection).delegate
+                                                                                 .close()
+                                                                                 .flatMap(_ -> IntermediatePromise.<Connection>failed(((ThrowableCause) cause).throwable())),
+                                                                             _ -> IntermediatePromise.successful(pooledConnection)
+                                                                         ))
                                                                .flatMap(Fn1.id());
                                     } else {
                                         return IntermediatePromise.successful(pooledConnection);
                                     }
                                 })
-                                .onResult((connected, th) -> {
-                                    if (th == null) {
-                                        release((PooledPgConnection) connected);
-                                    } else {
+                                .onResult(result -> result.fold(
+                                    cause -> {
+                                        var th = ((ThrowableCause) cause).throwable();
                                         var actions = locked(() -> {
                                             size--;
                                             var unlucky = Stream.concat(
@@ -352,8 +346,12 @@ public class PgConnectionPool extends PgConnectible {
                                             return unlucky;
                                         });
                                         actions.forEach(Promise::runAsync);
-                                    }
-                                });
+                                        return null;
+                                    },
+                                    connected -> {
+                                        release((PooledPgConnection) connected);
+                                        return null;
+                                    }));
                 }
                 return deferred;
             }
@@ -368,10 +366,10 @@ public class PgConnectionPool extends PgConnectible {
             if (closing == null) {
                 closing = IntermediatePromise.create()
                                              .flatMap(_ ->
-                                                             locked(() ->
-                                                                        IntermediatePromise.allOf(connections.stream()
-                                                                                                             .map(PooledPgConnection::shutdown))
-                                                             ));
+                                                          locked(() ->
+                                                                     IntermediatePromise.allOf(connections.stream()
+                                                                                                          .map(PooledPgConnection::shutdown))
+                                                          ));
                 return new CloseTuple(closing, checkClosed());
             } else {
                 return new CloseTuple(IntermediatePromise.failed(new IllegalStateException("PG pool is already shutting down")), NO_OP);

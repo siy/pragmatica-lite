@@ -1,6 +1,7 @@
 package com.github.pgasync;
 
 import com.github.pgasync.async.IntermediatePromise;
+import com.github.pgasync.async.ThrowableCause;
 import com.github.pgasync.net.ConnectibleBuilder;
 import com.github.pgasync.net.Connection;
 
@@ -21,14 +22,10 @@ public class PgDatabase extends PgConnectible {
                            .flatMap(connection -> {
                                if (validationQuery != null && !validationQuery.isBlank()) {
                                    return connection.completeScript(validationQuery)
-                                                    .fold((_, th) -> {
-                                                        if (th != null) {
-                                                            return connection.close()
-                                                                             .flatMap(_ -> IntermediatePromise.<Connection>failed(th));
-                                                        } else {
-                                                            return IntermediatePromise.successful(connection);
-                                                        }
-                                                    })
+                                                    .fold(result -> result.fold(
+                                                        cause -> IntermediatePromise.<Connection>failed(((ThrowableCause) cause).throwable()),
+                                                        _ -> IntermediatePromise.successful(connection)
+                                                    ))
                                                     .flatMap(Fn1.id());
                                } else {
                                    return IntermediatePromise.successful(connection);

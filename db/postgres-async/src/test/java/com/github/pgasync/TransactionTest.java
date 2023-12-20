@@ -15,6 +15,7 @@
 package com.github.pgasync;
 
 import com.github.pgasync.async.IntermediatePromise;
+import com.github.pgasync.async.ThrowableCause;
 import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.SqlException;
 import com.github.pgasync.net.Transaction;
@@ -53,17 +54,25 @@ public class TransactionTest {
         return dbr.pool()
                   .getConnection()
                   .flatMap(connection ->
-                                   connection.begin()
-                                             .flatMap(fn)
-                                             .fold((value, th) -> connection.close()
-                                                                            .map(_ -> {
-                                                                                  if (th == null) {
-                                                                                      return value;
-                                                                                  } else {
-                                                                                      throw new RuntimeException(th);
-                                                                                  }
-                                                                              }))
-                                             .flatMap(Fn1.id()));
+                               connection.begin()
+                                         .flatMap(fn)
+                                         .fold(result -> connection.close()
+                                                                   .map(_ ->
+                                                                            result.fold(
+                                                                                cause -> {
+                                                                                    throw new RuntimeException(((ThrowableCause) cause).throwable());
+                                                                                },
+                                                                                Fn1.id()
+                                                                            )
+//                                                                                 {
+//                                                                                  if (th == null) {
+//                                                                                      return value;
+//                                                                                  } else {
+//                                                                                      throw new RuntimeException(th);
+//                                                                                  }
+//                                                                              }
+                                                                   ))
+                                         .flatMap(Fn1.id()));
     }
 
     @Test
@@ -163,13 +172,13 @@ public class TransactionTest {
         withinTransaction(transaction ->
                               transaction.begin()
                                          .flatMap(nested ->
-                                                          nested
-                                                              .completeQuery("INSERT INTO TX_TEST(ID) VALUES(19)")
-                                                              .flatMap(result -> {
-                                                                  assertEquals(1, result.affectedRows());
-                                                                  return nested.commit();
-                                                              })
-                                                              .flatMap(_ -> transaction.commit())))
+                                                      nested
+                                                          .completeQuery("INSERT INTO TX_TEST(ID) VALUES(19)")
+                                                          .flatMap(result -> {
+                                                              assertEquals(1, result.affectedRows());
+                                                              return nested.commit();
+                                                          })
+                                                          .flatMap(_ -> transaction.commit())))
             .await();
         assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 19").size());
     }
@@ -182,12 +191,12 @@ public class TransactionTest {
                                              assertEquals(1, result.affectedRows());
                                              return transaction.begin()
                                                                .flatMap(nested ->
-                                                                                nested
-                                                                                    .completeQuery("INSERT INTO TX_TEST(ID) VALUES(23)")
-                                                                                    .flatMap(res2 -> {
-                                                                                        assertEquals(1, res2.affectedRows());
-                                                                                        return nested.rollback();
-                                                                                    }))
+                                                                            nested
+                                                                                .completeQuery("INSERT INTO TX_TEST(ID) VALUES(23)")
+                                                                                .flatMap(res2 -> {
+                                                                                    assertEquals(1, res2.affectedRows());
+                                                                                    return nested.rollback();
+                                                                                }))
                                                                .flatMap(_ -> transaction.commit());
                                          }))
             .await();
@@ -203,14 +212,14 @@ public class TransactionTest {
                                              assertEquals(1, result.affectedRows());
                                              return transaction.begin()
                                                                .flatMap(nested ->
-                                                                                nested.completeQuery("INSERT INTO TX_TEST(ID) VALUES(26)")
-                                                                                      .onSuccess(res2 -> assertEquals(1, res2.affectedRows()))
-                                                                                      .flatMap(_ -> nested.completeQuery(
-                                                                                          "INSERT INTO TX_TEST(ID) VALUES(26)"))
-                                                                                      .map(_ -> IntermediatePromise.<Void>failed(new IllegalStateException(
-                                                                                          "The query should fail")))
-                                                                                      .tryRecover(_ -> transaction.commit())
-                                                                                      .flatMap(Fn1.id()));
+                                                                            nested.completeQuery("INSERT INTO TX_TEST(ID) VALUES(26)")
+                                                                                  .onSuccess(res2 -> assertEquals(1, res2.affectedRows()))
+                                                                                  .flatMap(_ -> nested.completeQuery(
+                                                                                      "INSERT INTO TX_TEST(ID) VALUES(26)"))
+                                                                                  .map(_ -> IntermediatePromise.<Void>failed(new IllegalStateException(
+                                                                                      "The query should fail")))
+                                                                                  .tryRecover(_ -> transaction.commit())
+                                                                                  .flatMap(Fn1.id()));
                                          }))
             .await();
         assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 25").size());

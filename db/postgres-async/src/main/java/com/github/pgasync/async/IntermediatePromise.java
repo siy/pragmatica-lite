@@ -1,9 +1,8 @@
 package com.github.pgasync.async;
 
 import org.pragmatica.lang.Functions.Fn1;
+import org.pragmatica.lang.Result;
 
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -46,8 +45,20 @@ public class IntermediatePromise<T> extends java.util.concurrent.CompletableFutu
     }
 
     @SuppressWarnings("unchecked")
-    public <U> IntermediatePromise<U> fold(BiFunction<? super T, Throwable, ? extends U> fn) {
-        return (IntermediatePromise<U>) this.handle(fn);
+    public <U> IntermediatePromise<U> fold(Fn1<? extends U, Result<T>> fn) {
+        return (IntermediatePromise<U>) this.handle((value, th) -> fn.apply(buildResult(value, th)));
+    }
+
+    public IntermediatePromise<T> onResult(Consumer<Result<T>> action) {
+        return (IntermediatePromise<T>) this.whenComplete((value, th) -> action.accept(buildResult(value, th)));
+    }
+
+    private static <T> Result<T> buildResult(T value, Throwable th) {
+        if (th != null) {
+            return Result.failure(ThrowableCause.fromThrowable(th));
+        } else {
+            return Result.success(value);
+        }
     }
 
     public <U> IntermediatePromise<U> flatMap(Fn1<? extends IntermediatePromise<U>, ? super T> fn) {
@@ -66,7 +77,6 @@ public class IntermediatePromise<T> extends java.util.concurrent.CompletableFutu
         this.defaultExecutor()
             .execute(() -> this.succeed(supplier.get()));
     }
-
     //recover and replace exception with new completion stage
     public IntermediatePromise<T> tryRecover(Fn1<? extends T, Throwable> fn) {
         return (IntermediatePromise<T>) this.exceptionally(fn::apply);
@@ -75,10 +85,6 @@ public class IntermediatePromise<T> extends java.util.concurrent.CompletableFutu
     public IntermediatePromise<T> succeed(T value) {
         this.complete(value);
         return this;
-    }
-
-    public IntermediatePromise<T> onResult(BiConsumer<? super T, ? super Throwable> action) {
-        return (IntermediatePromise<T>) this.whenComplete(action);
     }
 
     public T await() {

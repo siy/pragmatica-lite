@@ -15,6 +15,7 @@
 package com.github.pgasync;
 
 import com.github.pgasync.async.IntermediatePromise;
+import com.github.pgasync.async.ThrowableCause;
 import com.github.pgasync.conversion.DataConverter;
 import com.github.pgasync.message.Message;
 import com.github.pgasync.message.backend.Authentication;
@@ -31,6 +32,7 @@ import com.github.pgasync.net.PreparedStatement;
 import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.Row;
 import com.github.pgasync.net.Transaction;
+import org.pragmatica.lang.Result;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -69,7 +71,9 @@ public class PgConnection implements Connection {
 
         //TODO: consider conversion to "reducer" style to eliminate externally stored state
         @Override
-        public IntermediatePromise<Integer> fetch(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns, Consumer<Row> processor, Object... params) {
+        public IntermediatePromise<Integer> fetch(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                                  Consumer<Row> processor,
+                                                  Object... params) {
             var bind = new Bind(sname, dataConverter.fromParameters(params));
             Consumer<DataRow> rowProcessor = dataRow -> processor.accept(new PgRow(dataRow, columns.byName, columns.ordered, dataConverter));
 
@@ -191,19 +195,16 @@ public class PgConnection implements Connection {
                                               Object... params) {
         return prepareStatement(sql, dataConverter.assumeTypes(params))
             .flatMap(ps -> ps.fetch(onColumns, onRow, params)
-                             .fold((affected, th) -> closePreparedStatement(ps, affected, th)))
+                             .fold(result -> closePreparedStatement(result, ps)))
             .flatMap(Fn1.id()); //Avoid race conditions
     }
 
-    private static IntermediatePromise<Integer> closePreparedStatement(PreparedStatement ps, Integer affected, Throwable th) {
+    private static IntermediatePromise<Integer> closePreparedStatement(Result<Integer> result, PreparedStatement ps) {
         return ps.close()
-                 .map(_ -> {
-                     if (th != null) {
-                         throw new RuntimeException(th);
-                     } else {
-                         return affected;
-                     }
-                 });
+                 .map(_ -> result.fold(cause -> {
+                                           throw new RuntimeException(((ThrowableCause) cause).throwable());
+                                       },
+                                       Fn1.id()));
     }
 
     @Override
@@ -293,15 +294,13 @@ public class PgConnection implements Connection {
                                     .flatMap(Fn1.id());
         }
 
-        private <T> IntermediatePromise<T> handleException(T unused, Throwable th) {
-            if (th != null) {
-                return rollback()
+        private <T> IntermediatePromise<T> handleException(Result<T> result) {
+            return result.fold(
+                cause -> rollback()
                     .map(_ -> {
-                        throw new RuntimeException(th);
-                    });
-            } else {
-                return IntermediatePromise.successful(unused);
-            }
+                        throw new RuntimeException(((ThrowableCause) cause).throwable());
+                    }),
+                IntermediatePromise::successful);
         }
     }
 

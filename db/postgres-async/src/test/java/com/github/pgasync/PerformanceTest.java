@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+import org.pragmatica.lang.Functions.Fn1;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -159,11 +160,14 @@ public class PerformanceTest {
         private void nextSamplePreparedStatement() {
             pool.getConnection()
                 .flatMap(connection ->
-                               connection.prepareStatement(SELECT_42)
-                                         .flatMap(stmt ->
-                                                        stmt.query()
-                                                            .fold((_, _) -> stmt.close())
-                                                            .fold((_, _) -> connection.close())))
+                             connection.prepareStatement(SELECT_42)
+                                       .flatMap(stmt ->
+                                                    stmt.query()
+                                                        .fold(_ -> stmt.close())
+                                                        .flatMap(Fn1.id())
+                                                        .fold(_ -> connection.close())
+                                                        .flatMap(Fn1.id())))
+
                 .onSuccess(_ -> {
                     if (++performed < batchSize) {
                         nextSamplePreparedStatement();
