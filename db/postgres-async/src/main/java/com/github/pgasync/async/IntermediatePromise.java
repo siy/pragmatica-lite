@@ -1,9 +1,10 @@
 package com.github.pgasync.async;
 
+import org.pragmatica.lang.Functions.Fn1;
+
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -40,8 +41,8 @@ public class IntermediatePromise<T> extends java.util.concurrent.CompletableFutu
     }
 
     @SuppressWarnings("unchecked")
-    public <U> IntermediatePromise<U> map(Function<? super T, ? extends U> fn) {
-        return (IntermediatePromise<U>) this.thenApply(fn);
+    public <U> IntermediatePromise<U> map(Fn1<? extends U, ? super T> fn) {
+        return (IntermediatePromise<U>) this.thenApply(fn::apply);
     }
 
     @SuppressWarnings("unchecked")
@@ -49,8 +50,8 @@ public class IntermediatePromise<T> extends java.util.concurrent.CompletableFutu
         return (IntermediatePromise<U>) this.handle(fn);
     }
 
-    public <U> IntermediatePromise<U> flatMap(Function<? super T, ? extends IntermediatePromise<U>> fn) {
-        return (IntermediatePromise<U>) this.thenCompose(fn);
+    public <U> IntermediatePromise<U> flatMap(Fn1<? extends IntermediatePromise<U>, ? super T> fn) {
+        return (IntermediatePromise<U>) this.thenCompose(fn::apply);
     }
 
     public IntermediatePromise<Void> onSuccess(Consumer<? super T> action) {
@@ -67,8 +68,8 @@ public class IntermediatePromise<T> extends java.util.concurrent.CompletableFutu
     }
 
     //recover and replace exception with new completion stage
-    public IntermediatePromise<T> fail(Function<Throwable, ? extends T> fn) {
-        return (IntermediatePromise<T>) this.exceptionally(fn);
+    public IntermediatePromise<T> tryRecover(Fn1<? extends T, Throwable> fn) {
+        return (IntermediatePromise<T>) this.exceptionally(fn::apply);
     }
 
     public IntermediatePromise<T> succeed(T value) {

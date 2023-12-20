@@ -37,9 +37,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static com.github.pgasync.message.backend.RowDescription.ColumnDescription;
+import static org.pragmatica.lang.Functions.Fn1;
 
 /**
  * A connection to Postgres backend. The postmaster forks a backend process for each connection. A connection can process only a single query at a
@@ -143,7 +143,7 @@ public class PgConnection implements Connection {
     @Override
     public IntermediatePromise<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes) {
         return preparedStatementOf(sql, parametersTypes)
-            .map(Function.identity());
+            .map(Fn1.id());
     }
 
     IntermediatePromise<PgPreparedStatement> preparedStatementOf(String sql, Oid... parametersTypes) {
@@ -192,7 +192,7 @@ public class PgConnection implements Connection {
         return prepareStatement(sql, dataConverter.assumeTypes(params))
             .flatMap(ps -> ps.fetch(onColumns, onRow, params)
                              .fold((affected, th) -> closePreparedStatement(ps, affected, th)))
-            .flatMap(Function.identity()); //Avoid race conditions
+            .flatMap(Fn1.id()); //Avoid race conditions
     }
 
     private static IntermediatePromise<Integer> closePreparedStatement(PreparedStatement ps, Integer affected, Throwable th) {
@@ -281,7 +281,7 @@ public class PgConnection implements Connection {
                                                 String sql) {
             return PgConnection.this.script(onColumns, onRow, onAffected, sql)
                                     .fold(this::handleException)
-                                    .flatMap(Function.identity());
+                                    .flatMap(Fn1.id());
         }
 
         public IntermediatePromise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
@@ -290,7 +290,7 @@ public class PgConnection implements Connection {
                                                   Object... params) {
             return PgConnection.this.query(onColumns, onRow, sql, params)
                                     .fold(this::handleException)
-                                    .flatMap(Function.identity());
+                                    .flatMap(Fn1.id());
         }
 
         private <T> IntermediatePromise<T> handleException(T unused, Throwable th) {

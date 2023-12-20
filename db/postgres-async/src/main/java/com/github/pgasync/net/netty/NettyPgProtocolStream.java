@@ -15,6 +15,7 @@
 package com.github.pgasync.net.netty;
 
 import com.github.pgasync.PgProtocolStream;
+import com.github.pgasync.async.IntermediatePromise;
 import com.github.pgasync.message.Message;
 import com.github.pgasync.message.backend.SslHandshake;
 import com.github.pgasync.message.frontend.SSLRequest;
@@ -22,7 +23,11 @@ import com.github.pgasync.message.frontend.StartupMessage;
 import com.github.pgasync.message.frontend.Terminate;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.ssl.SslContextBuilder;
@@ -37,8 +42,8 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.util.List;
-import com.github.pgasync.async.IntermediatePromise;
-import java.util.function.Function;
+
+import static org.pragmatica.lang.Functions.Fn1;
 
 /**
  * Netty messages stream to Postgres backend.
@@ -72,7 +77,7 @@ public class NettyPgProtocolStream extends PgProtocolStream {
         startupWith = startup;
         return offerRoundTrip(() -> channelPipeline.connect(address).addListener(outboundErrorListener), false)
             .map(this::send)
-            .flatMap(Function.identity())
+            .flatMap(Fn1.id())
             .map(message -> {
                 if (message == SslHandshake.INSTANCE) {
                     return send(startup);
@@ -80,7 +85,7 @@ public class NettyPgProtocolStream extends PgProtocolStream {
                     return IntermediatePromise.successful(message);
                 }
             })
-            .flatMap(Function.identity());
+            .flatMap(Fn1.id());
     }
 
     @Override

@@ -14,11 +14,73 @@
 
 package com.github.pgasync;
 
-import com.github.pgasync.SqlError.*;
+import com.github.pgasync.SqlError.ServerConfigurationFileError;
+import com.github.pgasync.SqlError.ServerConnectionException;
+import com.github.pgasync.SqlError.ServerDataException;
+import com.github.pgasync.SqlError.ServerDiagnosticsException;
+import com.github.pgasync.SqlError.ServerError;
+import com.github.pgasync.SqlError.ServerErrorCardinalityViolation;
+import com.github.pgasync.SqlError.ServerErrorCaseNotFound;
+import com.github.pgasync.SqlError.ServerErrorDependentPrivilegeDescriptorsStillExist;
+import com.github.pgasync.SqlError.ServerErrorFeatureNotSupported;
+import com.github.pgasync.SqlError.ServerErrorInsufficientResources;
+import com.github.pgasync.SqlError.ServerErrorIntegrityConstraintViolation;
+import com.github.pgasync.SqlError.ServerErrorInvalidAuthorizationSpecification;
+import com.github.pgasync.SqlError.ServerErrorInvalidCatalogName;
+import com.github.pgasync.SqlError.ServerErrorInvalidCursorName;
+import com.github.pgasync.SqlError.ServerErrorInvalidCursorState;
+import com.github.pgasync.SqlError.ServerErrorInvalidGrantor;
+import com.github.pgasync.SqlError.ServerErrorInvalidRoleSpecification;
+import com.github.pgasync.SqlError.ServerErrorInvalidSQLStatementName;
+import com.github.pgasync.SqlError.ServerErrorInvalidSchemaName;
+import com.github.pgasync.SqlError.ServerErrorInvalidTransactionInitiation;
+import com.github.pgasync.SqlError.ServerErrorInvalidTransactionState;
+import com.github.pgasync.SqlError.ServerErrorInvalidTransactionTermination;
+import com.github.pgasync.SqlError.ServerErrorNoData;
+import com.github.pgasync.SqlError.ServerErrorObjectNotInPrerequisiteState;
+import com.github.pgasync.SqlError.ServerErrorOperatorIntervention;
+import com.github.pgasync.SqlError.ServerErrorProgramLimitExceeded;
+import com.github.pgasync.SqlError.ServerErrorSQLStatementNotYetComplete;
+import com.github.pgasync.SqlError.ServerErrorTransactionRollback;
+import com.github.pgasync.SqlError.ServerErrorTriggeredDataChangeViolation;
+import com.github.pgasync.SqlError.ServerErrorWithCheckOptionViolation;
+import com.github.pgasync.SqlError.ServerExternalRoutineException;
+import com.github.pgasync.SqlError.ServerExternalRoutineInvocationException;
+import com.github.pgasync.SqlError.ServerForeignDataWrapperError;
+import com.github.pgasync.SqlError.ServerInternalError;
+import com.github.pgasync.SqlError.ServerLocatorException;
+import com.github.pgasync.SqlError.ServerPlPgSQLError;
+import com.github.pgasync.SqlError.ServerResponse;
+import com.github.pgasync.SqlError.ServerSQLRoutineException;
+import com.github.pgasync.SqlError.ServerSavepointException;
+import com.github.pgasync.SqlError.ServerSnapshotFailure;
+import com.github.pgasync.SqlError.ServerSyntaxErrorOrAccessRuleViolation;
+import com.github.pgasync.SqlError.ServerSystemError;
+import com.github.pgasync.SqlError.ServerTriggeredActionException;
+import com.github.pgasync.SqlError.ServerWarning;
+import com.github.pgasync.async.IntermediatePromise;
 import com.github.pgasync.message.ExtendedQueryMessage;
 import com.github.pgasync.message.Message;
-import com.github.pgasync.message.backend.*;
-import com.github.pgasync.message.frontend.*;
+import com.github.pgasync.message.backend.Authentication;
+import com.github.pgasync.message.backend.BIndicators;
+import com.github.pgasync.message.backend.BackendKeyData;
+import com.github.pgasync.message.backend.CommandComplete;
+import com.github.pgasync.message.backend.DataRow;
+import com.github.pgasync.message.backend.ErrorResponse;
+import com.github.pgasync.message.backend.NoticeResponse;
+import com.github.pgasync.message.backend.NotificationResponse;
+import com.github.pgasync.message.backend.ParameterStatus;
+import com.github.pgasync.message.backend.ReadyForQuery;
+import com.github.pgasync.message.backend.RowDescription;
+import com.github.pgasync.message.backend.UnknownMessage;
+import com.github.pgasync.message.frontend.Bind;
+import com.github.pgasync.message.frontend.Describe;
+import com.github.pgasync.message.frontend.Execute;
+import com.github.pgasync.message.frontend.FIndicators;
+import com.github.pgasync.message.frontend.PasswordMessage;
+import com.github.pgasync.message.frontend.Query;
+import com.github.pgasync.message.frontend.SASLInitialResponse;
+import com.github.pgasync.message.frontend.SASLResponse;
 import com.github.pgasync.net.SqlException;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Promise;
@@ -26,10 +88,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
-import java.util.*;
-import com.github.pgasync.async.IntermediatePromise;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * Messages stream to Postgres backend.
@@ -86,7 +150,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
                         throw new IllegalStateException("Bad SASL authentication sequence detected on 'server-first-message' step");
                     }
                 })
-                .flatMap(Function.identity());
+                .flatMap(Fn1.id());
         } else {
             return send(PasswordMessage.passwordMessage(userName, password, authRequired.md5salt(), encoding));
         }

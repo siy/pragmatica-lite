@@ -172,7 +172,7 @@ public class PerformanceTest {
                         onBatch.succeed(duration);
                     }
                 })
-                .fail(th -> {
+                .tryRecover(th -> {
                     onBatch.fail(th);
                     return null;
                 });
@@ -189,7 +189,7 @@ public class PerformanceTest {
                         onBatch.succeed(duration);
                     }
                 })
-                .fail(th -> {
+                .tryRecover(th -> {
                     onBatch.fail(th);
                     return null;
                 });

@@ -23,8 +23,7 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.jupiter.api.Tag;
-
-import java.util.function.Function;
+import org.pragmatica.lang.Functions.Fn1;
 
 import static org.junit.Assert.assertEquals;
 
@@ -50,7 +49,7 @@ public class TransactionTest {
         dbr.query("DROP TABLE IF EXISTS TX_TEST");
     }
 
-    private static <T> IntermediatePromise<T> withinTransaction(Function<Transaction, IntermediatePromise<T>> fn) {
+    private static <T> IntermediatePromise<T> withinTransaction(Fn1<IntermediatePromise<T>, Transaction> fn) {
         return dbr.pool()
                   .getConnection()
                   .flatMap(connection ->
@@ -64,7 +63,7 @@ public class TransactionTest {
                                                                                       throw new RuntimeException(th);
                                                                                   }
                                                                               }))
-                                             .flatMap(Function.identity()));
+                                             .flatMap(Fn1.id()));
     }
 
     @Test
@@ -74,7 +73,7 @@ public class TransactionTest {
                                                         assertEquals(1L, result.index(0).getLong(0).longValue());
                                                         return transaction.commit();
                                                     })
-                                                    .flatMap(Function.identity()))
+                                                    .flatMap(Fn1.id()))
             .await();
     }
 
@@ -102,7 +101,7 @@ public class TransactionTest {
                                                        return transaction.commit()
                                                                          .map(_ -> value);
                                                    })
-                                                   .flatMap(Function.identity()))
+                                                   .flatMap(Fn1.id()))
             .await();
         assertEquals(35L, id);
     }
@@ -152,8 +151,8 @@ public class TransactionTest {
                                                  .completeQuery("INSERT INTO TX_TEST(ID) VALUES(22)")
                                                  .map(_ -> IntermediatePromise.<ResultSet>failed(
                                                      new IllegalStateException("The transaction should fail")))
-                                                 .fail(_ -> transaction.completeQuery("SELECT 1"))
-                                                 .flatMap(Function.identity());
+                                                 .tryRecover(_ -> transaction.completeQuery("SELECT 1"))
+                                                 .flatMap(Fn1.id());
                                          }))
             .await();
         assertEquals(0, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 22").size());
@@ -210,8 +209,8 @@ public class TransactionTest {
                                                                                           "INSERT INTO TX_TEST(ID) VALUES(26)"))
                                                                                       .map(_ -> IntermediatePromise.<Void>failed(new IllegalStateException(
                                                                                           "The query should fail")))
-                                                                                      .fail(_ -> transaction.commit())
-                                                                                      .flatMap(Function.identity()));
+                                                                                      .tryRecover(_ -> transaction.commit())
+                                                                                      .flatMap(Fn1.id()));
                                          }))
             .await();
         assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 25").size());

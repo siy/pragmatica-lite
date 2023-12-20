@@ -14,6 +14,7 @@
 
 package com.github.pgasync;
 
+import com.github.pgasync.async.IntermediatePromise;
 import com.github.pgasync.net.Connectible;
 import com.github.pgasync.net.Connection;
 import com.github.pgasync.net.SqlException;
@@ -24,9 +25,6 @@ import org.junit.Test;
 import org.junit.jupiter.api.Tag;
 
 import java.util.Deque;
-
-import com.github.pgasync.async.IntermediatePromise;
-
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.SynchronousQueue;
 import java.util.stream.IntStream;
@@ -76,7 +74,7 @@ public class PipelineTest {
         for (int i = 0; i < count; ++i) {
             pool.completeQuery(STR."select \{i}, pg_sleep(\{sleep})")
                 .onSuccess(_ -> results.add(currentTimeMillis()))
-                .fail(th -> {
+                .tryRecover(th -> {
                     throw new AssertionError("failed", th);
                 });
         }
@@ -107,7 +105,7 @@ public class PipelineTest {
         try {
             IntermediatePromise.allOf(IntStream.range(0, 10)
                                                .mapToObj(i -> connection.completeQuery(STR."select \{i}, pg_sleep(10)")
-                                                                          .fail(th -> {
+                                                                          .tryRecover(th -> {
                                                                               throw new IllegalStateException(new SqlException(th.getMessage()));
                                                                           }))).await();
         } catch (Exception ex) {

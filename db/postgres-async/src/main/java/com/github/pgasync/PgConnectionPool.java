@@ -34,9 +34,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+import static org.pragmatica.lang.Functions.Fn1;
 
 /**
  * Resource pool for backend connections.
@@ -123,7 +124,7 @@ public class PgConnectionPool extends PgConnectible {
                                                     statementsSource.remove();
                                                     closeNextStatement(statementsSource, onComplete);
                                                 })
-                                                .fail(th -> {
+                                                .tryRecover(th -> {
                                                     Promise.runAsync(() -> onComplete.fail(th));
                                                     return null;
                                                 });
@@ -144,7 +145,7 @@ public class PgConnectionPool extends PgConnectible {
                     }
                     return delegate.close();
                 })
-                .flatMap(Function.identity());
+                .flatMap(Fn1.id());
         }
 
         @Override
@@ -188,7 +189,7 @@ public class PgConnectionPool extends PgConnectible {
                                                              throw new RuntimeException(th);
                                                          }
                                                      })
-                                     ).flatMap(Function.identity()));
+                                     ).flatMap(Fn1.id()));
         }
 
         @Override
@@ -331,7 +332,7 @@ public class PgConnectionPool extends PgConnectible {
                                                                        return IntermediatePromise.successful(pooledConnection);
                                                                    }
                                                                })
-                                                               .flatMap(Function.identity());
+                                                               .flatMap(Fn1.id());
                                     } else {
                                         return IntermediatePromise.successful(pooledConnection);
                                     }

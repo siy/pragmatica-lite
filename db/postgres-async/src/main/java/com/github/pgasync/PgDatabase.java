@@ -1,11 +1,12 @@
 package com.github.pgasync;
 
+import com.github.pgasync.async.IntermediatePromise;
 import com.github.pgasync.net.ConnectibleBuilder;
 import com.github.pgasync.net.Connection;
 
-import com.github.pgasync.async.IntermediatePromise;
-import java.util.function.Function;
 import java.util.function.Supplier;
+
+import static org.pragmatica.lang.Functions.Fn1;
 
 public class PgDatabase extends PgConnectible {
 
@@ -28,7 +29,7 @@ public class PgDatabase extends PgConnectible {
                                                             return IntermediatePromise.successful(connection);
                                                         }
                                                     })
-                                                    .flatMap(Function.identity());
+                                                    .flatMap(Fn1.id());
                                } else {
                                    return IntermediatePromise.successful(connection);
                                }
