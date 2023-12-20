@@ -6,7 +6,11 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.incubator.channel.uring.*;
+import io.netty.incubator.channel.uring.IOUring;
+import io.netty.incubator.channel.uring.IOUringDatagramChannel;
+import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
+import io.netty.incubator.channel.uring.IOUringServerSocketChannel;
+import io.netty.incubator.channel.uring.IOUringSocketChannel;
 import org.pragmatica.net.transport.api.TransportConfiguration;
 
 @SuppressWarnings("unused")

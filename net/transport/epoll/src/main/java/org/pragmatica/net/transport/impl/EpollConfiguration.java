@@ -3,7 +3,11 @@ package org.pragmatica.net.transport.impl;
 
 import com.google.auto.service.AutoService;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.epoll.*;
+import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollDatagramChannel;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollServerSocketChannel;
+import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;

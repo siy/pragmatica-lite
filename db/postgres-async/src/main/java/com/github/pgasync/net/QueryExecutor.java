@@ -2,6 +2,7 @@ package com.github.pgasync.net;
 
 import com.github.pgasync.PgColumn;
 import com.github.pgasync.PgResultSet;
+import com.github.pgasync.async.IntermediatePromise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import com.github.pgasync.async.IntermediatePromise;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 

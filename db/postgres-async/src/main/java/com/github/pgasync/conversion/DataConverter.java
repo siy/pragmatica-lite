@@ -6,7 +6,13 @@ import com.github.pgasync.net.Converter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
-import java.time.*;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -14,7 +20,11 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.github.pgasync.conversion.TemporalConversions.*;
+import static com.github.pgasync.conversion.TemporalConversions.fromInstant;
+import static com.github.pgasync.conversion.TemporalConversions.fromLocalDate;
+import static com.github.pgasync.conversion.TemporalConversions.fromLocalDateTime;
+import static com.github.pgasync.conversion.TemporalConversions.fromLocalTime;
+import static com.github.pgasync.conversion.TemporalConversions.fromZoneDateTime;
 import static com.github.pgasync.util.HexConverter.parseHexBinary;
 
 /**

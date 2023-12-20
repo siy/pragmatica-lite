@@ -1,12 +1,10 @@
 package com.github.pgasync.net;
 
 import com.github.pgasync.PgColumn;
+import com.github.pgasync.async.IntermediatePromise;
 import com.github.pgasync.message.backend.DataRow;
 
 import java.util.Map;
-
-import com.github.pgasync.async.IntermediatePromise;
-
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 

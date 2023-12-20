@@ -14,6 +14,7 @@
 
 package com.github.pgasync;
 
+import com.github.pgasync.async.IntermediatePromise;
 import com.github.pgasync.message.Message;
 import com.github.pgasync.message.backend.Authentication;
 import com.github.pgasync.message.backend.CommandComplete;
@@ -24,7 +25,6 @@ import com.github.pgasync.message.frontend.Describe;
 import com.github.pgasync.message.frontend.Query;
 import com.github.pgasync.message.frontend.StartupMessage;
 
-import com.github.pgasync.async.IntermediatePromise;
 import java.util.function.Consumer;
 
 /**

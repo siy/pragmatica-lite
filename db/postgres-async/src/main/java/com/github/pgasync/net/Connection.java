@@ -15,8 +15,8 @@
 package com.github.pgasync.net;
 
 import com.github.pgasync.Oid;
-
 import com.github.pgasync.async.IntermediatePromise;
+
 import java.util.function.Consumer;
 
 /**

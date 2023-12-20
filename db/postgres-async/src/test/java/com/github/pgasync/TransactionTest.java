@@ -64,13 +64,6 @@ public class TransactionTest {
                                                                                 },
                                                                                 Fn1.id()
                                                                             )
-//                                                                                 {
-//                                                                                  if (th == null) {
-//                                                                                      return value;
-//                                                                                  } else {
-//                                                                                      throw new RuntimeException(th);
-//                                                                                  }
-//                                                                              }
                                                                    ))
                                          .flatMap(Fn1.id()));
     }

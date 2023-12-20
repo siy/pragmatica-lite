@@ -17,12 +17,12 @@ package com.github.pgasync.net.netty;
 import com.github.pgasync.PgConnectionPool;
 import com.github.pgasync.PgDatabase;
 import com.github.pgasync.ProtocolStream;
+import com.github.pgasync.async.IntermediatePromise;
 import com.github.pgasync.net.Connectible;
 import com.github.pgasync.net.ConnectibleBuilder;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
-import com.github.pgasync.async.IntermediatePromise;
 
 /**
  * Builder for creating {@link Connectible} instances.

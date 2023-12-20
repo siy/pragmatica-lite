@@ -1,7 +1,11 @@
 package com.github.pgasync;
 
 import com.github.pgasync.net.Row;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
 import org.junit.jupiter.api.Tag;
 
 import java.math.BigDecimal;

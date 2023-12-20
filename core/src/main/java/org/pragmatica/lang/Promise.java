@@ -17,7 +17,16 @@
 
 package org.pragmatica.lang;
 
-import org.pragmatica.lang.Functions.*;
+import org.pragmatica.lang.Functions.Fn1;
+import org.pragmatica.lang.Functions.Fn2;
+import org.pragmatica.lang.Functions.Fn3;
+import org.pragmatica.lang.Functions.Fn4;
+import org.pragmatica.lang.Functions.Fn5;
+import org.pragmatica.lang.Functions.Fn6;
+import org.pragmatica.lang.Functions.Fn7;
+import org.pragmatica.lang.Functions.Fn8;
+import org.pragmatica.lang.Functions.Fn9;
+import org.pragmatica.lang.Functions.FnX;
 import org.pragmatica.lang.Result.Cause;
 import org.pragmatica.lang.io.CoreError;
 import org.pragmatica.lang.io.Timeout;

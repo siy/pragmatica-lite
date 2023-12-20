@@ -16,7 +16,17 @@
 
 package org.pragmatica.lang;
 
-import org.pragmatica.lang.Functions.*;
+import org.pragmatica.lang.Functions.Fn1;
+import org.pragmatica.lang.Functions.Fn2;
+import org.pragmatica.lang.Functions.Fn3;
+import org.pragmatica.lang.Functions.Fn4;
+import org.pragmatica.lang.Functions.Fn5;
+import org.pragmatica.lang.Functions.Fn6;
+import org.pragmatica.lang.Functions.Fn7;
+import org.pragmatica.lang.Functions.Fn8;
+import org.pragmatica.lang.Functions.Fn9;
+import org.pragmatica.lang.Functions.ThrowingFn0;
+import org.pragmatica.lang.Functions.ThrowingRunnable;
 import org.pragmatica.lang.Result.Failure;
 import org.pragmatica.lang.Result.Success;
 
@@ -29,7 +39,16 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.pragmatica.lang.Result.unitResult;
-import static org.pragmatica.lang.Tuple.*;
+import static org.pragmatica.lang.Tuple.Tuple1;
+import static org.pragmatica.lang.Tuple.Tuple2;
+import static org.pragmatica.lang.Tuple.Tuple3;
+import static org.pragmatica.lang.Tuple.Tuple4;
+import static org.pragmatica.lang.Tuple.Tuple5;
+import static org.pragmatica.lang.Tuple.Tuple6;
+import static org.pragmatica.lang.Tuple.Tuple7;
+import static org.pragmatica.lang.Tuple.Tuple8;
+import static org.pragmatica.lang.Tuple.Tuple9;
+import static org.pragmatica.lang.Tuple.tuple;
 
 
 /**

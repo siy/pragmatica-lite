@@ -29,7 +29,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for parameters binding.
