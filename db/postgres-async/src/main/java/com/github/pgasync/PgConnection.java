@@ -195,8 +195,7 @@ public class PgConnection implements Connection {
                                               Object... params) {
         return prepareStatement(sql, dataConverter.assumeTypes(params))
             .flatMap(ps -> ps.fetch(onColumns, onRow, params)
-                             .fold(result -> closePreparedStatement(result, ps)))
-            .flatMap(Fn1.id()); //Avoid race conditions
+                             .fold(result -> closePreparedStatement(result, ps)));
     }
 
     private static IntermediatePromise<Integer> closePreparedStatement(Result<Integer> result, PreparedStatement ps) {
@@ -281,8 +280,7 @@ public class PgConnection implements Connection {
                                                 Consumer<Integer> onAffected,
                                                 String sql) {
             return PgConnection.this.script(onColumns, onRow, onAffected, sql)
-                                    .fold(this::handleException)
-                                    .flatMap(Fn1.id());
+                                    .fold(this::handleException);
         }
 
         public IntermediatePromise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
@@ -290,8 +288,7 @@ public class PgConnection implements Connection {
                                                   String sql,
                                                   Object... params) {
             return PgConnection.this.query(onColumns, onRow, sql, params)
-                                    .fold(this::handleException)
-                                    .flatMap(Fn1.id());
+                                    .fold(this::handleException);
         }
 
         private <T> IntermediatePromise<T> handleException(Result<T> result) {

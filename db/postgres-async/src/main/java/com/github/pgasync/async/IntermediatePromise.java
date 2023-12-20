@@ -4,6 +4,7 @@ import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Result;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -44,9 +45,9 @@ public class IntermediatePromise<T> extends java.util.concurrent.CompletableFutu
         return (IntermediatePromise<U>) this.thenApply(fn::apply);
     }
 
-    @SuppressWarnings("unchecked")
-    public <U> IntermediatePromise<U> fold(Fn1<? extends U, Result<T>> fn) {
-        return (IntermediatePromise<U>) this.handle((value, th) -> fn.apply(buildResult(value, th)));
+    public <U> IntermediatePromise<U> fold(Fn1<IntermediatePromise<U>, Result<T>> fn) {
+        return (IntermediatePromise<U>) this.handle((value, th) -> fn.apply(buildResult(value, th)))
+                                            .thenCompose(Function.identity());
     }
 
     public IntermediatePromise<T> onResult(Consumer<Result<T>> action) {

@@ -185,8 +185,7 @@ public class PgConnectionPool extends PgConnectible {
                                            stmt.close()
                                                .map(_ -> result.fold(
                                                    cause -> {throw new RuntimeException(((ThrowableCause) cause).throwable());},
-                                                   Fn1.id())))
-                                 .flatMap(Fn1.id()));
+                                                   Fn1.id()))));
         }
 
         @Override
@@ -326,8 +325,7 @@ public class PgConnectionPool extends PgConnectible {
                                                                                  .close()
                                                                                  .flatMap(_ -> IntermediatePromise.<Connection>failed(((ThrowableCause) cause).throwable())),
                                                                              _ -> IntermediatePromise.successful(pooledConnection)
-                                                                         ))
-                                                               .flatMap(Fn1.id());
+                                                                         ));
                                     } else {
                                         return IntermediatePromise.successful(pooledConnection);
                                     }

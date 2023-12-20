@@ -7,8 +7,6 @@ import com.github.pgasync.net.Connection;
 
 import java.util.function.Supplier;
 
-import static org.pragmatica.lang.Functions.Fn1;
-
 public class PgDatabase extends PgConnectible {
 
     public PgDatabase(ConnectibleBuilder.ConnectibleConfiguration properties, Supplier<IntermediatePromise<ProtocolStream>> obtainStream) {
@@ -23,10 +21,9 @@ public class PgDatabase extends PgConnectible {
                                if (validationQuery != null && !validationQuery.isBlank()) {
                                    return connection.completeScript(validationQuery)
                                                     .fold(result -> result.fold(
-                                                        cause -> IntermediatePromise.<Connection>failed(((ThrowableCause) cause).throwable()),
+                                                        cause -> IntermediatePromise.failed(((ThrowableCause) cause).throwable()),
                                                         _ -> IntermediatePromise.successful(connection)
-                                                    ))
-                                                    .flatMap(Fn1.id());
+                                                    ));
                                } else {
                                    return IntermediatePromise.successful(connection);
                                }

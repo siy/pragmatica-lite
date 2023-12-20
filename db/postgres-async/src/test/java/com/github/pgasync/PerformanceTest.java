@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.pragmatica.lang.Functions.Fn1;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -164,9 +163,7 @@ public class PerformanceTest {
                                        .flatMap(stmt ->
                                                     stmt.query()
                                                         .fold(_ -> stmt.close())
-                                                        .flatMap(Fn1.id())
-                                                        .fold(_ -> connection.close())
-                                                        .flatMap(Fn1.id())))
+                                                        .fold(_ -> connection.close())))
 
                 .onSuccess(_ -> {
                     if (++performed < batchSize) {

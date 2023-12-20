@@ -64,18 +64,17 @@ public class TransactionTest {
                                                                                 },
                                                                                 Fn1.id()
                                                                             )
-                                                                   ))
-                                         .flatMap(Fn1.id()));
+                                                                   )));
     }
 
     @Test
     public void shouldCommitSelectInTransaction() {
-        withinTransaction(transaction -> transaction.completeQuery("SELECT 1")
-                                                    .map(result -> {
-                                                        assertEquals(1L, result.index(0).getLong(0).longValue());
-                                                        return transaction.commit();
-                                                    })
-                                                    .flatMap(Fn1.id()))
+        withinTransaction(transaction ->
+                              transaction.completeQuery("SELECT 1")
+                                         .flatMap(result -> {
+                                             assertEquals(1L, result.index(0).getLong(0).longValue());
+                                             return transaction.commit();
+                                         }))
             .await();
     }
 
@@ -98,12 +97,11 @@ public class TransactionTest {
         long id = withinTransaction(transaction ->
                                         transaction.completeQuery("INSERT INTO TX_TEST (ID) VALUES ($1) RETURNING ID", 35)
                                                    .map(rs -> rs.index(0))
-                                                   .map(row -> {
+                                                   .flatMap(row -> {
                                                        var value = row.getLong(0);
                                                        return transaction.commit()
                                                                          .map(_ -> value);
-                                                   })
-                                                   .flatMap(Fn1.id()))
+                                                   }))
             .await();
         assertEquals(35L, id);
     }
