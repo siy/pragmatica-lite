@@ -47,7 +47,7 @@ import static org.junit.Assert.assertTrue;
 public class PipelineTest {
 
     @ClassRule
-    public static DatabaseRule dbr = DatabaseRule.defaultConfiguration();
+    public static final DatabaseRule dbr = DatabaseRule.defaultConfiguration();
 
     private Connection c;
     private Connectible pool;
@@ -58,7 +58,7 @@ public class PipelineTest {
     }
 
     @After
-    public void closePool() throws Exception {
+    public void closePool() {
         if (c != null) {
             c.close().await();
         }

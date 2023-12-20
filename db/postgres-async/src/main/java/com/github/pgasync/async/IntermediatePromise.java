@@ -39,10 +39,12 @@ public class IntermediatePromise<T> extends java.util.concurrent.CompletableFutu
         return create();
     }
 
+    @SuppressWarnings("unchecked")
     public <U> IntermediatePromise<U> map(Function<? super T, ? extends U> fn) {
         return (IntermediatePromise<U>) this.thenApply(fn);
     }
 
+    @SuppressWarnings("unchecked")
     public <U> IntermediatePromise<U> fold(BiFunction<? super T, Throwable, ? extends U> fn) {
         return (IntermediatePromise<U>) this.handle(fn);
     }

@@ -40,7 +40,7 @@ import static org.junit.Assert.*;
 public class ParametersBindingTest {
 
     @ClassRule
-    public static DatabaseRule dbr = DatabaseRule.defaultConfiguration();
+    public static final DatabaseRule dbr = DatabaseRule.defaultConfiguration();
 
     @BeforeClass
     public static void create() {

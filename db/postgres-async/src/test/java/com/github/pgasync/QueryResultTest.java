@@ -41,7 +41,7 @@ import static org.junit.Assert.assertEquals;
 public class QueryResultTest {
 
     @ClassRule
-    public static DatabaseRule dbr = DatabaseRule.defaultConfiguration();
+    public static final DatabaseRule dbr = DatabaseRule.defaultConfiguration();
 
     @BeforeClass
     public static void create() {
@@ -59,7 +59,7 @@ public class QueryResultTest {
         Assert.assertEquals(2, dbr.query("INSERT INTO CONN_TEST (ID) VALUES (1),(2)").affectedRows());
         ResultSet result = dbr.query("SELECT * FROM CONN_TEST WHERE ID <= 2 ORDER BY ID");
         assertEquals(2, result.size());
-        Assert.assertEquals("ID", result.orderedColumns().iterator().next().name().toUpperCase());
+        Assert.assertEquals("ID", result.orderedColumns().getFirst().name().toUpperCase());
 
         Iterator<Row> i = result.iterator();
         assertEquals(1L, i.next().getLong(0).longValue());
@@ -80,31 +80,33 @@ public class QueryResultTest {
 
     @Test
     public void shouldParseDoStatement() {
-        dbr.script("" +
-                "create table locks\n" +
-                "(\n" +
-                "    id bigint not null,\n" +
-                "    name character varying(255),\n" +
-                "    constraint locks_pkey primary key (id)\n" +
-                ");\n" +
-                "create type item as\n" +
-                "(\n" +
-                "\tid bigint,\n" +
-                "\tname character varying(255)\n" +
-                ");\n" +
-                "create or replace procedure updateItems(vs item[])\n" +
-                "language plpgsql\n" +
-                "as $$\n" +
-                "declare\n" +
-                "  r item;\n" +
-                "begin  \n" +
-                "  foreach r in array vs loop \n" +
-                "    if r.id is not null then\n" +
-                "      raise notice 'id: %; name: %;', r.id, r.name;\n" +
-                "      update locks l set name = r.name where l.id = r.id;\n" +
-                "    end if;\n" +
-                "  end loop;\n" +
-                "end $$;\n");
+        dbr.script(
+            """
+            create table locks
+            (
+                id bigint not null,
+                name character varying(255),
+                constraint locks_pkey primary key (id)
+            );
+            create type item as
+            (
+            \tid bigint,
+            \tname character varying(255)
+            );
+            create or replace procedure updateItems(vs item[])
+            language plpgsql
+            as $$
+            declare
+              r item;
+            begin \s
+              foreach r in array vs loop\s
+                if r.id is not null then
+                  raise notice 'id: %; name: %;', r.id, r.name;
+                  update locks l set name = r.name where l.id = r.id;
+                end if;
+              end loop;
+            end $$;
+            """);
         dbr.query("call updateItems(array[(1, $1::character varying(255)), (2, $2::character varying(255)), (null, $3::character varying(255))]::item[]);",
                 Arrays.asList("fn***1", "fn***2", null)
         );
@@ -124,7 +126,7 @@ public class QueryResultTest {
     }
 
     @Test
-    public void shouldStreamResultRows() throws Exception {
+    public void shouldStreamResultRows() {
         List<Integer> series = dbr.pool().completeQuery("select generate_series(1, 5)")
                 .map(rs -> StreamSupport.stream(rs.spliterator(), false)
                                         .map(r -> r.getInt(0))

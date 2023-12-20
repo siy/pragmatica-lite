@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 public class ArrayConversionsTest {
 
     @ClassRule
-    public static DatabaseRule dbr = DatabaseRule.defaultConfiguration();
+    public static final DatabaseRule dbr = DatabaseRule.defaultConfiguration();
 
     @BeforeClass
     public static void create() {

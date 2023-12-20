@@ -43,7 +43,7 @@ public class CustomConverterTest {
     }
 
     @ClassRule
-    public static DatabaseRule dbr = DatabaseRule.withConverter(new JsonConverter());
+    public static final DatabaseRule dbr = DatabaseRule.withConverter(new JsonConverter());
 
     @BeforeClass
     public static void create() {

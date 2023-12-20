@@ -37,7 +37,7 @@ import static org.junit.Assert.*;
 public class TypeConverterTest {
 
     @ClassRule
-    public static DatabaseRule dbr = DatabaseRule.defaultConfiguration();
+    public static final DatabaseRule dbr = DatabaseRule.defaultConfiguration();
 
     @Test
     public void shouldConvertNullToString() {

@@ -2,7 +2,6 @@ package com.github.pgasync;
 
 import com.github.pgasync.net.Connectible;
 import com.github.pgasync.net.Connection;
-import com.github.pgasync.net.Listening;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -23,7 +22,7 @@ import static org.junit.Assert.assertNull;
 public class ListenNotifyTest {
 
     @ClassRule
-    public static DatabaseRule dbr = DatabaseRule.withMaxConnections(5);
+    public static final DatabaseRule dbr = DatabaseRule.withMaxConnections(5);
 
     private Connectible pool;
 
@@ -43,7 +42,8 @@ public class ListenNotifyTest {
 
         Connection conn = pool.getConnection().await();
         try {
-            Listening subscription = conn.subscribe("example", result::offer).await();
+            var subscription = conn.subscribe("example", result::offer)
+                                   .await();
             try {
                 TimeUnit.SECONDS.sleep(2);
 

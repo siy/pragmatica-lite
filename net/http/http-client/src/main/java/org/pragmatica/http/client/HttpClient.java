@@ -197,7 +197,7 @@ class ContextHandler<T> extends SimpleChannelInboundHandler<FullHttpResponse> {
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) {
         var response = HttpClientResponse.httpClientResponse(msg, configuration);
         promise.success(response);
         ctx.close();    //TODO: add support for keep-alive

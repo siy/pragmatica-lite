@@ -30,7 +30,6 @@ import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -42,13 +41,13 @@ import static org.junit.Assert.assertEquals;
 public class ConnectionPoolingTest {
 
     @Rule
-    public final DatabaseRule dbr = DatabaseRule.defaultConfiguration();;
+    public final DatabaseRule dbr = DatabaseRule.defaultConfiguration();
 
     @Before
     public void create() {
         dbr.script(
-                "DROP TABLE IF EXISTS CP_TEST;" +
-                        "CREATE TABLE CP_TEST (ID VARCHAR(255) PRIMARY KEY)"
+            "DROP TABLE IF EXISTS CP_TEST;" +
+            "CREATE TABLE CP_TEST (ID VARCHAR(255) PRIMARY KEY)"
         );
     }
 
@@ -63,15 +62,19 @@ public class ConnectionPoolingTest {
         IntFunction<Callable<ResultSet>> insert = value -> () -> dbr.query("INSERT INTO CP_TEST VALUES($1)", singletonList(value));
         List<Callable<ResultSet>> tasks = IntStream.range(0, count).mapToObj(insert).toList();
 
-        ExecutorService executor = Executors.newFixedThreadPool(20);
-        executor.invokeAll(tasks).forEach(this::await);
+        try (ExecutorService executor = Executors.newFixedThreadPool(20)) {
+            executor.invokeAll(tasks).forEach(ConnectionPoolingTest::await);
+        }
 
-        assertEquals(count, dbr.query("SELECT COUNT(*) FROM CP_TEST").index(0).getLong(0).longValue());
+        assertEquals(count, dbr.query("SELECT COUNT(*) FROM CP_TEST")
+                               .index(0)
+                               .getLong(0)
+                               .longValue());
     }
 
-    <T> T await(Future<T> future) {
+    private static <T> void await(Future<T> future) {
         try {
-            return future.get();
+            future.get();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

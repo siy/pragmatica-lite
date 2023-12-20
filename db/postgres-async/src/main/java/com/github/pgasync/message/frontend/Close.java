@@ -25,7 +25,7 @@ public class Close implements ExtendedQueryMessage {
         STATEMENT((byte) 'S'),
         PORTAL((byte) 'P');
 
-        byte code;
+        final byte code;
 
         Kind(byte code) {
             this.code = code;

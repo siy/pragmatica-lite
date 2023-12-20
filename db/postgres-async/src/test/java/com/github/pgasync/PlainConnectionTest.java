@@ -21,8 +21,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Tag;
 
-import java.util.stream.IntStream;
-
+import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -40,43 +39,51 @@ public class PlainConnectionTest {
     @Before
     public void create() {
         plain = dbr.builder.plain();
-        plain.completeScript("" +
-                "DROP TABLE IF EXISTS PC_TEST_1;" +
-                "DROP TABLE IF EXISTS PC_TEST_2;" +
-                "CREATE TABLE PC_TEST_1 (ID VARCHAR(255) PRIMARY KEY);" +
-                "CREATE TABLE PC_TEST_2 (ID VARCHAR(255) PRIMARY KEY);"
+        plain.completeScript(
+            "DROP TABLE IF EXISTS PC_TEST_1;" +
+            "DROP TABLE IF EXISTS PC_TEST_2;" +
+            "CREATE TABLE PC_TEST_1 (ID VARCHAR(255) PRIMARY KEY);" +
+            "CREATE TABLE PC_TEST_2 (ID VARCHAR(255) PRIMARY KEY);"
         ).await();
     }
 
     @After
     public void drop() {
-        plain.completeScript("" +
-                "DROP TABLE PC_TEST_1;" +
-                "DROP TABLE PC_TEST_2;"
+        plain.completeScript(
+            "DROP TABLE PC_TEST_1;" +
+            "DROP TABLE PC_TEST_2;"
         ).await();
-        plain.close().await();
+
+        plain.close()
+             .await();
     }
 
     @Test
     public void shouldRunAllQueries() {
         final int count = 100;
-        IntStream.range(0, count)
-                .mapToObj(value -> "" + value)
-                .forEach(value -> plain.completeQuery("INSERT INTO PC_TEST_1 VALUES($1)", value).await());
 
-        assertEquals(count, dbr.query("SELECT COUNT(*) FROM PC_TEST_1").index(0).getLong(0).longValue());
+        range(0, count)
+            .mapToObj(value -> STR."\{value}")
+            .forEach(value -> plain.completeQuery("INSERT INTO PC_TEST_1 VALUES($1)", value).await());
+
+        assertEquals(count,
+                     dbr.query("SELECT COUNT(*) FROM PC_TEST_1")
+                        .index(0)
+                        .getLong(0)
+                        .longValue());
     }
 
     @Test
     public void shouldRunScript() {
         final int count = 25;
-        IntStream.range(0, count).forEach(value -> plain.completeScript("" +
-                "INSERT INTO PC_TEST_2 VALUES('" + value + "');" +
-                "INSERT INTO PC_TEST_2 VALUES('_" + value + "');" +
-                "INSERT INTO PC_TEST_2 VALUES('__" + value + "');" +
-                "INSERT INTO PC_TEST_2 VALUES('___" + value + "');"
+        range(0, count).forEach(value -> plain.completeScript(
+            STR."INSERT INTO PC_TEST_2 VALUES('\{value}');INSERT INTO PC_TEST_2 VALUES('_\{value}');INSERT INTO PC_TEST_2 VALUES('__\{value}');INSERT INTO PC_TEST_2 VALUES('___\{value}');"
         ).await());
 
-        assertEquals(count * 4, dbr.query("SELECT COUNT(*) FROM PC_TEST_2").index(0).getLong(0).longValue());
+        assertEquals(count * 4,
+                     dbr.query("SELECT COUNT(*) FROM PC_TEST_2")
+                        .index(0)
+                        .getLong(0)
+                        .longValue());
     }
 }

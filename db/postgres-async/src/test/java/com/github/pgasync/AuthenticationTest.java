@@ -1,13 +1,11 @@
 package com.github.pgasync;
 
-import com.github.pgasync.net.Connectible;
-import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.SqlException;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.jupiter.api.Tag;
 
-import static com.github.pgasync.SqlError.*;
+import static com.github.pgasync.SqlError.ServerErrorInvalidAuthorizationSpecification;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -15,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class AuthenticationTest {
 
     @ClassRule
-    public static DatabaseRule dbr = DatabaseRule.defaultConfiguration();
+    public static final DatabaseRule dbr = DatabaseRule.defaultConfiguration();
 
     @Test(expected = SqlException.class)
     public void shouldThrowExceptionOnInvalidCredentials() throws Exception {
@@ -41,7 +39,7 @@ public class AuthenticationTest {
     }
 
     @Test
-    public void shouldGetResultOnValidCredentials() throws Exception {
+    public void shouldGetResultOnValidCredentials() {
         var pool = dbr.builder
             .password(DatabaseRule.postgres.getPassword())
             .pool();

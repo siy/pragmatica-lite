@@ -18,7 +18,7 @@ import java.util.function.Consumer;
 @Tag("Slow")
 public class DatabaseRule extends ExternalResource {
     private static final int MAX_CAUSE_DEPTH = 100;
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
+    static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
         "postgres:15-alpine"
     );
 
@@ -46,17 +46,15 @@ public class DatabaseRule extends ExternalResource {
         return new DatabaseRule(defaultBuilder().maxConnections(1).converters(converter));
     }
 
-    public static boolean ifCause(Throwable th, Consumer<SqlException> action, CheckedRunnable others) throws Exception {
+    public static void ifCause(Throwable th, Consumer<SqlException> action, CheckedRunnable others) throws Exception {
         int depth = 1;
         while (depth++ < MAX_CAUSE_DEPTH && th != null && !(th instanceof SqlException)) {
             th = th.getCause();
         }
         if (th instanceof SqlException sqlException) {
             action.accept(sqlException);
-            return true;
         } else {
             others.run();
-            return false;
         }
     }
 
