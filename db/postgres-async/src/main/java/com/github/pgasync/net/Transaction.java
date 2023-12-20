@@ -15,6 +15,7 @@
 package com.github.pgasync.net;
 
 import com.github.pgasync.async.IntermediatePromise;
+import org.pragmatica.lang.Unit;
 
 /**
  * A unit of work. Transactions must be committed or rolled back, otherwise a
@@ -28,17 +29,17 @@ public interface Transaction extends QueryExecutor {
     /**
      * Commits a transaction
      */
-    IntermediatePromise<Void> commit();
+    IntermediatePromise<Unit> commit();
 
     /**
      * Rollbacks a transaction.
      */
-    IntermediatePromise<Void> rollback();
+    IntermediatePromise<Unit> rollback();
 
     /**
      * Commits a transaction and rollbacks it if an error occurs.
      */
-    IntermediatePromise<Void> close();
+    IntermediatePromise<Unit> close();
 
     /**
      * Returns a connection, this transaction belongs to.

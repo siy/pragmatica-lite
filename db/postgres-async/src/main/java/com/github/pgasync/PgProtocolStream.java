@@ -84,6 +84,7 @@ import com.github.pgasync.message.frontend.SASLResponse;
 import com.github.pgasync.net.SqlException;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -170,7 +171,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
     }
 
     @Override
-    public IntermediatePromise<Void> send(Query query,
+    public IntermediatePromise<Unit> send(Query query,
                                           Consumer<RowDescription.ColumnDescription[]> onColumns,
                                           Consumer<DataRow> onRow,
                                           Consumer<CommandComplete> onAffected) {

@@ -24,6 +24,7 @@ import com.github.pgasync.message.frontend.Bind;
 import com.github.pgasync.message.frontend.Describe;
 import com.github.pgasync.message.frontend.Query;
 import com.github.pgasync.message.frontend.StartupMessage;
+import org.pragmatica.lang.Unit;
 
 import java.util.function.Consumer;
 
@@ -40,7 +41,7 @@ public interface ProtocolStream {
 
     IntermediatePromise<Message> send(Message message);
 
-    IntermediatePromise<Void> send(Query query, Consumer<RowDescription.ColumnDescription[]> onColumns, Consumer<DataRow> onRow, Consumer<CommandComplete> onAffected);
+    IntermediatePromise<Unit> send(Query query, Consumer<RowDescription.ColumnDescription[]> onColumns, Consumer<DataRow> onRow, Consumer<CommandComplete> onAffected);
 
     IntermediatePromise<Integer> send(Bind bind, Describe describe, Consumer<RowDescription.ColumnDescription[]> onColumns, Consumer<DataRow> onRow);
 
@@ -50,6 +51,6 @@ public interface ProtocolStream {
 
     boolean isConnected();
 
-    IntermediatePromise<Void> close();
+    IntermediatePromise<Unit> close();
 
 }

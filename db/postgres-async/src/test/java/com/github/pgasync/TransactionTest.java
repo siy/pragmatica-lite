@@ -25,6 +25,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.jupiter.api.Tag;
 import org.pragmatica.lang.Functions.Fn1;
+import org.pragmatica.lang.Unit;
 
 import static org.junit.Assert.assertEquals;
 
@@ -205,10 +206,8 @@ public class TransactionTest {
                                                                .flatMap(nested ->
                                                                             nested.completeQuery("INSERT INTO TX_TEST(ID) VALUES(26)")
                                                                                   .onSuccess(res2 -> assertEquals(1, res2.affectedRows()))
-                                                                                  .flatMap(_ -> nested.completeQuery(
-                                                                                      "INSERT INTO TX_TEST(ID) VALUES(26)"))
-                                                                                  .map(_ -> IntermediatePromise.<Void>failed(new IllegalStateException(
-                                                                                      "The query should fail")))
+                                                                                  .flatMap(_ -> nested.completeQuery("INSERT INTO TX_TEST(ID) VALUES(26)"))
+                                                                                  .map(_ -> IntermediatePromise.<Unit>failed(new IllegalStateException("The query should fail")))
                                                                                   .tryRecover(_ -> transaction.commit())
                                                                                   .flatMap(Fn1.id()));
                                          }))

@@ -2,7 +2,9 @@ package com.github.pgasync.async;
 
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Unit;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -10,7 +12,7 @@ import java.util.stream.Stream;
 
 //Temporary replacement which going to be used to simplify refactoring
 @SuppressWarnings("unused")
-public class IntermediatePromise<T> extends java.util.concurrent.CompletableFuture<T> {
+public class IntermediatePromise<T> extends CompletableFuture<T> {
     public static <U> IntermediatePromise<U> successful(U value) {
         return IntermediatePromise.<U>create().succeed(value);
     }
@@ -21,17 +23,19 @@ public class IntermediatePromise<T> extends java.util.concurrent.CompletableFutu
         return promise;
     }
 
-    public static <T> IntermediatePromise<Void> allOf(Stream<IntermediatePromise<T>> cfs) {
-        var promises = cfs.toArray(java.util.concurrent.CompletableFuture<?>[]::new);
+    public static <T> IntermediatePromise<Unit> allOf(Stream<IntermediatePromise<T>> cfs) {
+        var promises = cfs.toArray(CompletableFuture<?>[]::new);
 
-        var promise = IntermediatePromise.<Void>create();
-        java.util.concurrent.CompletableFuture.allOf(promises).whenComplete((v, th) -> {
-            if (th != null) {
-                promise.fail(th);
-            } else {
-                promise.succeed(null);
-            }
-        });
+        var promise = IntermediatePromise.<Unit>create();
+
+        CompletableFuture.allOf(promises)
+                         .whenComplete((v, th) -> {
+                             if (th != null) {
+                                 promise.fail(th);
+                             } else {
+                                 promise.succeed(Unit.aUnit());
+                             }
+                         });
         return promise;
     }
 
@@ -66,8 +70,9 @@ public class IntermediatePromise<T> extends java.util.concurrent.CompletableFutu
         return (IntermediatePromise<U>) this.thenCompose(fn::apply);
     }
 
-    public IntermediatePromise<Void> onSuccess(Consumer<? super T> action) {
-        return (IntermediatePromise<Void>) this.thenAccept(action);
+    public IntermediatePromise<Unit> onSuccess(Consumer<? super T> action) {
+        return (IntermediatePromise<Unit>) this.thenAccept(action)
+                                               .thenApply(Unit::unit);
     }
 
     public void fail(Throwable ex) {
@@ -78,6 +83,7 @@ public class IntermediatePromise<T> extends java.util.concurrent.CompletableFutu
         this.defaultExecutor()
             .execute(() -> this.succeed(supplier.get()));
     }
+
     //recover and replace exception with new completion stage
     public IntermediatePromise<T> tryRecover(Fn1<? extends T, Throwable> fn) {
         return (IntermediatePromise<T>) this.exceptionally(fn::apply);

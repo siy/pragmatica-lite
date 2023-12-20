@@ -8,6 +8,7 @@ import com.github.pgasync.net.ConnectibleBuilder;
 import com.github.pgasync.net.Connection;
 import com.github.pgasync.net.Row;
 import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Unit;
 
 import java.nio.charset.Charset;
 import java.util.Map;
@@ -37,7 +38,7 @@ public abstract class PgConnectible implements Connectible {
     }
 
     @Override
-    public IntermediatePromise<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+    public IntermediatePromise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
                                             Consumer<Row> onRow,
                                             Consumer<Integer> onAffected,
                                             String sql) {

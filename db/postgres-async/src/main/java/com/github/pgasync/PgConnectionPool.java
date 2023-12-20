@@ -25,6 +25,7 @@ import com.github.pgasync.net.Row;
 import com.github.pgasync.net.SqlException;
 import com.github.pgasync.net.Transaction;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -55,15 +56,15 @@ public class PgConnectionPool extends PgConnectible {
                 this.delegate = delegate;
             }
 
-            public IntermediatePromise<Void> commit() {
+            public IntermediatePromise<Unit> commit() {
                 return delegate.commit();
             }
 
-            public IntermediatePromise<Void> rollback() {
+            public IntermediatePromise<Unit> rollback() {
                 return delegate.rollback();
             }
 
-            public IntermediatePromise<Void> close() {
+            public IntermediatePromise<Unit> close() {
                 return delegate.close();
             }
 
@@ -80,7 +81,7 @@ public class PgConnectionPool extends PgConnectible {
             }
 
             @Override
-            public IntermediatePromise<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+            public IntermediatePromise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
                                                     Consumer<Row> onRow,
                                                     Consumer<Integer> onAffected,
                                                     String sql) {
@@ -118,7 +119,7 @@ public class PgConnectionPool extends PgConnectible {
             return delegate.isConnected();
         }
 
-        private void closeNextStatement(Iterator<PooledPgPreparedStatement> statementsSource, IntermediatePromise<Void> onComplete) {
+        private void closeNextStatement(Iterator<PooledPgPreparedStatement> statementsSource, IntermediatePromise<Unit> onComplete) {
             if (statementsSource.hasNext()) {
                 statementsSource.next().delegate.close()
                                                 .onSuccess(_ -> {
@@ -127,15 +128,15 @@ public class PgConnectionPool extends PgConnectible {
                                                 })
                                                 .tryRecover(th -> {
                                                     Promise.runAsync(() -> onComplete.fail(th));
-                                                    return null;
+                                                    return Unit.aUnit();
                                                 });
             } else {
-                Promise.runAsync(() -> onComplete.succeed(null));
+                Promise.runAsync(() -> onComplete.succeed(Unit.aUnit()));
             }
         }
 
-        IntermediatePromise<Void> shutdown() {
-            var onComplete = IntermediatePromise.<Void>create();
+        IntermediatePromise<Unit> shutdown() {
+            var onComplete = IntermediatePromise.<Unit>create();
 
             closeNextStatement(statements.values().iterator(), onComplete);
 
@@ -150,9 +151,9 @@ public class PgConnectionPool extends PgConnectible {
         }
 
         @Override
-        public IntermediatePromise<Void> close() {
+        public IntermediatePromise<Unit> close() {
             release(this);
-            return IntermediatePromise.successful(null);
+            return IntermediatePromise.successful(Unit.aUnit());
         }
 
         @Override
@@ -166,7 +167,7 @@ public class PgConnectionPool extends PgConnectible {
         }
 
         @Override
-        public IntermediatePromise<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+        public IntermediatePromise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
                                                 Consumer<Row> onRow,
                                                 Consumer<Integer> onAffected,
                                                 String sql) {
@@ -213,7 +214,7 @@ public class PgConnectionPool extends PgConnectible {
             }
 
             @Override
-            public IntermediatePromise<Void> close() {
+            public IntermediatePromise<Unit> close() {
                 PooledPgPreparedStatement already = statements.put(sql, this);
                 if (evicted != null) {
                     try {
@@ -232,7 +233,7 @@ public class PgConnectionPool extends PgConnectible {
                         log.warn(DUPLICATED_PREPARED_STATEMENT_DETECTED, already.sql);
                         return already.delegate.close();
                     } else {
-                        return IntermediatePromise.successful(null);
+                        return IntermediatePromise.successful(Unit.aUnit());
                     }
                 }
             }
@@ -258,7 +259,7 @@ public class PgConnectionPool extends PgConnectible {
     private int size;
     private final Queue<IntermediatePromise<? super Connection>> pending = new LinkedList<>();
     private final Queue<PooledPgConnection> connections = new LinkedList<>();
-    private IntermediatePromise<Void> closing;
+    private IntermediatePromise<Unit> closing;
 
     public PgConnectionPool(ConnectibleBuilder.ConnectibleConfiguration properties,
                             Supplier<IntermediatePromise<ProtocolStream>> obtainStream) {
@@ -323,7 +324,7 @@ public class PgConnectionPool extends PgConnectible {
                                                                          result.fold(
                                                                              cause -> ((PooledPgConnection) pooledConnection).delegate
                                                                                  .close()
-                                                                                 .flatMap(_ -> IntermediatePromise.<Connection>failed(((ThrowableCause) cause).throwable())),
+                                                                                 .flatMap(_ -> IntermediatePromise.failed(((ThrowableCause) cause).throwable())),
                                                                              _ -> IntermediatePromise.successful(pooledConnection)
                                                                          ));
                                     } else {
@@ -356,10 +357,10 @@ public class PgConnectionPool extends PgConnectible {
         }
     }
 
-    private record CloseTuple(IntermediatePromise<Void> closing, Runnable immediate) {}
+    private record CloseTuple(IntermediatePromise<Unit> closing, Runnable immediate) {}
 
     @Override
-    public IntermediatePromise<Void> close() {
+    public IntermediatePromise<Unit> close() {
         var tuple = locked(() -> {
             if (closing == null) {
                 closing = IntermediatePromise.create()
@@ -383,7 +384,7 @@ public class PgConnectionPool extends PgConnectible {
     private Runnable checkClosed() {
         if (closing != null && size <= connections.size()) {
             assert pending.isEmpty();
-            return () -> closing.succeed(null);
+            return () -> closing.succeed(Unit.aUnit());
         } else {
             return NO_OP;
         }

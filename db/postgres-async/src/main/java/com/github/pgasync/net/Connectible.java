@@ -1,6 +1,7 @@
 package com.github.pgasync.net;
 
 import com.github.pgasync.async.IntermediatePromise;
+import org.pragmatica.lang.Unit;
 
 /**
  * General container of connections.
@@ -10,5 +11,5 @@ import com.github.pgasync.async.IntermediatePromise;
 public interface Connectible extends QueryExecutor {
     IntermediatePromise<Connection> getConnection();
 
-    IntermediatePromise<Void> close();
+    IntermediatePromise<Unit> close();
 }

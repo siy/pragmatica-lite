@@ -16,12 +16,12 @@ package com.github.pgasync.net;
 
 import com.github.pgasync.Oid;
 import com.github.pgasync.async.IntermediatePromise;
+import org.pragmatica.lang.Unit;
 
 import java.util.function.Consumer;
 
 /**
  * A single physical connection to Postgres backend.
- *
  * Concurrent using of implementations is impossible.
  * {@link Connection} implementations are never thread-safe.
  * They are designed to be used in context of single {@link IntermediatePromise} completion at a time.
@@ -43,11 +43,12 @@ public interface Connection extends QueryExecutor {
      * @param onNotification Callback, thar is invoked every time notification arrives.
      * @return Promise instance, completed when subscription will be registered at the backend.
      */
+    @SuppressWarnings("JavadocDeclaration")
     IntermediatePromise<Listening> subscribe(String channel, Consumer<String> onNotification);
 
     IntermediatePromise<Transaction> begin();
 
-    IntermediatePromise<Void> close();
+    IntermediatePromise<Unit> close();
 
     boolean isConnected();
 }

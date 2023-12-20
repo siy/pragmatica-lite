@@ -33,6 +33,7 @@ import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.Row;
 import com.github.pgasync.net.Transaction;
 import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Unit;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -91,7 +92,7 @@ public class PgConnection implements Connection {
         }
 
         @Override
-        public IntermediatePromise<Void> close() {
+        public IntermediatePromise<Unit> close() {
             return stream.send(Close.statement(sname))
                          .onSuccess(_ -> {});
         }
@@ -166,7 +167,7 @@ public class PgConnection implements Connection {
     }
 
     @Override
-    public IntermediatePromise<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+    public IntermediatePromise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
                                             Consumer<Row> onRow,
                                             Consumer<Integer> onAffected,
                                             String sql) {
@@ -224,7 +225,7 @@ public class PgConnection implements Connection {
     }
 
     @Override
-    public IntermediatePromise<Void> close() {
+    public IntermediatePromise<Unit> close() {
         return stream.close();
     }
 
@@ -252,19 +253,19 @@ public class PgConnection implements Connection {
         }
 
         @Override
-        public IntermediatePromise<Void> commit() {
+        public IntermediatePromise<Unit> commit() {
             return PgConnection.this.completeScript("COMMIT")
-                                    .map(_ -> null);
+                                    .map(Unit::unit);
         }
 
         @Override
-        public IntermediatePromise<Void> rollback() {
+        public IntermediatePromise<Unit> rollback() {
             return PgConnection.this.completeScript("ROLLBACK")
-                                    .map(_ -> null);
+                                    .map(Unit::unit);
         }
 
         @Override
-        public IntermediatePromise<Void> close() {
+        public IntermediatePromise<Unit> close() {
             return commit()
                 .onResult(this::handleException);
         }
@@ -275,7 +276,7 @@ public class PgConnection implements Connection {
         }
 
         @Override
-        public IntermediatePromise<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+        public IntermediatePromise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
                                                 Consumer<Row> onRow,
                                                 Consumer<Integer> onAffected,
                                                 String sql) {
@@ -318,15 +319,15 @@ public class PgConnection implements Connection {
         }
 
         @Override
-        public IntermediatePromise<Void> commit() {
+        public IntermediatePromise<Unit> commit() {
             return PgConnection.this.completeScript(STR."RELEASE SAVEPOINT sp_\{depth}")
-                                    .map(_ -> null);
+                                    .map(Unit::unit);
         }
 
         @Override
-        public IntermediatePromise<Void> rollback() {
+        public IntermediatePromise<Unit> rollback() {
             return PgConnection.this.completeScript(STR."ROLLBACK TO SAVEPOINT sp_\{depth}")
-                                    .map(_ -> null);
+                                    .map(Unit::unit);
         }
     }
 }

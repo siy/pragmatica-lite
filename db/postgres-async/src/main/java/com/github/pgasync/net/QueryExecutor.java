@@ -3,6 +3,7 @@ package com.github.pgasync.net;
 import com.github.pgasync.PgColumn;
 import com.github.pgasync.PgResultSet;
 import com.github.pgasync.async.IntermediatePromise;
+import org.pragmatica.lang.Unit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +57,7 @@ public interface QueryExecutor {
      *
      * @return Promise that is completed when the whole process of multiple {@link ResultSet}s fetching ends.
      */
-    IntermediatePromise<Void> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+    IntermediatePromise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
                                      Consumer<Row> onRow,
                                      Consumer<Integer> onAffected,
                                      String sql);

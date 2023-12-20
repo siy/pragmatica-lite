@@ -3,6 +3,7 @@ package com.github.pgasync.net;
 import com.github.pgasync.PgColumn;
 import com.github.pgasync.async.IntermediatePromise;
 import com.github.pgasync.message.backend.DataRow;
+import org.pragmatica.lang.Unit;
 
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -48,5 +49,5 @@ public interface PreparedStatement {
      * @return Promise that is completed when the network process ends. Network process may occur if returned statement has evicted some other
      *     statement from the pool in case of pooled statement. Closing of such evicted statement is network activity, we should be aware of.
      */
-    IntermediatePromise<Void> close();
+    IntermediatePromise<Unit> close();
 }

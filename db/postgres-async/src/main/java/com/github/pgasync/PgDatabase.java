@@ -4,6 +4,7 @@ import com.github.pgasync.async.IntermediatePromise;
 import com.github.pgasync.async.ThrowableCause;
 import com.github.pgasync.net.ConnectibleBuilder;
 import com.github.pgasync.net.Connection;
+import org.pragmatica.lang.Unit;
 
 import java.util.function.Supplier;
 
@@ -31,7 +32,7 @@ public class PgDatabase extends PgConnectible {
     }
 
     @Override
-    public IntermediatePromise<Void> close() {
-        return IntermediatePromise.successful(null);
+    public IntermediatePromise<Unit> close() {
+        return IntermediatePromise.successful(Unit.aUnit());
     }
 }

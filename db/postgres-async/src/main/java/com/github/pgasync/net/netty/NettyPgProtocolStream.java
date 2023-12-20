@@ -36,6 +36,7 @@ import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
 import org.pragmatica.net.transport.api.TransportConfiguration;
 
 import java.io.IOException;
@@ -94,15 +95,15 @@ public class NettyPgProtocolStream extends PgProtocolStream {
     }
 
     @Override
-    public IntermediatePromise<Void> close() {
-        var uponClose = IntermediatePromise.<Void>create();
+    public IntermediatePromise<Unit> close() {
+        var uponClose = IntermediatePromise.<Unit>create();
         ctx.writeAndFlush(Terminate.INSTANCE)
            .addListener(written -> {
                if (written.isSuccess()) {
                    ctx.close()
                       .addListener(closed -> {
                           if (closed.isSuccess()) {
-                              uponClose.resolveAsync(() -> null);
+                              uponClose.resolveAsync(Unit::aUnit);
                           } else {
                               var th = closed.cause();
                               Promise.runAsync(() -> uponClose.fail(th));

@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+import org.pragmatica.lang.Unit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -175,7 +176,7 @@ public class PerformanceTest {
                 })
                 .tryRecover(th -> {
                     onBatch.fail(th);
-                    return null;
+                    return Unit.aUnit();
                 });
 
         }
@@ -192,7 +193,7 @@ public class PerformanceTest {
                 })
                 .tryRecover(th -> {
                     onBatch.fail(th);
-                    return null;
+                    return Unit.aUnit();
                 });
         }
     }
