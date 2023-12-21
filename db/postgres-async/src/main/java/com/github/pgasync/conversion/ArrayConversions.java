@@ -11,7 +11,9 @@ import java.util.function.Function;
 // TODO: change internal value format from byte[] to PgValue(TEXT|BINARY)
 @SuppressWarnings({"unchecked", "rawtypes"})
 final class ArrayConversions {
-    private ArrayConversions() {}
+    private ArrayConversions() {
+    }
+
     static String fromArray(final Object elements, final Function<Object, String> printFn) {
         return appendArray(new StringBuilder(), elements, printFn).toString();
     }
@@ -72,18 +74,18 @@ final class ArrayConversions {
         char[] text = value.toCharArray();
         var holder = new ArrayList<List<Object>>(1);
 
-        if (readArray(text, skipBounds(text, 0), (List) holder) != text.length) {
+        if (readArray(text, skipBounds(text), (List) holder) != text.length) {
             throw new IllegalStateException("Failed to read array");
         }
 
-        return (T) toNestedArrays(holder.get(0), elementType, getElementOid(oid), parse);
+        return (T) toNestedArrays(holder.getFirst(), elementType, getElementOid(oid), parse);
     }
 
-    private static int skipBounds(final char[] text, final int start) {
-        if (text[start] != '[') {
-            return start;
+    private static int skipBounds(final char[] text) {
+        if (text[0] != '[') {
+            return 0;
         }
-        for (int end = start + 1; ; ) {
+        for (int end = 1; ; ) {
             if (text[end++] == '=') {
                 return end;
             }
@@ -95,6 +97,7 @@ final class ArrayConversions {
 
         for (int i = start + 1; ; ) {
             final char c = text[i];
+
             if (c == '}') {
                 result.add(values);
                 return i + 1;
@@ -104,14 +107,20 @@ final class ArrayConversions {
                 i = readString(text, i, values);
             } else if (c == '{') {
                 i = readArray(text, i, values);
-            } else if (c == 'N' && text.length > i + 4 &&
-                    text[i + 1] == 'U' && text[i + 2] == 'L' && text[i + 3] == 'L' &&
-                    (text[i + 4] == ',' || text[i + 4] == '}' || Character.isWhitespace(text[i + 4]))) {
+            } else if (isEncodedNull(text, i)) {
                 i = readNull(i, values);
             } else {
                 i = readValue(text, i, values);
             }
         }
+    }
+
+    private static boolean isEncodedNull(char[] text, int i) {
+        return text[i] == 'N' && text.length > i + 4
+               && text[i + 1] == 'U'
+               && text[i + 2] == 'L'
+               && text[i + 3] == 'L'
+               && (text[i + 4] == ',' || text[i + 4] == '}' || Character.isWhitespace(text[i + 4]));
     }
 
     private static int readValue(final char[] text, final int start, List<Object> result) {

@@ -298,7 +298,8 @@ public class PgConnectionPool extends PgConnectible {
         if (locked(() -> closing != null)) {
             return IntermediatePromise.failed(new SqlException("Connection pool is closed"));
         } else {
-            Connection cached = locked(this::firstAliveConnection);
+            var cached = locked(this::firstAliveConnection);
+
             if (cached != null) {
                 return IntermediatePromise.successful(cached);
             } else {
