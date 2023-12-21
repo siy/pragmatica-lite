@@ -46,16 +46,16 @@ public class IntermediatePromise<T> extends CompletableFuture<T> {
 
     @SuppressWarnings("unchecked")
     public <U> IntermediatePromise<U> map(Fn1<? extends U, ? super T> fn) {
-        return (IntermediatePromise<U>) this.thenApply(fn::apply);
+        return (IntermediatePromise<U>) thenApply(fn::apply);
     }
 
     public <U> IntermediatePromise<U> fold(Fn1<IntermediatePromise<U>, Result<T>> fn) {
-        return (IntermediatePromise<U>) this.handle((value, th) -> fn.apply(buildResult(value, th)))
-                                            .thenCompose(Function.identity());
+        return (IntermediatePromise<U>) handle((value, th) -> fn.apply(buildResult(value, th)))
+            .thenCompose(Function.identity());
     }
 
     public IntermediatePromise<T> onResult(Consumer<Result<T>> action) {
-        return (IntermediatePromise<T>) this.whenComplete((value, th) -> action.accept(buildResult(value, th)));
+        return (IntermediatePromise<T>) whenComplete((value, th) -> action.accept(buildResult(value, th)));
     }
 
     private static <T> Result<T> buildResult(T value, Throwable th) {
@@ -67,35 +67,40 @@ public class IntermediatePromise<T> extends CompletableFuture<T> {
     }
 
     public <U> IntermediatePromise<U> flatMap(Fn1<? extends IntermediatePromise<U>, ? super T> fn) {
-        return (IntermediatePromise<U>) this.thenCompose(fn::apply);
+        return (IntermediatePromise<U>) thenCompose(fn::apply);
     }
 
     public IntermediatePromise<Unit> onSuccess(Consumer<? super T> action) {
-        return (IntermediatePromise<Unit>) this.thenAccept(action)
-                                               .thenApply(Unit::unit);
+        return (IntermediatePromise<Unit>) thenAccept(action)
+            .thenApply(Unit::unit);
     }
 
     public void fail(Throwable ex) {
-        this.completeExceptionally(ex);
+        completeExceptionally(ex);
     }
 
-    public void resolveAsync(Supplier<? extends T> supplier) {
-        this.defaultExecutor()
-            .execute(() -> this.succeed(supplier.get()));
+    public void failAsync(Supplier<? extends Throwable> supplier) {
+        defaultExecutor()
+            .execute(() -> completeExceptionally(supplier.get()));
+    }
+
+    public IntermediatePromise<T> succeed(T value) {
+        complete(value);
+        return this;
+    }
+
+    public void succeedAsync(Supplier<? extends T> supplier) {
+        defaultExecutor()
+            .execute(() -> complete(supplier.get()));
     }
 
     //recover and replace exception with new completion stage
     public IntermediatePromise<T> tryRecover(Fn1<? extends T, Throwable> fn) {
-        return (IntermediatePromise<T>) this.exceptionally(fn::apply);
-    }
-
-    public IntermediatePromise<T> succeed(T value) {
-        this.complete(value);
-        return this;
+        return (IntermediatePromise<T>) exceptionally(fn::apply);
     }
 
     public T await() {
-        return this.join();
+        return join();
     }
 
     public static <T> IntermediatePromise<T> create() {

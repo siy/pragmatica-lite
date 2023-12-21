@@ -146,9 +146,8 @@ public class PgConnection implements Connection {
     }
 
     @Override
-    public IntermediatePromise<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes) {
-        return preparedStatementOf(sql, parametersTypes)
-            .map(Fn1.id());
+    public IntermediatePromise<? extends PreparedStatement> prepareStatement(String sql, Oid... parametersTypes) {
+        return preparedStatementOf(sql, parametersTypes);
     }
 
     IntermediatePromise<PgPreparedStatement> preparedStatementOf(String sql, Oid... parametersTypes) {

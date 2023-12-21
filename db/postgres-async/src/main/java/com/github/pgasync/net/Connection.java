@@ -31,7 +31,7 @@ import java.util.function.Consumer;
  */
 public interface Connection extends QueryExecutor {
 
-    IntermediatePromise<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes);
+    IntermediatePromise<? extends PreparedStatement> prepareStatement(String sql, Oid... parametersTypes);
 
     /**
      * The typical scenario of using notifications is as follows:

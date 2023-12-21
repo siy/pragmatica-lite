@@ -83,7 +83,6 @@ import com.github.pgasync.message.frontend.SASLInitialResponse;
 import com.github.pgasync.message.frontend.SASLResponse;
 import com.github.pgasync.net.SqlException;
 import org.pragmatica.lang.Functions.Fn1;
-import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -135,7 +134,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
                                                               null, ""/*SaslPrep.asQueryString(userName) - Postgres requires an empty string here*/,
                                                               clientNonce);
             return send(saslInitialResponse)
-                .map(message -> {
+                .flatMap(message -> {
                     if (message instanceof Authentication authentication) {
                         var serverFirstMessage = authentication.saslContinueData();
                         if (serverFirstMessage != null) {
@@ -150,8 +149,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
                     } else {
                         throw new IllegalStateException("Bad SASL authentication sequence detected on 'server-first-message' step");
                     }
-                })
-                .flatMap(Fn1.id());
+                });
         } else {
             return send(PasswordMessage.passwordMessage(userName, password, authRequired.md5salt(), encoding));
         }
@@ -228,15 +226,15 @@ public abstract class PgProtocolStream implements ProtocolStream {
         lastSentMessage = null;
 
         if (onResponse != null) {
-            var uponResponse = consumeOnResponse();
-            Promise.runAsync(() -> uponResponse.fail(th));
+            consumeOnResponse().failAsync(() -> th);
         }
     }
 
     protected void gotMessage(Message message) {
         switch (message) {
             case NotificationResponse notification -> publish(notification);
-            case BIndicators.BindComplete _ -> {}                 // op op since bulk message sequence
+            case BIndicators.BindComplete _ -> {
+            }                 // op op since bulk message sequence
             case BIndicators.ParseComplete _, BIndicators.CloseComplete _ -> readyForQueryPendingMessage = message;
             case RowDescription rowDescription -> onColumns.accept(rowDescription.getColumns());
             case BIndicators.NoData _ -> onColumns.accept(new RowDescription.ColumnDescription[]{});
@@ -262,7 +260,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
                 if (authentication.authenticationOk() || authentication.saslServerFinalResponse()) {
                     readyForQueryPendingMessage = message;
                 } else {
-                    consumeOnResponse().resolveAsync(() -> message);
+                    consumeOnResponse().succeedAsync(() -> message);
                 }
             }
             case ReadyForQuery _ -> {
@@ -274,13 +272,13 @@ public abstract class PgProtocolStream implements ProtocolStream {
                     onRow = null;
                     onAffected = null;
                     var response = readyForQueryPendingMessage != null ? readyForQueryPendingMessage : message;
-                    consumeOnResponse().resolveAsync(() -> response);
+                    consumeOnResponse().succeedAsync(() -> response);
                 }
                 readyForQueryPendingMessage = null;
             }
             case ParameterStatus _, BackendKeyData _, UnknownMessage _ -> log.trace(message.toString());
             case NoticeResponse _ -> log.warn(message.toString());
-            case null, default -> consumeOnResponse().resolveAsync(() -> message);
+            case null, default -> consumeOnResponse().succeedAsync(() -> message);
         }
     }
 
@@ -300,11 +298,10 @@ public abstract class PgProtocolStream implements ProtocolStream {
                     gotException(th);
                 }
             } else {
-                Promise.runAsync(() -> uponResponse.fail(new IllegalStateException(
-                    "Postgres messages stream simultaneous use detected")));
+                uponResponse.failAsync(() -> new IllegalStateException("Postgres messages stream simultaneous use detected"));
             }
         } else {
-            Promise.runAsync(() -> uponResponse.fail(new IllegalStateException("Channel is closed")));
+            uponResponse.failAsync(() -> new IllegalStateException("Channel is closed"));
         }
         return uponResponse;
     }

@@ -35,7 +35,6 @@ import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
-import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.net.transport.api.TransportConfiguration;
 
@@ -43,8 +42,6 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.util.List;
-
-import static org.pragmatica.lang.Functions.Fn1;
 
 /**
  * Netty messages stream to Postgres backend.
@@ -77,16 +74,14 @@ public class NettyPgProtocolStream extends PgProtocolStream {
     public IntermediatePromise<Message> connect(StartupMessage startup) {
         startupWith = startup;
         return offerRoundTrip(() -> channelPipeline.connect(address).addListener(outboundErrorListener), false)
-            .map(this::send)
-            .flatMap(Fn1.id())
-            .map(message -> {
+            .flatMap(this::send)
+            .flatMap(message -> {
                 if (message == SslHandshake.INSTANCE) {
                     return send(startup);
                 } else {
                     return IntermediatePromise.successful(message);
                 }
-            })
-            .flatMap(Fn1.id());
+            });
     }
 
     @Override
@@ -103,15 +98,13 @@ public class NettyPgProtocolStream extends PgProtocolStream {
                    ctx.close()
                       .addListener(closed -> {
                           if (closed.isSuccess()) {
-                              uponClose.resolveAsync(Unit::aUnit);
+                              uponClose.succeedAsync(Unit::aUnit);
                           } else {
-                              var th = closed.cause();
-                              Promise.runAsync(() -> uponClose.fail(th));
+                              uponClose.failAsync(closed::cause);
                           }
                       });
                } else {
-                   var th = written.cause();
-                   Promise.runAsync(() -> uponClose.fail(th));
+                   uponClose.failAsync(written::cause);
                }
            });
         return uponClose;

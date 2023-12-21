@@ -127,11 +127,11 @@ public class PgConnectionPool extends PgConnectible {
                                                     closeNextStatement(statementsSource, onComplete);
                                                 })
                                                 .tryRecover(th -> {
-                                                    Promise.runAsync(() -> onComplete.fail(th));
+                                                    onComplete.failAsync(() -> th);
                                                     return Unit.aUnit();
                                                 });
             } else {
-                Promise.runAsync(() -> onComplete.succeed(Unit.aUnit()));
+                onComplete.succeedAsync(Unit::aUnit);
             }
         }
 
@@ -141,13 +141,12 @@ public class PgConnectionPool extends PgConnectible {
             closeNextStatement(statements.values().iterator(), onComplete);
 
             return onComplete
-                .map(_ -> {
+                .flatMap(_ -> {
                     if (!statements.isEmpty()) {
                         throw new IllegalStateException(STR."Stale prepared statements detected (\{statements.size()})");
                     }
                     return delegate.close();
-                })
-                .flatMap(Fn1.id());
+                });
         }
 
         @Override
