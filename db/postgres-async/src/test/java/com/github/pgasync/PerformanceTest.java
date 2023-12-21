@@ -14,7 +14,7 @@
 
 package com.github.pgasync;
 
-import com.github.pgasync.async.IntermediatePromise;
+import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.net.Connectible;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -109,17 +109,17 @@ public class PerformanceTest {
     }
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    private void performBatches(SortedMap<Integer, SortedMap<Integer, Long>> results, IntFunction<IntermediatePromise<Long>> batchStarter) {
+    private void performBatches(SortedMap<Integer, SortedMap<Integer, Long>> results, IntFunction<ThrowingPromise<Long>> batchStarter) {
         double mean = LongStream.range(0, repeats)
                                 .map(_ -> {
                                     try {
                                         var batches = IntStream.range(0, poolSize)
                                                                .mapToObj(batchStarter)
                                                                .toList();
-                                        IntermediatePromise.allOf(batches.stream())
-                                                           .await();
+                                        ThrowingPromise.allOf(batches.stream())
+                                                       .await();
                                         return batches.stream()
-                                                      .map(IntermediatePromise::await)
+                                                      .map(ThrowingPromise::await)
                                                       .max(Long::compare)
                                                       .get();
                                     } catch (Exception ex) {
@@ -137,21 +137,21 @@ public class PerformanceTest {
         private final long batchSize;
         private long performed;
         private long startedAt;
-        private IntermediatePromise<Long> onBatch;
+        private ThrowingPromise<Long> onBatch;
 
         Batch(long batchSize) {
             this.batchSize = batchSize;
         }
 
-        private IntermediatePromise<Long> startWithPreparedStatement() {
-            onBatch = IntermediatePromise.create();
+        private ThrowingPromise<Long> startWithPreparedStatement() {
+            onBatch = ThrowingPromise.create();
             startedAt = System.currentTimeMillis();
             nextSamplePreparedStatement();
             return onBatch;
         }
 
-        private IntermediatePromise<Long> startWithSimpleQuery() {
-            onBatch = IntermediatePromise.create();
+        private ThrowingPromise<Long> startWithSimpleQuery() {
+            onBatch = ThrowingPromise.create();
             startedAt = System.currentTimeMillis();
             nextSampleSimpleQuery();
             return onBatch;

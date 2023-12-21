@@ -58,7 +58,7 @@ import com.github.pgasync.SqlError.ServerSyntaxErrorOrAccessRuleViolation;
 import com.github.pgasync.SqlError.ServerSystemError;
 import com.github.pgasync.SqlError.ServerTriggeredActionException;
 import com.github.pgasync.SqlError.ServerWarning;
-import com.github.pgasync.async.IntermediatePromise;
+import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.message.ExtendedQueryMessage;
 import com.github.pgasync.message.Message;
 import com.github.pgasync.message.backend.Authentication;
@@ -105,7 +105,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
 
     protected final Charset encoding;
 
-    private IntermediatePromise<? super Message> onResponse;
+    private ThrowingPromise<? super Message> onResponse;
     private final Map<String, Set<Consumer<String>>> subscriptions = new HashMap<>();
 
     private Consumer<RowDescription.ColumnDescription[]> onColumns;
@@ -120,14 +120,14 @@ public abstract class PgProtocolStream implements ProtocolStream {
         this.encoding = encoding;
     }
 
-    private IntermediatePromise<? super Message> consumeOnResponse() {
+    private ThrowingPromise<? super Message> consumeOnResponse() {
         var wasOnResponse = onResponse;
         onResponse = null;
         return wasOnResponse;
     }
 
     @Override
-    public IntermediatePromise<Message> authenticate(String userName, String password, Authentication authRequired) {
+    public ThrowingPromise<Message> authenticate(String userName, String password, Authentication authRequired) {
         if (authRequired.saslScramSha256()) {
             var clientNonce = UUID.randomUUID().toString();
             var saslInitialResponse = new SASLInitialResponse(Authentication.SUPPORTED_SASL,
@@ -158,7 +158,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
     protected abstract void write(Message... messages);
 
     @Override
-    public IntermediatePromise<Message> send(Message message) {
+    public ThrowingPromise<Message> send(Message message) {
         return offerRoundTrip(() -> {
             lastSentMessage = message;
             write(message);
@@ -169,10 +169,10 @@ public abstract class PgProtocolStream implements ProtocolStream {
     }
 
     @Override
-    public IntermediatePromise<Unit> send(Query query,
-                                          Consumer<RowDescription.ColumnDescription[]> onColumns,
-                                          Consumer<DataRow> onRow,
-                                          Consumer<CommandComplete> onAffected) {
+    public ThrowingPromise<Unit> send(Query query,
+                                      Consumer<RowDescription.ColumnDescription[]> onColumns,
+                                      Consumer<DataRow> onRow,
+                                      Consumer<CommandComplete> onAffected) {
         this.onColumns = onColumns;
         this.onRow = onRow;
         this.onAffected = onAffected;
@@ -180,10 +180,10 @@ public abstract class PgProtocolStream implements ProtocolStream {
     }
 
     @Override
-    public IntermediatePromise<Integer> send(Bind bind,
-                                             Describe describe,
-                                             Consumer<RowDescription.ColumnDescription[]> onColumns,
-                                             Consumer<DataRow> onRow) {
+    public ThrowingPromise<Integer> send(Bind bind,
+                                         Describe describe,
+                                         Consumer<RowDescription.ColumnDescription[]> onColumns,
+                                         Consumer<DataRow> onRow) {
         this.onColumns = onColumns;
         this.onRow = onRow;
         this.onAffected = null;
@@ -195,7 +195,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
     }
 
     @Override
-    public IntermediatePromise<Integer> send(Bind bind, Consumer<DataRow> onRow) {
+    public ThrowingPromise<Integer> send(Bind bind, Consumer<DataRow> onRow) {
         this.onColumns = null;
         this.onRow = onRow;
         this.onAffected = null;
@@ -282,12 +282,12 @@ public abstract class PgProtocolStream implements ProtocolStream {
         }
     }
 
-    private IntermediatePromise<Message> offerRoundTrip(Runnable requestAction) {
+    private ThrowingPromise<Message> offerRoundTrip(Runnable requestAction) {
         return offerRoundTrip(requestAction, true);
     }
 
-    protected IntermediatePromise<Message> offerRoundTrip(Runnable requestAction, boolean assumeConnected) {
-        var uponResponse = IntermediatePromise.<Message>create();
+    protected ThrowingPromise<Message> offerRoundTrip(Runnable requestAction, boolean assumeConnected) {
+        var uponResponse = ThrowingPromise.<Message>create();
 
         if (!assumeConnected || isConnected()) {
             if (onResponse == null) {

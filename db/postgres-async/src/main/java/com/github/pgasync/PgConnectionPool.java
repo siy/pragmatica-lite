@@ -14,7 +14,7 @@
 
 package com.github.pgasync;
 
-import com.github.pgasync.async.IntermediatePromise;
+import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.async.ThrowableCause;
 import com.github.pgasync.net.ConnectibleBuilder;
 import com.github.pgasync.net.Connection;
@@ -56,35 +56,35 @@ public class PgConnectionPool extends PgConnectible {
                 this.delegate = delegate;
             }
 
-            public IntermediatePromise<Unit> commit() {
+            public ThrowingPromise<Unit> commit() {
                 return delegate.commit();
             }
 
-            public IntermediatePromise<Unit> rollback() {
+            public ThrowingPromise<Unit> rollback() {
                 return delegate.rollback();
             }
 
-            public IntermediatePromise<Unit> close() {
+            public ThrowingPromise<Unit> close() {
                 return delegate.close();
             }
 
-            public IntermediatePromise<Transaction> begin() {
+            public ThrowingPromise<Transaction> begin() {
                 return delegate.begin().map(PooledPgTransaction::new);
             }
 
             @Override
-            public IntermediatePromise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                                      Consumer<Row> onRow,
-                                                      String sql,
-                                                      Object... params) {
+            public ThrowingPromise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                                  Consumer<Row> onRow,
+                                                  String sql,
+                                                  Object... params) {
                 return delegate.query(onColumns, onRow, sql, params);
             }
 
             @Override
-            public IntermediatePromise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                                    Consumer<Row> onRow,
-                                                    Consumer<Integer> onAffected,
-                                                    String sql) {
+            public ThrowingPromise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                                Consumer<Row> onRow,
+                                                Consumer<Integer> onAffected,
+                                                String sql) {
                 return delegate.script(onColumns, onRow, onAffected, sql);
             }
 
@@ -111,7 +111,7 @@ public class PgConnectionPool extends PgConnectible {
             this.delegate = delegate;
         }
 
-        IntermediatePromise<Connection> connect(String username, String password, String database) {
+        ThrowingPromise<Connection> connect(String username, String password, String database) {
             return delegate.connect(username, password, database).map(_ -> PooledPgConnection.this);
         }
 
@@ -119,7 +119,7 @@ public class PgConnectionPool extends PgConnectible {
             return delegate.isConnected();
         }
 
-        private void closeNextStatement(Iterator<PooledPgPreparedStatement> statementsSource, IntermediatePromise<Unit> onComplete) {
+        private void closeNextStatement(Iterator<PooledPgPreparedStatement> statementsSource, ThrowingPromise<Unit> onComplete) {
             if (statementsSource.hasNext()) {
                 statementsSource.next().delegate.close()
                                                 .onSuccess(_ -> {
@@ -135,8 +135,8 @@ public class PgConnectionPool extends PgConnectible {
             }
         }
 
-        IntermediatePromise<Unit> shutdown() {
-            var onComplete = IntermediatePromise.<Unit>create();
+        ThrowingPromise<Unit> shutdown() {
+            var onComplete = ThrowingPromise.<Unit>create();
 
             closeNextStatement(statements.values().iterator(), onComplete);
 
@@ -150,34 +150,34 @@ public class PgConnectionPool extends PgConnectible {
         }
 
         @Override
-        public IntermediatePromise<Unit> close() {
+        public ThrowingPromise<Unit> close() {
             release(this);
-            return IntermediatePromise.successful(Unit.aUnit());
+            return ThrowingPromise.successful(Unit.aUnit());
         }
 
         @Override
-        public IntermediatePromise<Listening> subscribe(String channel, Consumer<String> onNotification) {
+        public ThrowingPromise<Listening> subscribe(String channel, Consumer<String> onNotification) {
             return delegate.subscribe(channel, onNotification);
         }
 
         @Override
-        public IntermediatePromise<Transaction> begin() {
+        public ThrowingPromise<Transaction> begin() {
             return delegate.begin().map(PooledPgTransaction::new);
         }
 
         @Override
-        public IntermediatePromise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                                Consumer<Row> onRow,
-                                                Consumer<Integer> onAffected,
-                                                String sql) {
+        public ThrowingPromise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                            Consumer<Row> onRow,
+                                            Consumer<Integer> onAffected,
+                                            String sql) {
             return delegate.script(onColumns, onRow, onAffected, sql);
         }
 
         @Override
-        public IntermediatePromise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                                  Consumer<Row> onRow,
-                                                  String sql,
-                                                  Object... params) {
+        public ThrowingPromise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                              Consumer<Row> onRow,
+                                              String sql,
+                                              Object... params) {
             return prepareStatement(sql, dataConverter.assumeTypes(params))
                 .flatMap(stmt ->
                              stmt.fetch(onColumns, onRow, params)
@@ -189,10 +189,10 @@ public class PgConnectionPool extends PgConnectible {
         }
 
         @Override
-        public IntermediatePromise<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes) {
+        public ThrowingPromise<PreparedStatement> prepareStatement(String sql, Oid... parametersTypes) {
             PooledPgPreparedStatement statement = statements.remove(sql);
             if (statement != null) {
-                return IntermediatePromise.successful(statement);
+                return ThrowingPromise.successful(statement);
             } else {
                 return delegate.preparedStatementOf(sql, parametersTypes)
                                .map(stmt -> new PooledPgPreparedStatement(sql, stmt));
@@ -213,7 +213,7 @@ public class PgConnectionPool extends PgConnectible {
             }
 
             @Override
-            public IntermediatePromise<Unit> close() {
+            public ThrowingPromise<Unit> close() {
                 PooledPgPreparedStatement already = statements.put(sql, this);
                 if (evicted != null) {
                     try {
@@ -232,20 +232,20 @@ public class PgConnectionPool extends PgConnectible {
                         log.warn(DUPLICATED_PREPARED_STATEMENT_DETECTED, already.sql);
                         return already.delegate.close();
                     } else {
-                        return IntermediatePromise.successful(Unit.aUnit());
+                        return ThrowingPromise.successful(Unit.aUnit());
                     }
                 }
             }
 
             @Override
-            public IntermediatePromise<ResultSet> query(Object... params) {
+            public ThrowingPromise<ResultSet> query(Object... params) {
                 return delegate.query(params);
             }
 
             @Override
-            public IntermediatePromise<Integer> fetch(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                                      Consumer<Row> processor,
-                                                      Object... params) {
+            public ThrowingPromise<Integer> fetch(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                                  Consumer<Row> processor,
+                                                  Object... params) {
                 return delegate.fetch(onColumns, processor, params);
             }
         }
@@ -256,12 +256,12 @@ public class PgConnectionPool extends PgConnectible {
 
     private final Lock guard = new ReentrantLock();
     private int size;
-    private final Queue<IntermediatePromise<? super Connection>> pending = new LinkedList<>();
+    private final Queue<ThrowingPromise<? super Connection>> pending = new LinkedList<>();
     private final Queue<PooledPgConnection> connections = new LinkedList<>();
-    private IntermediatePromise<Unit> closing;
+    private ThrowingPromise<Unit> closing;
 
     public PgConnectionPool(ConnectibleBuilder.ConnectibleConfiguration properties,
-                            Supplier<IntermediatePromise<ProtocolStream>> obtainStream) {
+                            Supplier<ThrowingPromise<ProtocolStream>> obtainStream) {
         super(properties, obtainStream);
         this.maxConnections = properties.maxConnections();
         this.maxStatements = properties.maxStatements();
@@ -294,16 +294,16 @@ public class PgConnectionPool extends PgConnectible {
     }
 
     @Override
-    public IntermediatePromise<Connection> getConnection() {
+    public ThrowingPromise<Connection> getConnection() {
         if (locked(() -> closing != null)) {
-            return IntermediatePromise.failed(new SqlException("Connection pool is closed"));
+            return ThrowingPromise.failed(new SqlException("Connection pool is closed"));
         } else {
             var cached = locked(this::firstAliveConnection);
 
             if (cached != null) {
-                return IntermediatePromise.successful(cached);
+                return ThrowingPromise.successful(cached);
             } else {
-                var deferred = IntermediatePromise.<Connection>create();
+                var deferred = ThrowingPromise.<Connection>create();
                 boolean makeNewConnection = locked(() -> {
                     pending.add(deferred);
                     if (size < maxConnections) {
@@ -324,11 +324,11 @@ public class PgConnectionPool extends PgConnectible {
                                                                          result.fold(
                                                                              cause -> ((PooledPgConnection) pooledConnection).delegate
                                                                                  .close()
-                                                                                 .flatMap(_ -> IntermediatePromise.failed(((ThrowableCause) cause).throwable())),
-                                                                             _ -> IntermediatePromise.successful(pooledConnection)
+                                                                                 .flatMap(_ -> ThrowingPromise.failed(((ThrowableCause) cause).throwable())),
+                                                                             _ -> ThrowingPromise.successful(pooledConnection)
                                                                          ));
                                     } else {
-                                        return IntermediatePromise.successful(pooledConnection);
+                                        return ThrowingPromise.successful(pooledConnection);
                                     }
                                 })
                                 .onResult(result -> result.fold(
@@ -357,21 +357,21 @@ public class PgConnectionPool extends PgConnectible {
         }
     }
 
-    private record CloseTuple(IntermediatePromise<Unit> closing, Runnable immediate) {}
+    private record CloseTuple(ThrowingPromise<Unit> closing, Runnable immediate) {}
 
     @Override
-    public IntermediatePromise<Unit> close() {
+    public ThrowingPromise<Unit> close() {
         var tuple = locked(() -> {
             if (closing == null) {
-                closing = IntermediatePromise.create()
-                                             .flatMap(_ ->
+                closing = ThrowingPromise.create()
+                                         .flatMap(_ ->
                                                           locked(() ->
-                                                                     IntermediatePromise.allOf(connections.stream()
-                                                                                                          .map(PooledPgConnection::shutdown))
+                                                                     ThrowingPromise.allOf(connections.stream()
+                                                                                                      .map(PooledPgConnection::shutdown))
                                                           ));
                 return new CloseTuple(closing, checkClosed());
             } else {
-                return new CloseTuple(IntermediatePromise.failed(new IllegalStateException("PG pool is already shutting down")), NO_OP);
+                return new CloseTuple(ThrowingPromise.failed(new IllegalStateException("PG pool is already shutting down")), NO_OP);
             }
         });
         Promise.runAsync(tuple.immediate);

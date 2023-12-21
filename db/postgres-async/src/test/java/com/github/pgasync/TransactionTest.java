@@ -14,7 +14,7 @@
 
 package com.github.pgasync;
 
-import com.github.pgasync.async.IntermediatePromise;
+import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.async.ThrowableCause;
 import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.SqlException;
@@ -51,7 +51,7 @@ public class TransactionTest {
         dbr.query("DROP TABLE IF EXISTS TX_TEST");
     }
 
-    private static <T> IntermediatePromise<T> withinTransaction(Fn1<IntermediatePromise<T>, Transaction> fn) {
+    private static <T> ThrowingPromise<T> withinTransaction(Fn1<ThrowingPromise<T>, Transaction> fn) {
         return dbr.pool()
                   .getConnection()
                   .flatMap(connection ->
@@ -150,7 +150,7 @@ public class TransactionTest {
 
                                              return transaction
                                                  .completeQuery("INSERT INTO TX_TEST(ID) VALUES(22)")
-                                                 .map(_ -> IntermediatePromise.<ResultSet>failed(
+                                                 .map(_ -> ThrowingPromise.<ResultSet>failed(
                                                      new IllegalStateException("The transaction should fail")))
                                                  .tryRecover(_ -> transaction.completeQuery("SELECT 1"))
                                                  .flatMap(Fn1.id());
@@ -207,7 +207,7 @@ public class TransactionTest {
                                                                             nested.completeQuery("INSERT INTO TX_TEST(ID) VALUES(26)")
                                                                                   .onSuccess(res2 -> assertEquals(1, res2.affectedRows()))
                                                                                   .flatMap(_ -> nested.completeQuery("INSERT INTO TX_TEST(ID) VALUES(26)"))
-                                                                                  .map(_ -> IntermediatePromise.<Unit>failed(new IllegalStateException("The query should fail")))
+                                                                                  .map(_ -> ThrowingPromise.<Unit>failed(new IllegalStateException("The query should fail")))
                                                                                   .tryRecover(_ -> transaction.commit())
                                                                                   .flatMap(Fn1.id()));
                                          }))

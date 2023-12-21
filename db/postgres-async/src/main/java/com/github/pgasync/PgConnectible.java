@@ -1,6 +1,6 @@
 package com.github.pgasync;
 
-import com.github.pgasync.async.IntermediatePromise;
+import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.async.ThrowableCause;
 import com.github.pgasync.conversion.DataConverter;
 import com.github.pgasync.net.Connectible;
@@ -20,14 +20,14 @@ public abstract class PgConnectible implements Connectible {
     final String validationQuery;
     final String username;
     final DataConverter dataConverter;
-    final Supplier<IntermediatePromise<ProtocolStream>> obtainStream;
+    final Supplier<ThrowingPromise<ProtocolStream>> obtainStream;
 
     protected final String password;
     protected final String database;
     protected final Charset encoding;
 
     PgConnectible(ConnectibleBuilder.ConnectibleConfiguration properties,
-                  Supplier<IntermediatePromise<ProtocolStream>> obtainStream) {
+                  Supplier<ThrowingPromise<ProtocolStream>> obtainStream) {
         this.username = properties.username();
         this.password = properties.password();
         this.database = properties.database();
@@ -38,10 +38,10 @@ public abstract class PgConnectible implements Connectible {
     }
 
     @Override
-    public IntermediatePromise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                            Consumer<Row> onRow,
-                                            Consumer<Integer> onAffected,
-                                            String sql) {
+    public ThrowingPromise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                        Consumer<Row> onRow,
+                                        Consumer<Integer> onAffected,
+                                        String sql) {
         return getConnection()
             .flatMap(connection ->
                          connection.script(onColumns, onRow, onAffected, sql)
@@ -49,10 +49,10 @@ public abstract class PgConnectible implements Connectible {
     }
 
     @Override
-    public IntermediatePromise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                              Consumer<Row> onRow,
-                                              String sql,
-                                              Object... params) {
+    public ThrowingPromise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
+                                          Consumer<Row> onRow,
+                                          String sql,
+                                          Object... params) {
         return getConnection()
             .flatMap(connection ->
                          connection.query(onColumns, onRow, sql, params)

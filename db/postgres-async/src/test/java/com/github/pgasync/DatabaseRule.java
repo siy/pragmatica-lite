@@ -1,6 +1,6 @@
 package com.github.pgasync;
 
-import com.github.pgasync.async.IntermediatePromise;
+import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.net.Connectible;
 import com.github.pgasync.net.ConnectibleBuilder;
 import com.github.pgasync.net.Converter;
@@ -101,7 +101,7 @@ public class DatabaseRule extends ExternalResource {
         return block(pool().completeScript(sql));
     }
 
-    private <T> T block(IntermediatePromise<T> promise) {
+    private <T> T block(ThrowingPromise<T> promise) {
         try {
             return promise.await();
         } catch (Throwable th) {

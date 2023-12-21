@@ -1,6 +1,6 @@
 package com.github.pgasync.net;
 
-import com.github.pgasync.async.IntermediatePromise;
+import com.github.pgasync.async.ThrowingPromise;
 import org.pragmatica.lang.Unit;
 
 /**
@@ -9,7 +9,7 @@ import org.pragmatica.lang.Unit;
  * @author Marat Gainullin
  */
 public interface Connectible extends QueryExecutor {
-    IntermediatePromise<Connection> getConnection();
+    ThrowingPromise<Connection> getConnection();
 
-    IntermediatePromise<Unit> close();
+    ThrowingPromise<Unit> close();
 }

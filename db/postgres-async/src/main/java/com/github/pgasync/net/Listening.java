@@ -1,10 +1,10 @@
 package com.github.pgasync.net;
 
-import com.github.pgasync.async.IntermediatePromise;
+import com.github.pgasync.async.ThrowingPromise;
 import org.pragmatica.lang.Unit;
 
 @FunctionalInterface
 public interface Listening {
 
-    IntermediatePromise<Unit> unlisten();
+    ThrowingPromise<Unit> unlisten();
 }

@@ -17,7 +17,7 @@ package com.github.pgasync.net.netty;
 import com.github.pgasync.PgConnectionPool;
 import com.github.pgasync.PgDatabase;
 import com.github.pgasync.ProtocolStream;
-import com.github.pgasync.async.IntermediatePromise;
+import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.net.Connectible;
 import com.github.pgasync.net.ConnectibleBuilder;
 
@@ -31,8 +31,8 @@ import java.nio.charset.Charset;
  * @author Marat Gainullin
  */
 public class NettyConnectibleBuilder extends ConnectibleBuilder {
-    private IntermediatePromise<ProtocolStream> obtainStream() {
-        return IntermediatePromise.successful(new NettyPgProtocolStream(
+    private ThrowingPromise<ProtocolStream> obtainStream() {
+        return ThrowingPromise.successful(new NettyPgProtocolStream(
             //TODO: use resolver
             new InetSocketAddress(properties.hostname(), properties.port()),
             properties.useSsl(),

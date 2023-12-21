@@ -15,7 +15,7 @@
 package com.github.pgasync.net.netty;
 
 import com.github.pgasync.PgProtocolStream;
-import com.github.pgasync.async.IntermediatePromise;
+import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.message.Message;
 import com.github.pgasync.message.backend.SslHandshake;
 import com.github.pgasync.message.frontend.SSLRequest;
@@ -71,7 +71,7 @@ public class NettyPgProtocolStream extends PgProtocolStream {
     }
 
     @Override
-    public IntermediatePromise<Message> connect(StartupMessage startup) {
+    public ThrowingPromise<Message> connect(StartupMessage startup) {
         startupWith = startup;
         return offerRoundTrip(() -> channelPipeline.connect(address).addListener(outboundErrorListener), false)
             .flatMap(this::send)
@@ -79,7 +79,7 @@ public class NettyPgProtocolStream extends PgProtocolStream {
                 if (message == SslHandshake.INSTANCE) {
                     return send(startup);
                 } else {
-                    return IntermediatePromise.successful(message);
+                    return ThrowingPromise.successful(message);
                 }
             });
     }
@@ -90,8 +90,8 @@ public class NettyPgProtocolStream extends PgProtocolStream {
     }
 
     @Override
-    public IntermediatePromise<Unit> close() {
-        var uponClose = IntermediatePromise.<Unit>create();
+    public ThrowingPromise<Unit> close() {
+        var uponClose = ThrowingPromise.<Unit>create();
         ctx.writeAndFlush(Terminate.INSTANCE)
            .addListener(written -> {
                if (written.isSuccess()) {

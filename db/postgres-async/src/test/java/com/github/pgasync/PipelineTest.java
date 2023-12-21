@@ -14,7 +14,7 @@
 
 package com.github.pgasync;
 
-import com.github.pgasync.async.IntermediatePromise;
+import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.net.Connectible;
 import com.github.pgasync.net.Connection;
 import com.github.pgasync.net.SqlException;
@@ -103,8 +103,8 @@ public class PipelineTest {
         var connection = getConnection();
 
         try {
-            IntermediatePromise.allOf(IntStream.range(0, 10)
-                                               .mapToObj(i -> connection.completeQuery(STR."select \{i}, pg_sleep(10)")
+            ThrowingPromise.allOf(IntStream.range(0, 10)
+                                           .mapToObj(i -> connection.completeQuery(STR."select \{i}, pg_sleep(10)")
                                                                           .tryRecover(th -> {
                                                                               throw new IllegalStateException(new SqlException(th.getMessage()));
                                                                           }))).await();

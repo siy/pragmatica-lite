@@ -12,21 +12,21 @@ import java.util.stream.Stream;
 
 //Temporary replacement which going to be used to simplify refactoring
 @SuppressWarnings("unused")
-public class IntermediatePromise<T> extends CompletableFuture<T> {
-    public static <U> IntermediatePromise<U> successful(U value) {
-        return IntermediatePromise.<U>create().succeed(value);
+public class ThrowingPromise<T> extends CompletableFuture<T> {
+    public static <U> ThrowingPromise<U> successful(U value) {
+        return ThrowingPromise.<U>create().succeed(value);
     }
 
-    public static <U> IntermediatePromise<U> failed(Throwable ex) {
-        var promise = IntermediatePromise.<U>create();
+    public static <U> ThrowingPromise<U> failed(Throwable ex) {
+        var promise = ThrowingPromise.<U>create();
         promise.fail(ex);
         return promise;
     }
 
-    public static <T> IntermediatePromise<Unit> allOf(Stream<IntermediatePromise<T>> cfs) {
+    public static <T> ThrowingPromise<Unit> allOf(Stream<ThrowingPromise<T>> cfs) {
         var promises = cfs.toArray(CompletableFuture<?>[]::new);
 
-        var promise = IntermediatePromise.<Unit>create();
+        var promise = ThrowingPromise.<Unit>create();
 
         CompletableFuture.allOf(promises)
                          .whenComplete((v, th) -> {
@@ -40,22 +40,22 @@ public class IntermediatePromise<T> extends CompletableFuture<T> {
     }
 
     @Override
-    public <U> IntermediatePromise<U> newIncompleteFuture() {
+    public <U> ThrowingPromise<U> newIncompleteFuture() {
         return create();
     }
 
     @SuppressWarnings("unchecked")
-    public <U> IntermediatePromise<U> map(Fn1<? extends U, ? super T> fn) {
-        return (IntermediatePromise<U>) thenApply(fn::apply);
+    public <U> ThrowingPromise<U> map(Fn1<? extends U, ? super T> fn) {
+        return (ThrowingPromise<U>) thenApply(fn::apply);
     }
 
-    public <U> IntermediatePromise<U> fold(Fn1<IntermediatePromise<U>, Result<T>> fn) {
-        return (IntermediatePromise<U>) handle((value, th) -> fn.apply(buildResult(value, th)))
+    public <U> ThrowingPromise<U> fold(Fn1<ThrowingPromise<U>, Result<T>> fn) {
+        return (ThrowingPromise<U>) handle((value, th) -> fn.apply(buildResult(value, th)))
             .thenCompose(Function.identity());
     }
 
-    public IntermediatePromise<T> onResult(Consumer<Result<T>> action) {
-        return (IntermediatePromise<T>) whenComplete((value, th) -> action.accept(buildResult(value, th)));
+    public ThrowingPromise<T> onResult(Consumer<Result<T>> action) {
+        return (ThrowingPromise<T>) whenComplete((value, th) -> action.accept(buildResult(value, th)));
     }
 
     private static <T> Result<T> buildResult(T value, Throwable th) {
@@ -66,12 +66,12 @@ public class IntermediatePromise<T> extends CompletableFuture<T> {
         }
     }
 
-    public <U> IntermediatePromise<U> flatMap(Fn1<? extends IntermediatePromise<U>, ? super T> fn) {
-        return (IntermediatePromise<U>) thenCompose(fn::apply);
+    public <U> ThrowingPromise<U> flatMap(Fn1<? extends ThrowingPromise<U>, ? super T> fn) {
+        return (ThrowingPromise<U>) thenCompose(fn::apply);
     }
 
-    public IntermediatePromise<Unit> onSuccess(Consumer<? super T> action) {
-        return (IntermediatePromise<Unit>) thenAccept(action)
+    public ThrowingPromise<Unit> onSuccess(Consumer<? super T> action) {
+        return (ThrowingPromise<Unit>) thenAccept(action)
             .thenApply(Unit::unit);
     }
 
@@ -84,7 +84,7 @@ public class IntermediatePromise<T> extends CompletableFuture<T> {
             .execute(() -> completeExceptionally(supplier.get()));
     }
 
-    public IntermediatePromise<T> succeed(T value) {
+    public ThrowingPromise<T> succeed(T value) {
         complete(value);
         return this;
     }
@@ -95,15 +95,15 @@ public class IntermediatePromise<T> extends CompletableFuture<T> {
     }
 
     //recover and replace exception with new completion stage
-    public IntermediatePromise<T> tryRecover(Fn1<? extends T, Throwable> fn) {
-        return (IntermediatePromise<T>) exceptionally(fn::apply);
+    public ThrowingPromise<T> tryRecover(Fn1<? extends T, Throwable> fn) {
+        return (ThrowingPromise<T>) exceptionally(fn::apply);
     }
 
     public T await() {
         return join();
     }
 
-    public static <T> IntermediatePromise<T> create() {
-        return new IntermediatePromise<>();
+    public static <T> ThrowingPromise<T> create() {
+        return new ThrowingPromise<>();
     }
 }

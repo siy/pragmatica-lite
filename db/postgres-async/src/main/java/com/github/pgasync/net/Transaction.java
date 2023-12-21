@@ -14,7 +14,7 @@
 
 package com.github.pgasync.net;
 
-import com.github.pgasync.async.IntermediatePromise;
+import com.github.pgasync.async.ThrowingPromise;
 import org.pragmatica.lang.Unit;
 
 /**
@@ -29,22 +29,22 @@ public interface Transaction extends QueryExecutor {
     /**
      * Commits a transaction
      */
-    IntermediatePromise<Unit> commit();
+    ThrowingPromise<Unit> commit();
 
     /**
      * Rollbacks a transaction.
      */
-    IntermediatePromise<Unit> rollback();
+    ThrowingPromise<Unit> rollback();
 
     /**
      * Commits a transaction and rollbacks it if an error occurs.
      */
-    IntermediatePromise<Unit> close();
+    ThrowingPromise<Unit> close();
 
     /**
      * Returns a connection, this transaction belongs to.
      */
     Connection getConnection();
 
-    IntermediatePromise<Transaction> begin();
+    ThrowingPromise<Transaction> begin();
 }
