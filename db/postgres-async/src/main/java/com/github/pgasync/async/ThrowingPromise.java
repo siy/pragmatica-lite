@@ -10,8 +10,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-//Temporary replacement which going to be used to simplify refactoring
-@SuppressWarnings("unused")
 public class ThrowingPromise<T> extends CompletableFuture<T> {
     public static <U> ThrowingPromise<U> successful(U value) {
         return ThrowingPromise.<U>create().succeed(value);
@@ -29,7 +27,7 @@ public class ThrowingPromise<T> extends CompletableFuture<T> {
         var promise = ThrowingPromise.<Unit>create();
 
         CompletableFuture.allOf(promises)
-                         .whenComplete((v, th) -> {
+                         .whenComplete((_, th) -> {
                              if (th != null) {
                                  promise.fail(th);
                              } else {
