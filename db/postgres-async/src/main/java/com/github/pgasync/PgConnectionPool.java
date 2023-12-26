@@ -14,8 +14,8 @@
 
 package com.github.pgasync;
 
-import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.async.ThrowableCause;
+import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.net.ConnectibleBuilder;
 import com.github.pgasync.net.Connection;
 import com.github.pgasync.net.Listening;
@@ -290,7 +290,7 @@ public class PgConnectionPool extends PgConnectible {
                 return checkClosed();
             }
         });
-        Promise.runAsync(lucky);
+        Promise.async(lucky);
     }
 
     @Override
@@ -344,7 +344,7 @@ public class PgConnectionPool extends PgConnectible {
                                             pending.clear();
                                             return unlucky;
                                         });
-                                        actions.forEach(Promise::runAsync);
+                                        actions.forEach(Promise::async);
                                         return null;
                                     },
                                     connected -> {
@@ -374,7 +374,7 @@ public class PgConnectionPool extends PgConnectible {
                 return new CloseTuple(ThrowingPromise.failed(new IllegalStateException("PG pool is already shutting down")), NO_OP);
             }
         });
-        Promise.runAsync(tuple.immediate);
+        Promise.async(tuple.immediate);
 
         return tuple.closing;
     }

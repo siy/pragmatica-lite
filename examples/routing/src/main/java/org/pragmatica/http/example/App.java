@@ -5,9 +5,8 @@ import org.pragmatica.http.HttpError;
 import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.http.server.HttpServer;
 import org.pragmatica.http.server.HttpServerConfiguration;
+import org.pragmatica.id.nanoid.NanoId;
 import org.pragmatica.lang.Promise;
-
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.pragmatica.http.server.routing.Route.get;
 import static org.pragmatica.http.server.routing.Route.in;
@@ -71,17 +70,14 @@ public class App {
             );
     }
 
-    private static final AtomicInteger counter = new AtomicInteger();
-
-    private static Promise<Integer> delayedResponse() {
-        return Promise.<Integer>promise()
-                      .async(promise -> {
-                          try {
-                              Thread.sleep(250);
-                          } catch (InterruptedException e) {
-                              //ignore
-                          }
-                          promise.success(counter.incrementAndGet());
-                      });
+    private static Promise<String> delayedResponse() {
+        return Promise.promise(promise -> {
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException e) {
+                //ignore
+            }
+            promise.succeed(NanoId.secureNanoId());
+        });
     }
 }

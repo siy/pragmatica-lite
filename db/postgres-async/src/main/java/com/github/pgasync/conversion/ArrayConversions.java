@@ -11,9 +11,7 @@ import java.util.function.Function;
 // TODO: change internal value format from byte[] to PgValue(TEXT|BINARY)
 @SuppressWarnings({"unchecked", "rawtypes"})
 final class ArrayConversions {
-    private ArrayConversions() {
-    }
-
+    private ArrayConversions() {}
     static String fromArray(final Object elements, final Function<Object, String> printFn) {
         return appendArray(new StringBuilder(), elements, printFn).toString();
     }

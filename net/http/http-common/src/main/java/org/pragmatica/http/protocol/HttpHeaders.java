@@ -40,6 +40,15 @@ public interface HttpHeaders {
         return header(name).isEmpty() ? add(name, values) : this;
     }
 
+    static HttpHeaders from(io.netty.handler.codec.http.HttpHeaders source) {
+        var headers = httpHeaders();
+
+        source.entries()
+              .forEach(entry -> headers.add(HttpHeaderName.fromRaw(entry.getKey()),
+                                            List.of(entry.getValue())));
+        return headers;
+    }
+
     static HttpHeaders httpHeaders() {
         record httpHeaders(Map<HttpHeaderName, List<String>> headers) implements HttpHeaders {
             private Option<List<String>> get(HttpHeaderName name) {

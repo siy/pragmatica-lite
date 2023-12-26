@@ -14,8 +14,8 @@
 
 package com.github.pgasync;
 
-import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.async.ThrowableCause;
+import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.SqlException;
 import com.github.pgasync.net.Transaction;

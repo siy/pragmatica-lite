@@ -13,7 +13,7 @@ class HttpClientTest {
         var client = HttpClient.create(HttpClientConfiguration.allDefaults());
         var request = HttpClientRequest.httpClientRequest(HttpMethod.GET,
                                                           CommonContentTypes.TEXT_PLAIN,
-                                                          IRI.fromString("https://www.google.com/"),
+                                                          IRI.fromString("https://www.example.com/"),
                                                           HttpHeaders.httpHeaders(), Option.none(), Option.none());
         var response = client.call(request)
                              .await()

@@ -66,18 +66,10 @@ public class AppTest {
     @Test
     void delayEndpointIsWorking() {
         given().baseUri("http://localhost:8000")
-               .get("/delay")
-               .then()
+               .get("/delay").then()
                .statusCode(200)
                .contentType("text/plain; charset=UTF-8")
-               .body(equalTo("1"));
-
-        given().baseUri("http://localhost:8000")
-               .get("/delay")
-               .then()
-               .statusCode(200)
-               .contentType("text/plain; charset=UTF-8")
-               .body(equalTo("2"));
+               .header("Content-Length", Integer::parseInt, equalTo(21));
     }
 
     @Test

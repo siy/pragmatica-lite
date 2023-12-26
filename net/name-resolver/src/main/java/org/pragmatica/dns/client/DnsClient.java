@@ -121,12 +121,12 @@ record DnsClientImpl(Bootstrap bootstrap, ConcurrentHashMap<Integer, Request> re
         log.debug("Handling response {} for request {}", msg, request);
 
         if (!msg.code().equals(DnsResponseCode.NOERROR)) {
-            var errorMessage = STR. "Server responded with error code \{ msg.code() }" ;
+            var errorMessage = STR."Server responded with error code \{msg.code()}";
 
             log.warn(errorMessage);
 
             request.promise()
-                   .failure(new ServerError(errorMessage));
+                   .fail(new ServerError(errorMessage));
             return;
         }
 
@@ -136,8 +136,8 @@ record DnsClientImpl(Bootstrap bootstrap, ConcurrentHashMap<Integer, Request> re
         extractAddresses(request, msg)
             .stream()
             .min(Comparator.comparing(DomainAddress::ttl))
-            .ifPresentOrElse(address -> request.promise().success(address),
-                             () -> request.promise().failure(new ServerError("No address provided by server")));
+            .ifPresentOrElse(address -> request.promise().succeed(address),
+                             () -> request.promise().fail(new ServerError("No address provided by server")));
     }
 
     private static ArrayList<DomainAddress> extractAddresses(Request request, DatagramDnsResponse msg) {
@@ -169,7 +169,7 @@ record DnsClientImpl(Bootstrap bootstrap, ConcurrentHashMap<Integer, Request> re
 
         // Setup guard timeout
         promise.async(QUERY_TIMEOUT,
-                      pending -> pending.failure(new RequestTimeout("No response from server in 10 seconds")));
+                      pending -> pending.fail(new RequestTimeout("No response from server in 10 seconds")));
     }
 
     private DatagramDnsQuery buildQuery(InetSocketAddress serverAddress, Promise<DomainAddress> promise, DomainName domainName) {

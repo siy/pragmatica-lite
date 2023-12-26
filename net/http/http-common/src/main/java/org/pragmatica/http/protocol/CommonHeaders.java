@@ -1,5 +1,12 @@
 package org.pragmatica.http.protocol;
 
+import org.pragmatica.lang.Option;
+
+import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 @SuppressWarnings("unused")
 public enum CommonHeaders implements HttpHeaderName {
     ACCEPT("accept"),
@@ -65,8 +72,19 @@ public enum CommonHeaders implements HttpHeaderName {
     REQUEST_ID_CHAIN("request-id-chain");
     private final String nameString;
 
+    private static final Map<String, CommonHeaders> LOOKUP;
+
+    static {
+        LOOKUP = Stream.of(values())
+                       .collect(Collectors.toMap(header -> header.nameString, header -> header));
+    }
+
     CommonHeaders(String nameString) {
         this.nameString = nameString;
+    }
+
+    public static Option<HttpHeaderName> lookup(String name) {
+        return Option.option(LOOKUP.get(name.toLowerCase(Locale.ROOT)));
     }
 
     @Override

@@ -1,6 +1,12 @@
 package org.pragmatica.http.protocol;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
+import org.pragmatica.lang.Option;
+
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SuppressWarnings("unused")
 public enum HttpStatus {
@@ -61,9 +67,17 @@ public enum HttpStatus {
     INSUFFICIENT_STORAGE(507, "Insufficient Storage"),
     NOT_EXTENDED(510, "Not Extended"),
     NETWORK_AUTHENTICATION_REQUIRED(511, "Network Authentication Required"),
+    UNKNOWN_ERROR(599, "Unknown Error")
     ;
     private final int code;
     private final String message;
+
+    private static final Map<Integer, HttpStatus> LOOKUP;
+
+    static {
+        LOOKUP = Stream.of(values())
+                       .collect(Collectors.toMap(HttpStatus::code, Function.identity()));
+    }
 
     HttpStatus(int code, String reasonPhrase) {
         this.code = code;
@@ -80,5 +94,10 @@ public enum HttpStatus {
 
     public HttpResponseStatus toInternal() {
         return new HttpResponseStatus(code, message);
+    }
+
+    public static HttpStatus fromInternal(HttpResponseStatus status) {
+        return Option.option(LOOKUP.get(status.code()))
+                     .or(UNKNOWN_ERROR);
     }
 }

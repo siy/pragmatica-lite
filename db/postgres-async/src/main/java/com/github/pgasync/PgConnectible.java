@@ -1,7 +1,7 @@
 package com.github.pgasync;
 
-import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.async.ThrowableCause;
+import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.conversion.DataConverter;
 import com.github.pgasync.net.Connectible;
 import com.github.pgasync.net.ConnectibleBuilder;

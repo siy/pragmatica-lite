@@ -24,6 +24,7 @@ import org.pragmatica.lang.io.Timeout;
 
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -68,17 +69,23 @@ public class PromiseTest {
     }
 
     @Test
-    void successActionsAreExecutedAfterResolutionWithSuccess() {
+    void successActionsAreExecutedAfterResolutionWithSuccess() throws InterruptedException {
+        var latch = new CountDownLatch(1);
         var ref1 = new AtomicInteger();
         var ref2 = new AtomicBoolean(false);
         var promise = Promise.<Integer>promise()
                              .onSuccess(ref1::set)
-                             .onSuccessRun(() -> ref2.set(true));
+                             .onSuccessRun(() -> ref2.set(true))
+                             .onSuccessRun(latch::countDown);
 
         assertEquals(0, ref1.get());
         assertFalse(ref2.get());
 
-        promise.resolve(Result.success(1)).await();
+        promise.resolve(Result.success(1));
+
+        if (!latch.await(1, TimeUnit.SECONDS)) {
+            fail("Promise is not resolved");
+        }
 
         assertEquals(1, ref1.get());
         assertTrue(ref2.get());
@@ -103,19 +110,25 @@ public class PromiseTest {
 
     @Test
     void failureActionsAreExecutedAfterResolutionWithFailure() {
-        var ref1 = new AtomicReference<Result.Cause>();
-        var ref2 = new AtomicBoolean(false);
+        var integerPromise = Promise.<Integer>promise();
+        var booleanPromise = Promise.<Boolean>promise();
+
         var promise = Promise.<Integer>promise()
-                             .onFailure(ref1::set)
-                             .onFailureRun(() -> ref2.set(true));
+                             .onFailure(integerPromise::fail)
+                             .onFailureRun(() -> booleanPromise.succeed(true));
 
-        assertNull(ref1.get());
-        assertFalse(ref2.get());
+        promise.resolve(FAULT);
 
-        promise.resolve(FAULT).await();
+        Promise.all(integerPromise, booleanPromise)
+               .id()
+               .await();
 
-        assertIsFault(ref1.get());
-        assertTrue(ref2.get());
+        integerPromise.await()
+                      .onFailure(this::assertIsFault)
+                      .onSuccessRun(Assertions::fail);
+        booleanPromise.await()
+                      .onSuccess(Assertions::assertTrue)
+                      .onFailureRun(Assertions::fail);
     }
 
     @Test
@@ -137,38 +150,44 @@ public class PromiseTest {
 
     @Test
     void resultActionsAreExecutedAfterResolutionWithSuccess() {
-        var ref1 = new AtomicReference<Result<Integer>>();
-        var ref2 = new AtomicBoolean(false);
+        var integerPromise = Promise.<Integer>promise();
+        var booleanPromise = Promise.<Boolean>promise();
+
         var promise = Promise.<Integer>promise()
-                             .onResult(ref1::set)
-                             .onResultRun(() -> ref2.set(true));
+                             .onResult(integerPromise::resolve)
+                             .onResultRun(() -> booleanPromise.succeed(true));
 
-        assertNull(ref1.get());
-        assertFalse(ref2.get());
+        promise.resolve(Result.success(1));
 
-        promise.resolve(Result.success(1)).await();
-
-        assertEquals(Result.success(1), ref1.get());
-        assertTrue(ref2.get());
+        Promise.all(integerPromise, booleanPromise)
+               .map((integer, bool) -> {
+                   assertEquals(1, integer);
+                   assertTrue(bool);
+                   return Unit.aUnit();
+               }).await();
     }
 
     @Test
     void resultActionsAreExecutedAfterResolutionWithFailure() {
-        var ref1 = new AtomicReference<Result<Integer>>();
-        var ref2 = new AtomicBoolean(false);
+        var integerPromise = Promise.<Integer>promise();
+        var booleanPromise = Promise.<Boolean>promise();
         var promise = Promise.<Integer>promise()
-                             .onResult(ref1::set)
-                             .onResultRun(() -> ref2.set(true));
-
-        assertNull(ref1.get());
-        assertFalse(ref2.get());
+                             .onResult(integerPromise::resolve)
+                             .onResultRun(() -> booleanPromise.succeed(true));
 
         promise.resolve(FAULT).await();
 
-        ref1.get()
-            .onFailure(this::assertIsFault)
-            .onSuccess(_ -> fail("Promise should be resolved with failure"));
-        assertTrue(ref2.get());
+        Promise.all(integerPromise, booleanPromise)
+               .id()
+               .await()
+               .onFailure(this::assertIsFault)
+               .onSuccessRun(Assertions::fail);
+
+        assertTrue(booleanPromise.isResolved());
+
+        booleanPromise.await()
+                      .onSuccess(Assertions::assertTrue)
+                      .onFailureRun(Assertions::fail);
     }
 
     @Test
@@ -217,38 +236,45 @@ public class PromiseTest {
 
     @Test
     void multipleActionsAreExecutedAfterResolution() {
-        var ref1 = new AtomicReference<Integer>();
-        var ref2 = new AtomicReference<String>();
-        var ref3 = new AtomicReference<Long>();
-        var ref4 = new AtomicInteger();
-
         var promise = Promise.<Integer>promise();
 
+        var integerPromise = Promise.promise();
+        var stringPromise = Promise.<String>promise();
+        var longPromise = Promise.<Long>promise();
+        var counterPromise = Promise.<Integer>promise();
+
         promise
-            .onSuccess(ref1::set)
+            .onSuccess(integerPromise::succeed)
             .map(Objects::toString)
-            .onSuccess(ref2::set)
+            .onSuccess(stringPromise::succeed)
             .map(Long::parseLong)
-            .onSuccess(ref3::set)
+            .onSuccess(longPromise::succeed)
             .onSuccessRun(() -> {
                 try {
                     Thread.sleep(50);
-                    ref4.incrementAndGet();
+                    counterPromise.succeed(1);
                 } catch (InterruptedException e) {
                     //ignore
                 }
             });
 
-        assertNull(ref1.get());
-        assertNull(ref2.get());
-        assertNull(ref3.get());
+        assertFalse(promise.isResolved());
+        assertFalse(integerPromise.isResolved());
+        assertFalse(stringPromise.isResolved());
+        assertFalse(longPromise.isResolved());
+        assertFalse(counterPromise.isResolved());
 
-        promise.resolve(Result.success(1)).await();
+        promise.resolve(Result.success(1));
 
-        assertEquals(1, ref1.get());
-        assertEquals("1", ref2.get());
-        assertEquals(1L, ref3.get());
-        assertEquals(1, ref4.get());
+        Promise.all(integerPromise, stringPromise, longPromise, counterPromise)
+               .map((integer, string, aLong, counter) -> {
+                   assertEquals(1, integer);
+                   assertEquals("1", string);
+                   assertEquals(1L, aLong);
+                   assertEquals(1, counter);
+                   return Unit.aUnit();
+               }).onFailureRun(Assertions::fail)
+               .await();
     }
 
     @Test
@@ -259,7 +285,7 @@ public class PromiseTest {
 
         assertFalse(allPromise.isResolved());
 
-        promise1.success(1);
+        promise1.succeed(1);
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1), tuple))
@@ -275,8 +301,8 @@ public class PromiseTest {
 
         assertFalse(allPromise.isResolved());
 
-        promise1.success(1);
-        promise2.success(2);
+        promise1.succeed(1);
+        promise2.succeed(2);
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2), tuple))
@@ -293,9 +319,9 @@ public class PromiseTest {
 
         assertFalse(allPromise.isResolved());
 
-        promise1.success(1);
-        promise2.success(2);
-        promise3.success(3);
+        promise1.succeed(1);
+        promise2.succeed(2);
+        promise3.succeed(3);
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3), tuple))
@@ -314,10 +340,10 @@ public class PromiseTest {
 
         assertFalse(allPromise.isResolved());
 
-        promise1.success(1);
-        promise2.success(2);
-        promise3.success(3);
-        promise4.success(4);
+        promise1.succeed(1);
+        promise2.succeed(2);
+        promise3.succeed(3);
+        promise4.succeed(4);
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4), tuple))
@@ -337,11 +363,11 @@ public class PromiseTest {
 
         assertFalse(allPromise.isResolved());
 
-        promise1.success(1);
-        promise2.success(2);
-        promise3.success(3);
-        promise4.success(4);
-        promise5.success(5);
+        promise1.succeed(1);
+        promise2.succeed(2);
+        promise3.succeed(3);
+        promise4.succeed(4);
+        promise5.succeed(5);
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5), tuple))
@@ -362,12 +388,12 @@ public class PromiseTest {
 
         assertFalse(allPromise.isResolved());
 
-        promise1.success(1);
-        promise2.success(2);
-        promise3.success(3);
-        promise4.success(4);
-        promise5.success(5);
-        promise6.success(6);
+        promise1.succeed(1);
+        promise2.succeed(2);
+        promise3.succeed(3);
+        promise4.succeed(4);
+        promise5.succeed(5);
+        promise6.succeed(6);
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5, 6), tuple))
@@ -389,13 +415,13 @@ public class PromiseTest {
 
         assertFalse(allPromise.isResolved());
 
-        promise1.success(1);
-        promise2.success(2);
-        promise3.success(3);
-        promise4.success(4);
-        promise5.success(5);
-        promise6.success(6);
-        promise7.success(7);
+        promise1.succeed(1);
+        promise2.succeed(2);
+        promise3.succeed(3);
+        promise4.succeed(4);
+        promise5.succeed(5);
+        promise6.succeed(6);
+        promise7.succeed(7);
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5, 6, 7), tuple))
@@ -419,14 +445,14 @@ public class PromiseTest {
 
         assertFalse(allPromise.isResolved());
 
-        promise1.success(1);
-        promise2.success(2);
-        promise3.success(3);
-        promise4.success(4);
-        promise5.success(5);
-        promise6.success(6);
-        promise7.success(7);
-        promise8.success(8);
+        promise1.succeed(1);
+        promise2.succeed(2);
+        promise3.succeed(3);
+        promise4.succeed(4);
+        promise5.succeed(5);
+        promise6.succeed(6);
+        promise7.succeed(7);
+        promise8.succeed(8);
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5, 6, 7, 8), tuple))
@@ -451,15 +477,15 @@ public class PromiseTest {
 
         assertFalse(allPromise.isResolved());
 
-        promise1.success(1);
-        promise2.success(2);
-        promise3.success(3);
-        promise4.success(4);
-        promise5.success(5);
-        promise6.success(6);
-        promise7.success(7);
-        promise8.success(8);
-        promise9.success(9);
+        promise1.succeed(1);
+        promise2.succeed(2);
+        promise3.succeed(3);
+        promise4.succeed(4);
+        promise5.succeed(5);
+        promise6.succeed(6);
+        promise7.succeed(7);
+        promise8.succeed(8);
+        promise9.succeed(9);
 
         allPromise.await()
                   .onSuccess(tuple -> assertEquals(Tuple.tuple(1, 2, 3, 4, 5, 6, 7, 8, 9), tuple))
@@ -473,7 +499,7 @@ public class PromiseTest {
 
         var promise = Promise.<Integer>promise(p -> p.onSuccess(ref::set).onSuccessRun(latch::countDown));
 
-        promise.success(1);
+        promise.succeed(1);
         latch.await();
 
         assertEquals(1, ref.get());
@@ -482,7 +508,8 @@ public class PromiseTest {
     void assertIsFault(Result.Cause cause) {
         //noinspection SwitchStatementWithTooFewBranches
         switch (cause) {
-            case CoreError.Fault _ -> {}
+            case CoreError.Fault _ -> {
+            }
             default -> fail("Unexpected cause");
         }
     }
@@ -490,7 +517,8 @@ public class PromiseTest {
     void assertIsTimeout(Result.Cause cause) {
         //noinspection SwitchStatementWithTooFewBranches
         switch (cause) {
-            case CoreError.Timeout _ -> {}
+            case CoreError.Timeout _ -> {
+            }
             default -> fail("Unexpected cause");
         }
     }
@@ -498,7 +526,8 @@ public class PromiseTest {
     void assertIsCancelled(Result.Cause cause) {
         //noinspection SwitchStatementWithTooFewBranches
         switch (cause) {
-            case CoreError.Cancelled _ -> {}
+            case CoreError.Cancelled _ -> {
+            }
             default -> fail("Unexpected cause");
         }
     }

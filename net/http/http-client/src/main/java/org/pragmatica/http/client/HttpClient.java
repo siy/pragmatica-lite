@@ -106,9 +106,9 @@ record HttpClientImpl(HttpClientConfiguration configuration, Bootstrap bootstrap
             .connect(address.ip(), port)
             .addListener((ChannelFutureListener) future -> {
                 if (future.isSuccess()) {
-                    promise.success(future.channel());
+                    promise.succeed(future.channel());
                 } else {
-                    promise.failure(Causes.fromThrowable(future.cause()));
+                    promise.fail(Causes.fromThrowable(future.cause()));
                 }
             }));
     }
@@ -213,7 +213,7 @@ class ContextHandler<T> extends SimpleChannelInboundHandler<FullHttpResponse> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) {
         var response = HttpClientResponse.httpClientResponse(msg, configuration);
-        promise.success(response);
+        promise.succeed(response);
         ctx.close();    //TODO: add support for keep-alive
     }
 }

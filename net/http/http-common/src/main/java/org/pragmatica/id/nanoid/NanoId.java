@@ -4,7 +4,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Random;
 
-@SuppressWarnings("unused")
 public sealed interface NanoId {
     static String secureNanoId() {
         return customNanoId(SECURE_RANDOM);
