@@ -22,7 +22,7 @@ public class PgDatabase extends PgConnectible {
                                if (validationQuery != null && !validationQuery.isBlank()) {
                                    return connection.completeScript(validationQuery)
                                                     .fold(result -> result.fold(
-                                                        cause -> ThrowingPromise.failed(((ThrowableCause) cause).throwable()),
+                                                        cause -> ThrowingPromise.failed(((ThrowableCause) cause)),
                                                         _ -> ThrowingPromise.successful(connection)
                                                     ));
                                } else {

@@ -296,7 +296,7 @@ public class PgConnectionPool extends PgConnectible {
     @Override
     public ThrowingPromise<Connection> getConnection() {
         if (locked(() -> closing != null)) {
-            return ThrowingPromise.failed(new SqlException("Connection pool is closed"));
+            return ThrowingPromise.failed(ThrowableCause.asCause(new SqlException("Connection pool is closed")));
         } else {
             var cached = locked(this::firstAliveConnection);
 
@@ -324,7 +324,7 @@ public class PgConnectionPool extends PgConnectible {
                                                                          result.fold(
                                                                              cause -> ((PooledPgConnection) pooledConnection).delegate
                                                                                  .close()
-                                                                                 .flatMap(_ -> ThrowingPromise.failed(((ThrowableCause) cause).throwable())),
+                                                                                 .flatMap(_ -> ThrowingPromise.failed(((ThrowableCause) cause))),
                                                                              _ -> ThrowingPromise.successful(pooledConnection)
                                                                          ));
                                     } else {
@@ -333,12 +333,11 @@ public class PgConnectionPool extends PgConnectible {
                                 })
                                 .onResult(result -> result.fold(
                                     cause -> {
-                                        var th = ((ThrowableCause) cause).throwable();
                                         var actions = locked(() -> {
                                             size--;
                                             var unlucky = Stream.concat(
                                                                     pending.stream()
-                                                                           .map(item -> () -> item.fail(th)),
+                                                                           .map(item -> () -> item.fail(((ThrowableCause) cause))),
                                                                     Stream.of(checkClosed()))
                                                                 .toList();
                                             pending.clear();
@@ -357,26 +356,19 @@ public class PgConnectionPool extends PgConnectible {
         }
     }
 
-    private record CloseTuple(ThrowingPromise<Unit> closing, Runnable immediate) {}
+//    private record CloseTuple(ThrowingPromise<Unit> closing, Runnable immediate) {}
 
     @Override
     public ThrowingPromise<Unit> close() {
-        var tuple = locked(() -> {
+        return locked(() -> {
             if (closing == null) {
-                closing = ThrowingPromise.create()
-                                         .flatMap(_ ->
-                                                          locked(() ->
-                                                                     ThrowingPromise.allOf(connections.stream()
-                                                                                                      .map(PooledPgConnection::shutdown))
-                                                          ));
-                return new CloseTuple(closing, checkClosed());
+                closing = ThrowingPromise.allOf(connections.stream()
+                                                           .map(PooledPgConnection::shutdown));
+                return closing;
             } else {
-                return new CloseTuple(ThrowingPromise.failed(new IllegalStateException("PG pool is already shutting down")), NO_OP);
+                return ThrowingPromise.failed(ThrowableCause.asCause(new IllegalStateException("PG pool is already shutting down")));
             }
         });
-        Promise.async(tuple.immediate);
-
-        return tuple.closing;
     }
 
     private static final Runnable NO_OP = () -> {};

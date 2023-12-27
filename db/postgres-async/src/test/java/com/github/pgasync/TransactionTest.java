@@ -151,7 +151,7 @@ public class TransactionTest {
                                              return transaction
                                                  .completeQuery("INSERT INTO TX_TEST(ID) VALUES(22)")
                                                  .map(_ -> ThrowingPromise.<ResultSet>failed(
-                                                     new IllegalStateException("The transaction should fail")))
+                                                     ThrowableCause.asCause(new IllegalStateException("The transaction should fail"))))
                                                  .tryRecover(_ -> transaction.completeQuery("SELECT 1"))
                                                  .flatMap(Fn1.id());
                                          }))
@@ -207,7 +207,7 @@ public class TransactionTest {
                                                                             nested.completeQuery("INSERT INTO TX_TEST(ID) VALUES(26)")
                                                                                   .onSuccess(res2 -> assertEquals(1, res2.affectedRows()))
                                                                                   .flatMap(_ -> nested.completeQuery("INSERT INTO TX_TEST(ID) VALUES(26)"))
-                                                                                  .map(_ -> ThrowingPromise.<Unit>failed(new IllegalStateException("The query should fail")))
+                                                                                  .map(_ -> ThrowingPromise.<Unit>failed(ThrowableCause.asCause(new IllegalStateException("The query should fail"))))
                                                                                   .tryRecover(_ -> transaction.commit())
                                                                                   .flatMap(Fn1.id()));
                                          }))

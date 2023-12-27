@@ -75,7 +75,7 @@ public class PipelineTest {
             pool.completeQuery(STR."select \{i}, pg_sleep(\{sleep})")
                 .onSuccess(_ -> results.add(currentTimeMillis()))
                 .tryRecover(th -> {
-                    throw new AssertionError("failed", th);
+                    throw new AssertionError("failed", th.throwable());
                 });
         }
         long writeTime = currentTimeMillis() - startWrite;
@@ -106,7 +106,7 @@ public class PipelineTest {
             ThrowingPromise.allOf(IntStream.range(0, 10)
                                            .mapToObj(i -> connection.completeQuery(STR."select \{i}, pg_sleep(10)")
                                                                           .tryRecover(th -> {
-                                                                              throw new IllegalStateException(new SqlException(th.getMessage()));
+                                                                              throw new IllegalStateException(new SqlException(th.message()));
                                                                           }))).await();
         } catch (Exception ex) {
             DatabaseRule.ifCause(ex, sqlException -> {

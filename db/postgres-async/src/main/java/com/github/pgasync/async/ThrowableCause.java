@@ -8,7 +8,7 @@ public record ThrowableCause(Throwable throwable) implements Result.Cause {
         return throwable.getMessage();
     }
 
-    public static ThrowableCause fromThrowable(Throwable throwable) {
+    public static ThrowableCause asCause(Throwable throwable) {
         return new ThrowableCause(throwable);
     }
 }

@@ -15,6 +15,7 @@
 package com.github.pgasync.net.netty;
 
 import com.github.pgasync.PgProtocolStream;
+import com.github.pgasync.async.ThrowableCause;
 import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.message.Message;
 import com.github.pgasync.message.backend.SslHandshake;
@@ -57,7 +58,7 @@ public class NettyPgProtocolStream extends PgProtocolStream {
 
     private final GenericFutureListener<Future<? super Object>> outboundErrorListener = written -> {
         if (!written.isSuccess()) {
-            gotException(written.cause());
+            gotError(ThrowableCause.asCause(written.cause()));
         }
     };
 
@@ -92,6 +93,7 @@ public class NettyPgProtocolStream extends PgProtocolStream {
     @Override
     public ThrowingPromise<Unit> close() {
         var uponClose = ThrowingPromise.<Unit>create();
+
         ctx.writeAndFlush(Terminate.INSTANCE)
            .addListener(written -> {
                if (written.isSuccess()) {
@@ -100,11 +102,11 @@ public class NettyPgProtocolStream extends PgProtocolStream {
                           if (closed.isSuccess()) {
                               uponClose.succeedAsync(Unit::aUnit);
                           } else {
-                              uponClose.failAsync(closed::cause);
+                              uponClose.failAsync(() -> ThrowableCause.asCause(closed.cause()));
                           }
                       });
                } else {
-                   uponClose.failAsync(written::cause);
+                   uponClose.failAsync(() -> ThrowableCause.asCause(written.cause()));
                }
            });
         return uponClose;
@@ -188,12 +190,12 @@ public class NettyPgProtocolStream extends PgProtocolStream {
 
             @Override
             public void channelInactive(ChannelHandlerContext context) {
-                exceptionCaught(context, new IOException("Channel state changed to inactive"));
+                gotError(ThrowableCause.asCause(new IOException("Channel state changed to inactive")));
             }
 
             @Override
             public void exceptionCaught(ChannelHandlerContext context, Throwable cause) {
-                gotException(cause);
+                gotError(ThrowableCause.asCause(cause));
             }
         };
     }

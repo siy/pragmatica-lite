@@ -15,7 +15,7 @@ public class ThrowingPromise<T> extends CompletableFuture<T> {
         return ThrowingPromise.<U>create().succeed(value);
     }
 
-    public static <U> ThrowingPromise<U> failed(Throwable ex) {
+    public static <U> ThrowingPromise<U> failed(ThrowableCause ex) {
         var promise = ThrowingPromise.<U>create();
         promise.fail(ex);
         return promise;
@@ -29,7 +29,7 @@ public class ThrowingPromise<T> extends CompletableFuture<T> {
         CompletableFuture.allOf(promises)
                          .whenComplete((_, th) -> {
                              if (th != null) {
-                                 promise.fail(th);
+                                 promise.fail(ThrowableCause.asCause(th));
                              } else {
                                  promise.succeed(Unit.aUnit());
                              }
@@ -58,7 +58,7 @@ public class ThrowingPromise<T> extends CompletableFuture<T> {
 
     private static <T> Result<T> buildResult(T value, Throwable th) {
         if (th != null) {
-            return Result.failure(ThrowableCause.fromThrowable(th));
+            return Result.failure(ThrowableCause.asCause(th));
         } else {
             return Result.success(value);
         }
@@ -73,13 +73,13 @@ public class ThrowingPromise<T> extends CompletableFuture<T> {
             .thenApply(Unit::unit);
     }
 
-    public void fail(Throwable ex) {
-        completeExceptionally(ex);
+    public void fail(ThrowableCause cause) {
+        completeExceptionally(cause.throwable());
     }
 
-    public void failAsync(Supplier<? extends Throwable> supplier) {
+    public void failAsync(Supplier<? extends ThrowableCause> supplier) {
         defaultExecutor()
-            .execute(() -> completeExceptionally(supplier.get()));
+            .execute(() -> fail(supplier.get()));
     }
 
     public ThrowingPromise<T> succeed(T value) {
@@ -93,8 +93,8 @@ public class ThrowingPromise<T> extends CompletableFuture<T> {
     }
 
     //recover and replace exception with new completion stage
-    public ThrowingPromise<T> tryRecover(Fn1<? extends T, Throwable> fn) {
-        return (ThrowingPromise<T>) exceptionally(fn::apply);
+    public ThrowingPromise<T> tryRecover(Fn1<? extends T, ThrowableCause> fn) {
+        return (ThrowingPromise<T>) exceptionally(th -> fn.apply(ThrowableCause.asCause(th)));
     }
 
     public T await() {

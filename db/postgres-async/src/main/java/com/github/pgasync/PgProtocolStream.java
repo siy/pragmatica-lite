@@ -58,6 +58,7 @@ import com.github.pgasync.SqlError.ServerSyntaxErrorOrAccessRuleViolation;
 import com.github.pgasync.SqlError.ServerSystemError;
 import com.github.pgasync.SqlError.ServerTriggeredActionException;
 import com.github.pgasync.SqlError.ServerWarning;
+import com.github.pgasync.async.ThrowableCause;
 import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.message.ExtendedQueryMessage;
 import com.github.pgasync.message.Message;
@@ -218,7 +219,8 @@ public abstract class PgProtocolStream implements ProtocolStream {
         });
     }
 
-    protected void gotException(Throwable th) {
+//    protected void gotError(Throwable th) {
+    protected void gotError(ThrowableCause th) {
         onColumns = null;
         onRow = null;
         onAffected = null;
@@ -243,7 +245,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
                 if (seenReadyForQuery) {
                     readyForQueryPendingMessage = message;
                 } else {
-                    gotException(toSqlException(errorResponse));
+                    gotError(toSqlException(errorResponse));
                 }
             }
             case CommandComplete commandComplete -> {
@@ -266,7 +268,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
             case ReadyForQuery _ -> {
                 seenReadyForQuery = true;
                 if (readyForQueryPendingMessage instanceof ErrorResponse errorResponse) {
-                    gotException(toSqlException(errorResponse));
+                    gotError(toSqlException(errorResponse));
                 } else {
                     onColumns = null;
                     onRow = null;
@@ -295,13 +297,13 @@ public abstract class PgProtocolStream implements ProtocolStream {
                 try {
                     requestAction.run();
                 } catch (Throwable th) {
-                    gotException(th);
+                    gotError(ThrowableCause.asCause(th));
                 }
             } else {
-                uponResponse.failAsync(() -> new IllegalStateException("Postgres messages stream simultaneous use detected"));
+                uponResponse.failAsync(() -> ThrowableCause.asCause(new IllegalStateException("Postgres messages stream simultaneous use detected")));
             }
         } else {
-            uponResponse.failAsync(() -> new IllegalStateException("Channel is closed"));
+            uponResponse.failAsync(() -> ThrowableCause.asCause(new IllegalStateException("Channel is closed")));
         }
         return uponResponse;
     }
@@ -321,8 +323,8 @@ public abstract class PgProtocolStream implements ProtocolStream {
         return lastSentMessage instanceof ExtendedQueryMessage;
     }
 
-    private static SqlException toSqlException(ErrorResponse error) {
-        return new SqlException(toSqlError(error));
+    private static ThrowableCause toSqlException(ErrorResponse error) {
+        return ThrowableCause.asCause(new SqlException(toSqlError(error)));
     }
 
     private static ServerError toSqlError(ErrorResponse error) {
