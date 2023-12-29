@@ -16,7 +16,17 @@
 
 package org.pragmatica.lang;
 
-import org.pragmatica.lang.Functions.*;
+import org.pragmatica.lang.Functions.Fn1;
+import org.pragmatica.lang.Functions.Fn2;
+import org.pragmatica.lang.Functions.Fn3;
+import org.pragmatica.lang.Functions.Fn4;
+import org.pragmatica.lang.Functions.Fn5;
+import org.pragmatica.lang.Functions.Fn6;
+import org.pragmatica.lang.Functions.Fn7;
+import org.pragmatica.lang.Functions.Fn8;
+import org.pragmatica.lang.Functions.Fn9;
+import org.pragmatica.lang.Functions.ThrowingFn0;
+import org.pragmatica.lang.Functions.ThrowingRunnable;
 import org.pragmatica.lang.Result.Failure;
 import org.pragmatica.lang.Result.Success;
 
@@ -28,8 +38,17 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static org.pragmatica.lang.Tuple.*;
-import static org.pragmatica.lang.Unit.unitResult;
+import static org.pragmatica.lang.Result.unitResult;
+import static org.pragmatica.lang.Tuple.Tuple1;
+import static org.pragmatica.lang.Tuple.Tuple2;
+import static org.pragmatica.lang.Tuple.Tuple3;
+import static org.pragmatica.lang.Tuple.Tuple4;
+import static org.pragmatica.lang.Tuple.Tuple5;
+import static org.pragmatica.lang.Tuple.Tuple6;
+import static org.pragmatica.lang.Tuple.Tuple7;
+import static org.pragmatica.lang.Tuple.Tuple8;
+import static org.pragmatica.lang.Tuple.Tuple9;
+import static org.pragmatica.lang.Tuple.tuple;
 
 
 /**
@@ -38,6 +57,7 @@ import static org.pragmatica.lang.Unit.unitResult;
  *
  * @param <T> Type of value in case of success.
  */
+@SuppressWarnings("unused")
 public sealed interface Result<T> permits Success, Failure {
     /**
      * Transform operation result value into value of other type and wrap new value into {@link Result}. Transformation takes place if current
@@ -132,28 +152,12 @@ public sealed interface Result<T> permits Success, Failure {
         return this;
     }
 
-    default Result<T> onOk(Consumer<T> consumer) {
-        fold(Functions::toNull, v -> {
-            consumer.accept(v);
-            return null;
-        });
-        return this;
-    }
-
     /**
      * Run provided action in case of success.
      *
      * @return current instance for fluent call chaining
      */
-    default Result<T> onSuccessDo(Runnable action) {
-        fold(Functions::toNull, _ -> {
-            action.run();
-            return null;
-        });
-        return this;
-    }
-
-    default Result<T> onOkDo(Runnable action) {
+    default Result<T> onSuccessRun(Runnable action) {
         fold(Functions::toNull, _ -> {
             action.run();
             return null;
@@ -176,28 +180,12 @@ public sealed interface Result<T> permits Success, Failure {
         return this;
     }
 
-    default Result<T> onError(Consumer<? super Cause> consumer) {
-        fold(v -> {
-            consumer.accept(v);
-            return null;
-        }, Functions::toNull);
-        return this;
-    }
-
     /**
      * Run provided action in case of failure.
      *
      * @return current instance for fluent call chaining
      */
-    default Result<T> onFailureDo(Runnable action) {
-        fold(_ -> {
-            action.run();
-            return null;
-        }, Functions::toNull);
-        return this;
-    }
-
-    default Result<T> onErrorDo(Runnable action) {
+    default Result<T> onFailureRun(Runnable action) {
         fold(_ -> {
             action.run();
             return null;
@@ -324,7 +312,7 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(_ -> supplier.get(), _ -> this);
     }
 
-    default Result<T> onResultDo(Runnable runnable) {
+    default Result<T> onResult(Runnable runnable) {
         runnable.run();
         return this;
     }
@@ -337,9 +325,10 @@ public sealed interface Result<T> permits Success, Failure {
      *
      * @return value stored inside present instance.
      */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     default T unwrap() {
-        return fold(v -> {throw new IllegalStateException("Unwrap error: " + v.message());}, Functions::id);
+        return fold(v -> {throw new IllegalStateException(STR."Unwrap error: \{v.message()}");}, Functions::id);
     }
 
     /**
@@ -364,6 +353,16 @@ public sealed interface Result<T> permits Success, Failure {
             });
     }
 
+    default Result<Unit> mapToUnit() {
+        return map(Unit::unit);
+    }
+
+    Result<Unit> UNIT_RESULT = success(Unit.aUnit());
+
+    static Result<Unit> unitResult() {
+        return UNIT_RESULT;
+    }
+
     /**
      * Create an instance of successful operation result.
      *
@@ -375,10 +374,6 @@ public sealed interface Result<T> permits Success, Failure {
         return new Success<>(value);
     }
 
-    static <R> Result<R> ok(R value) {
-        return new Success<>(value);
-    }
-
     record Success<T>(T value) implements Result<T> {
         @Override
         public <R> R fold(Fn1<? extends R, ? super Cause> failureMapper, Fn1<? extends R, ? super T> successMapper) {
@@ -387,7 +382,7 @@ public sealed interface Result<T> permits Success, Failure {
 
         @Override
         public String toString() {
-            return "Success(" + value.toString() + ")";
+            return STR."Success(\{value.toString()})";
         }
     }
 
@@ -414,7 +409,7 @@ public sealed interface Result<T> permits Success, Failure {
 
         @Override
         public String toString() {
-            return "Failure(" + cause + ")";
+            return STR."Failure(\{cause})";
         }
     }
 

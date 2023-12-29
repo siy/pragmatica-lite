@@ -19,6 +19,7 @@ package org.pragmatica.lang;
 /**
  * Collection of basic functions for various use cases.
  */
+@SuppressWarnings("unused")
 public interface Functions {
     /**
      * Function with no parameters (supplier). Provided for consistency.
@@ -227,14 +228,17 @@ public interface Functions {
                                                             T9 param9) {
     }
 
+    @SuppressWarnings("SameReturnValue")
     static <R, T1> R toNull(T1 value) {
         return null;
     }
 
+    @SuppressWarnings("SameReturnValue")
     static <T1> boolean toTrue(T1 value) {
         return true;
     }
 
+    @SuppressWarnings("SameReturnValue")
     static <T1> boolean toFalse(T1 value) {
         return false;
     }

@@ -1,0 +1,1 @@
+./mvnw validate -DbumpPatch

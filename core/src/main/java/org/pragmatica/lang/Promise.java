@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020-2022 Sergiy Yevtushenko.
+ *  Copyright (c) 2020-2023 Sergiy Yevtushenko.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,294 +17,237 @@
 
 package org.pragmatica.lang;
 
-import org.pragmatica.lang.Functions.*;
+import org.pragmatica.lang.Functions.Fn1;
+import org.pragmatica.lang.Functions.Fn2;
+import org.pragmatica.lang.Functions.Fn3;
+import org.pragmatica.lang.Functions.Fn4;
+import org.pragmatica.lang.Functions.Fn5;
+import org.pragmatica.lang.Functions.Fn6;
+import org.pragmatica.lang.Functions.Fn7;
+import org.pragmatica.lang.Functions.Fn8;
+import org.pragmatica.lang.Functions.Fn9;
+import org.pragmatica.lang.Functions.FnX;
 import org.pragmatica.lang.Result.Cause;
+import org.pragmatica.lang.Tuple.Tuple1;
+import org.pragmatica.lang.Tuple.Tuple2;
+import org.pragmatica.lang.Tuple.Tuple3;
+import org.pragmatica.lang.Tuple.Tuple4;
+import org.pragmatica.lang.Tuple.Tuple5;
+import org.pragmatica.lang.Tuple.Tuple6;
+import org.pragmatica.lang.Tuple.Tuple7;
+import org.pragmatica.lang.Tuple.Tuple8;
+import org.pragmatica.lang.Tuple.Tuple9;
 import org.pragmatica.lang.io.CoreError;
+import org.pragmatica.lang.io.CoreError.Cancelled;
 import org.pragmatica.lang.io.Timeout;
+import org.pragmatica.lang.utils.ResultCollector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
+import static org.pragmatica.lang.Result.unitResult;
 import static org.pragmatica.lang.utils.ActionableThreshold.threshold;
 import static org.pragmatica.lang.utils.ResultCollector.resultCollector;
 
 /**
- * The (perhaps not yet available) result of the asynchronous operation.
+ * This is a simple implementation of Promise monad. Promise is an one of the three {@code Core Monads} (along with {@link Option} and {@link Result})
+ * which are used to represent special variable states. Promise is a representation of the {@code eventually available value}.
+ * <p>
+ * This implementation serves three purposes:
+ * <ul>
+ * <li>- Asynchronous version of {@link Result} monad - {@code Promise} can be resolved to successful and failed states</li>
+ * <li>- A basic building block of asynchronous processing.</li>
+ * <li>- Resolution event "broker", which implements "exactly once" delivery semantics.</li>
+ * </ul>
+ * Last two purposes are closely related - they both react on resolution event. But the semantics and requirements to the
+ * event handling behavior is quite different.
+ * <p>Promise-based asynchronous processing mental model built around representing processing
+ * as sequence of transformations which are applied to the some value. Each transformation is applied to input values exactly once, executed
+ * with exactly one thread, in the order in which transformations are applied in the code. This mental model is easy to write and reason about
+ * and has very low "asynchronous" mental overhead. Since each promise in the chain "depends" on the previous one, actions (transformations)
+ * attached to the promise are called "dependent actions".
+ * <p>Resolution event broker has no such limitations. It starts actions as asynchronous tasks but does not wait for their completions. Obviously,
+ * such actions are called "independent actions". They are harder to reason about because their execution may take arbitrary
+ * amount of time.
+ */
+/* Implementation notes: this version of the implementation is heavily inspired by the implementation of
+the CompletableFuture. There are several differences though:
+- Method naming consistent with widely used Optional and Streams.
+- More orthogonal API. No duplicates with "Async" suffix, for example. Instead provided "async" method, which accepts promise consumer lambda.
+- No methods which do a complex combination of futures. Instead provided type-safe "all" and "any" predicates for up to 9 promises.
+This makes synchronization points in code more explicit, easier to write and reason about.
+- No exceptions, no nulls. This makes implementation exceptionally simple comparing to the CompletableFuture.
+- Interface-heavy implementation, with only minimal number of methods actually implemented in the implementation class.
+  Only two base methods are used to implement all dependent and independent action methods. All remaining transformations
+  and event handling methods are implemented in terms of these two methods.
  */
 public interface Promise<T> {
-    /**
-     * Resolve current instance. This action can be performed only once, all subsequent attempts will be ignored and state of the promise will remain
-     * unchanged.
-     *
-     * @param value The bufferSize to resolve the Promise instance.
-     *
-     * @return Current instance
-     */
-    Promise<T> resolve(Result<T> value);
 
-    /**
-     * Resolve current instance with {@link CoreError.Cancelled} error.
-     *
-     * @return Current instance
-     */
-    default Promise<T> cancel() {
-        return resolve(new CoreError.Cancelled("Promise cancelled").result());
-    }
+    // For all dependent actions
+    <U> Promise<U> fold(Fn1<Promise<U>, Result<T>> action);
 
-    boolean isResolved();
-
-    /**
-     * Transform current instance into the instance containing another type using provided transformation function.
-     *
-     * @param mapper The transformation function
-     *
-     * @return Transformed instance
-     */
-    <U> Promise<U> map(Fn1<U, ? super T> mapper);
-
-    /**
-     * Transform current instance by replacing stored value with one returned by provided supplier.
-     *
-     * @param mapper The replacement value supplier. Invoked only if current instance is resolved with success.
-     *
-     * @return Transformed instance
-     */
-    default <U> Promise<U> map(Supplier<U> mapper) {
-        return map(_ -> mapper.get());
-    }
-
-    /**
-     * Compose current instance with the function which returns a Promise of another type.
-     *
-     * @param mapper The function to compose with
-     *
-     * @return Composed instance
-     */
-    <U> Promise<U> flatMap(Fn1<Promise<U>, ? super T> mapper);
-
-    /**
-     * Transform current instance by replacing stored result with one returned by provided supplier.
-     *
-     * @param mapper The replacement result supplier. Invoked only if current instance is resolved with success.
-     *
-     * @return Transformed instance
-     */
-    default <U> Promise<U> flatMap(Supplier<Promise<U>> mapper) {
-        return flatMap(_ -> mapper.get());
-    }
-
-    Promise<T> mapError(Fn1<Cause, Cause> mapper);
-
-
-    /**
-     * General purpose method to start new virtual thread.
-     *
-     * @param runnable The {@link Runnable} to run
-     *
-     * @return created and started thread
-     */
-    static void runAsync(Runnable runnable) {
-        AsyncExecutor.INSTANCE.runAsync(runnable);
-    }
-
-    /**
-     * Run asynchronous task. The task will receive current instance of Promise as a parameter.
-     *
-     * @param action The task to run
-     *
-     * @return Current instance
-     */
-    Promise<T> async(Consumer<Promise<T>> action);
-
-    /**
-     * Run asynchronous task after specified timeout. The task will receive current instance of Promise as a parameter.
-     *
-     * @param action The task to run
-     *
-     * @return Current instance
-     */
-    Promise<T> async(Timeout timeout, Consumer<Promise<T>> action);
-
-    /**
-     * Wait indefinitely for completion of the Promise and all attached actions (see {@link #onResult(Consumer)}).
-     *
-     * @return Value of the Promise
-     */
-    Result<T> join();
-
-    /**
-     * Wait for completion of the Promise and all attached actions. The waiting time is limited to specified timeout. If timeout expires before
-     * Promise is resolved, then returned result contains {@link CoreError.Timeout} error.
-     * <p>
-     * Note that if return signals that timeout is expired, this does not change state of the promise.
-     *
-     * @param timeout How long to wait for promise resolution
-     *
-     * @return Value of the Promise or timeout error.
-     */
-    Result<T> join(Timeout timeout);
-
-    /**
-     * Attach a side effect action which will be executed upon resolution of the current instance. If promise is already resolved by the time of
-     * invocation of this method, then provided action will be executed immediately.
-     *
-     * @param action the action to execute
-     *
-     * @return Current instance
-     */
+    // For all independent actions
     Promise<T> onResult(Consumer<Result<T>> action);
 
-    /**
-     * Attach a side effect action which will be executed upon resolution of the current instance. If promise is already resolved by the time of
-     * invocation of this method, then provided action will be executed immediately. Note that unlike {@link Promise#onResult(Consumer)}, the action
-     * passed to this method does not receive parameter.
-     *
-     * @param action the action to execute
-     *
-     * @return Current instance
-     */
-    default Promise<T> onResultDo(Runnable action) {
+    default <U> Promise<U> map(Fn1<U, ? super T> transformation) {
+        return mapResult(result -> result.map(transformation));
+    }
+
+    default <U> Promise<U> flatMap(Fn1<Promise<U>, ? super T> transformation) {
+        return fold(result -> result.fold(Promise::<U>failed, transformation));
+    }
+
+    default <U> Promise<U> replace(Supplier<U> transformation) {
+        return map(_ -> transformation.get());
+    }
+
+    default <U> Promise<U> mapResult(Fn1<Result<U>, Result<T>> transformation) {
+        return fold(result -> Promise.resolved(transformation.apply(result)));
+    }
+
+    default Promise<T> onResultRun(Runnable action) {
         return onResult(_ -> action.run());
     }
 
-    /**
-     * Attach a side effect action which will be executed upon resolution of the current instance with {@link Result} containing
-     * {@link Result.Success}. If instance is resolved with {@link Result} containing {@link Result.Failure}, then action will not be invoked. If
-     * promise is already resolved by the time of invocation of this method and bufferSize is a {@link Result.Success}, then provided action will be
-     * executed immediately.
-     *
-     * @param action the action to execute
-     *
-     * @return Current instance
-     */
+    default <U> Promise<T> onResultDo(Fn1<Promise<U>, Result<T>> action) {
+        return fold(result -> action.apply(result)
+                                    .flatMap(_ -> resolved(result)));
+    }
+
+    // Consume result as dependent action
+    default Promise<T> withResult(Consumer<Result<T>> consumer) {
+        return fold(result -> Promise.resolved(result.onResult(() -> consumer.accept(result))));
+    }
+
     default Promise<T> onSuccess(Consumer<T> action) {
         return onResult(result -> result.onSuccess(action));
     }
 
-    /**
-     * Attach a side effect action which will be executed upon resolution of the current instance with {@link Result} containing
-     * {@link Result.Success}. If instance is resolved with {@link Result} containing {@link Result.Failure}, then action will not be invoked. If
-     * promise is already resolved by the time of invocation of this method and bufferSize is a {@link Result.Success}, then provided action will be
-     * executed immediately. Note that unlike {@link Promise#onSuccess(Consumer)}, the action passed to this method does not receive parameter.
-     *
-     * @param action the action to execute
-     *
-     * @return Current instance
-     */
-    default Promise<T> onSuccessDo(Runnable action) {
-        return onResult(result -> result.onSuccessDo(action));
+    default Promise<T> onSuccessRun(Runnable action) {
+        return onResult(result -> result.onSuccessRun(action));
     }
 
-    /**
-     * Attach a side effect action which will be executed upon resolution of the current instance with {@link Result} containing
-     * {@link Result.Failure}. If instance is resolved with {@link Result} containing {@link Result.Success}, then action will not be invoked. If
-     * promise is already resolved by the time of invocation of this method and bufferSize is a {@link Result.Failure}, then provided action will be
-     * executed immediately.
-     *
-     * @param action the action to execute
-     *
-     * @return Current instance
-     */
-    default Promise<T> onFailure(Consumer<? super Cause> action) {
+    default <U> Promise<T> onSuccessDo(Fn1<Promise<U>, T> action) {
+        return fold(result -> result.fold(Promise::<T>failed,
+                                          value -> action.apply(value)
+                                                         .flatMap(_ -> resolved(result))));
+    }
+
+    // Consume result as dependent action
+    default Promise<T> withSuccess(Consumer<T> consumer) {
+        return fold(result -> Promise.resolved(result.onSuccess(consumer)));
+    }
+
+    default Promise<T> onFailure(Consumer<Cause> action) {
         return onResult(result -> result.onFailure(action));
     }
 
-    /**
-     * Attach a side effect action which will be executed upon resolution of the current instance with {@link Result} containing
-     * {@link Result.Failure}. If instance is resolved with {@link Result} containing {@link Result.Success}, then action will not be invoked. If
-     * promise is already resolved by the time of invocation of this method and bufferSize is a {@link Result.Failure}, then provided action will be
-     * executed immediately. Note that unlike {@link Promise#onFailure(Consumer)}, the action passed to this method does not receive parameter.
-     *
-     * @param action the action to execute
-     *
-     * @return Current instance
-     */
-    default Promise<T> onFailureDo(Runnable action) {
-        return onResult(result -> result.onFailureDo(action));
+    default Promise<T> onFailureRun(Runnable action) {
+        return onResult(result -> result.onFailureRun(action));
     }
 
-    /**
-     * Resolve current instance with the {@link Result} containing {@link Result.Success}. If current instance is already resolved, then this method
-     * invocation has no effect.
-     *
-     * @param value the bufferSize to resolve.
-     *
-     * @return Current instance
-     */
-    default Promise<T> success(T value) {
+    default <U> Promise<T> onFailureDo(Fn1<Promise<U>, Cause> action) {
+        return fold(result -> result.fold(cause -> action.apply(cause)
+                                                         .flatMap(_ -> resolved(result)),
+                                          Promise::successful));
+    }
+
+    default Promise<T> withFailure(Consumer<Cause> consumer) {
+        return fold(result -> Promise.resolved(result.onFailure(consumer)));
+    }
+
+    boolean isResolved();
+
+    Promise<T> resolve(Result<T> value);
+
+    default Promise<T> succeed(T value) {
         return resolve(Result.success(value));
     }
 
-    /**
-     * Resolve current instance with the {@link Result} containing {@link Result.Failure}. If current instance is already resolved, then this method
-     * invocation has no effect.
-     *
-     * @param cause the failure cause.
-     *
-     * @return Current instance
-     */
-    default Promise<T> failure(Cause cause) {
-        return resolve(cause.result());
+    default Promise<T> fail(Cause cause) {
+        return resolve(Result.failure(cause));
     }
 
-    /**
-     * Create an unresolved instance.
-     *
-     * @return Created instance.
-     */
-    static <R> Promise<R> promise() {
+    default Promise<T> succeedAsync(Supplier<? extends T> supplier) {
+        return async(promise -> promise.succeed(supplier.get()));
+    }
+
+    default Promise<T> failAsync(Supplier<Cause> supplier) {
+        return async(promise -> promise.fail(supplier.get()));
+    }
+
+    default Promise<T> cancel() {
+        return fail(PROMISE_CANCELLED);
+    }
+
+    Result<T> await();
+
+    Result<T> await(Timeout timeout);
+
+    default Promise<T> async(Consumer<Promise<T>> consumer) {
+        AsyncExecutor.INSTANCE.runAsync(() -> consumer.accept(this));
+        return this;
+    }
+
+    default Promise<T> async(Timeout timeout, Consumer<Promise<T>> action) {
+        AsyncExecutor.INSTANCE.runAsync(timeout, () -> action.accept(this));
+        return this;
+    }
+
+    default Promise<Unit> mapToUnit() {
+        return map(Unit::unit);
+    }
+
+    static <T> Promise<T> promise() {
         return new PromiseImpl<>(null);
     }
 
-    /**
-     * Create an unresolved instance and run asynchronous action which will receive created instance as a parameter.
-     *
-     * @param consumer The action to run
-     *
-     * @return Created instance
-     */
-    static <R> Promise<R> promise(Consumer<Promise<R>> consumer) {
-        var promise = Promise.<R>promise();
-        runAsync(() -> consumer.accept(promise));
-        return promise;
-    }
-
-    /**
-     * Create a resolved instance.
-     *
-     * @param value The bufferSize which will be stored in the created instance
-     *
-     * @return Created instance
-     */
-    static <R> Promise<R> resolved(Result<R> value) {
+    static <T> Promise<T> resolved(Result<T> value) {
         return new PromiseImpl<>(value);
     }
 
-    static <R> Promise<R> successful(R value) {
+    static <T> Promise<T> successful(T value) {
         return new PromiseImpl<>(Result.success(value));
     }
 
-    static <R> Promise<R> failed(Cause failure) {
-        return new PromiseImpl<>(Result.failure(failure));
+    static <T> Promise<T> failed(Cause cause) {
+        return new PromiseImpl<>(Result.failure(cause));
     }
 
-    /**
-     * Return promise which will be resolved when any of the provided promises will be resolved. Remaining promises will be cancelled.
-     *
-     * @param promises Input promises.
-     *
-     * @return Created promise.
-     */
+    static <T> Promise<T> promise(Consumer<Promise<T>> consumer) {
+        return Promise.<T>promise().async(consumer);
+    }
+
+    static <T> Promise<T> promise(Timeout timeout, Consumer<Promise<T>> consumer) {
+        return Promise.<T>promise().async(timeout, consumer);
+    }
+
+    static void async(Runnable runnable) {
+        AsyncExecutor.INSTANCE.runAsync(runnable);
+    }
+
     @SafeVarargs
-    static <R> Promise<R> any(Promise<R>... promises) {
-        return Promise.promise(result -> List.of(promises)
-                                             .forEach(promise -> promise.onResult(result::resolve)
-                                                                        .onResultDo(() -> cancelAll(promises))));
+    static <T> void failAll(Cause cause, Promise<T>... promises) {
+        failAll(cause, List.of(promises));
+    }
+
+    static <T> void failAll(Cause cause, List<Promise<T>> promises) {
+        promises.forEach(promise -> promise.fail(cause));
+    }
+
+    @SuppressWarnings("unchecked")
+    static <R> Promise<R> unitPromise() {
+        return (Promise<R>) UNIT;
     }
 
     /**
@@ -320,33 +263,35 @@ public interface Promise<T> {
     static <T> Promise<T> anySuccess(Result<T> failureResult, Promise<T>... promises) {
         return Promise.promise(anySuccess -> threshold(promises.length, () -> anySuccess.resolve(failureResult))
             .apply(at -> List.of(promises)
-                             .forEach(promise -> promise.onResult(result -> result.onSuccess(anySuccess::success)
-                                                                                  .onSuccessDo(() -> cancelAll(promises)))
-                                                        .onResultDo(at::registerEvent))));
+                             .forEach(promise -> promise.onResult(result -> result.onSuccess(anySuccess::succeed)
+                                                                                  .onSuccessRun(() -> cancelAll(promises)))
+                                                        .onResultRun(at::registerEvent))));
     }
 
     static <T> Promise<T> anySuccess(Result<T> failureResult, List<Promise<T>> promises) {
         return Promise.promise(anySuccess -> threshold(promises.size(), () -> anySuccess.resolve(failureResult))
-            .apply(at -> promises.forEach(promise -> promise.onResult(result -> result.onSuccess(anySuccess::success)
-                                                                                      .onSuccessDo(() -> cancelAll(promises)))
-                                                            .onResultDo(at::registerEvent))));
+            .apply(at -> promises.forEach(promise -> promise.onResult(result -> result.onSuccess(anySuccess::succeed)
+                                                                                      .onSuccessRun(() -> cancelAll(promises)))
+                                                            .onResultRun(at::registerEvent))));
     }
 
     /**
      * Return promise which will be resolved once any of the promises provided as a parameters will be resolved with success. If none of the promises
-     * will be resolved with success, then created instance will be resolved with {@link CoreError.Cancelled}.
+     * will be resolved with success, then created instance will be resolved with {@link Cancelled}.
      *
      * @param promises Input promises
      *
      * @return Created instance
      */
+    @SuppressWarnings("unchecked")
     @SafeVarargs
     static <T> Promise<T> anySuccess(Promise<T>... promises) {
-        return anySuccess(Result.failure(new CoreError.Cancelled("Other Promise instance succeeded")), promises);
+        return anySuccess((Result<T>) OTHER_SUCCEEDED, promises);
     }
 
+    @SuppressWarnings("unchecked")
     static <T> Promise<T> anySuccess(List<Promise<T>> promises) {
-        return anySuccess(Result.failure(new CoreError.Cancelled("Other Promise instance succeeded")), promises);
+        return anySuccess((Result<T>) OTHER_SUCCEEDED, promises);
     }
 
     /**
@@ -365,7 +310,23 @@ public interface Promise<T> {
      * @param promises Input promises.
      */
     static <T> void cancelAll(List<Promise<T>> promises) {
-        promises.forEach(Promise::cancel);
+        failAll(PROMISE_CANCELLED, promises);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T> Promise<List<Result<T>>> allOf(Collection<Promise<T>> promises) {
+        if (promises.isEmpty()) {
+            return Promise.successful(List.of());
+        }
+
+        var array = promises.toArray(new Promise[0]);
+        var promise = Promise.promise();
+        var collector = ResultCollector.resultCollector(promises.size(),
+                                                        values -> promise.succeed(List.of(values)));
+        IntStream.range(0, promises.size())
+                 .forEach(index -> array[index].onResult(result -> collector.registerEvent(index, result)));
+
+        return promise.map(list -> (List<Result<T>>) list);
     }
 
     /**
@@ -553,14 +514,19 @@ public interface Promise<T> {
                            promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8, promise9);
     }
 
+    Promise<?> UNIT = Promise.resolved(unitResult());
+
+    Result<?> OTHER_SUCCEEDED = Result.failure(new Cancelled("Cancelled because other Promise instance succeeded"));
+
+    Cancelled PROMISE_CANCELLED = new Cancelled("Promise cancelled");
+
     /**
      * Helper interface for convenient tuple transformation.
      *
      * @see Result.Mapper1
      */
     interface Mapper1<T1> {
-
-        Promise<Tuple.Tuple1<T1>> id();
+        Promise<Tuple1<T1>> id();
 
         default <R> Promise<R> map(Fn1<R, T1> mapper) {
             return id().map(tuple -> tuple.map(mapper));
@@ -569,7 +535,6 @@ public interface Promise<T> {
         default <R> Promise<R> flatMap(Fn1<Promise<R>, T1> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
-
     }
 
     /**
@@ -578,8 +543,7 @@ public interface Promise<T> {
      * @see Result.Mapper2
      */
     interface Mapper2<T1, T2> {
-
-        Promise<Tuple.Tuple2<T1, T2>> id();
+        Promise<Tuple2<T1, T2>> id();
 
         default <R> Promise<R> map(Fn2<R, T1, T2> mapper) {
             return id().map(tuple -> tuple.map(mapper));
@@ -588,7 +552,6 @@ public interface Promise<T> {
         default <R> Promise<R> flatMap(Fn2<Promise<R>, T1, T2> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
-
     }
 
     /**
@@ -597,8 +560,7 @@ public interface Promise<T> {
      * @see Result.Mapper3
      */
     interface Mapper3<T1, T2, T3> {
-
-        Promise<Tuple.Tuple3<T1, T2, T3>> id();
+        Promise<Tuple3<T1, T2, T3>> id();
 
         default <R> Promise<R> map(Fn3<R, T1, T2, T3> mapper) {
             return id().map(tuple -> tuple.map(mapper));
@@ -607,7 +569,6 @@ public interface Promise<T> {
         default <R> Promise<R> flatMap(Fn3<Promise<R>, T1, T2, T3> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
-
     }
 
     /**
@@ -616,8 +577,7 @@ public interface Promise<T> {
      * @see Result.Mapper4
      */
     interface Mapper4<T1, T2, T3, T4> {
-
-        Promise<Tuple.Tuple4<T1, T2, T3, T4>> id();
+        Promise<Tuple4<T1, T2, T3, T4>> id();
 
         default <R> Promise<R> map(Fn4<R, T1, T2, T3, T4> mapper) {
             return id().map(tuple -> tuple.map(mapper));
@@ -626,7 +586,6 @@ public interface Promise<T> {
         default <R> Promise<R> flatMap(Fn4<Promise<R>, T1, T2, T3, T4> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
-
     }
 
     /**
@@ -635,8 +594,7 @@ public interface Promise<T> {
      * @see Result.Mapper5
      */
     interface Mapper5<T1, T2, T3, T4, T5> {
-
-        Promise<Tuple.Tuple5<T1, T2, T3, T4, T5>> id();
+        Promise<Tuple5<T1, T2, T3, T4, T5>> id();
 
         default <R> Promise<R> map(Fn5<R, T1, T2, T3, T4, T5> mapper) {
             return id().map(tuple -> tuple.map(mapper));
@@ -645,7 +603,6 @@ public interface Promise<T> {
         default <R> Promise<R> flatMap(Fn5<Promise<R>, T1, T2, T3, T4, T5> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
-
     }
 
     /**
@@ -654,8 +611,7 @@ public interface Promise<T> {
      * @see Result.Mapper6
      */
     interface Mapper6<T1, T2, T3, T4, T5, T6> {
-
-        Promise<Tuple.Tuple6<T1, T2, T3, T4, T5, T6>> id();
+        Promise<Tuple6<T1, T2, T3, T4, T5, T6>> id();
 
         default <R> Promise<R> map(Fn6<R, T1, T2, T3, T4, T5, T6> mapper) {
             return id().map(tuple -> tuple.map(mapper));
@@ -664,7 +620,6 @@ public interface Promise<T> {
         default <R> Promise<R> flatMap(Fn6<Promise<R>, T1, T2, T3, T4, T5, T6> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
-
     }
 
     /**
@@ -673,8 +628,7 @@ public interface Promise<T> {
      * @see Result.Mapper7
      */
     interface Mapper7<T1, T2, T3, T4, T5, T6, T7> {
-
-        Promise<Tuple.Tuple7<T1, T2, T3, T4, T5, T6, T7>> id();
+        Promise<Tuple7<T1, T2, T3, T4, T5, T6, T7>> id();
 
         default <R> Promise<R> map(Fn7<R, T1, T2, T3, T4, T5, T6, T7> mapper) {
             return id().map(tuple -> tuple.map(mapper));
@@ -683,7 +637,6 @@ public interface Promise<T> {
         default <R> Promise<R> flatMap(Fn7<Promise<R>, T1, T2, T3, T4, T5, T6, T7> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
-
     }
 
     /**
@@ -692,8 +645,7 @@ public interface Promise<T> {
      * @see Result.Mapper8
      */
     interface Mapper8<T1, T2, T3, T4, T5, T6, T7, T8> {
-
-        Promise<Tuple.Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> id();
+        Promise<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> id();
 
         default <R> Promise<R> map(Fn8<R, T1, T2, T3, T4, T5, T6, T7, T8> mapper) {
             return id().map(tuple -> tuple.map(mapper));
@@ -702,7 +654,6 @@ public interface Promise<T> {
         default <R> Promise<R> flatMap(Fn8<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
-
     }
 
     /**
@@ -711,8 +662,7 @@ public interface Promise<T> {
      * @see Result.Mapper9
      */
     interface Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> {
-
-        Promise<Tuple.Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> id();
+        Promise<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> id();
 
         default <R> Promise<R> map(Fn9<R, T1, T2, T3, T4, T5, T6, T7, T8, T9> mapper) {
             return id().map(tuple -> tuple.map(mapper));
@@ -721,256 +671,19 @@ public interface Promise<T> {
         default <R> Promise<R> flatMap(Fn9<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
-
     }
 
     private static <R> Promise<R> setup(FnX<R> transformer, Promise<?>... promises) {
         var promise = Promise.<R>promise();
-        var collector = resultCollector(promises.length, values -> promise.success(transformer.apply(values)));
+        var collector = resultCollector(promises.length, values -> promise.succeed(transformer.apply(values)));
 
         int count = 0;
         for (var p : promises) {
             final var index = count++;
-            p.onResult(result -> result.accept(promise::failure, value -> collector.registerEvent(index, value)));
+            p.onResult(result -> result.accept(promise::fail, value -> collector.registerEvent(index, value)));
         }
 
         return promise;
-    }
-
-    final class PromiseImpl<T> implements Promise<T> {
-        @SuppressWarnings("rawtypes")
-        private static final CompletionAction NOP = new CompletionAction<>(Functions::unitFn, null);
-
-        @SuppressWarnings({"unchecked", "FieldMayBeFinal"})
-        private volatile CompletionAction<T> head = NOP;
-        private volatile CompletionAction<T> processed;
-        @SuppressWarnings("FieldMayBeFinal")
-        private volatile Result<T> value;
-
-        private static final VarHandle HEAD;
-        private static final VarHandle VALUE;
-
-        private static class CompletionAction<T> {
-            private volatile CompletionAction<T> next;
-            private final Consumer<Result<T>> action;
-            private final PromiseImpl<?> dependency;
-
-            private CompletionAction(Consumer<Result<T>> action, PromiseImpl<?> dependency) {
-                this.action = action;
-                this.dependency = dependency;
-            }
-
-            @Override
-            public String toString() {
-                return this == NOP ? "NOP" : "Action(" + (dependency == null ? "free" : dependency.toString()) + ')';
-            }
-        }
-
-        static {
-            try {
-                final var lookup = MethodHandles.lookup();
-                HEAD = lookup.findVarHandle(PromiseImpl.class, "head", CompletionAction.class);
-                VALUE = lookup.findVarHandle(PromiseImpl.class, "value", Result.class);
-            } catch (final ReflectiveOperationException e) {
-                throw new ExceptionInInitializerError(e);
-            }
-        }
-
-        private PromiseImpl(Result<T> value) {
-            this.value = value;
-            this.processed = value == null ? null : this.head;
-        }
-
-        @Override
-        public <U> Promise<U> map(Fn1<U, ? super T> mapper) {
-            if (value != null) {
-                return new PromiseImpl<>(value.map(mapper));
-            }
-
-            var result = new PromiseImpl<U>(null);
-
-            push(new CompletionAction<>(value -> result.resolve(value.map(mapper)), result));
-
-            return result;
-        }
-
-        @Override
-        public Promise<T> mapError(Fn1<Cause, Cause> mapper) {
-            if (value != null) {
-                return new PromiseImpl<>(value.mapError(mapper));
-            }
-
-            var result = new PromiseImpl<T>(null);
-
-            push(new CompletionAction<>(value -> result.resolve(value.mapError(mapper)), result));
-
-            return result;
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public <U> Promise<U> flatMap(Fn1<Promise<U>, ? super T> mapper) {
-            if (value != null) {
-                return value.fold(_ -> new PromiseImpl<>((Result<U>) value), mapper);
-            }
-
-            var result = new PromiseImpl<U>(null);
-
-            push(new CompletionAction<>(value -> value.fold(_ -> new PromiseImpl<>((Result<U>) value), mapper)
-                                                      .onResult(result::resolve),
-                                        result));
-
-            return result;
-        }
-
-        @Override
-        public Promise<T> onResult(Consumer<Result<T>> action) {
-            if (value != null) {
-                action.accept(value);
-            } else {
-                push(new CompletionAction<>(action, null));
-            }
-
-            return this;
-        }
-
-        @Override
-        public Promise<T> resolve(Result<T> value) {
-            if (VALUE.compareAndSet(this, null, value)) {
-                runAsync(() -> runActions(value));
-            }
-
-            return this;
-        }
-
-        @Override
-        public boolean isResolved() {
-            return value != null;
-        }
-
-        public Promise<T> async(Consumer<Promise<T>> action) {
-            runAsync(() -> action.accept(this));
-            return this;
-        }
-
-        public Promise<T> async(Timeout timeout, Consumer<Promise<T>> action) {
-            runAsync(() -> {
-                try {
-                    Thread.sleep(timeout.duration());
-                } catch (InterruptedException e) {
-                    // ignore
-                }
-                action.accept(this);
-            });
-            return this;
-        }
-
-
-        @Override
-        public Result<T> join() {
-            CompletionAction<T> action;
-
-            while ((action = processed) == null) {
-                Thread.onSpinWait();
-                Thread.yield();
-            }
-
-            while (action != NOP) {
-                action.dependency.join();
-                action = action.next;
-            }
-
-            return value;
-        }
-
-        @Override
-        public Result<T> join(Timeout timeout) {
-            return join(timeout.nanoseconds());
-        }
-
-        @Override
-        public String toString() {
-            return "Promise(" + (value == null ? "<>" : value.toString()) + ')';
-        }
-
-        @SuppressWarnings("unchecked")
-        private void runActions(Result<T> value) {
-            CompletionAction<T> processed = NOP;
-            CompletionAction<T> head;
-
-            while ((head = swapHead()) != null) {
-                while (head != null) {
-                    head.action.accept(value);
-                    var current = head;
-                    head = head.next;
-
-                    if (current.dependency != null) {
-                        current.next = processed;
-                        processed = current;
-                    }
-                }
-            }
-
-            this.processed = processed;
-        }
-
-        private Result<T> join(long delayNanos) {
-            var start = System.nanoTime();
-
-            CompletionAction<T> action;
-
-            while ((action = processed) == null) {
-                Thread.onSpinWait();
-
-                if (System.nanoTime() - start > delayNanos) {
-                    return new CoreError.Timeout("Result.join(timeout) expired while waiting for completion of current instance").result();
-                }
-            }
-
-            while (action != NOP) {
-                var currentNanoTime = System.nanoTime();
-
-                if (currentNanoTime - start > delayNanos) {
-                    return new CoreError.Timeout("Result.join(timeout) expired while waiting for completion of dependencies").result();
-                }
-
-                action.dependency.join(currentNanoTime - start);
-                action = action.next;
-            }
-
-            return value;
-        }
-
-        private void push(CompletionAction<T> newHead) {
-            CompletionAction<T> oldHead;
-
-            do {
-                oldHead = head;
-                newHead.next = oldHead;
-            } while (!HEAD.compareAndSet(this, oldHead, newHead));
-        }
-
-        private CompletionAction<T> swapHead() {
-            CompletionAction<T> head;
-
-            do {
-                head = this.head;
-            } while (!HEAD.compareAndSet(this, head, NOP));
-
-            CompletionAction<T> current = head;
-            CompletionAction<T> prev = null;
-            CompletionAction<T> next;
-
-            //Reverse list
-            while (current != NOP) {
-                next = current.next;
-                current.next = prev;
-                prev = current;
-                current = next;
-            }
-
-            return prev;
-        }
     }
 }
 
@@ -979,7 +692,310 @@ enum AsyncExecutor {
 
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
-    public void runAsync(Runnable runnable) {
+    void runAsync(Runnable runnable) {
         executor.submit(runnable);
+    }
+
+    void runAsync(Timeout timeout, Runnable runnable) {
+        runAsync(() -> {
+            try {
+                Thread.sleep(timeout.duration());
+            } catch (InterruptedException e) {
+                // ignore
+            }
+            runnable.run();
+        });
+    }
+}
+
+final class PromiseImpl<T> implements Promise<T> {
+    private static final Logger log = LoggerFactory.getLogger(Promise.class);
+
+    volatile Result<T> result;
+    volatile Completion<T> stack; // Rely on default initialization to null
+
+    PromiseImpl(Result<T> result) {
+        this.result = result;
+    }
+
+    @Override
+    public String toString() {
+        return result == null ? "Promise<>"
+                              : STR."Promise<\{result}\{'>'}";
+    }
+
+    @Override
+    public boolean isResolved() {
+        return result != null;
+    }
+
+    @Override
+    public Promise<T> onResult(Consumer<Result<T>> action) {
+        if (result != null) {
+            action.accept(result);
+            return this;
+        } else {
+            push(new CompletionOnResult<>(action));
+        }
+
+        return this;
+    }
+
+    @Override
+    public <U> Promise<U> fold(Fn1<Promise<U>, Result<T>> action) {
+        if (result != null) {
+            return action.apply(result);
+        } else {
+            return chain(action);
+        }
+    }
+
+    @Override
+    public Result<T> await() {
+        if (result != null) {
+            return result;
+        }
+
+        var thread = Thread.currentThread();
+
+        if (log.isTraceEnabled()) {
+            var stackTraceElement = thread.getStackTrace()[2];
+
+            log.trace("Thread {} ({}) is waiting for resolution of Promise {} at {}:{}",
+                      thread.threadId(), thread.getName(), this,
+                      stackTraceElement.getFileName(), stackTraceElement.getLineNumber());
+        }
+
+        push(new CompletionJoin<>(thread));
+
+        while (result == null) {
+            LockSupport.park();
+        }
+
+        return result;
+    }
+
+    /**
+     * Await for resolution of current instance with specified timeout. Note that if timeout is expired, then current instance remains unresolved.
+     *
+     * @param timeout Timeout to wait for resolution
+     *
+     * @return If instance is resolved while waiting, then the result of resolution is returned. Otherwise, Timeout error is returned.
+     */
+    @Override
+    public Result<T> await(Timeout timeout) {
+        if (result != null) {
+            return result;
+        }
+
+        var thread = Thread.currentThread();
+
+        if (log.isTraceEnabled()) {
+            var stackTraceElement = thread.getStackTrace()[2];
+
+            log.trace("Thread {} ({}) is waiting for resolution of Promise {} at {}:{} for {}ns",
+                      thread.threadId(), thread.getName(), this,
+                      stackTraceElement.getFileName(), stackTraceElement.getLineNumber(),
+                      timeout.nanoseconds());
+        }
+
+        push(new CompletionJoin<>(thread));
+
+        var deadline = System.nanoTime() + timeout.nanoseconds();
+
+        while (result == null && System.nanoTime() < deadline) {
+            LockSupport.parkNanos(deadline - System.nanoTime());
+        }
+
+        if (result == null) {
+            return new CoreError.Timeout("Promise is not resolved within specified timeout").result();
+        }
+
+        return result;
+    }
+
+    @Override
+    public Promise<T> resolve(Result<T> value) {
+        if (RESULT.compareAndSet(this, null, value)) {
+            do {
+                processActions();
+            } while (this.stack != null);
+        }
+        return this;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private void processActions() {
+        Completion head;
+
+        do {
+            head = this.stack;
+        } while (!STACK.compareAndSet(this, head, null));
+
+        // Split all completions into three lists - joins, regular completions (dependent transformations), and
+        // event handlers.
+        // Regular completions are executed immediately, event processors executed asynchronously.
+        // Joins are executed after all regular completions are done.
+        CompletionJoin joins = null;
+        CompletionOnResult events = null;
+        CompletionFold actions = null;
+
+        Completion current = head;
+        Completion tmp;
+
+        // Split and reverse list in one pass
+        while (current != null) {
+            tmp = current.next;
+
+            switch ((CompletionMarker) current) {
+                case CompletionJoin join -> {
+                    join.next = joins;
+                    joins = join;
+                }
+
+                case CompletionOnResult event -> {
+                    event.next = events;
+                    events = event;
+                }
+
+                case CompletionFold action -> {
+                    action.next = actions;
+                    actions = action;
+                }
+            }
+            current = tmp;
+        }
+
+        runEventHandlers(events);
+        runSequentialActions(actions);
+        runJoins(joins);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void runJoins(Completion current) {
+        while (current != null) {
+            current.complete(result);
+            current = current.next;
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void runSequentialActions(Completion current) {
+        while (current != null) {
+            current.complete(result);
+            current = current.next;
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void runEventHandlers(Completion asyncEvents) {
+        AsyncExecutor.INSTANCE.runAsync(() -> {
+            var current = asyncEvents;
+
+            while (current != null) {
+                current.complete(result);
+                current = current.next;
+            }
+        });
+    }
+
+    private <U> Promise<U> chain(Fn1<Promise<U>, Result<T>> transformer) {
+        var dependency = new PromiseImpl<U>(null);
+
+        push(new CompletionFold<>(dependency, transformer));
+
+        return dependency;
+    }
+
+    private void push(Completion<T> completion) {
+        Completion<T> prevStack;
+        do {
+            if (result != null) {
+                // In rare circumstances, when one thread is resolved instance while other tries to
+                // add new independent completion, we resolve completion here. There might be chances, that this might
+                // lead to race condition if actions done by completions attached to this Promise have shared data.
+                // Otherwise, dependency chain is still maintained properly even with this invocation.
+                completion.complete(result);
+                return;
+            }
+            prevStack = stack;
+            completion.next = prevStack;
+        } while (!STACK.compareAndSet(this, prevStack, completion));
+    }
+
+    sealed interface CompletionMarker permits CompletionOnResult, CompletionFold, CompletionJoin {}
+
+    abstract static class Completion<T> {
+        volatile Completion<T> next;
+
+        abstract public void complete(Result<T> value);
+    }
+
+    final static class CompletionFold<U, T> extends Completion<T> implements CompletionMarker {
+        private final Promise<U> dependency;
+        private final Fn1<Promise<U>, Result<T>> transformer;
+
+        CompletionFold(Promise<U> dependency, Fn1<Promise<U>, Result<T>> transformer) {
+            this.dependency = dependency;
+            this.transformer = transformer;
+        }
+
+        @Override
+        public void complete(Result<T> value) {
+            transformer.apply(value)
+                       .onResult(dependency::resolve);
+        }
+    }
+
+    final static class CompletionOnResult<T> extends Completion<T> implements CompletionMarker {
+        private final Consumer<Result<T>> consumer;
+
+        CompletionOnResult(Consumer<Result<T>> consumer) {
+            this.consumer = consumer;
+        }
+
+        @Override
+        public void complete(Result<T> value) {
+            consumer.accept(value);
+        }
+    }
+
+    final static class CompletionJoin<T> extends Completion<T> implements CompletionMarker {
+        private final Thread thread;
+
+        CompletionJoin(Thread thread) {
+            this.thread = thread;
+        }
+
+        @Override
+        public void complete(Result<T> value) {
+            if (log.isTraceEnabled()) {
+                var stackTraceElement = thread.getStackTrace()[2];
+
+                log.trace("Unblocking thread {} ({}) after resolution of Promise with {} at {}:{}",
+                          thread.threadId(), thread.getName(), value,
+                          stackTraceElement.getFileName(), stackTraceElement.getLineNumber());
+            }
+
+            LockSupport.unpark(thread);
+        }
+    }
+
+    private static final VarHandle RESULT;
+    private static final VarHandle STACK;
+
+    static {
+        try {
+            var lookup = MethodHandles.lookup();
+            RESULT = lookup.findVarHandle(PromiseImpl.class, "result", Result.class);
+            STACK = lookup.findVarHandle(PromiseImpl.class, "stack", PromiseImpl.Completion.class);
+        } catch (ReflectiveOperationException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+
+        // Reduce the risk of rare disastrous classloading in first call to
+        // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773
+        @SuppressWarnings("unused")
+        Class<?> ensureLoaded = LockSupport.class;
     }
 }

@@ -4,30 +4,40 @@
 
     <groupId>org.pragmatica.lite</groupId>
     <artifactId>pragmatica-lite</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.2</version>
     <modules>
         <module>core</module>
-        <module>http-server</module>
-        <module>example</module>
+        <module>examples</module>
+        <module>net</module>
+        <module>bom</module>
+        <module>json</module>
+        <module>db</module>
     </modules>
     <packaging>pom</packaging>
 
+    <name>Pragmatica Lite</name>
+    <description>Pragmatica Lite - Functional Style Micro Web Framework</description>
+
+    <scm>
+        <url>https://github.com/siy/pragmatica-lite.git</url>
+        <connection>scm:git:ssh://git@github.com/siy/pragmatica-lite.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/siy/pragmatica-lite.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <!-- TODO: add modules https://github.com/moditect/moditect -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
         <java.release>21</java.release>
         <java.enable-preview>--enable-preview</java.enable-preview>
-
-        <!-- Code dependencies -->
-        <jackson.version>2.16.0</jackson.version>
-        <log4j2.version>2.22.0</log4j2.version>
-        <slf4j.version>2.0.9</slf4j.version>
-        <rest-assured.version>5.3.2</rest-assured.version>
-        <netty.version>4.1.95.Final</netty.version>
-        <disruptor.version>3.4.4</disruptor.version>
-
-        <!-- Test dependencies -->
-        <junit.version>5.10.0</junit.version>
     </properties>
 
     <build>
@@ -43,7 +53,6 @@
                         <source>${java.release}</source>
                         <target>${java.release}</target>
                         <compilerArgs>
-                            <arg>-g:none</arg> <!-- enables use of "_" as a variable/parameter name, fixed in Java 21.0.1 -->
                             <arg>${java.enable-preview}</arg>
                         </compilerArgs>
                     </configuration>
@@ -53,7 +62,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.2.2</version>
                     <configuration>
-                        <excludedGroups>Infinite, Benchmark</excludedGroups>
+                        <excludedGroups>Infinite, Slow, Benchmark</excludedGroups>
                         <argLine>${java.enable-preview}</argLine>
                     </configuration>
                 </plugin>
@@ -65,74 +74,114 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.4.0</version>
+                <executions>
+                    <execution>
+                        <id>parse-version</id>
+                        <goals>
+                            <goal>parse-version</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>versions-maven-plugin</artifactId>
+                <version>2.16.0</version>
+            </plugin>
         </plugins>
     </build>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-http</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
+    <profiles>
+        <profile>
+            <id>bump-patch</id>
+            <activation>
+                <property>
+                    <name>bumpPatch</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>versions-maven-plugin</artifactId>
 
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport-native-epoll</artifactId>
-                <version>${netty.version}</version>
-                <classifier>linux-x86_64</classifier>
-            </dependency>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>set</goal>
+                                </goals>
+                                <phase>validate</phase>
+                                <configuration>
+                                    <newVersion>
+                                        ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.nextIncrementalVersion}
+                                    </newVersion>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>bump-minor</id>
+            <activation>
+                <property>
+                    <name>bumpMinor</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>versions-maven-plugin</artifactId>
 
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport-native-kqueue</artifactId>
-                <version>${netty.version}</version>
-                <classifier>osx-x86_64</classifier>
-            </dependency>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>set</goal>
+                                </goals>
+                                <phase>validate</phase>
+                                <configuration>
+                                    <newVersion>${parsedVersion.majorVersion}.${parsedVersion.nextMinorVersion}.0
+                                    </newVersion>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>bump-major</id>
+            <activation>
+                <property>
+                    <name>bumpMajor</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>versions-maven-plugin</artifactId>
 
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${slf4j.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-api</artifactId>
-                <version>${log4j2.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-core</artifactId>
-                <version>${log4j2.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.lmax</groupId>
-                <artifactId>disruptor</artifactId>
-                <version>${disruptor.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-engine</artifactId>
-                <version>${junit.version}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>io.rest-assured</groupId>
-                <artifactId>rest-assured</artifactId>
-                <version>${rest-assured.version}</version>
-                <scope>test</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>set</goal>
+                                </goals>
+                                <phase>validate</phase>
+                                <configuration>
+                                    <newVersion>${parsedVersion.nextMajorVersion}.0.0</newVersion>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

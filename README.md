@@ -3,12 +3,12 @@
 Minimalistic web framework for Java 21+ with minimal dependencies.
 
 ## Features
-* Functional style - no NPE, no exceptions. Consistent Option/Result/Promise monads.
-* Minimalistic - no annotations, no reflection, no code generation.
-* Minimal dependencies - only slf4j-api and jackson-databind (for now, later expected some DB-related dependencies).
-* Minimalistic API - only 4 main elements: WebServer, WebClient (WIP), Async resolver (WIP) and DB access layer (WIP).
-* Provides type safety as much as possible
-* Minimal package size (example app jar is about 6.5MB with all dependencies included). 
+* Functional style - no NPE, no exceptions, type safety, etc.
+* Consistent Option/Result/Promise monads.
+* Simple and convenient to use Promise-based asynchronous API - no low level technical details leaking into business logic.   
+* Minimalistic - no annotations, no reflection, no code generation, minimal external dependencies, only 3 main components: HttpServer, HttpClient and DB access layer.
+* Fully asynchronous HTTP server and client, built-in caching domain name resolver with proper TTL handling.
+* Minimal package size (example app jar is less than 7MB with all dependencies included). 
 
 ## Example 
 Test app which demonstrates available routing configuration options. (WARNING: Subject to change!)
@@ -18,62 +18,56 @@ public class App {
     public static void main(final String[] args) {
         buildServer()
             .start()
-            .join();
+            .await();
     }
 
-    public static WebServer buildServer() {
-        return WebServer
-            .with(Configuration.allDefaults())
+    public static HttpServer buildServer() {
+        return HttpServer
+            .with(HttpServerConfiguration.allDefaults().withPort(8000))
             .serve(
                 //Full description
-                from("/hello1")
-                    .get()
-                    .text()
-                    .then(request -> successful("Hello world! at " + request.route().path())),
+                get("/hello1")
+                    .with(request -> successful(STR."Hello world! at \{request.route().path()}"))
+                    .as(CommonContentTypes.TEXT_PLAIN),
 
-                //Default content type (text)
-                from("/hello2")
-                    .get()
-                    .then(request -> successful("Hello world! at " + request.route().path())),
-
-                //Shortcut for method, explicit content type
-                get("/hello3")
-                    .text()
-                    .then(request -> successful("Hello world! at " + request.route().path())),
-
-                //Shortcut for method, default content type
-                get("/hello4")
-                    .then(request -> successful("Hello world! at " + request.route().path())),
+                //Short content type (text)
+                get("/hello2")
+                    .with(request -> successful(STR."Hello world! at \{request.route().path()}"))
+                    .asText(),
 
                 //Runtime exception handling example
-                get("/boom-legacy").then(_ -> {
-                    throw new RuntimeException("Some exception message");
-                }),
+                get("/boom-legacy")
+                    .with(_ -> {
+                        throw new RuntimeException("Some exception message");
+                    })
+                    .asText(),
 
                 //Functional error handling
                 get("/boom-functional")
-                    .then(_ -> failed(WebError.from(HttpStatus.UNPROCESSABLE_ENTITY, "Test error"))),
+                    .with(_ -> failed(HttpError.httpError(HttpStatus.UNPROCESSABLE_ENTITY, "Test error")))
+                    .asText(),
 
                 //Long-running process
                 get("/delay")
-                    .then(_ -> delayedResponse()),
+                    .with(_ -> delayedResponse())
+                    .asText(),
 
                 //Nested routes
-                from(
-                    "/v1",
-                    from(
-                        "/user",
-                        get("/list")
-                            .json()
-                            .then(request -> successful(request.pathParams())),
-                        get("/query")
-                            .json()
-                            .then(request -> successful(request.queryParams())),
-                        get("/profile")
-                            .json()
-                            .then(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com")))
+                in("/v1")
+                    .serve(
+                        in("/user")
+                            .serve(
+                                get("/list")
+                                    .with(request -> successful(request.pathParams()))
+                                    .asJson(),
+                                get("/query")
+                                    .with(request -> successful(request.queryParams()))
+                                    .asJson(),
+                                get("/profile")
+                                    .with(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com")))
+                                    .asJson()
+                            )
                     )
-                )
             );
     }
 

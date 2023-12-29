@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2023 Sergiy Yevtushenko.
+ *  Copyright (c) 2020-2023 Sergiy Yevtushenko.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import static org.pragmatica.lang.Tuple.tuple;
 /**
  * Representation of timeout value.
  */
+@SuppressWarnings("unused")
 public sealed interface Timeout extends Comparable<Timeout> {
     /**
      * Timeout value represented as number of nanoseconds.
@@ -54,6 +55,7 @@ public sealed interface Timeout extends Comparable<Timeout> {
     }
 
     long NANOS_IN_SECOND = TimeUnit.SECONDS.toNanos(1);
+    long MILLIS_IN_SECOND = TimeUnit.MILLISECONDS.toNanos(1);
 
     /**
      * Timeout value represented as number of whole seconds and remaining nanoseconds. This representation is compatible with many use cases, for
@@ -63,6 +65,16 @@ public sealed interface Timeout extends Comparable<Timeout> {
      */
     default Tuple2<Long, Integer> secondsAndNanos() {
         return tuple(nanoseconds() / NANOS_IN_SECOND, (int) (nanoseconds() % NANOS_IN_SECOND));
+    }
+
+    /**
+     * Timeout value represented as number of whole milliseconds and remaining nanoseconds. This representation is compatible with many use cases, for
+     * example with {@link Thread#sleep(long, int).
+     *
+     * @return timeout represented as tuple containing number of milliseconds and remaining nanoseconds
+     */
+    default Tuple2<Long, Integer> millisAndNanos() {
+        return tuple(nanoseconds() / MILLIS_IN_SECOND, (int) (nanoseconds() % MILLIS_IN_SECOND));
     }
 
     /**

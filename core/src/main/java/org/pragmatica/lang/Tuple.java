@@ -16,12 +16,34 @@
 
 package org.pragmatica.lang;
 
-import org.pragmatica.lang.Functions.*;
+import org.pragmatica.lang.Functions.Fn0;
+import org.pragmatica.lang.Functions.Fn1;
+import org.pragmatica.lang.Functions.Fn2;
+import org.pragmatica.lang.Functions.Fn3;
+import org.pragmatica.lang.Functions.Fn4;
+import org.pragmatica.lang.Functions.Fn5;
+import org.pragmatica.lang.Functions.Fn6;
+import org.pragmatica.lang.Functions.Fn7;
+import org.pragmatica.lang.Functions.Fn8;
+import org.pragmatica.lang.Functions.Fn9;
+import org.pragmatica.lang.Functions.ThrowingFn0;
+import org.pragmatica.lang.Functions.ThrowingFn1;
+import org.pragmatica.lang.Functions.ThrowingFn2;
+import org.pragmatica.lang.Functions.ThrowingFn3;
+import org.pragmatica.lang.Functions.ThrowingFn4;
+import org.pragmatica.lang.Functions.ThrowingFn5;
+import org.pragmatica.lang.Functions.ThrowingFn6;
+import org.pragmatica.lang.Functions.ThrowingFn7;
+import org.pragmatica.lang.Functions.ThrowingFn8;
+import org.pragmatica.lang.Functions.ThrowingFn9;
 import org.pragmatica.lang.io.CoreError;
+
+import java.util.Map;
 
 /**
  * Tuples of various size (0-9).
  */
+@SuppressWarnings("unused")
 public interface Tuple {
     int size();
 
@@ -177,6 +199,10 @@ public interface Tuple {
         }
 
         return new tuple2<>(param1, param2);
+    }
+
+    static <T1, T2> Tuple2<T1, T2> fomEntry(Map.Entry<T1, T2> entry) {
+        return tuple(entry.getKey(), entry.getValue());
     }
 
     static <T1, T2, T3> Tuple3<T1, T2, T3> tuple(T1 param1, T2 param2, T3 param3) {

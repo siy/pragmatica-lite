@@ -33,13 +33,13 @@ import org.pragmatica.lang.io.CoreError;
  * some of its functions, but because its carrier set is empty, it has some limitations.
  * </blockquote>
  */
+@SuppressWarnings("unused")
 public final class Unit implements Tuple.Tuple0 {
     private Unit() {}
 
     private static final Unit UNIT = new Unit();
-    private static final Result<Unit> UNIT_RESULT = Result.success(UNIT);
 
-    public static Unit unit() {
+    public static Unit aUnit() {
         return UNIT;
     }
 
@@ -85,10 +85,6 @@ public final class Unit implements Tuple.Tuple0 {
         return UNIT;
     }
 
-    public static Result<Unit> unitResult() {
-        return UNIT_RESULT;
-    }
-
     @Override
     public String toString() {
         return "()";
@@ -101,7 +97,7 @@ public final class Unit implements Tuple.Tuple0 {
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return 0;   // There is only one instance of Unit
     }
 
     @Override
