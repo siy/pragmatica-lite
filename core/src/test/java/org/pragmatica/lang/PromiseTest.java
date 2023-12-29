@@ -19,6 +19,7 @@ package org.pragmatica.lang;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.pragmatica.lang.Result.Cause;
 import org.pragmatica.lang.io.CoreError;
 import org.pragmatica.lang.io.Timeout;
 
@@ -37,7 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class PromiseTest {
-    private static final Result<Integer> FAULT = new CoreError.Fault("Test fault").result();
+    private static final Cause FAULT_CAUSE = new CoreError.Fault("Test fault");
+    private static final Result<Integer> FAULT = FAULT_CAUSE.result();
 
     @Test
     void promiseCanBeResolved() {
@@ -50,6 +52,29 @@ public class PromiseTest {
         promise.await().onSuccess(v -> assertEquals(1, v));
 
         assertEquals(1, ref.get());
+    }
+
+    @Test
+    void promiseCanSucceedAsynchronously() {
+        var promise = Promise.<Integer>promise();
+        var ref = new AtomicInteger();
+
+        promise.succeedAsync(() -> 1);
+        promise.onSuccess(ref::set);
+
+        promise.await().onSuccess(v -> assertEquals(1, v));
+
+        assertEquals(1, ref.get());
+    }
+
+    @Test
+    void promiseCanFailAsynchronously() {
+        var promise = Promise.<Integer>promise();
+
+        promise.failAsync(() -> FAULT_CAUSE);
+
+        promise.await()
+               .onSuccessRun(Assertions::fail);
     }
 
     @Test
@@ -133,7 +158,7 @@ public class PromiseTest {
 
     @Test
     void failureActionsAreNotExecutedAfterResolutionWithSuccess() {
-        var ref1 = new AtomicReference<Result.Cause>();
+        var ref1 = new AtomicReference<Cause>();
         var ref2 = new AtomicBoolean(false);
         var promise = Promise.<Integer>promise()
                              .onFailure(ref1::set)
@@ -505,7 +530,7 @@ public class PromiseTest {
         assertEquals(1, ref.get());
     }
 
-    void assertIsFault(Result.Cause cause) {
+    void assertIsFault(Cause cause) {
         //noinspection SwitchStatementWithTooFewBranches
         switch (cause) {
             case CoreError.Fault _ -> {
@@ -514,7 +539,7 @@ public class PromiseTest {
         }
     }
 
-    void assertIsTimeout(Result.Cause cause) {
+    void assertIsTimeout(Cause cause) {
         //noinspection SwitchStatementWithTooFewBranches
         switch (cause) {
             case CoreError.Timeout _ -> {
@@ -523,7 +548,7 @@ public class PromiseTest {
         }
     }
 
-    void assertIsCancelled(Result.Cause cause) {
+    void assertIsCancelled(Cause cause) {
         //noinspection SwitchStatementWithTooFewBranches
         switch (cause) {
             case CoreError.Cancelled _ -> {

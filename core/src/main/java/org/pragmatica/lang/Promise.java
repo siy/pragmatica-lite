@@ -41,6 +41,8 @@ import org.pragmatica.lang.io.CoreError;
 import org.pragmatica.lang.io.CoreError.Cancelled;
 import org.pragmatica.lang.io.Timeout;
 import org.pragmatica.lang.utils.ResultCollector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -122,6 +124,11 @@ public interface Promise<T> {
                                     .flatMap(_ -> resolved(result)));
     }
 
+    // Consume result as dependent action
+    default Promise<T> withResult(Consumer<Result<T>> consumer) {
+        return fold(result -> Promise.resolved(result.onResult(() -> consumer.accept(result))));
+    }
+
     default Promise<T> onSuccess(Consumer<T> action) {
         return onResult(result -> result.onSuccess(action));
     }
@@ -134,6 +141,11 @@ public interface Promise<T> {
         return fold(result -> result.fold(Promise::<T>failed,
                                           value -> action.apply(value)
                                                          .flatMap(_ -> resolved(result))));
+    }
+
+    // Consume result as dependent action
+    default Promise<T> withSuccess(Consumer<T> consumer) {
+        return fold(result -> Promise.resolved(result.onSuccess(consumer)));
     }
 
     default Promise<T> onFailure(Consumer<Cause> action) {
@@ -150,6 +162,10 @@ public interface Promise<T> {
                                           Promise::successful));
     }
 
+    default Promise<T> withFailure(Consumer<Cause> consumer) {
+        return fold(result -> Promise.resolved(result.onFailure(consumer)));
+    }
+
     boolean isResolved();
 
     Promise<T> resolve(Result<T> value);
@@ -160,6 +176,14 @@ public interface Promise<T> {
 
     default Promise<T> fail(Cause cause) {
         return resolve(Result.failure(cause));
+    }
+
+    default Promise<T> succeedAsync(Supplier<? extends T> supplier) {
+        return async(promise -> promise.succeed(supplier.get()));
+    }
+
+    default Promise<T> failAsync(Supplier<Cause> supplier) {
+        return async(promise -> promise.fail(supplier.get()));
     }
 
     default Promise<T> cancel() {
@@ -291,6 +315,10 @@ public interface Promise<T> {
 
     @SuppressWarnings("unchecked")
     static <T> Promise<List<Result<T>>> allOf(Collection<Promise<T>> promises) {
+        if (promises.isEmpty()) {
+            return Promise.successful(List.of());
+        }
+
         var array = promises.toArray(new Promise[0]);
         var promise = Promise.promise();
         var collector = ResultCollector.resultCollector(promises.size(),
@@ -681,11 +709,19 @@ enum AsyncExecutor {
 }
 
 final class PromiseImpl<T> implements Promise<T> {
+    private static final Logger log = LoggerFactory.getLogger(Promise.class);
+
     volatile Result<T> result;
     volatile Completion<T> stack; // Rely on default initialization to null
 
     PromiseImpl(Result<T> result) {
         this.result = result;
+    }
+
+    @Override
+    public String toString() {
+        return result == null ? "Promise<>"
+                              : STR."Promise<\{result}\{'>'}";
     }
 
     @Override
@@ -720,7 +756,17 @@ final class PromiseImpl<T> implements Promise<T> {
             return result;
         }
 
-        push(new CompletionJoin<>(Thread.currentThread()));
+        var thread = Thread.currentThread();
+
+        if (log.isTraceEnabled()) {
+            var stackTraceElement = thread.getStackTrace()[2];
+
+            log.trace("Thread {} ({}) is waiting for resolution of Promise {} at {}:{}",
+                      thread.threadId(), thread.getName(), this,
+                      stackTraceElement.getFileName(), stackTraceElement.getLineNumber());
+        }
+
+        push(new CompletionJoin<>(thread));
 
         while (result == null) {
             LockSupport.park();
@@ -732,7 +778,7 @@ final class PromiseImpl<T> implements Promise<T> {
     /**
      * Await for resolution of current instance with specified timeout. Note that if timeout is expired, then current instance remains unresolved.
      *
-     * @param timeout
+     * @param timeout Timeout to wait for resolution
      *
      * @return If instance is resolved while waiting, then the result of resolution is returned. Otherwise, Timeout error is returned.
      */
@@ -742,7 +788,18 @@ final class PromiseImpl<T> implements Promise<T> {
             return result;
         }
 
-        push(new CompletionJoin<>(Thread.currentThread()));
+        var thread = Thread.currentThread();
+
+        if (log.isTraceEnabled()) {
+            var stackTraceElement = thread.getStackTrace()[2];
+
+            log.trace("Thread {} ({}) is waiting for resolution of Promise {} at {}:{} for {}ns",
+                      thread.threadId(), thread.getName(), this,
+                      stackTraceElement.getFileName(), stackTraceElement.getLineNumber(),
+                      timeout.nanoseconds());
+        }
+
+        push(new CompletionJoin<>(thread));
 
         var deadline = System.nanoTime() + timeout.nanoseconds();
 
@@ -826,8 +883,6 @@ final class PromiseImpl<T> implements Promise<T> {
     private void runSequentialActions(Completion current) {
         while (current != null) {
             current.complete(result);
-            // Here we can release completion back to pool
-            // pool.release(current);
             current = current.next;
         }
     }
@@ -914,6 +969,14 @@ final class PromiseImpl<T> implements Promise<T> {
 
         @Override
         public void complete(Result<T> value) {
+            if (log.isTraceEnabled()) {
+                var stackTraceElement = thread.getStackTrace()[2];
+
+                log.trace("Unblocking thread {} ({}) after resolution of Promise with {} at {}:{}",
+                          thread.threadId(), thread.getName(), value,
+                          stackTraceElement.getFileName(), stackTraceElement.getLineNumber());
+            }
+
             LockSupport.unpark(thread);
         }
     }
