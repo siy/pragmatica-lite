@@ -27,7 +27,6 @@ import com.github.pgasync.net.Transaction;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -119,34 +118,11 @@ public class PgConnectionPool extends PgConnectible {
             return delegate.isConnected();
         }
 
-        private void closeNextStatement(Iterator<PooledPgPreparedStatement> statementsSource, ThrowingPromise<Unit> onComplete) {
-            if (statementsSource.hasNext()) {
-                statementsSource.next().delegate.close()
-                                                .onSuccess(_ -> {
-                                                    statementsSource.remove();
-                                                    closeNextStatement(statementsSource, onComplete);
-                                                })
-                                                .tryRecover(th -> {
-                                                    onComplete.failAsync(() -> th);
-                                                    return Unit.aUnit();
-                                                });
-            } else {
-                onComplete.succeedAsync(Unit::aUnit);
-            }
-        }
-
         ThrowingPromise<Unit> shutdown() {
-            var onComplete = ThrowingPromise.<Unit>create();
-
-            closeNextStatement(statements.values().iterator(), onComplete);
-
-            return onComplete
-                .flatMap(_ -> {
-                    if (!statements.isEmpty()) {
-                        throw new IllegalStateException(STR."Stale prepared statements detected (\{statements.size()})");
-                    }
-                    return delegate.close();
-                });
+            return ThrowingPromise.allOf(statements.values().stream()
+                                            .map(stmt -> stmt.delegate.close()))
+                .withResult(_ -> statements.clear())
+                .fold(_ -> delegate.close());
         }
 
         @Override
@@ -331,7 +307,7 @@ public class PgConnectionPool extends PgConnectible {
                                         return ThrowingPromise.successful(pooledConnection);
                                     }
                                 })
-                                .onResult(result -> result.fold(
+                                .withResult(result -> result.fold(
                                     cause -> {
                                         var actions = locked(() -> {
                                             size--;

@@ -14,9 +14,7 @@
 
 package com.github.pgasync;
 
-import com.github.pgasync.async.ThrowableCause;
 import com.github.pgasync.async.ThrowingPromise;
-import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.SqlException;
 import com.github.pgasync.net.Transaction;
 import org.junit.AfterClass;
@@ -25,7 +23,6 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.jupiter.api.Tag;
 import org.pragmatica.lang.Functions.Fn1;
-import org.pragmatica.lang.Unit;
 
 import static org.junit.Assert.assertEquals;
 
@@ -58,24 +55,15 @@ public class TransactionTest {
                                connection.begin()
                                          .flatMap(fn)
                                          .fold(result -> connection.close()
-                                                                   .map(_ ->
-                                                                            result.fold(
-                                                                                cause -> {
-                                                                                    throw new RuntimeException(((ThrowableCause) cause).throwable());
-                                                                                },
-                                                                                Fn1.id()
-                                                                            )
-                                                                   )));
+                                                                   .fold(_ -> ThrowingPromise.resolved(result))));
     }
 
     @Test
     public void shouldCommitSelectInTransaction() {
         withinTransaction(transaction ->
                               transaction.completeQuery("SELECT 1")
-                                         .flatMap(result -> {
-                                             assertEquals(1L, result.index(0).getLong(0).longValue());
-                                             return transaction.commit();
-                                         }))
+                                         .onSuccess(rs -> assertEquals(1L, rs.index(0).getLong(0).longValue()))
+                                         .flatMap(_ -> transaction.commit()))
             .await();
     }
 
@@ -83,10 +71,8 @@ public class TransactionTest {
     public void shouldCommitInsertInTransaction() {
         withinTransaction(transaction ->
                               transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(10)")
-                                         .flatMap(result -> {
-                                             assertEquals(1, result.affectedRows());
-                                             return transaction.commit();
-                                         }))
+                                         .onSuccess(rs -> assertEquals(1, rs.affectedRows()))
+                                         .flatMap(_ -> transaction.commit()))
             .await();
 
         assertEquals(10L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 10").index(0).getLong(0).longValue());
@@ -97,12 +83,8 @@ public class TransactionTest {
         // Ref: https://github.com/alaisi/postgres-async-driver/issues/34
         long id = withinTransaction(transaction ->
                                         transaction.completeQuery("INSERT INTO TX_TEST (ID) VALUES ($1) RETURNING ID", 35)
-                                                   .map(rs -> rs.index(0))
-                                                   .flatMap(row -> {
-                                                       var value = row.getLong(0);
-                                                       return transaction.commit()
-                                                                         .map(_ -> value);
-                                                   }))
+                                                   .map(rs -> rs.index(0).getLong(0))
+                                                   .flatMap(value -> transaction.commit().map(_ -> value)))
             .await();
         assertEquals(35L, id);
     }
@@ -111,10 +93,8 @@ public class TransactionTest {
     public void shouldRollbackTransaction() {
         withinTransaction(transaction ->
                               transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(9)")
-                                         .flatMap(result -> {
-                                             assertEquals(1, result.affectedRows());
-                                             return transaction.rollback();
-                                         }))
+                                         .onSuccess(rs -> assertEquals(1, rs.affectedRows()))
+                                         .flatMap(_ -> transaction.rollback()))
             .await();
 
         assertEquals(0L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 9").size());
@@ -126,10 +106,8 @@ public class TransactionTest {
         try {
             withinTransaction(transaction ->
                                   transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(11)")
-                                             .flatMap(result -> {
-                                                 assertEquals(1, result.affectedRows());
-                                                 return transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(11)");
-                                             }))
+                                             .onSuccess(rs -> assertEquals(1, rs.affectedRows()))
+                                             .flatMap(_ -> transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(11)")))
                 .await();
         } catch (Exception ex) {
             DatabaseRule.ifCause(ex, sqlException -> {
@@ -145,16 +123,10 @@ public class TransactionTest {
     public void shouldRollbackTransactionAfterBackendError() {
         withinTransaction(transaction ->
                               transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(22)")
-                                         .flatMap(result -> {
-                                             assertEquals(1, result.affectedRows());
-
-                                             return transaction
-                                                 .completeQuery("INSERT INTO TX_TEST(ID) VALUES(22)")
-                                                 .map(_ -> ThrowingPromise.<ResultSet>failed(
-                                                     ThrowableCause.asCause(new IllegalStateException("The transaction should fail"))))
-                                                 .tryRecover(_ -> transaction.completeQuery("SELECT 1"))
-                                                 .flatMap(Fn1.id());
-                                         }))
+                                         .onSuccess(rs -> assertEquals(1, rs.affectedRows()))
+                                         .flatMap(_ -> transaction
+                                             .completeQuery("INSERT INTO TX_TEST(ID) VALUES(22)")
+                                             .fold(_ -> transaction.completeQuery("SELECT 1"))))
             .await();
         assertEquals(0, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 22").size());
     }
@@ -166,10 +138,8 @@ public class TransactionTest {
                                          .flatMap(nested ->
                                                       nested
                                                           .completeQuery("INSERT INTO TX_TEST(ID) VALUES(19)")
-                                                          .flatMap(result -> {
-                                                              assertEquals(1, result.affectedRows());
-                                                              return nested.commit();
-                                                          })
+                                                          .onSuccess(rs -> assertEquals(1, rs.affectedRows()))
+                                                          .flatMap(_ -> nested.commit())
                                                           .flatMap(_ -> transaction.commit())))
             .await();
         assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 19").size());
@@ -179,18 +149,14 @@ public class TransactionTest {
     public void shouldRollbackNestedTransaction() {
         withinTransaction(transaction ->
                               transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(24)")
-                                         .flatMap(result -> {
-                                             assertEquals(1, result.affectedRows());
-                                             return transaction.begin()
-                                                               .flatMap(nested ->
-                                                                            nested
-                                                                                .completeQuery("INSERT INTO TX_TEST(ID) VALUES(23)")
-                                                                                .flatMap(res2 -> {
-                                                                                    assertEquals(1, res2.affectedRows());
-                                                                                    return nested.rollback();
-                                                                                }))
-                                                               .flatMap(_ -> transaction.commit());
-                                         }))
+                                         .onSuccess(rs -> assertEquals(1, rs.affectedRows()))
+                                         .flatMap(_ -> transaction.begin()
+                                                                  .flatMap(nested ->
+                                                                               nested
+                                                                                   .completeQuery("INSERT INTO TX_TEST(ID) VALUES(23)")
+                                                                                   .onSuccess(rs -> assertEquals(1, rs.affectedRows()))
+                                                                                   .flatMap(_ -> nested.rollback()))
+                                                                  .flatMap(_ -> transaction.commit())))
             .await();
         assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 24").size());
         assertEquals(0L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 23").size());
@@ -200,17 +166,15 @@ public class TransactionTest {
     public void shouldRollbackNestedTransactionOnBackendError() {
         withinTransaction(transaction ->
                               transaction.completeQuery("INSERT INTO TX_TEST(ID) VALUES(25)")
-                                         .flatMap(result -> {
-                                             assertEquals(1, result.affectedRows());
-                                             return transaction.begin()
-                                                               .flatMap(nested ->
-                                                                            nested.completeQuery("INSERT INTO TX_TEST(ID) VALUES(26)")
-                                                                                  .onSuccess(res2 -> assertEquals(1, res2.affectedRows()))
-                                                                                  .flatMap(_ -> nested.completeQuery("INSERT INTO TX_TEST(ID) VALUES(26)"))
-                                                                                  .map(_ -> ThrowingPromise.<Unit>failed(ThrowableCause.asCause(new IllegalStateException("The query should fail"))))
-                                                                                  .tryRecover(_ -> transaction.commit())
-                                                                                  .flatMap(Fn1.id()));
-                                         }))
+                                         .onSuccess(rs -> assertEquals(1, rs.affectedRows()))
+                                         .flatMap(_ -> transaction.begin()
+                                                                  .flatMap(nested ->
+                                                                               nested
+                                                                                   .completeQuery("INSERT INTO TX_TEST(ID) VALUES(26)")
+                                                                                   .onSuccess(rs -> assertEquals(1, rs.affectedRows()))
+                                                                                   .flatMap(_ -> nested.completeQuery(
+                                                                                       "INSERT INTO TX_TEST(ID) VALUES(26)"))
+                                                                                   .fold(_ -> transaction.commit()))))
             .await();
         assertEquals(1L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 25").size());
         assertEquals(0L, dbr.query("SELECT ID FROM TX_TEST WHERE ID = 26").size());

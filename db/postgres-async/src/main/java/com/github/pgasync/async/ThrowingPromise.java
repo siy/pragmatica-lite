@@ -7,7 +7,6 @@ import org.pragmatica.lang.Unit;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class ThrowingPromise<T> extends CompletableFuture<T> {
@@ -19,6 +18,11 @@ public class ThrowingPromise<T> extends CompletableFuture<T> {
         var promise = ThrowingPromise.<U>create();
         promise.fail(ex);
         return promise;
+    }
+
+    public static <U> ThrowingPromise<U> resolved(Result<U> value) {
+        return value.fold(ex -> failed((ThrowableCause) ex),
+                          ThrowingPromise::successful);
     }
 
     public static <T> ThrowingPromise<Unit> allOf(Stream<ThrowingPromise<T>> cfs) {
@@ -52,8 +56,13 @@ public class ThrowingPromise<T> extends CompletableFuture<T> {
             .thenCompose(Function.identity());
     }
 
-    public ThrowingPromise<T> onResult(Consumer<Result<T>> action) {
+    // Dependent action
+    public ThrowingPromise<T> withResult(Consumer<Result<T>> action) {
         return (ThrowingPromise<T>) whenComplete((value, th) -> action.accept(buildResult(value, th)));
+    }
+
+    public ThrowingPromise<T> withFailure(Consumer<ThrowableCause> action) {
+        return withResult(result -> result.onFailure(cause -> action.accept((ThrowableCause) cause)));
     }
 
     private static <T> Result<T> buildResult(T value, Throwable th) {
@@ -68,28 +77,24 @@ public class ThrowingPromise<T> extends CompletableFuture<T> {
         return (ThrowingPromise<U>) thenCompose(fn::apply);
     }
 
-    public ThrowingPromise<Unit> onSuccess(Consumer<? super T> action) {
-        return (ThrowingPromise<Unit>) thenAccept(action)
-            .thenApply(Unit::unit);
+    public ThrowingPromise<Unit> mapToUnit() {
+        return map(_ -> Unit.aUnit());
+    }
+
+    public ThrowingPromise<T> onSuccess(Consumer<? super T> action) {
+        return (ThrowingPromise<T>) thenApply(value -> {
+            action.accept(value);
+            return value;
+        });
     }
 
     public void fail(ThrowableCause cause) {
         completeExceptionally(cause.throwable());
     }
 
-    public void failAsync(Supplier<? extends ThrowableCause> supplier) {
-        defaultExecutor()
-            .execute(() -> fail(supplier.get()));
-    }
-
     public ThrowingPromise<T> succeed(T value) {
         complete(value);
         return this;
-    }
-
-    public void succeedAsync(Supplier<? extends T> supplier) {
-        defaultExecutor()
-            .execute(() -> complete(supplier.get()));
     }
 
     //recover and replace exception with new completion stage

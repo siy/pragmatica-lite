@@ -100,13 +100,13 @@ public class NettyPgProtocolStream extends PgProtocolStream {
                    ctx.close()
                       .addListener(closed -> {
                           if (closed.isSuccess()) {
-                              uponClose.succeedAsync(Unit::aUnit);
+                              uponClose.succeed(Unit.aUnit());
                           } else {
-                              uponClose.failAsync(() -> ThrowableCause.asCause(closed.cause()));
+                              uponClose.fail(ThrowableCause.asCause(closed.cause()));
                           }
                       });
                } else {
-                   uponClose.failAsync(() -> ThrowableCause.asCause(written.cause()));
+                   uponClose.fail(ThrowableCause.asCause(written.cause()));
                }
            });
         return uponClose;

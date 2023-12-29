@@ -43,7 +43,8 @@ public class PerformanceTest {
     private static final DatabaseRule dbr;
 
     static {
-        System.setProperty("io.netty.eventLoopThreads", "1");
+        // Uncomment to run with single event loop thread, although I see no big value in it
+//        System.setProperty("io.netty.eventLoopThreads", "1");
         dbr = DatabaseRule.withMaxConnections(1);
     }
 
@@ -52,7 +53,7 @@ public class PerformanceTest {
 
     @Parameters(name = "{index}: maxConnections={0}, threads={1}")
     public static Iterable<Object[]> data() {
-        ArrayList<Object[]> testData = new ArrayList<>();
+        var testData = new ArrayList<Object[]>();
         var numbers = List.of(1, 6, 12);
 
         for (var poolSize : numbers) {
@@ -133,7 +134,6 @@ public class PerformanceTest {
     }
 
     private class Batch {
-
         private final long batchSize;
         private long performed;
         private long startedAt;
@@ -191,10 +191,7 @@ public class PerformanceTest {
                         onBatch.succeed(duration);
                     }
                 })
-                .tryRecover(th -> {
-                    onBatch.fail(th);
-                    return Unit.aUnit();
-                });
+                .withFailure(th -> onBatch.fail(th));
         }
     }
 

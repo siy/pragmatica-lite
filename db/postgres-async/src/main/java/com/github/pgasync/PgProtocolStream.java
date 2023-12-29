@@ -106,7 +106,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
 
     protected final Charset encoding;
 
-    private ThrowingPromise<? super Message> onResponse;
+    private volatile ThrowingPromise<? super Message> onResponse;
     private final Map<String, Set<Consumer<String>>> subscriptions = new HashMap<>();
 
     private Consumer<RowDescription.ColumnDescription[]> onColumns;
@@ -121,10 +121,15 @@ public abstract class PgProtocolStream implements ProtocolStream {
         this.encoding = encoding;
     }
 
-    private ThrowingPromise<? super Message> consumeOnResponse() {
+    private void consumeOnResponse(ThrowableCause th, Message message) {
         var wasOnResponse = onResponse;
         onResponse = null;
-        return wasOnResponse;
+
+        if (th != null) {
+            wasOnResponse.fail(th);
+        } else {
+            wasOnResponse.succeed(message);
+        }
     }
 
     @Override
@@ -177,7 +182,8 @@ public abstract class PgProtocolStream implements ProtocolStream {
         this.onColumns = onColumns;
         this.onRow = onRow;
         this.onAffected = onAffected;
-        return send(query).onSuccess(_ -> {});
+
+        return send(query).mapToUnit();
     }
 
     @Override
@@ -219,7 +225,6 @@ public abstract class PgProtocolStream implements ProtocolStream {
         });
     }
 
-//    protected void gotError(Throwable th) {
     protected void gotError(ThrowableCause th) {
         onColumns = null;
         onRow = null;
@@ -228,15 +233,14 @@ public abstract class PgProtocolStream implements ProtocolStream {
         lastSentMessage = null;
 
         if (onResponse != null) {
-            consumeOnResponse().failAsync(() -> th);
+            consumeOnResponse(th, null);
         }
     }
 
     protected void gotMessage(Message message) {
         switch (message) {
             case NotificationResponse notification -> publish(notification);
-            case BIndicators.BindComplete _ -> {
-            }                 // op op since bulk message sequence
+            case BIndicators.BindComplete _ -> {} // op op since bulk message sequence
             case BIndicators.ParseComplete _, BIndicators.CloseComplete _ -> readyForQueryPendingMessage = message;
             case RowDescription rowDescription -> onColumns.accept(rowDescription.getColumns());
             case BIndicators.NoData _ -> onColumns.accept(new RowDescription.ColumnDescription[]{});
@@ -262,7 +266,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
                 if (authentication.authenticationOk() || authentication.saslServerFinalResponse()) {
                     readyForQueryPendingMessage = message;
                 } else {
-                    consumeOnResponse().succeedAsync(() -> message);
+                    consumeOnResponse(null, message);
                 }
             }
             case ReadyForQuery _ -> {
@@ -274,13 +278,13 @@ public abstract class PgProtocolStream implements ProtocolStream {
                     onRow = null;
                     onAffected = null;
                     var response = readyForQueryPendingMessage != null ? readyForQueryPendingMessage : message;
-                    consumeOnResponse().succeedAsync(() -> response);
+                    consumeOnResponse(null, response);
                 }
                 readyForQueryPendingMessage = null;
             }
-            case ParameterStatus _, BackendKeyData _, UnknownMessage _ -> log.trace(message.toString());
-            case NoticeResponse _ -> log.warn(message.toString());
-            case null, default -> consumeOnResponse().succeedAsync(() -> message);
+            case ParameterStatus _, BackendKeyData _, UnknownMessage _ -> log.trace("{}", message);
+            case NoticeResponse _ -> log.debug("{}", message);
+            case null, default -> consumeOnResponse(null, message);
         }
     }
 
@@ -300,16 +304,19 @@ public abstract class PgProtocolStream implements ProtocolStream {
                     gotError(ThrowableCause.asCause(th));
                 }
             } else {
-                uponResponse.failAsync(() -> ThrowableCause.asCause(new IllegalStateException("Postgres messages stream simultaneous use detected")));
+                var error = new SqlError.SimultaneousUseDetected("Postgres messages stream simultaneous use detected");
+                uponResponse.fail(ThrowableCause.forError(error));
             }
         } else {
-            uponResponse.failAsync(() -> ThrowableCause.asCause(new IllegalStateException("Channel is closed")));
+            var error = new SqlError.ChannelClosed("Channel is closed");
+            uponResponse.fail(ThrowableCause.forError(error));
         }
         return uponResponse;
     }
 
     private void publish(NotificationResponse notification) {
-        Set<Consumer<String>> consumers = subscriptions.get(notification.getChannel());
+        var consumers = subscriptions.get(notification.getChannel());
+
         if (consumers != null) {
             consumers.forEach(c -> c.accept(notification.getPayload()));
         }
@@ -319,6 +326,7 @@ public abstract class PgProtocolStream implements ProtocolStream {
         return lastSentMessage instanceof Query;
     }
 
+    @SuppressWarnings("unused")
     private boolean isExtendedQueryInProgress() {
         return lastSentMessage instanceof ExtendedQueryMessage;
     }

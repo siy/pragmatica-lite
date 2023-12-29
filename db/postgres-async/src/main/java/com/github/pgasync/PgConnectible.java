@@ -1,13 +1,10 @@
 package com.github.pgasync;
 
-import com.github.pgasync.async.ThrowableCause;
 import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.conversion.DataConverter;
 import com.github.pgasync.net.Connectible;
 import com.github.pgasync.net.ConnectibleBuilder;
-import com.github.pgasync.net.Connection;
 import com.github.pgasync.net.Row;
-import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
 
 import java.nio.charset.Charset;
@@ -45,7 +42,7 @@ public abstract class PgConnectible implements Connectible {
         return getConnection()
             .flatMap(connection ->
                          connection.script(onColumns, onRow, onAffected, sql)
-                                   .onResult(result -> closeConnection(result, connection)));
+                                   .withResult(_ -> connection.close()));
     }
 
     @Override
@@ -56,14 +53,6 @@ public abstract class PgConnectible implements Connectible {
         return getConnection()
             .flatMap(connection ->
                          connection.query(onColumns, onRow, sql, params)
-                                   .onResult(result -> closeConnection(result, connection)));
-    }
-
-    private static <T> void closeConnection(Result<T> result, Connection connection) {
-        connection.close()
-                  .map(_ -> result.fold(
-                      cause -> {throw new RuntimeException(((ThrowableCause) cause).throwable());},
-                      value -> value
-                  ));
+                                   .withResult(_ -> connection.close()));
     }
 }

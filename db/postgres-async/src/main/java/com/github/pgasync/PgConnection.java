@@ -94,7 +94,7 @@ public class PgConnection implements Connection {
         @Override
         public ThrowingPromise<Unit> close() {
             return stream.send(Close.statement(sname))
-                         .onSuccess(_ -> {});
+                         .mapToUnit();
         }
     }
 
@@ -218,8 +218,8 @@ public class PgConnection implements Connection {
             .map(_ -> {
                 var unsubscribe = stream.subscribe(channel, onNotification);
 
-                return () -> completeScript(STR."UNLISTEN \{channel}")
-                    .onSuccess(_ -> unsubscribe.run());
+                return () -> completeScript(STR."UNLISTEN \{channel}").onSuccess(_ -> unsubscribe.run())
+                                                                      .mapToUnit();
             });
     }
 
@@ -266,7 +266,7 @@ public class PgConnection implements Connection {
         @Override
         public ThrowingPromise<Unit> close() {
             return commit()
-                .onResult(this::handleException);
+                .fold(this::handleException);
         }
 
         @Override
@@ -292,12 +292,8 @@ public class PgConnection implements Connection {
         }
 
         private <T> ThrowingPromise<T> handleException(Result<T> result) {
-            return result.fold(
-                cause -> rollback()
-                    .map(_ -> {
-                        throw new RuntimeException(((ThrowableCause) cause).throwable());
-                    }),
-                ThrowingPromise::successful);
+            return result.fold(cause -> rollback().fold(_ -> ThrowingPromise.failed((ThrowableCause) cause)),
+                               ThrowingPromise::successful);
         }
     }
 
