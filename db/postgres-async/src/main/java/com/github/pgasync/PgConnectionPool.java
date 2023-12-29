@@ -22,7 +22,6 @@ import com.github.pgasync.net.Listening;
 import com.github.pgasync.net.PreparedStatement;
 import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.Row;
-import com.github.pgasync.net.SqlException;
 import com.github.pgasync.net.Transaction;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
@@ -110,7 +109,7 @@ public class PgConnectionPool extends PgConnectible {
             this.delegate = delegate;
         }
 
-        ThrowingPromise<Connection> connect(String username, String password, String database) {
+        ThrowingPromise<PooledPgConnection> connect(String username, String password, String database) {
             return delegate.connect(username, password, database).map(_ -> PooledPgConnection.this);
         }
 
@@ -272,7 +271,7 @@ public class PgConnectionPool extends PgConnectible {
     @Override
     public ThrowingPromise<Connection> getConnection() {
         if (locked(() -> closing != null)) {
-            return ThrowingPromise.failed(ThrowableCause.asCause(new SqlException("Connection pool is closed")));
+            return ThrowingPromise.failed(ThrowableCause.forError(new SqlError.ConnectionPoolClosed("Connection pool is closed")));
         } else {
             var cached = locked(this::firstAliveConnection);
 
@@ -295,14 +294,7 @@ public class PgConnectionPool extends PgConnectible {
                                     .connect(username, password, database))
                                 .flatMap(pooledConnection -> {
                                     if (validationQuery != null && !validationQuery.isBlank()) {
-                                        return pooledConnection.completeScript(validationQuery)
-                                                               .fold(result ->
-                                                                         result.fold(
-                                                                             cause -> ((PooledPgConnection) pooledConnection).delegate
-                                                                                 .close()
-                                                                                 .flatMap(_ -> ThrowingPromise.failed(((ThrowableCause) cause))),
-                                                                             _ -> ThrowingPromise.successful(pooledConnection)
-                                                                         ));
+                                        return runValidationQuery(pooledConnection);
                                     } else {
                                         return ThrowingPromise.successful(pooledConnection);
                                     }
@@ -323,7 +315,7 @@ public class PgConnectionPool extends PgConnectible {
                                         return null;
                                     },
                                     connected -> {
-                                        release((PooledPgConnection) connected);
+                                        release(connected);
                                         return null;
                                     }));
                 }
@@ -332,7 +324,16 @@ public class PgConnectionPool extends PgConnectible {
         }
     }
 
-//    private record CloseTuple(ThrowingPromise<Unit> closing, Runnable immediate) {}
+    private ThrowingPromise<PooledPgConnection> runValidationQuery(PooledPgConnection pooledConnection) {
+        return pooledConnection.completeScript(validationQuery)
+                               .fold(result ->
+                                         result.fold(
+                                             cause -> pooledConnection.delegate
+                                                 .close()
+                                                 .flatMap(_ -> ThrowingPromise.failed(((ThrowableCause) cause))),
+                                             _ -> ThrowingPromise.successful(pooledConnection)
+                                         ));
+    }
 
     @Override
     public ThrowingPromise<Unit> close() {
