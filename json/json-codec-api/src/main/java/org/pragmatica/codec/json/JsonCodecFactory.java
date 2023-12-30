@@ -15,7 +15,7 @@ public interface JsonCodecFactory<C extends JsonCodecConfiguration> {
     Class<C> configClass();
 
     static JsonCodecFactory<?> defaultFactory() {
-        var map = SerializerHolder.INSTANCE.factories;
+        var map = JsonCodecFactoriesHolder.INSTANCE.factories;
 
         if (map.size() != 1) {
             throw new IllegalStateException(
@@ -27,15 +27,15 @@ public interface JsonCodecFactory<C extends JsonCodecConfiguration> {
 
     @SuppressWarnings("unchecked")
     static <T extends JsonCodecConfiguration> Option<JsonCodecFactory<T>> configuredBy(Class<T> key) {
-        return Option.option((JsonCodecFactory<T>) SerializerHolder.INSTANCE.factories.get(key));
+        return Option.option((JsonCodecFactory<T>) JsonCodecFactoriesHolder.INSTANCE.factories.get(key));
     }
 
-    enum SerializerHolder {
+    enum JsonCodecFactoriesHolder {
         INSTANCE;
         private final Map<Class<? extends JsonCodecConfiguration>, JsonCodecFactory<?>> factories;
 
         @SuppressWarnings("unchecked")
-        SerializerHolder() {
+        JsonCodecFactoriesHolder() {
             factories = ServiceLoader.load(JsonCodecFactory.class)
                                      .stream()
                                      .map(ServiceLoader.Provider::get)

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
 import org.pragmatica.http.codec.CodecError;
 import org.pragmatica.http.codec.JsonCodec;
-import org.pragmatica.http.codec.TypeToken;
+import org.pragmatica.lang.type.TypeToken;
 import org.pragmatica.lang.Result;
 
 import static io.netty.buffer.Unpooled.wrappedBuffer;

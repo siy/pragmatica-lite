@@ -24,6 +24,7 @@
         <jsonio.version>4.19.1</jsonio.version>
         <netty.version>4.1.100.Final</netty.version>
         <netty.io_uring.version>0.0.24.Final</netty.io_uring.version>
+        <lightbend_config.version>1.4.3</lightbend_config.version>
 
         <!-- Logging dependencies -->
         <slf4j.version>2.0.9</slf4j.version>
@@ -31,7 +32,6 @@
         <log4j2.version>2.22.0</log4j2.version>
         <disruptor.version>3.4.4</disruptor.version>
     </properties>
-
 
     <dependencyManagement>
         <dependencies>
@@ -135,6 +135,18 @@
             <dependency>
                 <groupId>org.pragmatica.lite</groupId>
                 <artifactId>postgres-async</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.pragmatica.lite</groupId>
+                <artifactId>config-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.pragmatica.lite</groupId>
+                <artifactId>config-lightbend</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -261,6 +273,13 @@
                 <groupId>com.cedarsoftware</groupId>
                 <artifactId>json-io</artifactId>
                 <version>${jsonio.version}</version>
+            </dependency>
+
+            <!-- Config Lightbend-config -->
+            <dependency>
+                <groupId>com.typesafe</groupId>
+                <artifactId>config</artifactId>
+                <version>${lightbend_config.version}</version>
             </dependency>
 
             <!-- Logging -->

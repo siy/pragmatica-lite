@@ -2,7 +2,7 @@ package org.pragmatica.http.server.routing;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaders;
-import org.pragmatica.http.codec.TypeToken;
+import org.pragmatica.lang.type.TypeToken;
 import org.pragmatica.lang.Result;
 
 import java.util.List;

@@ -9,7 +9,7 @@ import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import org.pragmatica.http.HttpError;
 import org.pragmatica.http.codec.CustomCodec;
-import org.pragmatica.http.codec.TypeToken;
+import org.pragmatica.lang.type.TypeToken;
 import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.http.server.HttpServerConfiguration;
 import org.pragmatica.http.server.routing.Redirect;
