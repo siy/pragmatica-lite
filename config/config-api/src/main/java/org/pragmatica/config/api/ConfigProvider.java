@@ -1,5 +1,6 @@
 package org.pragmatica.config.api;
 
+import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.TypeToken;
 
 import java.util.function.Consumer;
@@ -12,16 +13,18 @@ public interface ConfigProvider {
      * <p>
      * It should be noted, that not all configuration providers support dynamic configuration, so it is not guaranteed that change listener will be
      * ever invoked.
+     * <p>
+     * It is assumed
      *
      * @param key            The key to help locate the configuration.
-     * @param typeToken      Configuration object type
+     * @param configRecord      Configuration object type
      * @param changeListener listener to be called when configuration changes
      *
      * @return loaded configuration object instance.
      */
-    <T> T configuration(SubsystemKey key, TypeToken<T> typeToken, Consumer<SubsystemKey> changeListener);
+    <T extends Record> Result<T> configuration(SubsystemKey key, Class<T> configRecord, Consumer<SubsystemKey> changeListener);
 
-    default <T> T staticConfiguration(SubsystemKey key, TypeToken<T> typeToken) {
-        return configuration(key, typeToken, _ -> {});
+    default <T extends Record> Result<T> staticConfiguration(SubsystemKey key, Class<T> configRecord) {
+        return configuration(key, configRecord, _ -> {});
     }
 }

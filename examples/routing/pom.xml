@@ -15,7 +15,16 @@
         <dependency>
             <groupId>org.pragmatica.lite</groupId>
             <artifactId>http-server</artifactId>
-            <version>${project.parent.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.pragmatica.lite</groupId>
+            <artifactId>config-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.pragmatica.lite</groupId>
+            <artifactId>config-lightbend</artifactId>
         </dependency>
 
         <!-- TODO: cleanup experiment -->
