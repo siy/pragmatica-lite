@@ -53,4 +53,14 @@ class IRITest {
 
         assertEquals("mailto:bob@example.com", IRI.fromString("mailto:bob@example.com").toString());
     }
+
+    @Test
+    void databaseIRI() {
+        IRI iri = IRI.fromString("postgresql://localhost:5432/mydb");
+
+        iri.scheme().onPresent(scheme -> assertEquals("postgresql", scheme));
+        iri.domain().onPresent(domain -> assertEquals("localhost", domain.name()));
+        iri.port().onPresent(port -> assertEquals(5432, port.port()));
+        iri.path().onPresent(path -> assertEquals("/mydb", path));
+    }
 }

@@ -29,4 +29,8 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
     public Type token() {
         return token;
     }
+
+    public int compareTo(TypeToken<T> o) {
+        return 0;
+    }
 }

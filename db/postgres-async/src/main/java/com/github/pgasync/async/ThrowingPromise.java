@@ -1,6 +1,7 @@
 package com.github.pgasync.async;
 
 import org.pragmatica.lang.Functions.Fn1;
+import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
 
@@ -54,6 +55,13 @@ public class ThrowingPromise<T> extends CompletableFuture<T> {
     public <U> ThrowingPromise<U> fold(Fn1<ThrowingPromise<U>, Result<T>> fn) {
         return (ThrowingPromise<U>) handle((value, th) -> fn.apply(buildResult(value, th)))
             .thenCompose(Function.identity());
+    }
+
+    public Promise<T> asPromise() {
+        var promise = Promise.<T>promise();
+
+        withResult(promise::resolve);
+        return promise;
     }
 
     // Dependent action
