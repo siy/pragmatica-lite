@@ -4,18 +4,13 @@ import org.pragmatica.lang.Result;
 
 @SuppressWarnings("unused")
 public sealed interface SqlError extends Result.Cause {
-    @SuppressWarnings("unused")
+    record ConfigurationError(String message) implements SqlError {}
     record ChannelClosed(String message) implements SqlError {}
-    @SuppressWarnings("unused")
     record SimultaneousUseDetected(String message) implements SqlError {}
-    @SuppressWarnings("unused")
     record ConnectionPoolClosed(String message) implements SqlError {}
-    @SuppressWarnings("unused")
     record BadAuthenticationSequence(String message) implements SqlError {}
-    @SuppressWarnings("unused")
     record CommunicationError(String message) implements SqlError {}
 
-    @SuppressWarnings("unused")
     record ServerResponse(String code, String level, String message) {}
 
     @SuppressWarnings("unused")
