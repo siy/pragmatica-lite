@@ -1,10 +1,10 @@
 package org.pragmatica.db.postgres;
 
-import org.pragmatica.http.codec.TypeToken;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Tuple.Tuple2;
 import org.pragmatica.lang.Tuple.Tuple3;
+import org.pragmatica.lang.type.TypeToken;
 import org.pragmatica.uri.IRI;
 
 import java.util.List;

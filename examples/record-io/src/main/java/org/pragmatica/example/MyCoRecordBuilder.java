@@ -10,9 +10,11 @@ import java.lang.annotation.Target;
 
 @RecordBuilder.Template(options = @RecordBuilder.Options(
 addClassRetainedGenerated = false,
-addFunctionalMethodsToWith = true,
 addStaticBuilder = false,
-enableWither = false
+addFunctionalMethodsToWith = true,
+enableWither = false,
+builderMode = RecordBuilder.BuilderMode.STAGED,
+stagedBuilderMethodName = "builder"
 ))
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
