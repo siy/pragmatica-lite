@@ -146,7 +146,25 @@
 
             <dependency>
                 <groupId>org.pragmatica.lite</groupId>
-                <artifactId>config-lightbend</artifactId>
+                <artifactId>config-hocon</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.pragmatica.lite</groupId>
+                <artifactId>config-toml</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.pragmatica.lite</groupId>
+                <artifactId>config-properties</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.pragmatica.lite</groupId>
+                <artifactId>config-env</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
