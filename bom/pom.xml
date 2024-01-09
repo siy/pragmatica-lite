@@ -273,11 +273,12 @@
             </dependency>
 
             <!-- JSON Genson -->
-            <dependency>
-                <groupId>com.owlike</groupId>
-                <artifactId>genson</artifactId>
-                <version>${genson.version}</version>
-            </dependency>
+            <!-- Has vulnerabilities -->
+<!--            <dependency>-->
+<!--                <groupId>com.owlike</groupId>-->
+<!--                <artifactId>genson</artifactId>-->
+<!--                <version>${genson.version}</version>-->
+<!--            </dependency>-->
 
             <!-- JSON Gson -->
             <dependency>

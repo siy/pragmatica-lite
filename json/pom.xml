@@ -16,7 +16,8 @@
         <module>json-codec-api</module>
         <module>json-jackson</module>   <!-- TODO: configuration -->
         <module>json-jackson-jr</module> <!-- TODO: implementation -->
-        <module>json-genson</module> <!-- TODO: implementation -->
+        <!-- Has vulnerabilities -->
+<!--        <module>json-genson</module> &lt;!&ndash; TODO: implementation &ndash;&gt;-->
         <module>json-gson</module> <!-- TODO: implementation -->
         <module>json-jsonio</module> <!-- TODO: implementation -->
     </modules>
