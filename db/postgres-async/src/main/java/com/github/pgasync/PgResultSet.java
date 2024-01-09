@@ -70,4 +70,14 @@ public class PgResultSet implements ResultSet {
     public int affectedRows() {
         return affectedRows;
     }
+
+    @Override
+    public String toString() {
+        var builder = new StringBuilder("PgResultSet[affected=").append(affectedRows).append(" {\n");
+
+        for (var row : rows) {
+            builder.append("  ").append(row).append(",\n");
+        }
+        return builder.append("}]").toString();
+    }
 }

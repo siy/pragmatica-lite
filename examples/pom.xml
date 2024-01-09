@@ -16,6 +16,7 @@
         <module>routing</module>
         <module>record-io</module>
         <module>hello-world</module>
+        <module>url-shortener</module>
     </modules>
 
     <dependencyManagement>

@@ -1,4 +1,4 @@
-package org.pragmatica.db.postgres;
+package org.pragmatica.config.api;
 
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.TypeToken;

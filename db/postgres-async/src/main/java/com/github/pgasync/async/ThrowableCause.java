@@ -8,7 +8,7 @@ import org.pragmatica.lang.Result.Cause;
 public record ThrowableCause(Throwable throwable, Option<Cause> source) implements Cause {
     @Override
     public String message() {
-        return throwable.getMessage();
+        return STR."\{throwable.getMessage()}\n\{throwable.getStackTrace()}";
     }
 
     public static ThrowableCause asCause(Throwable throwable) {

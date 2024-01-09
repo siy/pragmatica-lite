@@ -140,6 +140,12 @@
 
             <dependency>
                 <groupId>org.pragmatica.lite</groupId>
+                <artifactId>db-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.pragmatica.lite</groupId>
                 <artifactId>config-api</artifactId>
                 <version>${project.version}</version>
             </dependency>

@@ -68,40 +68,45 @@ public interface Route<T> extends RouteSource {
         }
     }
 
+
     static RouteBuilder1 options(String path) {
-        return RouteBuilder1.builder1(path, HttpMethod.OPTIONS);
+        return method(path, HttpMethod.OPTIONS);
     }
 
     static RouteBuilder1 get(String path) {
-        return RouteBuilder1.builder1(path, HttpMethod.GET);
+        return method(path, HttpMethod.GET);
     }
 
     static RouteBuilder1 head(String path) {
-        return RouteBuilder1.builder1(path, HttpMethod.HEAD);
+        return method(path, HttpMethod.HEAD);
     }
 
     static RouteBuilder1 post(String path) {
-        return RouteBuilder1.builder1(path, HttpMethod.POST);
+        return method(path, HttpMethod.POST);
     }
 
     static RouteBuilder1 put(String path) {
-        return RouteBuilder1.builder1(path, HttpMethod.PUT);
+        return method(path, HttpMethod.PUT);
     }
 
     static RouteBuilder1 patch(String path) {
-        return RouteBuilder1.builder1(path, HttpMethod.PATCH);
+        return method(path, HttpMethod.PATCH);
     }
 
     static RouteBuilder1 delete(String path) {
-        return RouteBuilder1.builder1(path, HttpMethod.DELETE);
+        return method(path, HttpMethod.DELETE);
     }
 
     static RouteBuilder1 trace(String path) {
-        return RouteBuilder1.builder1(path, HttpMethod.TRACE);
+        return method(path, HttpMethod.TRACE);
     }
 
     static RouteBuilder1 connect(String path) {
-        return RouteBuilder1.builder1(path, HttpMethod.CONNECT);
+        return method(path, HttpMethod.CONNECT);
+    }
+
+    static RouteBuilder1 method(String path, HttpMethod method) {
+        return RouteBuilder1.builder1(path, method);
     }
 
     interface RouteBuilder1 {

@@ -19,14 +19,22 @@ public sealed interface Sql {
 
     // Single query
     Processor<Query, SqlException> QRY = stringTemplate -> {
+        if (stringTemplate.values().isEmpty()) {
+            return new Query(stringTemplate.fragments().getFirst());
+        }
+
         var builder = new StringBuilder();
         int index = 1;
+        int last = 0;
 
         for(var fragment : stringTemplate.fragments()) {
             builder.append(fragment);
+            last = builder.length();
             builder.append("$");
             builder.append(index++);
         }
+
+        builder.setLength(last);
 
         return new Query(builder.toString(), stringTemplate.values().toArray());
     };

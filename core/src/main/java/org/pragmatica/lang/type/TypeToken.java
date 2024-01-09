@@ -2,6 +2,7 @@ package org.pragmatica.lang.type;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Objects;
 
 /**
  * Simple implementation of type token which allows to capture full generic type. <br /> In order to use this class, one should create anonymous
@@ -32,5 +33,21 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
 
     public int compareTo(TypeToken<T> o) {
         return 0;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o instanceof TypeToken<?> typeToken) {
+            return token.equals(typeToken.token);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return token.hashCode();
     }
 }

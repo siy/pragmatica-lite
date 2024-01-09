@@ -7,4 +7,7 @@ import org.pragmatica.uri.IRI;
 public record DbEnvConfig(IRI url, String username, String password, int maxConnections, int maxStatements,
                           Option<String> validationQuery, Option<String> encoding) {
 
+    public DbEnvConfig withMaxConnections(int maxConnections) {
+        return new DbEnvConfig(url(), username(), password(), maxConnections, maxStatements(), validationQuery(), encoding());
+    }
 }

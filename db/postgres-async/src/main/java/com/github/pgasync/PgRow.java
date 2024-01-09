@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -237,4 +238,21 @@ public class PgRow implements Row {
         return column;
     }
 
+    @Override
+    public String toString() {
+        var builder = new StringBuilder("PgRow[");
+
+        int last = builder.length();
+        for (int i = 0; i < columns.length; i++) {
+            builder.append(columns[i].name());
+            builder.append("=");
+            builder.append(get(i));
+            last = builder.length();
+            builder.append(", ");
+        }
+        builder.setLength(last);
+        builder.append("]");
+
+        return builder.toString();
+    }
 }
