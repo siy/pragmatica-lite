@@ -220,8 +220,16 @@ public interface Promise<T> {
         return new PromiseImpl<>(Result.success(value));
     }
 
+    static <T> Promise<T> ok(T value) {
+        return successful(value);
+    }
+
     static <T> Promise<T> failed(Cause cause) {
         return new PromiseImpl<>(Result.failure(cause));
+    }
+
+    static <T> Promise<T> err(Cause cause) {
+        return failed(cause);
     }
 
     static <T> Promise<T> promise(Consumer<Promise<T>> consumer) {

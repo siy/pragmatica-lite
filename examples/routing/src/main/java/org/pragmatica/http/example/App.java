@@ -22,7 +22,7 @@ public class App {
 
     public static HttpServer buildServer() {
         return HttpServer
-            .with(HttpServerConfiguration.allDefaults().withPort(8000))
+            .httpServerWith(HttpServerConfiguration.defaultConfiguration())
             .serve(
                 //Full description
                 get("/hello1")

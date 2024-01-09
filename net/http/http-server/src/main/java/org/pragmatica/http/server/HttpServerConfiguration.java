@@ -12,16 +12,16 @@ import java.net.InetAddress;
 import static org.pragmatica.lang.Option.none;
 import static org.pragmatica.lang.Option.some;
 
-//TODO: support for HTTP/2, compression,
+//TODO: support for HTTP/2, compression, WebSocket, SSE, etc.
 @SuppressWarnings("unused")
 public interface HttpServerConfiguration {
     int DEFAULT_PORT = 8000;
     int DEFAULT_RECEIVE_BUFFER_SIZE = 32768; // 32KB
-    int DEFAULT_SEND_BUFFER_SIZE = 1048576; // 1MB
-    int DEFAULT_MAX_CONTENT_LEN = 2097152; // 2MB
+    int DEFAULT_SEND_BUFFER_SIZE = 65536; // 64KB
+    int DEFAULT_MAX_CONTENT_LEN = 262144; // 256KB
     boolean DEFAULT_NATIVE_TRANSPORT = true;
 
-    static HttpServerConfiguration allDefaults() {
+    static HttpServerConfiguration defaultConfiguration() {
         record configuration(int port, Option<InetAddress> bindAddress, int sendBufferSize,
                              int receiveBufferSize, int maxContentLen, boolean nativeTransport,
                              Option<CustomCodec> customCodec,

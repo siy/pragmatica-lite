@@ -15,7 +15,7 @@ import static org.pragmatica.lang.Result.unitResult;
 
 class HttpServerTest {
     private static final Logger log = LoggerFactory.getLogger(HttpServerTest.class);
-    private static final HttpServer server = HttpServer.with(HttpServerConfiguration.allDefaults().withPort(8000))
+    private static final HttpServer server = HttpServer.httpServerWith(HttpServerConfiguration.defaultConfiguration().withPort(8000))
                                                        .serve(Route.get("/one").textWith(() -> "one"),
                                                             Route.get("/two").textWith(() -> "two"),
                                                             Route.get("/three").textWith(() -> "three"));

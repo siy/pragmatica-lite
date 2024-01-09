@@ -15,6 +15,7 @@
     <modules>
         <module>routing</module>
         <module>record-io</module>
+        <module>hello-world</module>
     </modules>
 
     <dependencyManagement>
