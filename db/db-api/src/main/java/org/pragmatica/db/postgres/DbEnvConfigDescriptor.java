@@ -23,9 +23,17 @@ public class DbEnvConfigDescriptor implements RecordDescriptor<DbEnvConfig> {
                 password ->
                     maxConnections ->
                         maxStatements ->
-                            validationQuery ->
-                                encoding ->
-                                    () -> new DbEnvConfig(url, username, password, maxConnections, maxStatements, validationQuery, encoding);
+                            useSsl ->
+                                validationQuery ->
+                                    encoding ->
+                                        () -> new DbEnvConfig(url,
+                                                              username,
+                                                              password,
+                                                              maxConnections,
+                                                              maxStatements,
+                                                              useSsl,
+                                                              validationQuery,
+                                                              encoding);
     }
 
     interface DbEnvConfigBuilder {
@@ -44,7 +52,11 @@ public class DbEnvConfigDescriptor implements RecordDescriptor<DbEnvConfig> {
         }
 
         interface MaxStatements {
-            ValidationQuery maxStatements(int maxStatements);
+            UseSsl maxStatements(int maxStatements);
+        }
+
+        interface UseSsl {
+            ValidationQuery useSsl(boolean useSsl);
         }
 
         interface ValidationQuery {
@@ -67,6 +79,7 @@ public class DbEnvConfigDescriptor implements RecordDescriptor<DbEnvConfig> {
                           mapping.get("password", new TypeToken<String>() {}),
                           mapping.get("maxConnections", new TypeToken<Integer>() {}),
                           mapping.get("maxStatements", new TypeToken<Integer>() {}),
+                          mapping.get("useSsl", new TypeToken<Boolean>() {}),
                           mapping.get("validationQuery", new TypeToken<Option<String>>() {}),
                           mapping.get("encoding", new TypeToken<Option<String>>() {}))
                      .map(DbEnvConfig::new);
@@ -89,6 +102,7 @@ public class DbEnvConfigDescriptor implements RecordDescriptor<DbEnvConfig> {
         tuple("password", new TypeToken<String>() {}),
         tuple("maxConnections", new TypeToken<Integer>() {}),
         tuple("maxStatements", new TypeToken<Integer>() {}),
+        tuple("useSsl", new TypeToken<Boolean>() {}),
         tuple("validationQuery", new TypeToken<Option<String>>() {}),
         tuple("encoding", new TypeToken<Option<String>>() {})
     );
@@ -99,6 +113,7 @@ public class DbEnvConfigDescriptor implements RecordDescriptor<DbEnvConfig> {
         tuple("password", new TypeToken<String>() {}, DbEnvConfig::password),
         tuple("maxConnections", new TypeToken<Integer>() {}, DbEnvConfig::maxConnections),
         tuple("maxStatements", new TypeToken<Integer>() {}, DbEnvConfig::maxStatements),
+        tuple("useSsl", new TypeToken<Boolean>() {}, DbEnvConfig::useSsl),
         tuple("validationQuery", new TypeToken<Option<String>>() {}, DbEnvConfig::validationQuery),
         tuple("encoding", new TypeToken<Option<String>>() {}, DbEnvConfig::encoding)
     );

@@ -1,8 +1,11 @@
 package org.pragmatica.db.postgres;
 
+import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.SqlException;
+import org.pragmatica.lang.Promise;
 
 import java.lang.StringTemplate.Processor;
+import java.util.Collection;
 
 public sealed interface Sql {
     Object[] EMPTY_VALUES = new Object[0];
@@ -10,10 +13,18 @@ public sealed interface Sql {
     String sql();
     Object[] values();
 
-    record Query(String sql, Object... values) implements Sql {}
+    record Query(String sql, Object... values) implements Sql {
+        public Promise<ResultSet> in(DbEnv env) {
+            return env.execute(this);
+        }
+    }
     record Script(String sql) implements Sql {
         public Object[] values() {
             return EMPTY_VALUES;
+        }
+
+        public Promise<Collection<ResultSet>> in(DbEnv env) {
+            return env.execute(this);
         }
     }
 

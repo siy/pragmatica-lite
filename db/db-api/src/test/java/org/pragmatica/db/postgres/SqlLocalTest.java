@@ -3,9 +3,9 @@ package org.pragmatica.db.postgres;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.uri.IRI;
-import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -17,21 +17,22 @@ import static org.pragmatica.db.postgres.Sql.DDL;
 import static org.pragmatica.db.postgres.Sql.QRY;
 import static org.pragmatica.lang.Option.none;
 
-class SqlTest {
-    static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
-        "postgres:15-alpine"
-    );
-
+// This test uses local environment with Postgres running on localhost with following configuration:
+// port: 5432
+// user: test
+// password: test123test321
+// database: test
+@Disabled
+class SqlLocalTest {
     static DbEnv dbEnv;
 
     @SuppressWarnings("deprecation")
     @BeforeAll
     static void start() {
-        postgres.start();
         dbEnv = DbEnv.with(new DbEnvConfig(
-            IRI.fromString(STR."postgres://localhost:\{postgres.getMappedPort(5432)}/\{postgres.getDatabaseName()}"),
-            postgres.getUsername(),
-            postgres.getPassword(),
+            IRI.fromString("postgres://localhost:5432/test"),
+            "test",
+            "test123test321",
             -1,
             10,
             false,
@@ -39,10 +40,10 @@ class SqlTest {
             none()
         ));
 
-        DDL."CREATE TABLE IF NOT EXISTS test (id INT, value VARCHAR(255))"
-            .in(dbEnv)
-            .await()
-            .unwrap();
+        DDL."""
+            DROP TABLE IF EXISTS test;
+            CREATE TABLE test (id INT PRIMARY KEY, value VARCHAR(255));
+            """.in(dbEnv).await().unwrap();
 
         var ids = List.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9).iterator();
         var values = List.of("zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine").iterator();
@@ -64,9 +65,15 @@ class SqlTest {
            .unwrap();
     }
 
+    @SuppressWarnings("deprecation")
     @AfterAll
     static void stop() {
-        postgres.stop();
+        DDL."DROP TABLE IF EXISTS test".in(dbEnv)
+                                       .await()
+                                       .unwrap();
+        dbEnv.close()
+             .await()
+             .unwrap();
     }
 
     @Test
@@ -130,7 +137,12 @@ class SqlTest {
 
         var freq = (int) (iterationsCount / ((end - start) / 1_000_000_000.0));
 
-        System.out.println(STR."Executed \{iterationsCount} queries in \{(end - start)
-                                                                         / 1_000_000} ms (\{freq} RPS), \{successes.get()} succeeded, \{failures.get()} failed");
+        System.out.println(
+            STR."""
+                Executed \{iterationsCount} queries in \{(end - start) / 1_000_000} ms
+                Requests per second \{freq}
+                Successful requests \{successes.get()}
+                Failed requests \{failures.get()} failed");
+                """);
     }
 }
