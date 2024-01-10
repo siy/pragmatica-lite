@@ -25,7 +25,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -206,9 +205,10 @@ public class PgRow implements Row {
         return getArray(getColumn(column).index(), arrayType);
     }
 
+    //TODO: does not work for known types, only for custom ones.
     @Override
     public <T> T get(int index, Class<T> type) {
-        return dataConverter.toObject(type, columns[index].type(), data.getValue(index));
+        return dataConverter.toObject(columns[index].type(), data.getValue(index), type);
     }
 
     @Override
@@ -217,7 +217,7 @@ public class PgRow implements Row {
     }
 
     public Object get(int index) {
-        return dataConverter.toObject(columns[index].type(), data.getValue(index));
+        return dataConverter.toObject(columns[index].type(), data.getValue(index), null);
     }
 
     public Object get(String column) {

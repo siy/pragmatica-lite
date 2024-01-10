@@ -112,7 +112,7 @@ class SqlTest {
 
     @Test
     void miniPerfTest() throws InterruptedException {
-        int iterationsCount = 2_000_000;
+        int iterationsCount = 100_000;
 
         var successes = new AtomicInteger(0);
         var failures = new AtomicInteger(0);

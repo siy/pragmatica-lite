@@ -2,6 +2,7 @@ package com.github.pgasync.conversion;
 
 import com.github.pgasync.Oid;
 import com.github.pgasync.net.Converter;
+import org.pragmatica.lang.Functions.Fn2;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -13,6 +14,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZonedDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -41,7 +43,7 @@ public class DataConverter {
     }
 
     public String toString(Oid oid, byte[] value) {
-        return value == null ? null : StringConversions.toString(oid, new String(value, encoding));
+        return value == null ? null : StringConversions.asString(oid, new String(value, encoding));
     }
 
     public Character toChar(Oid oid, byte[] value) {
@@ -82,11 +84,11 @@ public class DataConverter {
 
     //TODO: get rid of it
     public LocalDateTime toDate(Oid oid, byte[] value) {
-        return value == null ? null : TemporalConversions.toDate(oid, new String(value, encoding));
+        return value == null ? null : TemporalConversions.toLocalDateTime(oid, new String(value, encoding));
     }
 
     public LocalTime toTime(Oid oid, byte[] value) {
-        return value == null ? null : TemporalConversions.toTime(oid, new String(value, encoding));
+        return value == null ? null : TemporalConversions.toLocalTime(oid, new String(value, encoding));
     }
 
     public Instant toInstant(Oid oid, byte[] value) {
@@ -114,10 +116,10 @@ public class DataConverter {
             case INT2_ARRAY -> NumericConversions::toShort;
             case INT4_ARRAY -> NumericConversions::toInteger;
             case INT8_ARRAY -> NumericConversions::toLong;
-            case TEXT_ARRAY, CHAR_ARRAY, BPCHAR_ARRAY, VARCHAR_ARRAY -> StringConversions::toString;
+            case TEXT_ARRAY, CHAR_ARRAY, BPCHAR_ARRAY, VARCHAR_ARRAY -> StringConversions::asString;
             case NUMERIC_ARRAY, FLOAT4_ARRAY, FLOAT8_ARRAY -> NumericConversions::toBigDecimal;
             case TIMESTAMP_ARRAY, TIMESTAMPTZ_ARRAY -> TemporalConversions::toInstant;
-            case TIMETZ_ARRAY, TIME_ARRAY -> TemporalConversions::toTime;
+            case TIMETZ_ARRAY, TIME_ARRAY -> TemporalConversions::toLocalTime;
             case DATE_ARRAY -> TemporalConversions::toLocalDate;
             case BOOL_ARRAY -> BooleanConversions::toBoolean;
             case BYTEA_ARRAY -> (oide, svaluee) -> {
@@ -137,13 +139,6 @@ public class DataConverter {
         }
 
         return converter;
-    }
-
-    public <T> T toObject(Class<T> type, Oid oid, byte[] value) {
-        var converter = getConverter(type);
-
-        return value == null ? null
-                             : converter.to(oid, new String(value, encoding));
     }
 
     private String fromObject(Object o) {
@@ -188,8 +183,60 @@ public class DataConverter {
         return params;
     }
 
-    public Object toObject(Oid oid, byte[] value) {
-        return switch (oid) {
+    private static final Map<Class<?>, Fn2<?, Oid, String>> KNOWN_TYPES = new HashMap<>();
+
+    static {
+        KNOWN_TYPES.put(byte.class, NumericConversions::toByte);
+        KNOWN_TYPES.put(Byte.class, NumericConversions::toByte);
+        KNOWN_TYPES.put(char.class, StringConversions::toChar);
+        KNOWN_TYPES.put(Character.class, StringConversions::toChar);
+        KNOWN_TYPES.put(short.class, NumericConversions::toShort);
+        KNOWN_TYPES.put(Short.class, NumericConversions::toShort);
+        KNOWN_TYPES.put(int.class, NumericConversions::toInteger);
+        KNOWN_TYPES.put(Integer.class, NumericConversions::toInteger);
+        KNOWN_TYPES.put(long.class, NumericConversions::toLong);
+        KNOWN_TYPES.put(Long.class, NumericConversions::toLong);
+        KNOWN_TYPES.put(BigInteger.class, NumericConversions::toBigInteger);
+        KNOWN_TYPES.put(BigDecimal.class, NumericConversions::toBigDecimal);
+        KNOWN_TYPES.put(float.class, NumericConversions::toFloat);
+        KNOWN_TYPES.put(Float.class, NumericConversions::toFloat);
+        KNOWN_TYPES.put(double.class, NumericConversions::toDouble);
+        KNOWN_TYPES.put(Double.class, NumericConversions::toDouble);
+        KNOWN_TYPES.put(String.class, StringConversions::asString);
+        KNOWN_TYPES.put(LocalDate.class, TemporalConversions::toLocalDate);
+        KNOWN_TYPES.put(LocalTime.class, TemporalConversions::toLocalTime);
+        KNOWN_TYPES.put(LocalDateTime.class, TemporalConversions::toLocalDateTime);
+        KNOWN_TYPES.put(ZonedDateTime.class, TemporalConversions::toZonedDateTime);
+        KNOWN_TYPES.put(OffsetDateTime.class, TemporalConversions::toOffsetDateTime);
+        KNOWN_TYPES.put(Instant.class, TemporalConversions::toInstant);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T toObject(Oid oid, byte[] value, Class<T> type) {
+        if (value == null) {
+            return null;
+        }
+
+        if (type != null) {
+            // Try custom converter first
+            var converter = (Converter<T>) typeToConverter.get(type);
+
+            if (converter != null) {
+                return converter.to(oid, new String(value, encoding));
+            }
+
+            // Try known converter
+            var knownConverter = KNOWN_TYPES.get(type);
+
+            if (knownConverter != null) {
+                return (T) knownConverter.apply(oid, new String(value, encoding));
+            }
+
+            throw new IllegalArgumentException(STR."Unknown conversion target: \{type}");
+        }
+
+        // Convert by oid
+        return (T) switch (oid) {
             case null -> null;
             case TEXT, CHAR, BPCHAR, VARCHAR -> toString(oid, value);
             case INT2 -> toShort(oid, value);
@@ -205,12 +252,8 @@ public class DataConverter {
             case INT2_ARRAY, INT4_ARRAY, INT8_ARRAY, NUMERIC_ARRAY, FLOAT4_ARRAY, FLOAT8_ARRAY,
                 TEXT_ARRAY, CHAR_ARRAY, BPCHAR_ARRAY, VARCHAR_ARRAY,
                 TIMESTAMP_ARRAY, TIMESTAMPTZ_ARRAY, TIMETZ_ARRAY, TIME_ARRAY, BOOL_ARRAY -> toArray(Object[].class, oid, value);
-            default -> toConvertible(oid, value);
+            default -> throw new IllegalArgumentException(STR."Unknown conversion target: \{oid}");
         };
-    }
-
-    private Object toConvertible(Oid oid, byte[] value) {
-        throw new IllegalStateException(STR."Unknown conversion source: \{oid}");
     }
 
     public Oid[] assumeTypes(Object... params) {

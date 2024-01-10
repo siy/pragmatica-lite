@@ -55,6 +55,13 @@ final class NumericConversions {
         };
     }
 
+    static Float toFloat(Oid oid, String value) {
+        return switch (oid) {
+            case UNSPECIFIED, INT2, INT4, INT8, NUMERIC, FLOAT4 -> Float.valueOf(value);
+            default -> returnError(oid, "Float");
+        };
+    }
+
     static Double toDouble(Oid oid, String value) {
         return switch (oid) {
             case UNSPECIFIED, INT2, INT4, INT8, NUMERIC, FLOAT4, FLOAT8 -> Double.valueOf(value);
