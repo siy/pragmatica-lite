@@ -2,6 +2,7 @@ package org.pragmatica.config.api;
 
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Result;
+import org.pragmatica.lang.type.KeyToValue;
 import org.pragmatica.lang.type.TypeToken;
 
 import java.util.Map;

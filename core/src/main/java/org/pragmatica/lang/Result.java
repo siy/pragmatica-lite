@@ -447,22 +447,6 @@ public sealed interface Result<T> permits Success, Failure {
     }
 
     /**
-     * Transform list of {@link Result} instances into {@link Result} with list of values.
-     *
-     * @param resultList input list
-     *
-     * @return success instance if all {@link Result} instances in list are successes or failure instance with any instances in list is a failure
-     */
-    static <T> Result<List<T>> allOf(List<Result<T>> resultList) {
-        var failure = new Cause[1];
-        var values = new ArrayList<T>();
-
-        resultList.forEach(val -> val.fold(f -> failure[0] = f, values::add));
-
-        return failure[0] != null ? failure(failure[0]) : success(values);
-    }
-
-    /**
      * Find and return first success instance among provided.
      *
      * @param first   first input result
@@ -508,6 +492,22 @@ public sealed interface Result<T> permits Success, Failure {
         }
 
         return first;
+    }
+
+    /**
+     * Transform list of {@link Result} instances into {@link Result} with list of values.
+     *
+     * @param results input stream of {@link Result} instances
+     *
+     * @return success instance if all {@link Result} instances in list are successes or failure instance with any instances in list is a failure
+     */
+    static <T> Result<List<T>> allOf(Stream<Result<T>> results) {
+        var failure = new Cause[1];
+        var values = new ArrayList<T>();
+
+        results.forEach(val -> val.fold(f -> failure[0] = f, values::add));
+
+        return failure[0] != null ? failure(failure[0]) : success(values);
     }
 
     @SafeVarargs

@@ -81,11 +81,13 @@ class SqlTest {
     @Test
     public void valuesAreSelected() {
         var id = 3;
+
         dbEnv.execute(QRY."SELECT * FROM test WHERE id = \{id}")
              .await()
              .onFailure(System.out::println)
              .onFailureRun(Assertions::fail)
              .onSuccess(System.out::println)
+             .map(ResultAccessor::resultSet)
              .onSuccess(rs -> {
                  assertEquals(1, rs.size());
                  assertEquals(3, rs.index(0).getInt("id"));
@@ -103,10 +105,30 @@ class SqlTest {
             .onFailure(System.out::println)
             .onFailureRun(Assertions::fail)
             .onSuccess(System.out::println)
+            .map(ResultAccessor::resultSet)
             .onSuccess(rs -> {
                 assertEquals(1, rs.size());
                 assertEquals(3, rs.index(0).getInt("id"));
                 assertEquals("three", rs.index(0).getString("value"));
+            });
+    }
+
+    @Test
+    void recordInstancesCanBeRetrieved() {
+        QRY."SELECT * FROM test"
+            .in(dbEnv)
+            .await()
+            .onFailure(System.out::println)
+            .onFailureRun(Assertions::fail)
+            .onSuccess(ra -> assertEquals(10, ra.size()))
+            .flatMap(ra -> ra.as(TestRecordTemplate.INSTANCE))
+            .onFailureRun(Assertions::fail)
+            .map(stream -> stream.peek(System.out::println))
+            .onSuccess(stream -> {
+                // Do not use count() collector here, it will optimize out the peek() call above
+                var count = new AtomicInteger(0);
+                stream.forEach(_ -> count.incrementAndGet());
+                assertEquals(10, count.get());
             });
     }
 

@@ -11,6 +11,10 @@ public sealed interface SqlError extends Result.Cause {
     record BadAuthenticationSequence(String message) implements SqlError {}
     record CommunicationError(String message) implements SqlError {}
 
+    record ColumnNotFound(String message) implements SqlError {}
+    record InconvertibleColumnType(String message) implements SqlError {}
+    record UnableToConvertColumnValue(String message) implements SqlError {}
+
     record ServerResponse(String code, String level, String message) {}
 
     @SuppressWarnings("unused")

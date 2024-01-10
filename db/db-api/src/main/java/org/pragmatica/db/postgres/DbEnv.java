@@ -1,8 +1,8 @@
 package org.pragmatica.db.postgres;
 
+import com.github.pgasync.PgResultSet;
 import com.github.pgasync.SqlError;
 import com.github.pgasync.net.Connectible;
-import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.SqlException;
 import com.github.pgasync.net.netty.NettyConnectibleBuilder;
 import org.pragmatica.db.postgres.Sql.Query;
@@ -22,9 +22,9 @@ import static org.pragmatica.lang.Result.all;
 import static org.pragmatica.lang.Result.success;
 
 public interface DbEnv extends AsyncCloseable {
-    Promise<ResultSet> execute(Query query);
+    Promise<ResultAccessor> execute(Query query);
 
-    Promise<Collection<ResultSet>> execute(Script script);
+    Promise<Collection<ResultAccessor>> execute(Script script);
 
     static DbEnv with(DbEnvConfig configuration) {
         record env(DbEnvConfig configuration, Connectible connectible) implements DbEnv {
@@ -39,15 +39,23 @@ public interface DbEnv extends AsyncCloseable {
             }
 
             @Override
-            public Promise<ResultSet> execute(Query query) {
+            public Promise<ResultAccessor> execute(Query query) {
                 return connectible().completeQuery(query.sql(), query.values())
-                                    .asPromise();
+                                    .asPromise()
+                                    .map(ResultAccessor::wrap);
             }
 
             @Override
-            public Promise<Collection<ResultSet>> execute(Script script) {
+            public Promise<Collection<ResultAccessor>> execute(Script script) {
                 return connectible().completeScript(script.sql())
-                                    .asPromise();
+                                    .asPromise()
+                                    .map(env::wrap);
+            }
+
+            private static Collection<ResultAccessor> wrap(Collection<PgResultSet> collection) {
+                return collection.stream()
+                                 .map(ResultAccessor::wrap)
+                                 .toList();
             }
 
             static Mapper3<String, String, Integer> validate(IRI url) {

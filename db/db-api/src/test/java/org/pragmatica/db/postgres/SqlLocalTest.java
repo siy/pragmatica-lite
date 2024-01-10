@@ -93,6 +93,7 @@ class SqlLocalTest {
              .onFailure(System.out::println)
              .onFailureRun(Assertions::fail)
              .onSuccess(System.out::println)
+             .map(ResultAccessor::resultSet)
              .onSuccess(rs -> {
                  assertEquals(1, rs.size());
                  assertEquals(3, rs.index(0).getInt("id"));
@@ -110,6 +111,7 @@ class SqlLocalTest {
             .onFailure(System.out::println)
             .onFailureRun(Assertions::fail)
             .onSuccess(System.out::println)
+            .map(ResultAccessor::resultSet)
             .onSuccess(rs -> {
                 assertEquals(1, rs.size());
                 assertEquals(3, rs.index(0).getInt("id"));

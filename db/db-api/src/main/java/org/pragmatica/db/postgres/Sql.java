@@ -1,6 +1,5 @@
 package org.pragmatica.db.postgres;
 
-import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.SqlException;
 import org.pragmatica.lang.Promise;
 
@@ -14,7 +13,7 @@ public sealed interface Sql {
     Object[] values();
 
     record Query(String sql, Object... values) implements Sql {
-        public Promise<ResultSet> in(DbEnv env) {
+        public Promise<ResultAccessor> in(DbEnv env) {
             return env.execute(this);
         }
     }
@@ -23,7 +22,7 @@ public sealed interface Sql {
             return EMPTY_VALUES;
         }
 
-        public Promise<Collection<ResultSet>> in(DbEnv env) {
+        public Promise<Collection<ResultAccessor>> in(DbEnv env) {
             return env.execute(this);
         }
     }

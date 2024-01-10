@@ -18,6 +18,10 @@ import com.github.pgasync.conversion.DataConverter;
 import com.github.pgasync.message.backend.DataRow;
 import com.github.pgasync.net.Row;
 import com.github.pgasync.net.SqlException;
+import org.pragmatica.lang.Option;
+import org.pragmatica.lang.Result;
+import org.pragmatica.lang.type.KeyToValue;
+import org.pragmatica.lang.type.TypeToken;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -27,12 +31,14 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Map;
 
+import static org.pragmatica.lang.Option.option;
+
 /**
  * Result row, uses {@link DataConverter} for all conversions.
  *
  * @author Antti Laisi
  */
-public class PgRow implements Row {
+public class PgRow implements Row, KeyToValue {
     private final DataRow data;
     private final DataConverter dataConverter;
     private final Map<String, PgColumn> columnsByName;
@@ -222,6 +228,25 @@ public class PgRow implements Row {
 
     public Object get(String column) {
         return get(getColumn(column).index());
+    }
+
+    //TODO: arrays are not supported yet
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> Result<T> get(String key, TypeToken<T> typeToken) {
+        var column = columnsByName.get(key);
+
+        if (column == null) {
+            return new SqlError.ColumnNotFound(STR."Unknown column '\{key}'").result();
+        }
+
+        if (typeToken.rawType().equals(Option.class)) {
+            var value = typeToken.typeArgument(0)
+                                 .map(cls -> get(column.index(), cls));
+            return Result.success((T) option(value));
+        } else {
+            return Result.success(get(column.index(), (Class<T>) typeToken.rawType()));
+        }
     }
 
     private PgColumn getColumn(String name) {
