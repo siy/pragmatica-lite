@@ -23,6 +23,7 @@ import org.pragmatica.lang.Result.Success;
 import org.pragmatica.lang.utils.Causes;
 
 import java.util.Objects;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,6 +37,7 @@ class ResultTest {
     void successResultsAreEqualIfValueEqual() {
         assertEquals(Result.success("123"), Result.success(123).map(Objects::toString));
         assertNotEquals(Result.success("321"), Result.success(123).map(Objects::toString));
+        assertEquals(Result.success(List.of("123")), Result.success(List.of("123")));
     }
 
     @Test
