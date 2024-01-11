@@ -24,6 +24,8 @@ public interface ResultAccessor {
         return resultSet().stream(template);
     }
 
+    //TODO: asCount()
+
     static ResultAccessor wrap(PgResultSet resultSet) {
         return () -> resultSet;
     }

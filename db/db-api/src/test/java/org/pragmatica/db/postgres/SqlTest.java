@@ -4,6 +4,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.pragmatica.lang.type.FieldNames;
+import org.pragmatica.lang.type.FieldValues;
 import org.pragmatica.uri.IRI;
 import org.testcontainers.containers.PostgreSQLContainer;
 
@@ -11,6 +13,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.pragmatica.db.postgres.Sql.DDL;
@@ -39,7 +42,7 @@ class SqlTest {
             none()
         ));
 
-        DDL."CREATE TABLE IF NOT EXISTS test (id INT, value VARCHAR(255))"
+        DDL."CREATE TABLE IF NOT EXISTS test (id INT PRIMARY KEY, value VARCHAR(255) NOT NULL)"
             .in(dbEnv)
             .await()
             .unwrap();
@@ -130,6 +133,33 @@ class SqlTest {
                 stream.forEach(_ -> count.incrementAndGet());
                 assertEquals(10, count.get());
             });
+    }
+
+    @Test
+    void recordsCanBeInserted() {
+        var newInstance = TestRecordTemplate.builder()
+                                            .id(15)
+                                            .value("fifteen")
+                                            .build();
+
+        var columns = TestRecordTemplate.INSTANCE.fieldNames();
+        var values = TestRecordTemplate.INSTANCE.fieldValues(newInstance);
+
+        QRY."INSERT INTO test (\{columns}) VALUES (\{values})"
+            .in(dbEnv)
+            .await()
+            .onFailure(System.out::println)
+            .onFailureRun(Assertions::fail);
+
+        QRY."SELECT * FROM test WHERE id = \{newInstance.id()}"
+            .in(dbEnv)
+            .await()
+            .onFailureRun(Assertions::fail)
+            .flatMap(ra -> ra.as(TestRecordTemplate.INSTANCE)
+                             .map(Stream::toList))
+            .onSuccess(list -> assertEquals(1, list.size()))
+            .onSuccess(list -> assertEquals(newInstance, list.getFirst()))
+            .onSuccess(list -> list.forEach(System.out::println));
     }
 
     @Test

@@ -86,12 +86,12 @@ public interface DbEnvConfigTemplate extends RecordTemplate<DbEnvConfig> {
     }
 
     @Override
-    default Stream<Tuple2<String, TypeToken<?>>> fields() {
+    default Stream<Tuple2<String, TypeToken<?>>> fieldDescriptors() {
         return FIELDS.stream();
     }
 
     @Override
-    default Stream<Tuple3<String, TypeToken<?>, ?>> values(DbEnvConfig record) {
+    default Stream<Tuple3<String, TypeToken<?>, ?>> valueDescriptors(DbEnvConfig record) {
         return VALUE_EXTRACTORS.stream()
                                .map(tuple -> tuple.map((name, type, fn) -> tuple(name, type, fn.apply(record))));
     }
