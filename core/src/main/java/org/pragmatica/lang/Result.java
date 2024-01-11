@@ -357,6 +357,11 @@ public sealed interface Result<T> permits Success, Failure {
         return map(Unit::unit);
     }
 
+    default Promise<T> toPromise() {
+        return Promise.resolved(this);
+    }
+
+
     Result<Unit> UNIT_RESULT = success(Unit.aUnit());
 
     static Result<Unit> unitResult() {
