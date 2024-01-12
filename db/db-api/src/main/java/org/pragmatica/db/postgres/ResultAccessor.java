@@ -1,6 +1,7 @@
 package org.pragmatica.db.postgres;
 
 import com.github.pgasync.PgResultSet;
+import com.github.pgasync.SqlError;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.RecordTemplate;
 
@@ -24,9 +25,25 @@ public interface ResultAccessor {
         return resultSet().stream(template);
     }
 
+    default <T extends Record> Result<T> asSingle(RecordTemplate<T> template) {
+        return resultSet().stream(template)
+                          .map(Stream::toList)
+                          .flatMap(list -> {
+                              if (list.isEmpty()) {
+                                  return new SqlError.NoResultsReturned("Response contains no records").result();
+                              }
+                              if (list.size() > 1) {
+                                  return new SqlError.TooManyResultsReturned("Response contains more than one record").result();
+                              }
+                              return Result.success(list.getFirst());
+                          });
+    }
+
     //TODO: asCount()
 
     static ResultAccessor wrap(PgResultSet resultSet) {
         return () -> resultSet;
     }
+
+
 }

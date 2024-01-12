@@ -25,15 +25,14 @@ public interface DbEnvConfigTemplate extends RecordTemplate<DbEnvConfig> {
                         maxStatements ->
                             useSsl ->
                                 validationQuery ->
-                                    encoding ->
-                                        () -> new DbEnvConfig(url,
-                                                              username,
-                                                              password,
-                                                              maxConnections,
-                                                              maxStatements,
-                                                              useSsl,
-                                                              validationQuery,
-                                                              encoding);
+                                    encoding -> new DbEnvConfig(url,
+                                                                username,
+                                                                password,
+                                                                maxConnections,
+                                                                maxStatements,
+                                                                useSsl,
+                                                                validationQuery,
+                                                                encoding);
     }
 
     interface DbEnvConfigBuilder {
@@ -64,11 +63,7 @@ public interface DbEnvConfigTemplate extends RecordTemplate<DbEnvConfig> {
         }
 
         interface Encoding {
-            Build encoding(Option<String> encoding);
-        }
-
-        interface Build {
-            DbEnvConfig build();
+            DbEnvConfig encoding(Option<String> encoding);
         }
     }
 

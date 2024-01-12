@@ -21,18 +21,14 @@ public interface TestRecordTemplate extends RecordTemplate<TestRecord> {
     TestRecordTemplate INSTANCE = new TestRecordTemplate() {};
 
     static TestRecordBuilder builder() {
-        return id -> value -> () -> new TestRecord(id, value);
+        return id -> value -> new TestRecord(id, value);
     }
 
     interface TestRecordBuilder {
         Value id(int id);
 
         interface Value {
-            Build value(String value);
-        }
-
-        interface Build {
-            TestRecord build();
+            TestRecord value(String value);
         }
     }
 

@@ -22,8 +22,8 @@ import org.pragmatica.lang.Result.Failure;
 import org.pragmatica.lang.Result.Success;
 import org.pragmatica.lang.utils.Causes;
 
-import java.util.Objects;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

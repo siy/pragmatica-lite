@@ -9,7 +9,6 @@ import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import org.pragmatica.http.HttpError;
 import org.pragmatica.http.codec.CustomCodec;
-import org.pragmatica.lang.type.TypeToken;
 import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.http.server.HttpServerConfiguration;
 import org.pragmatica.http.server.routing.Redirect;
@@ -19,6 +18,7 @@ import org.pragmatica.http.util.Utils;
 import org.pragmatica.id.ulid.ULID;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
+import org.pragmatica.lang.type.TypeToken;
 import org.slf4j.MDC;
 
 import java.nio.charset.StandardCharsets;

@@ -4,8 +4,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.pragmatica.lang.type.FieldNames;
-import org.pragmatica.lang.type.FieldValues;
 import org.pragmatica.uri.IRI;
 import org.testcontainers.containers.PostgreSQLContainer;
 
@@ -139,8 +137,7 @@ class SqlTest {
     void recordsCanBeInserted() {
         var newInstance = TestRecordTemplate.builder()
                                             .id(15)
-                                            .value("fifteen")
-                                            .build();
+                                            .value("fifteen");
 
         var columns = TestRecordTemplate.INSTANCE.fieldNames();
         var values = TestRecordTemplate.INSTANCE.fieldValues(newInstance);

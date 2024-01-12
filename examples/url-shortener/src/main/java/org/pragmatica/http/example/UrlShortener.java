@@ -1,28 +1,52 @@
 package org.pragmatica.http.example;
 
 
+import org.pragmatica.db.postgres.DbEnv;
+import org.pragmatica.db.postgres.DbEnvConfig;
 import org.pragmatica.http.server.routing.RequestContext;
 import org.pragmatica.id.nanoid.NanoId;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.TypeToken;
+import org.pragmatica.uri.IRI;
+
+import java.time.LocalDateTime;
 
 import static org.pragmatica.http.server.HttpServer.httpServerWith;
 import static org.pragmatica.http.server.HttpServerConfiguration.defaultConfiguration;
-import static org.pragmatica.http.server.routing.Route.get;
+import static org.pragmatica.http.server.routing.Route.post;
+import static org.pragmatica.lang.Option.none;
 
+//TODO: make configuration loadable
 public class UrlShortener {
     private static final int MAX_URL_LENGTH = 250;
     private static final int ID_LENGTH = 10;
 
-    public static void main(String[] args) {
-        new UrlShortener().run(args);
+    private final ShortenedUrlRepository repository;
+
+    private UrlShortener(String[] args) {
+        var dbEnv = DbEnv.with(new DbEnvConfig(
+            IRI.fromString("postgres://localhost:5432/urlshortener"),
+            "urlshortener",
+            "urlshortener",
+            -1,
+            10,
+            false,
+            none(),
+            none()
+        ));
+
+        repository = () -> dbEnv;
     }
 
-    private void run(String[] args) {
+    public static void main(String[] args) {
+        new UrlShortener(args).run();
+    }
+
+    private void run() {
         httpServerWith(defaultConfiguration().withPort(3000))
             .serveNow(
-                get("/shorten").with(this::shortenUrl).asText()
+                post("/shorten").with(this::shortenUrl).asText()
             );
     }
 
@@ -34,15 +58,17 @@ public class UrlShortener {
     }
 
     private Promise<UrlShortenerResponse> shortenAndStoreUrl(UrlShortenerRequest urlShortenerRequest) {
-        var shortenedUrl = calculateShortUrl(urlShortenerRequest.srcUrl());
+        var shortenedUrl = STR."http://test.short/\{NanoId.secureNanoId(ID_LENGTH)}";
+
+        var record = ShortenedUrlTemplate.builder()
+                                         .id(shortenedUrl)
+                                         .srcUrl(urlShortenerRequest.srcUrl())
+                                         .created(LocalDateTime.now())
+                                         .lastAccessed(LocalDateTime.now());
 
 
-
-        return null;
-    }
-
-    private String calculateShortUrl(String source) {
-        return STR."http://test.short/\{NanoId.secureNanoId(ID_LENGTH)}";
+        return repository.create(record)
+                         .map(UrlShortenerResponse::fromShortenedUrl);
     }
 
     private Result<UrlShortenerRequest> validateRequest(UrlShortenerRequest urlShortenerRequest) {

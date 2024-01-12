@@ -1,6 +1,5 @@
 package org.pragmatica.config.api;
 
-import org.pragmatica.lang.Functions;
 import org.pragmatica.lang.Functions.Fn0;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Result;

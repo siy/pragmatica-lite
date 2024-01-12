@@ -100,7 +100,7 @@ public interface Promise<T> {
     Promise<T> onResult(Consumer<Result<T>> action);
 
     default <U> Promise<U> map(Fn1<U, ? super T> transformation) {
-        return mapResult(result -> result.map(transformation));
+        return replaceResult(result -> result.map(transformation));
     }
 
     default <U> Promise<U> flatMap(Fn1<Promise<U>, ? super T> transformation) {
@@ -111,7 +111,11 @@ public interface Promise<T> {
         return map(_ -> transformation.get());
     }
 
-    default <U> Promise<U> mapResult(Fn1<Result<U>, Result<T>> transformation) {
+    default <U> Promise<U> mapResult(Fn1<Result<U>, T> transformation) {
+        return replaceResult(result -> result.flatMap(transformation));
+    }
+
+    default <U> Promise<U> replaceResult(Fn1<Result<U>, Result<T>> transformation) {
         return fold(result -> Promise.resolved(transformation.apply(result)));
     }
 
