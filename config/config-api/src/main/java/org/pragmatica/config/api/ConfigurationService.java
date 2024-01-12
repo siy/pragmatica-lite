@@ -46,6 +46,4 @@ public interface ConfigurationService {
      * @param listener The listener to be called when a parameter with the given prefix changes.
      */
     void listen(ParameterKey prefix, Consumer<ParameterKey> listener);
-
-    List<String> supportedExtensions();
 }

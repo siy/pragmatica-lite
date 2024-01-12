@@ -16,7 +16,7 @@
         <module>config-hocon</module>
         <module>config-properties</module>
         <module>config-toml</module>
-        <module>config-env</module>
+        <module>config-yaml</module>
     </modules>
 
     <dependencyManagement>

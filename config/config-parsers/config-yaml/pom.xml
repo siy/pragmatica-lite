@@ -9,6 +9,6 @@
         <version>0.1.0</version>
     </parent>
 
-    <artifactId>config-env</artifactId>
+    <artifactId>config-yaml</artifactId>
     <packaging>jar</packaging>
 </project>
