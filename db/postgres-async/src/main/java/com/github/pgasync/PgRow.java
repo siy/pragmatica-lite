@@ -233,7 +233,8 @@ public class PgRow implements Row, KeyToValue {
     //TODO: arrays are not supported yet
     @SuppressWarnings("unchecked")
     @Override
-    public <T> Result<T> get(String key, TypeToken<T> typeToken) {
+    public <T> Result<T> get(String prefix, String key, TypeToken<T> typeToken) {
+        // Prefix is always empty for mapping of rows to records, so just ignore it
         var column = columnsByName.get(key);
 
         if (column == null) {

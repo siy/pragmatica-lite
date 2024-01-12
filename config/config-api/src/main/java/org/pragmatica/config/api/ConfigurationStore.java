@@ -25,19 +25,21 @@ public final class ConfigurationStore implements KeyToValue {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> Result<T> get(String key, TypeToken<T> typeToken) {
+    public <T> Result<T> get(String prefix, String key, TypeToken<T> typeToken) {
+        var effectiveKey = prependPrefix(prefix, key);
+
         if (typeToken.rawType() == Option.class) {
-            if (sourceData.get(key).isFailure()) {
+            if (sourceData.get(effectiveKey).isFailure()) {
                 return (Result<T>) Result.success(Option.none());
             } else {
                 return (Result<T>) typeToken.subType(0)
                                             .toResult(DataConversionError.cantRetrieveSubTypeFrom(typeToken))
-                                            .flatMap(subType -> get(key, subType))
+                                            .flatMap(subType -> get(prefix, key, subType))
                                             .map(Option::option);
             }
         }
 
-        return sourceData.get(key)
+        return sourceData.get(effectiveKey)
                          .flatMap(value -> converter.convert(typeToken, value));
     }
 }

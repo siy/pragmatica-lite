@@ -12,7 +12,6 @@ import java.util.stream.Stream;
 import static org.pragmatica.lang.Promise.resolved;
 import static org.pragmatica.lang.Promise.successful;
 
-//TODO: rework API
 //TODO: better support for path parameter extraction
 @SuppressWarnings("unused")
 public interface Route<T> extends RouteSource {

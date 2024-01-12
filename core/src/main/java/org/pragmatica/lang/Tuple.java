@@ -89,6 +89,10 @@ public interface Tuple {
         default int size() {
             return 3;
         }
+
+        T1 first();
+
+        T3 last();
     }
 
     interface Tuple4<T1, T2, T3, T4> extends Tuple {
@@ -219,6 +223,16 @@ public interface Tuple {
                 } catch (Throwable throwable) {
                     return new CoreError.Exception(throwable).result();
                 }
+            }
+
+            @Override
+            public T1 first() {
+                return param1();
+            }
+
+            @Override
+            public T3 last() {
+                return param3();
             }
         }
 
