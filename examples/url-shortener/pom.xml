@@ -91,7 +91,7 @@
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>org.pragmatica.http.example.UrlShortener</mainClass>
+                                    <mainClass>org.pragmatica.http.example.urlshortener.UrlShortener</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

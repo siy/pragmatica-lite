@@ -1,6 +1,8 @@
-package org.pragmatica.http.example;
+package org.pragmatica.http.example.urlshortener.persistence;
 
 import org.pragmatica.db.postgres.DbEnv;
+import org.pragmatica.http.example.urlshortener.domain.entity.ShortenedUrl;
+import org.pragmatica.http.example.urlshortener.persistence.template.ShortenedUrlTemplate;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 

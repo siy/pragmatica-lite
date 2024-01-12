@@ -107,6 +107,10 @@ public interface Promise<T> {
         return fold(result -> result.fold(Promise::<U>failed, transformation));
     }
 
+    default Promise<T> mapError(Fn1<Cause, Cause> transformation) {
+        return replaceResult(result -> result.mapError(transformation));
+    }
+
     default <U> Promise<U> replace(Supplier<U> transformation) {
         return map(_ -> transformation.get());
     }

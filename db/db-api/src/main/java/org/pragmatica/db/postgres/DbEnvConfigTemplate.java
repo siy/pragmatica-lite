@@ -37,6 +37,9 @@ public interface DbEnvConfigTemplate extends RecordTemplate<DbEnvConfig> {
 
     interface DbEnvConfigBuilder {
         Username url(IRI url);
+        default Username url(String url) {
+            return url(IRI.fromString(url));
+        }
 
         interface Username {
             Password username(String username);

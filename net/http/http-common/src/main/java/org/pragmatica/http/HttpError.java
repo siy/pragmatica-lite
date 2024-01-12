@@ -36,4 +36,9 @@ public interface HttpError extends Cause {
 
         return new httpError(status, source);
     }
+
+    // Shortcuts for frequent cases (WIP)
+    static HttpError unprocessableEntity(Cause source) {
+        return httpError(HttpStatus.UNPROCESSABLE_ENTITY, source);
+    }
 }
