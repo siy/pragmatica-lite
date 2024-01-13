@@ -1,5 +1,9 @@
 package org.pragmatica.config.api;
 
+import org.pragmatica.config.provider.CommandLineConfigDataProvider;
+import org.pragmatica.config.provider.EnvironmentConfigDataProvider;
+import org.pragmatica.config.provider.SystemPropertiesConfigDataProvider;
+
 /**
  * Descriptors for configuration sources. Note that sources which deal with files (e.g. {@link File} and {@link Classpath}) should not specify
  * extension. The list of extensions is defined dynamically by loading available {@link ConfigFormatReader}s.
@@ -15,14 +19,30 @@ public sealed interface SourceDescriptor {
         record Classpath(String path) implements FileSourceDescriptor {}
 
         //TODO: implement Url
-//        record Url(String url) implements FileBasedSourceDescriptor {}
+        record Url(String url) implements FileSourceDescriptor {}
     }
 
     sealed interface EnvironmentSourceDescriptor extends SourceDescriptor {
-        record Environment() implements EnvironmentSourceDescriptor {}
+        ConfigDataProvider provider();
+        record Environment() implements EnvironmentSourceDescriptor {
+            @Override
+            public ConfigDataProvider provider() {
+                return EnvironmentConfigDataProvider.INSTANCE;
+            }
+        }
 
-        record SystemProperties() implements EnvironmentSourceDescriptor {}
+        record SystemProperties() implements EnvironmentSourceDescriptor {
+            @Override
+            public ConfigDataProvider provider() {
+                return SystemPropertiesConfigDataProvider.INSTANCE;
+            }
+        }
 
-        record CommandLine() implements EnvironmentSourceDescriptor {}
+        record CommandLine(String[] arguments) implements EnvironmentSourceDescriptor {
+            @Override
+            public CommandLineConfigDataProvider provider() {
+                return this::arguments;
+            }
+        }
     }
 }

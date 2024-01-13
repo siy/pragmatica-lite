@@ -16,6 +16,8 @@ import static org.pragmatica.lang.Tuple.tuple;
  * API.
  */
 public interface EnvironmentConfigDataProvider extends ConfigDataProvider {
+    EnvironmentConfigDataProvider INSTANCE = new EnvironmentConfigDataProvider() {};
+
     @Override
     default Result<StringMap> read() {
         var map = System.getenv().entrySet().stream()

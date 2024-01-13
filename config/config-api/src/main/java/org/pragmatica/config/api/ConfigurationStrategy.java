@@ -1,6 +1,12 @@
 package org.pragmatica.config.api;
 
+import org.pragmatica.config.api.SourceDescriptor.FileSourceDescriptor;
+import org.pragmatica.config.api.SourceDescriptor.FileSourceDescriptor.Classpath;
+import org.pragmatica.config.api.SourceDescriptor.FileSourceDescriptor.File;
+
 import java.util.List;
+
+import static org.pragmatica.config.api.SourceDescriptor.EnvironmentSourceDescriptor.*;
 
 /**
  * Strategy for configuration sources. Returned sources are loaded in order and sources loaded later override values from sources loaded earlier.
@@ -12,10 +18,11 @@ public interface ConfigurationStrategy {
     List<SourceDescriptor> orderedSources();
 
     static ConfigurationStrategy defaultStrategy() {
-        return () -> List.of(new File("application"),
-                                new Classpath("application"),
-            new SourceDescriptor.Environment(),
-                             new SourceDescriptor.SystemProperties(),
-                             new SourceDescriptor.CommandLine());
+        return () -> List.of(new Classpath("defaults"),
+                             new File("application"),
+                             new Classpath("application"),
+                             new Environment(),
+                             new SystemProperties(),
+                             new CommandLine());
     }
 }
