@@ -1,7 +1,7 @@
 package org.pragmatica.config.provider;
 
 import org.pragmatica.config.api.ConfigDataProvider;
-import org.pragmatica.config.api.ConfigurationError;
+import org.pragmatica.config.api.ConfigError;
 import org.pragmatica.config.api.StringMap;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Tuple.Tuple2;
@@ -39,6 +39,6 @@ public interface CommandLineConfigDataProvider extends ConfigDataProvider {
         if (argument.length == 2) {
             return Result.success(tuple(argument[0].substring(2).trim(), argument[1].trim()));
         }
-        return Result.failure(ConfigurationError.invalidParameter(argument));
+        return Result.failure(ConfigError.invalidParameter(argument));
     }
 }

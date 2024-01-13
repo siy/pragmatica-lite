@@ -7,11 +7,11 @@ import org.pragmatica.lang.type.TypeToken;
 
 import java.util.Map;
 
-public final class ConfigurationStore implements KeyToValue {
+public final class ConfigStore implements KeyToValue {
     private final Converter converter;
     private StringMap sourceData = Map::of;
 
-    private ConfigurationStore(Converter converter) {
+    private ConfigStore(Converter converter) {
         this.converter = converter;
     }
 

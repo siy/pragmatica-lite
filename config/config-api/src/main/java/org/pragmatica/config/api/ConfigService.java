@@ -2,7 +2,6 @@ package org.pragmatica.config.api;
 
 import org.pragmatica.lang.Result;
 
-import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -26,7 +25,7 @@ import java.util.function.Consumer;
  *     <li>Array of values of the same type</li>
  * </ul>
  */
-public interface ConfigurationService {
+public interface ConfigService {
     /**
      * Retrieve a configuration parameter.
      *

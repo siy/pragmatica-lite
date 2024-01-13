@@ -1,0 +1,44 @@
+server:
+    host: 0.0.0.0
+    port: 3005
+    admin:
+      User-Name1: admin
+      password2: 123456
+cors:
+   enable: true
+   allow_origin: '*'
+hello: world
+foo: bar
+string1: ''
+String2: '
+String3: ""
+String4: "
+string5: "abc"
+string6: a"
+string7: 'abcdef'
+string8: abc'
+string9: "abc
+string10: 'abc
+multiline1: |
+    helo world1
+    multiline1value
+multiline2: >
+    helo world2
+    multiline2value
+multiline3: >-
+    helo world3
+    multiline3value
+multiline4:|
+multiline5:>
+multiline6:>-
+multiline7:|a
+multiline8:>b
+multiline9:>-c
+multiline10:
+    I'm 10
+    Try to : error10
+multiline11:
+    Try to : error11
+    I'm 11
+
+

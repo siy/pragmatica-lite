@@ -1,6 +1,5 @@
 package org.pragmatica.config.api;
 
-import org.pragmatica.config.api.SourceDescriptor.FileSourceDescriptor;
 import org.pragmatica.config.api.SourceDescriptor.FileSourceDescriptor.Classpath;
 import org.pragmatica.config.api.SourceDescriptor.FileSourceDescriptor.File;
 
@@ -14,15 +13,15 @@ import static org.pragmatica.config.api.SourceDescriptor.EnvironmentSourceDescri
  * Use of strategy enables flexible adjustment of the configuration loading process. In many cases such flexibility is not necessary, so default
  * strategy is provided too.
  */
-public interface ConfigurationStrategy {
-    List<SourceDescriptor> orderedSources();
+public interface ConfigStrategy {
+    List<SourceDescriptor> configurationSources();
 
-    static ConfigurationStrategy defaultStrategy() {
+    static ConfigStrategy defaultStrategy(String[] arguments) {
         return () -> List.of(new Classpath("defaults"),
                              new File("application"),
                              new Classpath("application"),
                              new Environment(),
                              new SystemProperties(),
-                             new CommandLine());
+                             new CommandLine(arguments));
     }
 }

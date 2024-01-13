@@ -9,7 +9,7 @@ import org.pragmatica.config.provider.SystemPropertiesConfigDataProvider;
  * extension. The list of extensions is defined dynamically by loading available {@link ConfigFormatReader}s.
  * <p>
  * Note that error which happens during loading of the content, does not cause failure of the configuration loading process. The error is logged and
- * process continues with next source (or same source with next file extension, see {@link ConfigurationStrategy} for more details).
+ * process continues with next source (or same source with next file extension, see {@link ConfigStrategy} for more details).
  */
 public sealed interface SourceDescriptor {
 

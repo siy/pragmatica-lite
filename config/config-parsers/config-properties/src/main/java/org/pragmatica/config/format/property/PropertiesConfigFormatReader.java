@@ -3,7 +3,7 @@ package org.pragmatica.config.format.property;
 
 import com.google.auto.service.AutoService;
 import org.pragmatica.config.api.ConfigFormatReader;
-import org.pragmatica.config.api.ConfigurationError;
+import org.pragmatica.config.api.ConfigError;
 import org.pragmatica.config.api.StringMap;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
@@ -18,7 +18,7 @@ import static org.pragmatica.lang.Tuple.tuple;
 @SuppressWarnings("unused")
 @AutoService(ConfigFormatReader.class)
 public class PropertiesConfigFormatReader implements ConfigFormatReader {
-    private static final Cause INPUT_IS_MISSING = new ConfigurationError.InputIsMissing("Input is missing");
+    private static final Cause INPUT_IS_MISSING = new ConfigError.InputIsMissing("Input is missing");
 
     @Override
     public Result<StringMap> read(Option<String> content) {
