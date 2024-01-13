@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class YamlFileReaderTest {
+    @SuppressWarnings("deprecation")
     @Test
     public void readSpaces() {
         var map = YamlFileReader.readFile("src/test/resources/application.yaml").unwrap();
@@ -29,6 +30,7 @@ class YamlFileReaderTest {
         assertEquals(map.get("hello"), Result.success("world"));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void readTabs() {
         var map = YamlFileReader.readFile("src/test/resources/application2_yaml.txt").unwrap();

@@ -10,8 +10,8 @@ import org.pragmatica.lang.Tuple.Tuple2;
 
 import static org.pragmatica.lang.Tuple.tuple;
 
-public class SystemPropertiesConfigDataProvider implements ConfigDataProvider {
-    public static final SystemPropertiesConfigDataProvider INSTANCE = new SystemPropertiesConfigDataProvider();
+public class SystemPropertiesProvider implements ConfigDataProvider {
+    public static final SystemPropertiesProvider INSTANCE = new SystemPropertiesProvider();
 
     @Override
     public Result<StringMap> read() {

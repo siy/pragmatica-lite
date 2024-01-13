@@ -10,93 +10,78 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
+/**
+ * Yaml file reader. Based on <a href="https://github.com/tvd12/properties-file">properties-file</a> project with significant changes.
+ */
 public class YamlFileReader {
-
     private static final char TAB_CHAR = '\t';
     private static final char SPACE_CHAR = ' ';
-    private static final Set<Character> SPACE_CHARACTERS = Set.of(TAB_CHAR, SPACE_CHAR);
+    private static final char DASH_CHAR = '-';
+    private static final char HASH_CHAR = '#';
+    private static final char DOUBLE_QUOTE_CHAR = '"';
+    private static final char SINGLE_QUOTE_CHAR = '\'';
+
     private static final String COLON_CHAR = ":";
-    private static final String DOT_CHAR = ".";
-    private static final String START_COMMENT_CHAR = "#";
-    private static final String KEY_PATTERN = "[a-zA-Z0-9._-]+";
-    private static final String DASH_CHAR = "-";
-    private static final String DOUBLE_QUOTE_CHAR = "\"";
-    private static final String SINGLE_QUOTE_CHAR = "'";
-    private static final String EMPTY_STRING = "";
+    private static final Pattern KEY_PATTERN = Pattern.compile("[a-zA-Z0-9._-]+");
 
     private static class ReaderState {
         int lineIndex = 0;
         int lastSpaceCount = 0;
         String line;
         String lastParentKey = null;
-        String lastPropertyKey = null;
+        String currentKey = null;
         HashMap<String, String> map = new HashMap<>();
-        TreeMap<Integer, YamlNode> nodes = new TreeMap<>();
+        TreeMap<Integer, String> nodes = new TreeMap<>();
 
-        private String getClearValue(String rawValue) {
-            String clearValue = rawValue.trim();
-            int commentIndex = clearValue.indexOf(START_COMMENT_CHAR);
-            if (commentIndex >= 0) {
-                clearValue = clearValue.substring(0, commentIndex).trim();
-            }
-            if (clearValue.startsWith(DOUBLE_QUOTE_CHAR)
-                && clearValue.endsWith(DOUBLE_QUOTE_CHAR)
-            ) {
-                if (clearValue.length() > 2) {
-                    clearValue = clearValue.substring(1, clearValue.length() - 1);
-                } else {
-                    return EMPTY_STRING;
-                }
-            } else if (clearValue.startsWith(SINGLE_QUOTE_CHAR)
-                       && clearValue.endsWith(SINGLE_QUOTE_CHAR)
-            ) {
-                if (clearValue.length() > 2) {
-                    clearValue = clearValue.substring(1, clearValue.length() - 1);
-                } else {
-                    return EMPTY_STRING;
-                }
-            } else if (clearValue.startsWith(">-")) {
-                if (clearValue.length() > 2) {
-                    clearValue = clearValue.substring(2).trim();
-                } else {
-                    clearValue = EMPTY_STRING;
-                }
-            } else if (clearValue.startsWith("|")) {
-                if (clearValue.length() > 1) {
-                    clearValue = clearValue.substring(1).trim();
-                } else {
-                    clearValue = EMPTY_STRING;
-                }
-            } else if (clearValue.startsWith(">")) {
-                if (clearValue.length() > 1) {
-                    clearValue = clearValue.substring(1).trim();
-                } else {
-                    clearValue = EMPTY_STRING;
-                }
-            } else {
-                clearValue = clearValue.trim();
-            }
-            return clearValue;
+        private String extractKey(String rawKey) {
+            var key = rawKey.charAt(0) == DASH_CHAR
+                      ? rawKey.substring(1).trim()
+                      : rawKey;
+
+            return !KEY_PATTERN.matcher(key).matches() ? null : key;
         }
 
-        protected int countStartedSpace(String line) {
-            int count = 0;
-            for (int i = 0; ; ++i) {
-                char ch = line.charAt(i);
-                if (!SPACE_CHARACTERS.contains(ch)) {
-                    break;
-                }
-                if (ch == TAB_CHAR) {
-                    count += 4;
-                } else {
-                    count += 1;
-                }
+        private String extractValue(String rawValue) {
+            var value = stripTrailingComment(rawValue.trim());
+
+            if (isQuotedString(value, DOUBLE_QUOTE_CHAR) || isQuotedString(value, SINGLE_QUOTE_CHAR)) {
+                return value.length() > 2
+                       ? value.substring(1, value.length() - 1)
+                       : "";
             }
-            return count;
+
+            if (value.startsWith(">-")) {
+                return value.length() > 2
+                       ? value.substring(2).trim()
+                       : "";
+            }
+
+            if (value.startsWith("|") || value.startsWith(">")) {
+                return value.length() > 1
+                       ? value.substring(1).trim()
+                       : "";
+            }
+
+            return value.trim();
+        }
+
+        private static boolean isQuotedString(String string, char quoteType) {
+            return string.charAt(0) == quoteType
+                   && string.charAt(string.length() - 1) == quoteType;
+        }
+
+        private static String stripTrailingComment(String line) {
+            int commentIndex = line.indexOf(HASH_CHAR);
+
+            return commentIndex >= 0 ? line.substring(0, commentIndex).trim() : line;
+        }
+
+        private static int countLeadingIndent(String line) {
+            return line.chars().takeWhile(c -> c == SPACE_CHAR || c == TAB_CHAR)
+                        .reduce(0, (acc, c) -> acc + (c == SPACE_CHAR ? 1 : 4));
         }
 
         Result<StringMap> read(Iterator<String> lines) {
@@ -106,101 +91,68 @@ public class YamlFileReader {
 
                 var lineTrim = line.trim();
 
-                if (lineTrim.isEmpty()) {
-                    continue;
-                }
-
-                if (lineTrim.startsWith(START_COMMENT_CHAR)) {
+                if (lineTrim.isEmpty() || lineTrim.charAt(0) == HASH_CHAR) {
                     continue;
                 }
 
                 if (!lineTrim.contains(COLON_CHAR)) {
-                    if (lastPropertyKey == null) {
+                    if (currentKey == null) {
                         return YamlParseError.invalidSyntax("", lineIndex, line).result();
                     } else {
-                        var lastValue = map.getOrDefault(lastPropertyKey, EMPTY_STRING).trim();
-
-                        if (lineTrim.startsWith(DASH_CHAR)) {
+                        if (lineTrim.charAt(0) == DASH_CHAR) {
                             if (lineTrim.length() > 1) {
                                 var value = lineTrim.substring(1).trim();
-                                lastValue = lastValue.isEmpty() ? value : (STR."\{lastValue},\{value}");
+
+                                map.compute(currentKey, (_, v) -> v == null ? value : (STR."\{v},\{value}"));
                             }
                         } else {
-                            lastValue = lastValue.isEmpty() ? lineTrim : (STR."\{lastValue} \{lineTrim}");
+                            map.compute(currentKey, (_, v) -> v == null ? lineTrim : (STR."\{v} \{lineTrim}"));
                         }
-                        map.put(lastPropertyKey, lastValue);
                         continue;
                     }
                 }
 
                 var keyValue = lineTrim.split(COLON_CHAR, 2);
-
                 var keyTrim = keyValue[0].trim();
+
                 if (keyTrim.isEmpty()) {
                     return YamlParseError.invalidSyntax("missing key", lineIndex, line).result();
                 }
 
-                String clearKey = getClearKey(keyTrim);
+                var key = extractKey(keyTrim);
 
-                if (clearKey == null) {
-                    int spaceCount = countStartedSpace(line);
-                    if (lastPropertyKey == null || spaceCount <= lastSpaceCount) {
+                if (key == null) {
+                    int spaceCount = countLeadingIndent(line);
+
+                    if (currentKey == null || spaceCount <= lastSpaceCount) {
                         return YamlParseError.invalidSyntax(STR."invalid key \{keyTrim}", lineIndex, line).result();
                     }
-                    String lastValue = map.getOrDefault(lastPropertyKey, EMPTY_STRING);
-                    lastValue = lastValue.isEmpty() ? lineTrim : (STR."\{lastValue} \{lineTrim}");
-                    map.put(lastPropertyKey, lastValue.trim());
+
+                    map.compute(currentKey, (_, v) -> v == null ? lineTrim : STR."\{v} \{lineTrim}");
                     continue;
                 }
 
-                int spaceCount = countStartedSpace(line);
-                Map.Entry<Integer, YamlNode> parentEntry = nodes.lowerEntry(spaceCount);
-                YamlNode parentNode = null;
-
-                if (parentEntry != null) {
-                    parentNode = parentEntry.getValue();
-                }
+                int spaceCount = countLeadingIndent(line);
+                var parentEntry = nodes.lowerEntry(spaceCount);
+                var parentNode = parentEntry != null ? parentEntry.getValue() : null;
 
                 if (keyValue[1].isBlank()) {
-                    if (parentNode != null) {
-                        lastParentKey = parentNode.propertyName + DOT_CHAR + keyTrim;
-                    } else {
-                        lastParentKey = clearKey;
-                    }
-                    nodes.put(spaceCount, new YamlNode(lastParentKey));
-                    lastPropertyKey = lastParentKey;
+                    lastParentKey = parentNode != null ? STR."\{parentNode}.\{keyTrim}" : key;
+                    nodes.put(spaceCount, lastParentKey);
+                    currentKey = lastParentKey;
                 } else {
                     if (parentNode == null) {
                         lastParentKey = null;
                     }
-                    String fullKey = clearKey;
-                    if (lastParentKey != null) {
-                        fullKey = lastParentKey + DOT_CHAR + clearKey;
-                    }
-                    map.put(fullKey, getClearValue(keyValue[1]));
-                    lastPropertyKey = fullKey;
+
+                    var fullKey = lastParentKey != null ? STR."\{lastParentKey}.\{key}" : key;
+
+                    map.put(fullKey, extractValue(keyValue[1]));
+                    currentKey = fullKey;
                 }
                 lastSpaceCount = spaceCount;
             }
             return Result.success(() -> map);
-        }
-
-        private String getClearKey(String rawKey) {
-            String clearKey = rawKey;
-
-            if (clearKey.startsWith(DASH_CHAR)) {
-                clearKey = clearKey.substring(1).trim();
-            }
-
-            if (clearKey.isEmpty()) {
-                return null;
-            }
-
-            if (!clearKey.matches(KEY_PATTERN)) {
-                return null;
-            }
-
-            return clearKey;
         }
     }
 
@@ -217,8 +169,4 @@ public class YamlFileReader {
     public static Result<StringMap> read(Iterator<String> source) {
         return new ReaderState().read(source);
     }
-
-    private record YamlNode(String propertyName) {}
-
-    ;
 }

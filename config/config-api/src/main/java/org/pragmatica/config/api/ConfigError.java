@@ -4,7 +4,6 @@ import org.pragmatica.lang.Result;
 
 public sealed interface ConfigError extends Result.Cause {
     record InputIsMissing(String message) implements ConfigError {}
-
     record InvalidCommandLineParameter(String message) implements ConfigError {}
 
     static ConfigError invalidParameter(String[] argument) {

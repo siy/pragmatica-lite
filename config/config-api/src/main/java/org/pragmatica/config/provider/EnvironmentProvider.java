@@ -15,8 +15,8 @@ import static org.pragmatica.lang.Tuple.tuple;
  * All environment variables are converted to lower case and then underscores are replaced with dots to form keys compatible with the configuration
  * API.
  */
-public interface EnvironmentConfigDataProvider extends ConfigDataProvider {
-    EnvironmentConfigDataProvider INSTANCE = new EnvironmentConfigDataProvider() {};
+public interface EnvironmentProvider extends ConfigDataProvider {
+    EnvironmentProvider INSTANCE = new EnvironmentProvider() {};
 
     @Override
     default Result<StringMap> read() {

@@ -152,12 +152,6 @@
 
             <dependency>
                 <groupId>org.pragmatica.lite</groupId>
-                <artifactId>config-hocon</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.pragmatica.lite</groupId>
                 <artifactId>config-toml</artifactId>
                 <version>${project.version}</version>
             </dependency>

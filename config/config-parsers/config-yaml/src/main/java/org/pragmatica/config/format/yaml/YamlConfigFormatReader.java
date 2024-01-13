@@ -1,6 +1,7 @@
 package org.pragmatica.config.format.yaml;
 
 import com.google.auto.service.AutoService;
+import org.pragmatica.config.api.ConfigError;
 import org.pragmatica.config.api.ConfigFormatReader;
 import org.pragmatica.config.api.StringMap;
 import org.pragmatica.lang.Option;
@@ -13,7 +14,8 @@ import java.util.List;
 public class YamlConfigFormatReader implements ConfigFormatReader {
     @Override
     public Result<StringMap> read(Option<String> content) {
-        return null;
+        return content.toResult(new ConfigError.InputIsMissing("Content is empty"))
+                      .flatMap(YamlFileReader::readString);
     }
 
     @Override

@@ -13,7 +13,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>config-hocon</module>
         <module>config-properties</module>
         <module>config-toml</module>
         <module>config-yaml</module>

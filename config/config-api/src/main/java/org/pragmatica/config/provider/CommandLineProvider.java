@@ -13,13 +13,13 @@ import java.util.stream.Stream;
 
 import static org.pragmatica.lang.Tuple.tuple;
 
-public interface CommandLineConfigDataProvider extends ConfigDataProvider {
+public interface CommandLineProvider extends ConfigDataProvider {
     String[] arguments();
 
     @Override
     default Result<StringMap> read() {
         return Result.allOf(processCommandLine())
-                     .map(CommandLineConfigDataProvider::tupleListAsMap)
+                     .map(CommandLineProvider::tupleListAsMap)
                      .map(map -> () -> map);
     }
 
@@ -32,7 +32,7 @@ public interface CommandLineConfigDataProvider extends ConfigDataProvider {
         return Stream.of(arguments())
                      .filter(arg -> arg.startsWith("--"))
                      .map(arg -> arg.split("="))
-                     .map(CommandLineConfigDataProvider::buildTuple);
+                     .map(CommandLineProvider::buildTuple);
     }
 
     private static Result<Tuple2<String, String>> buildTuple(String[] argument) {
