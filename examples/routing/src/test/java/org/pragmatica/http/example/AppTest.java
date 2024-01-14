@@ -40,7 +40,7 @@ public class AppTest {
                .then()
                .statusCode(200)
                .contentType("text/plain; charset=UTF-8")
-               .body(equalTo("Hello world! at /hello2/"));
+               .body(equalTo("Hello world!"));
     }
 
     @Test
