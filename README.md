@@ -6,83 +6,114 @@ Minimalistic web framework for Java 21+ with minimal dependencies.
 * Functional style - no NPE, no exceptions, type safety, etc.
 * Consistent Option/Result/Promise monads.
 * Simple and convenient to use Promise-based asynchronous API - no low level technical details leaking into business logic.   
-* Minimalistic - no annotations, no reflection, no code generation, minimal external dependencies, only 3 main components: HttpServer, HttpClient and DB access layer.
+* Minimalistic - no annotations, no reflection, minimal external dependencies, only 3 main components: HttpServer, HttpClient and DB access layer.
 * Fully asynchronous HTTP server and client, built-in caching domain name resolver with proper TTL handling.
 * Minimal package size (example app jar is less than 7MB with all dependencies included). 
 
 ## Example 
-Test app which demonstrates available routing configuration options. (WARNING: Subject to change!)
+Some examples can be found in the [example's](./examples) folder.
+
+### Traditional Hello World application
 
 ```java
-public class App {
-    public static void main(final String[] args) {
-        buildServer()
-            .start()
-            .await();
+public class HelloWorld {
+    public static void main(String[] args) {
+        httpServerWith(defaultConfiguration().withPort(3000))
+            .serveNow(
+                handleGet("/").withText(() -> "Hello world!")
+            );
     }
+}
+```
 
+### Various routing examples
+
+```java
     public static HttpServer buildServer() {
         return HttpServer
-            .with(HttpServerConfiguration.allDefaults().withPort(8000))
+            .httpServerWith(HttpServerConfiguration.defaultConfiguration())
             .serve(
                 //Full description
-                get("/hello1")
+                handleGet("/hello1")
+                    .withoutParameters()
                     .with(request -> successful(STR."Hello world! at \{request.route().path()}"))
                     .as(CommonContentTypes.TEXT_PLAIN),
 
-                //Short content type (text)
-                get("/hello2")
+                //Assume no parameters
+                handleGet("/hello2")
+                    .with(request -> successful(STR."Hello world! at \{request.route().path()}"))
+                    .as(CommonContentTypes.TEXT_PLAIN),
+
+                //Assume no parameters, short content type (text)
+                handleGet("/hello2")
                     .with(request -> successful(STR."Hello world! at \{request.route().path()}"))
                     .asText(),
 
+                //Assume no parameters, even shorter content type (json)
+                handleGet("/hello2")
+                    .withText(request -> successful(STR."Hello world! at \{request.route().path()}")),
+
+                //Assume no parameters, response does not depend on request
+                handleGet("/hello2")
+                    .withText(() -> "Hello world!"),
+
                 //Runtime exception handling example
-                get("/boom-legacy")
-                    .with(_ -> {
+                handleGet("/boom-legacy")
+                    .withText(_ -> {
                         throw new RuntimeException("Some exception message");
-                    })
-                    .asText(),
+                    }),
 
                 //Functional error handling
-                get("/boom-functional")
-                    .with(_ -> failed(HttpError.httpError(HttpStatus.UNPROCESSABLE_ENTITY, "Test error")))
-                    .asText(),
+                handleGet("/boom-functional")
+                    .withText(_ -> failed(HttpError.httpError(HttpStatus.UNPROCESSABLE_ENTITY, "Test error"))),
 
                 //Long-running process
-                get("/delay")
-                    .with(_ -> delayedResponse())
-                    .asText(),
+                handleGet("/delay")
+                    .withText(_ -> delayedResponse()),
 
                 //Nested routes
                 in("/v1")
                     .serve(
                         in("/user")
                             .serve(
-                                get("/list")
-                                    .with(request -> successful(request.pathParams()))
-                                    .asJson(),
-                                get("/query")
-                                    .with(request -> successful(request.queryParams()))
-                                    .asJson(),
-                                get("/profile")
-                                    .with(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com")))
-                                    .asJson()
+                                handleGet("/list")
+                                    .withJson(request -> successful(request.pathParams())),
+                                handleGet("/query")
+                                    .withJson(request -> successful(request.queryParams())),
+                                handleGet("/profile")
+                                    .withJson(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com")))
                             )
                     )
             );
     }
+```
+### PostgreSQL asynchronous CRUD Repository example
+(actually, there is no update, but it's easy to guess how it will look like)
 
-    private static final AtomicInteger counter = new AtomicInteger();
+```java
+public interface ShortenedUrlRepository {
+    default Promise<ShortenedUrl> create(ShortenedUrl shortenedUrl) {
+        return QRY."INSERT INTO shortenedurl (\{template().fieldNames()}) VALUES (\{template().fieldValues(shortenedUrl)}) RETURNING *"
+            .in(dbEnv())
+            .mapResult(ra -> ra.asSingle(template()));
+    }
 
-    private static Promise<Integer> delayedResponse() {
-        return Promise.<Integer>promise()
-                      .async(promise -> {
-                          try {
-                              Thread.sleep(250);
-                          } catch (InterruptedException e) {
-                              //ignore
-                          }
-                          promise.success(counter.incrementAndGet());
-                      });
+    default Promise<ShortenedUrl> read(String id) {
+        return QRY."SELECT * FROM shortenedurl WHERE id = \{id}"
+            .in(dbEnv())
+            .mapResult(ra -> ra.asSingle(template()));
+    }
+
+    default Promise<Unit> delete(String id) {
+        return QRY."DELETE FROM shortenedurl WHERE id = \{id}"
+            .in(dbEnv())
+            .mapToUnit();
+    }
+
+    DbEnv dbEnv();
+
+    default ShortenedUrlTemplate template() {
+        return ShortenedUrlTemplate.INSTANCE;
     }
 }
 ```
