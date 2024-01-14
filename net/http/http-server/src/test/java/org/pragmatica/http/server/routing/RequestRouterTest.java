@@ -10,11 +10,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class RequestRouterTest {
     private final RequestRouter table = RequestRouter.with(
-        Route.get("/one").textWith(() -> "one"),
-        Route.get("/one1").textWith(() -> "one1"),
-        Route.get("/one2").textWith(() -> "one2"),
-        Route.get("/on").textWith(() -> "on"),
-        Route.get("/o").textWith(() -> "o")
+        Route.handleGet("/one").withText(() -> "one"),
+        Route.handleGet("/one1").withText(() -> "one1"),
+        Route.handleGet("/one2").withText(() -> "one2"),
+        Route.handleGet("/on").withText(() -> "on"),
+        Route.handleGet("/o").withText(() -> "o")
     );
 
     @Test

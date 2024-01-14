@@ -8,7 +8,7 @@ import org.pragmatica.http.server.HttpServerConfiguration;
 import org.pragmatica.id.nanoid.NanoId;
 import org.pragmatica.lang.Promise;
 
-import static org.pragmatica.http.server.routing.Route.get;
+import static org.pragmatica.http.server.routing.Route.handleGet;
 import static org.pragmatica.http.server.routing.Route.in;
 import static org.pragmatica.lang.Promise.failed;
 import static org.pragmatica.lang.Promise.successful;
@@ -25,46 +25,54 @@ public class App {
             .httpServerWith(HttpServerConfiguration.defaultConfiguration())
             .serve(
                 //Full description
-                get("/hello1")
+                handleGet("/hello1")
+                    .withoutParameters()
                     .with(request -> successful(STR."Hello world! at \{request.route().path()}"))
                     .as(CommonContentTypes.TEXT_PLAIN),
 
-                //Short content type (text)
-                get("/hello2")
+                //Assume no parameters
+                handleGet("/hello2")
+                    .with(request -> successful(STR."Hello world! at \{request.route().path()}"))
+                    .as(CommonContentTypes.TEXT_PLAIN),
+
+                //Assume no parameters, short content type (text)
+                handleGet("/hello2")
                     .with(request -> successful(STR."Hello world! at \{request.route().path()}"))
                     .asText(),
 
+                //Assume no parameters, even shorter content type (json)
+                handleGet("/hello2")
+                    .withText(request -> successful(STR."Hello world! at \{request.route().path()}")),
+
+                //Assume no parameters, response does not depend on request
+                handleGet("/hello2")
+                    .withText(() -> "Hello world!"),
+
                 //Runtime exception handling example
-                get("/boom-legacy")
-                    .with(_ -> {
+                handleGet("/boom-legacy")
+                    .withText(_ -> {
                         throw new RuntimeException("Some exception message");
-                    })
-                    .asText(),
+                    }),
 
                 //Functional error handling
-                get("/boom-functional")
-                    .with(_ -> failed(HttpError.httpError(HttpStatus.UNPROCESSABLE_ENTITY, "Test error")))
-                    .asText(),
+                handleGet("/boom-functional")
+                    .withText(_ -> failed(HttpError.httpError(HttpStatus.UNPROCESSABLE_ENTITY, "Test error"))),
 
                 //Long-running process
-                get("/delay")
-                    .with(_ -> delayedResponse())
-                    .asText(),
+                handleGet("/delay")
+                    .withText(_ -> delayedResponse()),
 
                 //Nested routes
                 in("/v1")
                     .serve(
                         in("/user")
                             .serve(
-                                get("/list")
-                                    .with(request -> successful(request.pathParams()))
-                                    .asJson(),
-                                get("/query")
-                                    .with(request -> successful(request.queryParams()))
-                                    .asJson(),
-                                get("/profile")
-                                    .with(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com")))
-                                    .asJson()
+                                handleGet("/list")
+                                    .withJson(request -> successful(request.pathParams())),
+                                handleGet("/query")
+                                    .withJson(request -> successful(request.queryParams())),
+                                handleGet("/profile")
+                                    .withJson(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com")))
                             )
                     )
             );

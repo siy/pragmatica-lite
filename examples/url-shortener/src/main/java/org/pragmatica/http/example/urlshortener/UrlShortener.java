@@ -4,12 +4,14 @@ import org.pragmatica.db.postgres.DbEnv;
 import org.pragmatica.db.postgres.DbEnvConfig;
 import org.pragmatica.db.postgres.DbEnvConfigTemplate;
 import org.pragmatica.http.example.urlshortener.api.UrlShortenerController;
+import org.pragmatica.http.example.urlshortener.api.UrlShortenerRequest;
 import org.pragmatica.http.example.urlshortener.domain.service.UrlShortenerService;
 import org.pragmatica.http.example.urlshortener.persistence.ShortenedUrlRepository;
+import org.pragmatica.lang.type.TypeToken;
 
 import static org.pragmatica.http.server.HttpServer.httpServerWith;
 import static org.pragmatica.http.server.HttpServerConfiguration.defaultConfiguration;
-import static org.pragmatica.http.server.routing.Route.post;
+import static org.pragmatica.http.server.routing.Route.handlePost;
 import static org.pragmatica.lang.Option.none;
 
 /**
@@ -37,7 +39,9 @@ public class UrlShortener {
 
         httpServerWith(defaultConfiguration().withPort(3000))
             .serveNow(
-                post("/shorten").with(controller::shortenUrl).asText()
+                handlePost("/shorten").whereBodyIs(new TypeToken<UrlShortenerRequest>() {})
+                                      .with(controller::shortenUrl)
+                                      .asJson()
             );
     }
 }

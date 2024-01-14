@@ -4,13 +4,16 @@ import org.pragmatica.http.CommonContentTypes;
 import org.pragmatica.http.ContentType;
 import org.pragmatica.http.protocol.HttpMethod;
 import org.pragmatica.http.util.Utils;
+import org.pragmatica.lang.Functions.Fn1;
+import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Tuple.Tuple2;
+import org.pragmatica.lang.type.TypeToken;
 
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static org.pragmatica.lang.Promise.resolved;
-import static org.pragmatica.lang.Promise.successful;
+import static org.pragmatica.lang.Tuple.tuple;
 
 //TODO: better support for path parameter extraction
 @SuppressWarnings("unused")
@@ -40,25 +43,19 @@ public interface Route<T> extends RouteSource {
 
             @Override
             public String toString() {
-                return STR. "Route: \{ method } \{ path }, \{ contentType }" ;
+                return STR."Route: \{method} \{path}, \{contentType}";
             }
         }
 
         return new route<>(method, Utils.normalize(path), handler, contentType);
     }
 
-    static RouteBuilder0 in(String path) {
-        return RouteBuilder0.builder0(path);
+    static Subroutes in(String path) {
+        return () -> path;
     }
 
-    interface RouteBuilder0 {
+    interface Subroutes {
         String path();
-
-        static RouteBuilder0 builder0(String path) {
-            record routeBuilder0(String path) implements RouteBuilder0 {}
-
-            return new routeBuilder0(path);
-        }
 
         default RouteSource serve(RouteSource... subroutes) {
             return () -> Stream.of(subroutes)
@@ -67,88 +64,121 @@ public interface Route<T> extends RouteSource {
         }
     }
 
-
-    static RouteBuilder1 options(String path) {
-        return method(path, HttpMethod.OPTIONS);
+    static ParameterBuilder handleOptions(String path) {
+        return handleMethod(path, HttpMethod.OPTIONS);
     }
 
-    static RouteBuilder1 get(String path) {
-        return method(path, HttpMethod.GET);
+    static ParameterBuilder handleGet(String path) {
+        return handleMethod(path, HttpMethod.GET);
     }
 
-    static RouteBuilder1 head(String path) {
-        return method(path, HttpMethod.HEAD);
+    static ParameterBuilder handleHead(String path) {
+        return handleMethod(path, HttpMethod.HEAD);
     }
 
-    static RouteBuilder1 post(String path) {
-        return method(path, HttpMethod.POST);
+    static ParameterBuilder handlePost(String path) {
+        return handleMethod(path, HttpMethod.POST);
     }
 
-    static RouteBuilder1 put(String path) {
-        return method(path, HttpMethod.PUT);
+    static ParameterBuilder handlePut(String path) {
+        return handleMethod(path, HttpMethod.PUT);
     }
 
-    static RouteBuilder1 patch(String path) {
-        return method(path, HttpMethod.PATCH);
+    static ParameterBuilder handlePatch(String path) {
+        return handleMethod(path, HttpMethod.PATCH);
     }
 
-    static RouteBuilder1 delete(String path) {
-        return method(path, HttpMethod.DELETE);
+    static ParameterBuilder handleDelete(String path) {
+        return handleMethod(path, HttpMethod.DELETE);
     }
 
-    static RouteBuilder1 trace(String path) {
-        return method(path, HttpMethod.TRACE);
+    static ParameterBuilder handleTrace(String path) {
+        return handleMethod(path, HttpMethod.TRACE);
     }
 
-    static RouteBuilder1 connect(String path) {
-        return method(path, HttpMethod.CONNECT);
+    static ParameterBuilder handleConnect(String path) {
+        return handleMethod(path, HttpMethod.CONNECT);
     }
 
-    static RouteBuilder1 method(String path, HttpMethod method) {
-        return RouteBuilder1.builder1(path, method);
+    static ParameterBuilder handleMethod(String path, HttpMethod method) {
+        return () -> tuple(path, method);
     }
 
-    interface RouteBuilder1 {
-        String path();
+    interface ParameterBuilder {
+        Tuple2<String, HttpMethod> pathAndMethod();
 
-        HttpMethod method();
-
-        static RouteBuilder1 builder1(String path, HttpMethod method) {
-            record routeBuilder1(String path, HttpMethod method) implements RouteBuilder1 {}
-
-            return new routeBuilder1(path, method);
+        default RawHandlerBuilder withoutParameters() {
+            return this::pathAndMethod;
         }
 
-        default <T> RouteBuilder2<T> with(Handler<T> handler) {
-            return contentType -> route(method(), path(), handler, contentType);
+        default <T> JsonBodyParameterBuilder<T> whereBodyIs(TypeToken<T> type) {
+            return () -> tuple(pathAndMethod(), type);
+        }
+        //TODO: support for path and query parameters
+
+        //Shortcuts for frequent case of no input parameters and popular content types
+        default <T> ContentTypeBuilder<T> with(Handler<T> handler) {
+            return withoutParameters().with(handler);
         }
 
-        default <T> RouteBuilder2<T> with(Supplier<Result<T>> supplier) {
-            return with(_ -> resolved(supplier.get()));
+        default <T> ContentTypeBuilder<T> withImmediate(Fn1<Result<T>, RequestContext> handler) {
+            return withoutParameters().withImmediate(handler);
         }
 
-        default <T> Route<T> textWith(Handler<T> handler) {
-            return with(handler).as(CommonContentTypes.TEXT_PLAIN);
+        default <T> Route<T> withText(Handler<T> handler) {
+            return with(handler).asText();
         }
 
-        default <T> Route<T> textWith(Supplier<T> supplier) {
-            return textWith(_ -> successful(supplier.get()));
+        default <T> Route<T> withText(Supplier<T> handler) {
+            return with(_ -> Promise.successful(handler.get())).asText();
         }
 
-        default <T> Route<T> jsonWith(Handler<T> handler) {
-            return with(handler).as(CommonContentTypes.APPLICATION_JSON);
+        default <T> Route<T> withJson(Handler<T> handler) {
+            return with(handler).asJson();
         }
 
-        default <T> Route<T> jsonWith(Supplier<T> supplier) {
-            return jsonWith(_ -> successful(supplier.get()));
+        default <T> Route<T> withJson(Supplier<T> handler) {
+            return with(_ -> Promise.successful(handler.get())).asJson();
         }
     }
 
-    interface RouteBuilder2<T> {
+    // Short, but low level path
+    interface RawHandlerBuilder {
+        Tuple2<String, HttpMethod> pathAndMethod();
+
+        default <T> ContentTypeBuilder<T> with(Handler<T> handler) {
+            return contentType -> route(pathAndMethod().last(), pathAndMethod().first(), handler, contentType);
+        }
+
+        default <T> ContentTypeBuilder<T> withImmediate(Fn1<Result<T>, RequestContext> handler) {
+            return contentType -> route(pathAndMethod().last(), pathAndMethod().first(), ctx -> Promise.resolved(handler.apply(ctx)), contentType);
+        }
+        // No shortcuts are provided. If we're here, we chose to be explicit and therefore need to specify content type
+    }
+
+    interface JsonBodyParameterBuilder<T> {
+        Tuple2<Tuple2<String, HttpMethod>, TypeToken<T>> pathMethodAndBodyType();
+
+        default <R> ContentTypeBuilder<R> with(Fn1<Promise<R>, T> handler) {
+            var pathMethod = pathMethodAndBodyType().first();
+            var bodyType = pathMethodAndBodyType().last();
+
+            return contentType -> route(pathMethod.last(),
+                                        pathMethod.first(),
+                                        ctx -> ctx.fromJson(bodyType)
+                                                  .toPromise()
+                                                  .flatMap(handler),
+                                        contentType);
+        }
+    }
+
+    interface ContentTypeBuilder<T> {
         Route<T> as(ContentType contentType);
+
         default Route<T> asText() {
             return as(CommonContentTypes.TEXT_PLAIN);
         }
+
         default Route<T> asJson() {
             return as(CommonContentTypes.APPLICATION_JSON);
         }
