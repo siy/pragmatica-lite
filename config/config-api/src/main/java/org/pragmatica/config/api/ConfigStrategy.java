@@ -18,8 +18,8 @@ public interface ConfigStrategy {
 
     static ConfigStrategy defaultStrategy(String[] arguments) {
         return () -> List.of(new Classpath("defaults"),
-                             new File("application"),
                              new Classpath("application"),
+                             new File("application"),
                              new Environment(),
                              new SystemProperties(),
                              new CommandLine(arguments));

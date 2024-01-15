@@ -15,6 +15,14 @@ public final class ConfigStore implements KeyToValue {
         this.converter = converter;
     }
 
+    public static ConfigStore store(Converter converter) {
+        return new ConfigStore(converter);
+    }
+
+    public static ConfigStore defaultStore() {
+        return new ConfigStore(Converter.converter());
+    }
+
     public void append(Map<String, String> data) {
         sourceData = sourceData.merge(data);
     }

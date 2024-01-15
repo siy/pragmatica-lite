@@ -13,9 +13,8 @@ import java.util.List;
 @AutoService(ConfigFormatReader.class)
 public class YamlConfigFormatReader implements ConfigFormatReader {
     @Override
-    public Result<StringMap> read(Option<String> content) {
-        return content.toResult(new ConfigError.InputIsMissing("Content is empty"))
-                      .flatMap(YamlFileReader::readString);
+    public Result<StringMap> read(String content) {
+        return YamlFileReader.readString(content);
     }
 
     @Override
