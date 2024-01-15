@@ -81,6 +81,17 @@ public record IRI(
                 domain = option(domainName(n.group(3)));
                 port = option(n.group(5)).flatMap(Decoder::parsePort);
             }
+        } else {
+            // Special handling for JDBC URLs, which are not compliant with RFC 3986 and have "double" scheme.
+            // Note that they don't have authority part, so we don't need to handle that case.
+            if (matcher.group(2).equals("jdbc")) {
+                IRI iri = fromString(url.substring("jdbc:".length()));
+
+                var newScheme = iri.scheme()
+                                   .map(s -> STR."jdbc:\{s}").or("jdbc");
+
+                return iri.withScheme(newScheme);
+            }
         }
 
         return new IRI(scheme, userInfo, domain, port,

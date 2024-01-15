@@ -1,6 +1,8 @@
 package com.github.pgasync.net;
 
 import com.github.pgasync.PgColumn;
+import com.github.pgasync.PgResultSet;
+import com.github.pgasync.PgRow;
 import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.message.backend.DataRow;
 import org.pragmatica.lang.Unit;
@@ -27,7 +29,7 @@ public interface PreparedStatement {
      *
      * @return An instance of {@link ResultSet} with data.
      */
-    ThrowingPromise<ResultSet> query(Object... params);
+    ThrowingPromise<PgResultSet> query(Object... params);
 
     /**
      * Fetches data rows from Postgres one by one. Use this method when you are unsure, that all data, returned by the query can be placed into
@@ -41,7 +43,7 @@ public interface PreparedStatement {
      * @return Promise that completes when the whole process ends or when an error occurs. Promise's value will indicate the number of rows affected
      *     by the query.
      */
-    ThrowingPromise<Integer> fetch(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns, Consumer<Row> processor, Object... params);
+    ThrowingPromise<Integer> fetch(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns, Consumer<PgRow> processor, Object... params);
 
     /**
      * Closes this {@link PreparedStatement} and possibly frees resources. In case of pool statement it may be returned to a pool for future reuse.

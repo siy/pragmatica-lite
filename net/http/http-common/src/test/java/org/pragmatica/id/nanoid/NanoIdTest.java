@@ -19,8 +19,32 @@ class NanoIdTest {
         };
 
         for (final String expectedId : expectedIds) {
-            var generatedId = NanoId.customNanoId(random);
+            var generatedId = NanoId.customNanoId(random, expectedId.length());
             assertEquals(expectedId, generatedId);
         }
+    }
+
+    @Test
+    void microbenchmark() {
+        //Warmup (kind of)
+        int count = 2_000_000;
+        for (int i = 0; i < count; i++) {
+            assertEquals(21, NanoId.secureNanoId().length());
+            assertEquals(21, NanoId.nonSecureNanoId().length());
+        }
+
+        var start = System.nanoTime();
+        for (int i = 0; i < count; i++) {
+            assertEquals(21, NanoId.secureNanoId().length());
+        }
+        var end = System.nanoTime();
+        System.out.println(STR."Secure: \{(end - start) / count }ns per id");
+
+        start = System.nanoTime();
+        for (int i = 0; i < count; i++) {
+            assertEquals(21, NanoId.nonSecureNanoId().length());
+        }
+        end = System.nanoTime();
+        System.out.println(STR."Non-secure: \{(end - start) / count }ns per id");
     }
 }

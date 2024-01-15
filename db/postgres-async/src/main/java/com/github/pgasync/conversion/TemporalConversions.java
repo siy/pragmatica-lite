@@ -21,32 +21,33 @@ import static java.time.format.DateTimeFormatter.ISO_LOCAL_TIME;
 
 /**
  * @author Antti Laisi
- * <p>
- * TODO: Add support for Java 8 temporal types.
+ *     <p>
+ *     TODO: Add support for Java 8 temporal types.
  */
 final class TemporalConversions {
-    private TemporalConversions() {}
+    private TemporalConversions() {
+    }
 
     private static final DateTimeFormatter TIMESTAMP_FORMAT = new DateTimeFormatterBuilder()
-            .parseCaseInsensitive()
-            .append(ISO_LOCAL_DATE)
-            .appendLiteral(' ')
-            .append(ISO_LOCAL_TIME)
-            .toFormatter();
+        .parseCaseInsensitive()
+        .append(ISO_LOCAL_DATE)
+        .appendLiteral(' ')
+        .append(ISO_LOCAL_TIME)
+        .toFormatter();
 
     private static final DateTimeFormatter TIMESTAMPTZ_FORMAT = new DateTimeFormatterBuilder()
-            .parseCaseInsensitive()
-            .append(ISO_LOCAL_DATE)
-            .appendLiteral(' ')
-            .append(ISO_LOCAL_TIME)
-            .appendOffset("+HH:mm", "+00")
-            .toFormatter();
+        .parseCaseInsensitive()
+        .append(ISO_LOCAL_DATE)
+        .appendLiteral(' ')
+        .append(ISO_LOCAL_TIME)
+        .appendOffset("+HH:mm", "+00")
+        .toFormatter();
 
     private static final DateTimeFormatter TIMEZ_FORMAT = new DateTimeFormatterBuilder()
-            .parseCaseInsensitive()
-            .append(ISO_LOCAL_TIME)
-            .appendOffset("+HH:mm", "+00")
-            .toFormatter();
+        .parseCaseInsensitive()
+        .append(ISO_LOCAL_TIME)
+        .appendOffset("+HH:mm", "+00")
+        .toFormatter();
 
     static LocalDate toLocalDate(Oid oid, String value) {
         try {
@@ -59,27 +60,51 @@ final class TemporalConversions {
         }
     }
 
-    static LocalTime toTime(Oid oid, String value) {
+    static LocalTime toLocalTime(Oid oid, String value) {
         try {
             return switch (oid) {
                 case UNSPECIFIED, TIME -> LocalTime.parse(value, ISO_LOCAL_TIME);
                 case TIMETZ -> OffsetTime.parse(value, TIMEZ_FORMAT).toLocalTime();
-                default -> returnError(oid, "Time");
+                default -> returnError(oid, "LocalTime");
             };
         } catch (DateTimeParseException e) {
             throw new SqlException(STR."Invalid time: \{value}");
         }
     }
 
-    static LocalDateTime toDate(Oid oid, String value) {
+    static LocalDateTime toLocalDateTime(Oid oid, String value) {
         try {
             return switch (oid) {
                 case UNSPECIFIED, TIMESTAMP -> LocalDateTime.parse(value, TIMESTAMP_FORMAT);
                 case TIMESTAMPTZ -> OffsetDateTime.parse(value, TIMESTAMPTZ_FORMAT).toLocalDateTime();
-                default -> returnError(oid, "Date");
+                default -> returnError(oid, "LocalDateTime");
             };
         } catch (DateTimeParseException e) {
-            throw new SqlException(STR."Invalid time: \{value}");
+            throw new SqlException(STR."Invalid date/time: \{value}");
+        }
+    }
+
+    static ZonedDateTime toZonedDateTime(Oid oid, String value) {
+        try {
+            return switch (oid) {
+                case UNSPECIFIED, TIMESTAMP -> LocalDateTime.parse(value, TIMESTAMP_FORMAT).atZone(ZoneOffset.UTC); //Assume UTC
+                case TIMESTAMPTZ -> ZonedDateTime.parse(value, TIMESTAMPTZ_FORMAT);
+                default -> returnError(oid, "ZonedDateTime");
+            };
+        } catch (DateTimeParseException e) {
+            throw new SqlException(STR."Invalid date/time: \{value}");
+        }
+    }
+
+    static OffsetDateTime toOffsetDateTime(Oid oid, String value) {
+        try {
+            return switch (oid) {
+                case UNSPECIFIED, TIMESTAMP -> LocalDateTime.parse(value, TIMESTAMP_FORMAT).atZone(ZoneOffset.UTC).toOffsetDateTime(); //Assume UTC
+                case TIMESTAMPTZ -> OffsetDateTime.parse(value, TIMESTAMPTZ_FORMAT);
+                default -> returnError(oid, "OffsetDateTime");
+            };
+        } catch (DateTimeParseException e) {
+            throw new SqlException(STR."Invalid date/time: \{value}");
         }
     }
 
@@ -109,6 +134,10 @@ final class TemporalConversions {
 
     static String fromZoneDateTime(ZonedDateTime zonedDateTime) {
         return TIMESTAMPTZ_FORMAT.format(zonedDateTime);
+    }
+
+    static String fromOffsetDateTime(OffsetDateTime offsetDateTime) {
+        return TIMESTAMPTZ_FORMAT.format(offsetDateTime);
     }
 
     static String fromInstant(Instant instant) {

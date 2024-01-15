@@ -18,6 +18,10 @@ import com.github.pgasync.conversion.DataConverter;
 import com.github.pgasync.message.backend.DataRow;
 import com.github.pgasync.net.Row;
 import com.github.pgasync.net.SqlException;
+import org.pragmatica.lang.Option;
+import org.pragmatica.lang.Result;
+import org.pragmatica.lang.type.KeyToValue;
+import org.pragmatica.lang.type.TypeToken;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -27,12 +31,14 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Map;
 
+import static org.pragmatica.lang.Option.option;
+
 /**
  * Result row, uses {@link DataConverter} for all conversions.
  *
  * @author Antti Laisi
  */
-public class PgRow implements Row {
+public class PgRow implements Row, KeyToValue {
     private final DataRow data;
     private final DataConverter dataConverter;
     private final Map<String, PgColumn> columnsByName;
@@ -205,9 +211,10 @@ public class PgRow implements Row {
         return getArray(getColumn(column).index(), arrayType);
     }
 
+    //TODO: does not work for known types, only for custom ones.
     @Override
     public <T> T get(int index, Class<T> type) {
-        return dataConverter.toObject(type, columns[index].type(), data.getValue(index));
+        return dataConverter.toObject(columns[index].type(), data.getValue(index), type);
     }
 
     @Override
@@ -216,11 +223,31 @@ public class PgRow implements Row {
     }
 
     public Object get(int index) {
-        return dataConverter.toObject(columns[index].type(), data.getValue(index));
+        return dataConverter.toObject(columns[index].type(), data.getValue(index), null);
     }
 
     public Object get(String column) {
         return get(getColumn(column).index());
+    }
+
+    //TODO: arrays are not supported yet
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> Result<T> get(String prefix, String key, TypeToken<T> typeToken) {
+        // Prefix is always empty for mapping of rows to records, so just ignore it
+        var column = columnsByName.get(key);
+
+        if (column == null) {
+            return new SqlError.ColumnNotFound(STR."Unknown column '\{key}'").result();
+        }
+
+        if (typeToken.rawType().equals(Option.class)) {
+            var value = typeToken.typeArgument(0)
+                                 .map(cls -> get(column.index(), cls));
+            return Result.success((T) option(value));
+        } else {
+            return Result.success(get(column.index(), (Class<T>) typeToken.rawType()));
+        }
     }
 
     private PgColumn getColumn(String name) {
@@ -237,4 +264,21 @@ public class PgRow implements Row {
         return column;
     }
 
+    @Override
+    public String toString() {
+        var builder = new StringBuilder("PgRow[");
+
+        int last = builder.length();
+        for (int i = 0; i < columns.length; i++) {
+            builder.append(columns[i].name());
+            builder.append("=");
+            builder.append(get(i));
+            last = builder.length();
+            builder.append(", ");
+        }
+        builder.setLength(last);
+        builder.append("]");
+
+        return builder.toString();
+    }
 }

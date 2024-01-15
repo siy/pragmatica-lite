@@ -1,10 +1,10 @@
 package org.pragmatica.http.client;
 
 import io.netty.handler.codec.http.FullHttpResponse;
-import org.pragmatica.http.codec.TypeToken;
 import org.pragmatica.http.protocol.HttpHeaders;
 import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.lang.Result;
+import org.pragmatica.lang.type.TypeToken;
 
 import java.nio.charset.StandardCharsets;
 

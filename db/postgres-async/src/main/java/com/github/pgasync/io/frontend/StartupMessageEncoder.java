@@ -69,5 +69,4 @@ public class StartupMessageEncoder implements Encoder<StartupMessage> {
         buffer.put((byte) 0);
         buffer.putInt(0, buffer.position());
     }
-
 }

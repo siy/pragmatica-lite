@@ -4,7 +4,6 @@ import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.conversion.DataConverter;
 import com.github.pgasync.net.Connectible;
 import com.github.pgasync.net.ConnectibleBuilder;
-import com.github.pgasync.net.Row;
 import org.pragmatica.lang.Unit;
 
 import java.nio.charset.Charset;
@@ -36,7 +35,7 @@ public abstract class PgConnectible implements Connectible {
 
     @Override
     public ThrowingPromise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                        Consumer<Row> onRow,
+                                        Consumer<PgRow> onRow,
                                         Consumer<Integer> onAffected,
                                         String sql) {
         return getConnection()
@@ -47,7 +46,7 @@ public abstract class PgConnectible implements Connectible {
 
     @Override
     public ThrowingPromise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                          Consumer<Row> onRow,
+                                          Consumer<PgRow> onRow,
                                           String sql,
                                           Object... params) {
         return getConnection()

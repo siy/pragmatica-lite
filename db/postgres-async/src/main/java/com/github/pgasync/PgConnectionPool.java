@@ -20,8 +20,6 @@ import com.github.pgasync.net.ConnectibleBuilder;
 import com.github.pgasync.net.Connection;
 import com.github.pgasync.net.Listening;
 import com.github.pgasync.net.PreparedStatement;
-import com.github.pgasync.net.ResultSet;
-import com.github.pgasync.net.Row;
 import com.github.pgasync.net.Transaction;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
@@ -72,7 +70,7 @@ public class PgConnectionPool extends PgConnectible {
 
             @Override
             public ThrowingPromise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                                  Consumer<Row> onRow,
+                                                  Consumer<PgRow> onRow,
                                                   String sql,
                                                   Object... params) {
                 return delegate.query(onColumns, onRow, sql, params);
@@ -80,7 +78,7 @@ public class PgConnectionPool extends PgConnectible {
 
             @Override
             public ThrowingPromise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                                Consumer<Row> onRow,
+                                                Consumer<PgRow> onRow,
                                                 Consumer<Integer> onAffected,
                                                 String sql) {
                 return delegate.script(onColumns, onRow, onAffected, sql);
@@ -142,7 +140,7 @@ public class PgConnectionPool extends PgConnectible {
 
         @Override
         public ThrowingPromise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                            Consumer<Row> onRow,
+                                            Consumer<PgRow> onRow,
                                             Consumer<Integer> onAffected,
                                             String sql) {
             return delegate.script(onColumns, onRow, onAffected, sql);
@@ -150,7 +148,7 @@ public class PgConnectionPool extends PgConnectible {
 
         @Override
         public ThrowingPromise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                              Consumer<Row> onRow,
+                                              Consumer<PgRow> onRow,
                                               String sql,
                                               Object... params) {
             return prepareStatement(sql, dataConverter.assumeTypes(params))
@@ -213,13 +211,13 @@ public class PgConnectionPool extends PgConnectible {
             }
 
             @Override
-            public ThrowingPromise<ResultSet> query(Object... params) {
+            public ThrowingPromise<PgResultSet> query(Object... params) {
                 return delegate.query(params);
             }
 
             @Override
             public ThrowingPromise<Integer> fetch(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                                  Consumer<Row> processor,
+                                                  Consumer<PgRow> processor,
                                                   Object... params) {
                 return delegate.fetch(onColumns, processor, params);
             }

@@ -15,10 +15,10 @@ import static org.pragmatica.lang.Result.unitResult;
 
 class HttpServerTest {
     private static final Logger log = LoggerFactory.getLogger(HttpServerTest.class);
-    private static final HttpServer server = HttpServer.with(HttpServerConfiguration.allDefaults().withPort(8000))
-                                                       .serve(Route.get("/one").textWith(() -> "one"),
-                                                            Route.get("/two").textWith(() -> "two"),
-                                                            Route.get("/three").textWith(() -> "three"));
+    private static final HttpServer server = HttpServer.httpServerWith(HttpServerConfiguration.defaultConfiguration().withPort(8000))
+                                                       .serve(Route.handleGet("/one").withText(() -> "one"),
+                                                              Route.handleGet("/two").withText(() -> "two"),
+                                                              Route.handleGet("/three").withText(() -> "three"));
 
     private static Promise<Unit> serverPromise;
 

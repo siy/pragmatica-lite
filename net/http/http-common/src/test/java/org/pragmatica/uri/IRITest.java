@@ -63,4 +63,14 @@ class IRITest {
         iri.port().onPresent(port -> assertEquals(5432, port.port()));
         iri.path().onPresent(path -> assertEquals("/mydb", path));
     }
+
+    @Test
+    void jdbcIRI() {
+        IRI iri = IRI.fromString("jdbc:postgresql://localhost:38151/test?loggerLevel=OFF");
+
+        iri.scheme().onPresent(scheme -> assertEquals("jdbc:postgresql", scheme));
+        iri.domain().onPresent(domain -> assertEquals("localhost", domain.name()));
+        iri.port().onPresent(port -> assertEquals(38151, port.port()));
+        iri.path().onPresent(path -> assertEquals("/test", path));
+    }
 }

@@ -97,7 +97,7 @@ public class DatabaseRule extends ExternalResource {
         return block(pool().completeQuery(sql, params.toArray()));
     }
 
-    Collection<ResultSet> script(String sql) {
+    Collection<PgResultSet> script(String sql) {
         return block(pool().completeScript(sql));
     }
 

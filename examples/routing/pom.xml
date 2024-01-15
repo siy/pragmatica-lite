@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.pragmatica.lite</groupId>
         <artifactId>examples</artifactId>
-        <version>0.0.2</version>
+        <version>0.1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -15,13 +15,16 @@
         <dependency>
             <groupId>org.pragmatica.lite</groupId>
             <artifactId>http-server</artifactId>
-            <version>${project.parent.version}</version>
         </dependency>
 
-        <!-- TODO: cleanup experiment -->
         <dependency>
             <groupId>org.pragmatica.lite</groupId>
-            <artifactId>postgres-async</artifactId>
+            <artifactId>config-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.pragmatica.lite</groupId>
+            <artifactId>config-properties</artifactId>
         </dependency>
 
         <dependency>
@@ -60,22 +63,10 @@
             <artifactId>json-jackson</artifactId>
         </dependency>
 
-        <!-- TODO: temporary fix for vulnerable commons-codec:commons-codec -->
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>commons-codec</groupId>
-                    <artifactId>commons-codec</artifactId>
-                </exclusion>
-            </exclusions>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
-            <version>1.15</version>
         </dependency>
     </dependencies>
 

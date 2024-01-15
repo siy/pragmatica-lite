@@ -100,18 +100,26 @@ public interface Promise<T> {
     Promise<T> onResult(Consumer<Result<T>> action);
 
     default <U> Promise<U> map(Fn1<U, ? super T> transformation) {
-        return mapResult(result -> result.map(transformation));
+        return replaceResult(result -> result.map(transformation));
     }
 
     default <U> Promise<U> flatMap(Fn1<Promise<U>, ? super T> transformation) {
         return fold(result -> result.fold(Promise::<U>failed, transformation));
     }
 
+    default Promise<T> mapError(Fn1<Cause, Cause> transformation) {
+        return replaceResult(result -> result.mapError(transformation));
+    }
+
     default <U> Promise<U> replace(Supplier<U> transformation) {
         return map(_ -> transformation.get());
     }
 
-    default <U> Promise<U> mapResult(Fn1<Result<U>, Result<T>> transformation) {
+    default <U> Promise<U> mapResult(Fn1<Result<U>, T> transformation) {
+        return replaceResult(result -> result.flatMap(transformation));
+    }
+
+    default <U> Promise<U> replaceResult(Fn1<Result<U>, Result<T>> transformation) {
         return fold(result -> Promise.resolved(transformation.apply(result)));
     }
 
@@ -220,8 +228,16 @@ public interface Promise<T> {
         return new PromiseImpl<>(Result.success(value));
     }
 
+    static <T> Promise<T> ok(T value) {
+        return successful(value);
+    }
+
     static <T> Promise<T> failed(Cause cause) {
         return new PromiseImpl<>(Result.failure(cause));
+    }
+
+    static <T> Promise<T> err(Cause cause) {
+        return failed(cause);
     }
 
     static <T> Promise<T> promise(Consumer<Promise<T>> consumer) {

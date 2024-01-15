@@ -11,6 +11,7 @@ import org.pragmatica.http.server.impl.HttpServerInitializer;
 import org.pragmatica.http.server.routing.RequestRouter;
 import org.pragmatica.http.server.routing.RouteSource;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.utils.Causes;
 import org.pragmatica.net.transport.api.TransportConfiguration;
@@ -47,9 +48,13 @@ public class HttpServer {
     @FunctionalInterface
     public interface Builder {
         HttpServer serve(RouteSource... routeSources);
+
+        default Result<Unit> serveNow(RouteSource... routeSources) {
+            return serve(routeSources).start().await();
+        }
     }
 
-    public static Builder with(HttpServerConfiguration configuration) {
+    public static Builder httpServerWith(HttpServerConfiguration configuration) {
         return (RouteSource... routeSources) -> new HttpServer(configuration, RequestRouter.with(routeSources));
     }
 

@@ -1,0 +1,28 @@
+# server config
+include:
+   profiles:
+      - 
+      - local
+      - alpha
+server:
+   host: 0.0.0.0
+   port: 3005
+   admin:
+      - username: admin
+      - password: 123456
+# cors config
+cors:
+   enable: true # true or false
+   allow_origin: '*'
+hello: world
+foo: bar
+# datasources config
+data_sources:
+   main:
+      url: jdbc://main_url
+      username: main_admin
+      password: main_password
+   test:
+      url: jdbc://test_url
+      username: test_admin
+      password: test_password

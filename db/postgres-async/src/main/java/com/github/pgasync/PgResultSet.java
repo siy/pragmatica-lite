@@ -15,11 +15,14 @@
 package com.github.pgasync;
 
 import com.github.pgasync.net.ResultSet;
-import com.github.pgasync.net.Row;
+import org.pragmatica.lang.Result;
+import org.pragmatica.lang.type.RecordTemplate;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * {@link ResultSet} constructed from Query/Execute response messages.
@@ -28,16 +31,24 @@ import java.util.Map;
  */
 public class PgResultSet implements ResultSet {
 
-    private final List<Row> rows;
+    private final List<PgRow> rows;
     private final Map<String, PgColumn> columnsByName;
     private final List<PgColumn> orderedColumns;
     private final int affectedRows;
 
-    public PgResultSet(Map<String, PgColumn> columnsByName, PgColumn[] orderedColumns, List<Row> rows, int affectedRows) {
+    public PgResultSet(Map<String, PgColumn> columnsByName, PgColumn[] orderedColumns, List<PgRow> rows, int affectedRows) {
         this.columnsByName = columnsByName == null ? Map.of() : columnsByName;
         this.orderedColumns = orderedColumns == null ? List.of() : List.of(orderedColumns);
         this.rows = rows == null ? List.of() : rows;
         this.affectedRows = affectedRows;
+    }
+
+    public <T extends Record> Result<Stream<T>> stream(RecordTemplate<T> descriptor) {
+        var results = rows.stream()
+                          .map(descriptor::load);
+
+        return Result.allOf(results)
+                     .map(Collection::stream);
     }
 
     @Override
@@ -52,12 +63,12 @@ public class PgResultSet implements ResultSet {
 
     @SuppressWarnings("NullableProblems")
     @Override
-    public Iterator<Row> iterator() {
+    public Iterator<PgRow> iterator() {
         return rows.iterator();
     }
 
     @Override
-    public Row index(int index) {
+    public PgRow index(int index) {
         return rows.get(index);
     }
 
@@ -69,5 +80,15 @@ public class PgResultSet implements ResultSet {
     @Override
     public int affectedRows() {
         return affectedRows;
+    }
+
+    @Override
+    public String toString() {
+        var builder = new StringBuilder("PgResultSet[affected=").append(affectedRows).append(" {\n");
+
+        for (var row : rows) {
+            builder.append("  ").append(row).append(",\n");
+        }
+        return builder.append("}]").toString();
     }
 }

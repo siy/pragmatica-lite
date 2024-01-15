@@ -10,7 +10,7 @@ import static com.github.pgasync.conversion.Common.returnError;
 final class StringConversions {
     private StringConversions() {}
 
-    static String toString(Oid oid, String value) {
+    static String asString(Oid oid, String value) {
         return switch (oid) {
             case UNSPECIFIED, TEXT, CHAR, BPCHAR, UUID, VARCHAR -> value;
             default -> returnError(oid, "String");

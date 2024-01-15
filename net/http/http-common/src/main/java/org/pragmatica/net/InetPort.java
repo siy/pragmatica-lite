@@ -20,13 +20,13 @@ package org.pragmatica.net;
 /**
  * IP port.
  */
-public record InetPort(short port) {
+public record InetPort(int port) {
     public static InetPort inetPort(final int port) {
-        return new InetPort((short) port);
+        return new InetPort(port);
     }
 
     @Override
     public String toString() {
-        return "InetPort(" + port + ")";
+        return STR."InetPort(\{port})";
     }
 }

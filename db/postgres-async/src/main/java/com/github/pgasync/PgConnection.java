@@ -29,8 +29,6 @@ import com.github.pgasync.message.frontend.StartupMessage;
 import com.github.pgasync.net.Connection;
 import com.github.pgasync.net.Listening;
 import com.github.pgasync.net.PreparedStatement;
-import com.github.pgasync.net.ResultSet;
-import com.github.pgasync.net.Row;
 import com.github.pgasync.net.Transaction;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
@@ -63,8 +61,8 @@ public class PgConnection implements Connection {
         }
 
         @Override
-        public ThrowingPromise<ResultSet> query(Object... params) {
-            var rows = new ArrayList<Row>();
+        public ThrowingPromise<PgResultSet> query(Object... params) {
+            var rows = new ArrayList<PgRow>();
 
             return fetch((_, _) -> {}, rows::add, params)
                 .map(_ -> new PgResultSet(columns.byName, columns.ordered, rows, 0));
@@ -73,7 +71,7 @@ public class PgConnection implements Connection {
         //TODO: consider conversion to "reducer" style to eliminate externally stored state
         @Override
         public ThrowingPromise<Integer> fetch(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                              Consumer<Row> processor,
+                                              Consumer<PgRow> processor,
                                               Object... params) {
             var bind = new Bind(sname, dataConverter.fromParameters(params));
             Consumer<DataRow> rowProcessor = dataRow -> processor.accept(new PgRow(dataRow, columns.byName, columns.ordered, dataConverter));
@@ -167,7 +165,7 @@ public class PgConnection implements Connection {
 
     @Override
     public ThrowingPromise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                        Consumer<Row> onRow,
+                                        Consumer<PgRow> onRow,
                                         Consumer<Integer> onAffected,
                                         String sql) {
         if (sql == null || sql.isBlank()) {
@@ -190,7 +188,7 @@ public class PgConnection implements Connection {
 
     @Override
     public ThrowingPromise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                          Consumer<Row> onRow,
+                                          Consumer<PgRow> onRow,
                                           String sql,
                                           Object... params) {
         return prepareStatement(sql, dataConverter.assumeTypes(params))
@@ -276,7 +274,7 @@ public class PgConnection implements Connection {
 
         @Override
         public ThrowingPromise<Unit> script(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                            Consumer<Row> onRow,
+                                            Consumer<PgRow> onRow,
                                             Consumer<Integer> onAffected,
                                             String sql) {
             return PgConnection.this.script(onColumns, onRow, onAffected, sql)
@@ -284,7 +282,7 @@ public class PgConnection implements Connection {
         }
 
         public ThrowingPromise<Integer> query(BiConsumer<Map<String, PgColumn>, PgColumn[]> onColumns,
-                                              Consumer<Row> onRow,
+                                              Consumer<PgRow> onRow,
                                               String sql,
                                               Object... params) {
             return PgConnection.this.query(onColumns, onRow, sql, params)

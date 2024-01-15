@@ -15,6 +15,7 @@
 package com.github.pgasync.net;
 
 import com.github.pgasync.PgColumn;
+import com.github.pgasync.PgRow;
 
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,7 @@ import java.util.Map;
  *
  * @author Antti Laisi
  */
-public interface ResultSet extends Iterable<Row> {
+public interface ResultSet extends Iterable<PgRow> {
     Map<String, PgColumn> columnsByName();
 
     List<PgColumn> orderedColumns();
@@ -34,7 +35,7 @@ public interface ResultSet extends Iterable<Row> {
      * @param index Row index starting from 0
      * @return Row, never null
      */
-    Row index(int index);
+    PgRow index(int index);
 
     /**
      * @return Amount of result rows.

@@ -15,7 +15,6 @@
 package com.github.pgasync;
 
 import com.github.pgasync.net.ResultSet;
-import com.github.pgasync.net.Row;
 import com.github.pgasync.net.SqlException;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -61,7 +60,7 @@ public class QueryResultTest {
         assertEquals(2, result.size());
         Assert.assertEquals("ID", result.orderedColumns().getFirst().name().toUpperCase());
 
-        Iterator<Row> i = result.iterator();
+        Iterator<PgRow> i = result.iterator();
         assertEquals(1L, i.next().getLong(0).longValue());
         assertEquals(2L, i.next().getLong(0).longValue());
     }
