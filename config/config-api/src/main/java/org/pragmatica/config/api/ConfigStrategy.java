@@ -8,10 +8,12 @@ import java.util.List;
 import static org.pragmatica.config.api.SourceDescriptor.EnvironmentSourceDescriptor.*;
 
 /**
- * Strategy for configuration sources. Returned sources are loaded in order and sources loaded later override values from sources loaded earlier.
+ * Strategy for configuration sources defines order and source of the configuration data. Returned sources are loaded in order and sources loaded
+ * later override values from sources loaded earlier. Use of strategy enables flexible adjustment of the configuration loading process.
  * <p>
- * Use of strategy enables flexible adjustment of the configuration loading process. In many cases such flexibility is not necessary, so default
- * strategy is provided too.
+ * The default strategy loads defaults for main components and then overrides them with values from application configuration files, starting from one
+ * provided in classpath and then one provided as a file in the current directory. Finally, values from environment variables, system properties and
+ * command line arguments are loaded. Such an order should be sufficient for most typical use cases.
  */
 public interface ConfigStrategy {
     List<SourceDescriptor> configurationSources();

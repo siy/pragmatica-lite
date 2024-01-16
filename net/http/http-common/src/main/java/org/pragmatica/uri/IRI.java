@@ -42,9 +42,10 @@ public record IRI(
     QueryParameters queryParameters,
     Option<String> fragment
 ) {
+    public static final IRI EMPTY = new IRI(empty(), empty(), empty(), empty(), empty(), QueryParameters.parameters(), empty());
+
     private static final Pattern URI_PATTERN = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
     private static final Pattern AUTHORITY_PATTERN = Pattern.compile("((.*)@)?([^:]*)(:(\\d+))?");
-    private static final IRI EMPTY = new IRI(empty(), empty(), empty(), empty(), empty(), QueryParameters.parameters(), empty());
 
     private static final String HTTP = "http";
     private static final String HTTPS = "https";

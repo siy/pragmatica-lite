@@ -7,6 +7,8 @@ import org.pragmatica.lang.type.TypeToken;
 
 import java.util.Map;
 
+import static org.pragmatica.config.api.Converter.converter;
+
 public final class ConfigStore implements KeyToValue {
     private final Converter converter;
     private StringMap sourceData = Map::of;
@@ -15,39 +17,35 @@ public final class ConfigStore implements KeyToValue {
         this.converter = converter;
     }
 
-    public static ConfigStore store(Converter converter) {
-        return new ConfigStore(converter);
-    }
-
-    public static ConfigStore defaultStore() {
-        return new ConfigStore(Converter.converter());
-    }
-
-    public void append(Map<String, String> data) {
-        sourceData = sourceData.merge(data);
+    public static ConfigStore configStore() {
+        return new ConfigStore(converter());
     }
 
     public void append(StringMap data) {
         sourceData = sourceData.merge(data);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T> Result<T> get(String prefix, String key, TypeToken<T> typeToken) {
         var effectiveKey = prependPrefix(prefix, key);
 
         if (typeToken.rawType() == Option.class) {
-            if (sourceData.get(effectiveKey).isFailure()) {
-                return (Result<T>) Result.success(Option.none());
-            } else {
-                return (Result<T>) typeToken.subType(0)
-                                            .toResult(DataConversionError.cantRetrieveSubTypeFrom(typeToken))
-                                            .flatMap(subType -> get(prefix, key, subType))
-                                            .map(Option::option);
-            }
+            return getOption(effectiveKey, typeToken);
         }
 
         return sourceData.get(effectiveKey)
                          .flatMap(value -> converter.convert(typeToken, value));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> Result<T> getOption(String effectiveKey, TypeToken<T> typeToken) {
+        if (sourceData.get(effectiveKey).isFailure()) {
+            return (Result<T>) Result.success(Option.none());
+        }
+
+        return (Result<T>) typeToken.subType(0)
+                                    .toResult(DataConversionError.cantRetrieveSubTypeFrom(typeToken))
+                                    .flatMap(subType -> get("", effectiveKey, subType))
+                                    .map(Option::option);
     }
 }

@@ -9,6 +9,6 @@
         <version>0.1.0</version>
     </parent>
 
-    <artifactId>config-toml</artifactId>
+    <artifactId>config-cfg</artifactId>
     <packaging>jar</packaging>
 </project>

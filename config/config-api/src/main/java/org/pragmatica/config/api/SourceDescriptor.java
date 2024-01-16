@@ -17,8 +17,8 @@ import java.nio.file.Path;
  * {@link FileSourceDescriptor.Classpath}) should not specify extension. The list of extensions is determined by available
  * {@link ConfigFormatReader}s.
  * <p>
- * Note that error which happens during loading of the content, does not cause failure of the configuration loading process. The error is logged and
- * process continues with next source (or same source with next file extension, see {@link ConfigStrategy} for more details).
+ * Error which happen during loading of the content, do not cause a failure of the entire configuration loading process. The error is logged and
+ * process continues with next combination of source and file extension.
  */
 public sealed interface SourceDescriptor {
     void load(ConfigStore store);
@@ -68,7 +68,7 @@ public sealed interface SourceDescriptor {
             }
         }
 
-        //TODO: implement Url
+        //TODO: implement Url source
 //        record Url(String url) implements FileSourceDescriptor {}
     }
 

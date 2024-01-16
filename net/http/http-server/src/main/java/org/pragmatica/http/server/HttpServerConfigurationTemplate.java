@@ -1,6 +1,5 @@
 package org.pragmatica.http.server;
 
-import com.google.auto.service.AutoService;
 import io.netty.handler.codec.http.cors.CorsConfig;
 import io.netty.handler.ssl.SslContext;
 import org.pragmatica.http.codec.CustomCodec;

@@ -40,11 +40,73 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
         }
 
         @Override
-        public Result<String> apply(String param1) {
-            return success(param1);
+        public Result<String> apply(String value) {
+            var chars = value.toCharArray();
+            var state = new StringArrayParameter.ParsingState();
+
+            for (var chr : chars) {
+                switch (state.process(chr)) {
+                    case ELEMENT_READY -> {
+                        state.state = StringArrayParameter.State.SKIP_TO_COMMA;
+                    }
+                    case ELEMENT_READY_COMMA -> {
+                        state.element.append(chr);
+                        state.state = StringArrayParameter.State.INITIAL;
+                    }
+                    default -> {
+                    }
+                }
+            }
+            if (state.state == StringArrayParameter.State.INITIAL || state.state == StringArrayParameter.State.SKIP_TO_COMMA) {
+                return success(state.element.toString().trim());
+            } else {
+                return new InvalidInput(STR."The value [\{value}] can't be parsed into String").result();
+            }
         }
 
         public static final StringParameter INSTANCE = new StringParameter();
+    }
+
+    record ByteParameter() implements ParameterType<Byte> {
+        @Override
+        public TypeToken<Byte> token() {
+            return new TypeToken<>() {};
+        }
+
+        @Override
+        public Result<Byte> apply(String param1) {
+            return Result.lift(invalidInput("Byte", param1), () -> Byte.parseByte(param1));
+        }
+
+        public static final ByteParameter INSTANCE = new ByteParameter();
+    }
+
+    record ShortParameter() implements ParameterType<Short> {
+        @Override
+        public TypeToken<Short> token() {
+            return new TypeToken<>() {};
+        }
+
+        @Override
+        public Result<Short> apply(String param1) {
+            return Result.lift(invalidInput("Short", param1), () -> Short.parseShort(param1));
+        }
+
+        public static final ShortParameter INSTANCE = new ShortParameter();
+    }
+
+    record IntegerParameter() implements ParameterType<Integer> {
+        @Override
+        public TypeToken<Integer> token() {
+            return new TypeToken<>() {};
+        }
+
+        @Override
+        public Result<Integer> apply(String param1) {
+            return Result.lift(invalidInput("Integer", param1), () -> Integer.parseInt(param1));
+        }
+
+        public static final IntegerParameter INSTANCE = new IntegerParameter();
     }
 
     record LongParameter() implements ParameterType<Long> {
@@ -457,6 +519,9 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
     static List<ParameterType> knownParameterTypes() {
         var builtIn = List.of(
             StringParameter.INSTANCE,
+            ByteParameter.INSTANCE,
+            ShortParameter.INSTANCE,
+            IntegerParameter.INSTANCE,
             LongParameter.INSTANCE,
             DecimalParameter.INSTANCE,
             BooleanParameter.INSTANCE,

@@ -14,7 +14,7 @@
 
     <modules>
         <module>config-properties</module>
-        <module>config-toml</module>
+        <module>config-cfg</module>
         <module>config-yaml</module>
     </modules>
 

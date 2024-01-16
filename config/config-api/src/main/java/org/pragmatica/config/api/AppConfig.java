@@ -15,7 +15,7 @@ public interface AppConfig {
     }
 
     static AppConfig loadConfigs(ConfigStrategy strategy) {
-        var store = ConfigStore.defaultStore();
+        var store = ConfigStore.configStore();
 
         strategy.configurationSources()
                 .forEach(source -> source.load(store));
