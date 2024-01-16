@@ -17,11 +17,13 @@ public interface ConfigStrategy {
     List<SourceDescriptor> configurationSources();
 
     static ConfigStrategy defaultStrategy(String[] arguments) {
-        return () -> List.of(new Classpath("defaults"),
-                             new Classpath("application"),
-                             new File("application"),
-                             new Environment(),
-                             new SystemProperties(),
-                             new CommandLine(arguments));
+        return () -> List.of(
+            new Classpath("/db/default"),
+            new Classpath("/server/default"),
+            new Classpath("/application"),
+            new File("application"),
+            new Environment(),
+            new SystemProperties(),
+            new CommandLine(arguments));
     }
 }

@@ -2,41 +2,18 @@ package org.pragmatica.config.api;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.pragmatica.config.api.ParameterType.BooleanArrayParameter;
-import org.pragmatica.config.api.ParameterType.BooleanParameter;
-import org.pragmatica.config.api.ParameterType.DecimalArrayParameter;
-import org.pragmatica.config.api.ParameterType.DecimalParameter;
-import org.pragmatica.config.api.ParameterType.DurationArrayParameter;
-import org.pragmatica.config.api.ParameterType.DurationParameter;
-import org.pragmatica.config.api.ParameterType.LocalDateArrayParameter;
-import org.pragmatica.config.api.ParameterType.LocalDateParameter;
-import org.pragmatica.config.api.ParameterType.LocalDateTimeArrayParameter;
-import org.pragmatica.config.api.ParameterType.LocalDateTimeParameter;
-import org.pragmatica.config.api.ParameterType.LocalTimeArrayParameter;
-import org.pragmatica.config.api.ParameterType.LocalTimeParameter;
-import org.pragmatica.config.api.ParameterType.LongArrayParameter;
-import org.pragmatica.config.api.ParameterType.LongParameter;
-import org.pragmatica.config.api.ParameterType.OffsetDateTimeArrayParameter;
-import org.pragmatica.config.api.ParameterType.OffsetDateTimeParameter;
-import org.pragmatica.config.api.ParameterType.StringArrayParameter;
-import org.pragmatica.config.api.ParameterType.StringParameter;
+import org.pragmatica.config.api.ParameterType.*;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.TypeToken;
 
 import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ParameterTypeTest {
-
     public static final OffsetDateTime OFFSET_DATE_TIME = OffsetDateTime.of(2007, 12, 3, 10, 15, 30, 0, ZoneOffset.ofHours(1));
     public static final LocalDateTime LOCAL_DATE_TIME = LocalDateTime.of(2007, 12, 3, 10, 15, 30);
     public static final LocalDate LOCAL_DATE = LocalDate.of(2007, 12, 3);
@@ -88,46 +65,27 @@ class ParameterTypeTest {
     @Test
     void emptyArraysParsedIntoEmptyResults() {
         StringArrayParameter.INSTANCE.apply("[]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        StringArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        StringArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
+        StringArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertEquals(2, list.size()));
+        StringArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertEquals(3, list.size()));
 
         LongArrayParameter.INSTANCE.apply("[]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        LongArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        LongArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-
         DecimalArrayParameter.INSTANCE.apply("[]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        DecimalArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        DecimalArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-
         BooleanArrayParameter.INSTANCE.apply("[]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        BooleanArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        BooleanArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-
         OffsetDateTimeArrayParameter.INSTANCE.apply("[]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        OffsetDateTimeArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        OffsetDateTimeArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-
         LocalDateTimeArrayParameter.INSTANCE.apply("[]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        LocalDateTimeArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        LocalDateTimeArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-
         LocalDateArrayParameter.INSTANCE.apply("[]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        LocalDateArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        LocalDateArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-
         LocalTimeArrayParameter.INSTANCE.apply("[]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        LocalTimeArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        LocalTimeArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-
         DurationArrayParameter.INSTANCE.apply("[]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        DurationArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        DurationArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
     }
 
     @Test
     void parsingOfCorrectArrayDataWorksAsExpected() {
-        assertEquals(StringArrayParameter.INSTANCE.apply("[ one ]"), Result.success(List.of("one")));
-        assertEquals(StringArrayParameter.INSTANCE.apply("[ one, two ]"), Result.success(List.of("one", "two")));
+        assertEquals(Result.success(List.of("one")), StringArrayParameter.INSTANCE.apply("[ one ]"));
+        assertEquals(Result.success(List.of("one", "two")), StringArrayParameter.INSTANCE.apply("[ one, two ]"));
+        assertEquals(Result.success(List.of("one", "two")), StringArrayParameter.INSTANCE.apply("[  'one' ,  'two'   ]"));
+        assertEquals(Result.success(List.of("one", "two")), StringArrayParameter.INSTANCE.apply("['one','two']"));
+        assertEquals(Result.success(List.of("o\ne", "two")), StringArrayParameter.INSTANCE.apply("['o\\ne','t\\wo']"));
+        assertEquals(Result.success(List.of("'one", "two'")), StringArrayParameter.INSTANCE.apply("['\\'one','two\\'']"));
 
         assertEquals(LongArrayParameter.INSTANCE.apply("[123]"), Result.success(List.of(123L)));
         assertEquals(LongArrayParameter.INSTANCE.apply("[ 123, -456]"), Result.success(List.of(123L, -456L)));

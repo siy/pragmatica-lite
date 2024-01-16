@@ -31,13 +31,14 @@ public sealed interface SourceDescriptor {
             public void load(ConfigStore store) {
                 ConfigFormatReader.readers()
                                   .map(tuple -> tuple.map((ext, reader) -> readFile(ext, path())
+                                      .onSuccessRun(() -> log.debug(STR."File \{path}.\{ext} successfully read"))
                                       .onFailure(cause -> log.debug(STR."Failed to read file \{path}.\{ext}: \{cause}", cause))
                                       .flatMap(reader::read)))
                                   .forEach(result -> result.onSuccess(store::append));
             }
 
             static Result<String> readFile(String extension, String path) {
-                return Result.lift(Causes::fromThrowable, () -> Files.readString(Path.of(STR."\{path}.\{extension}")));
+                return Result.lift(ConfigError::ioError, () -> Files.readString(Path.of(STR."\{path}.\{extension}")));
             }
         }
 
@@ -48,6 +49,7 @@ public sealed interface SourceDescriptor {
             public void load(ConfigStore store) {
                 ConfigFormatReader.readers()
                                   .map(tuple -> tuple.map((ext, reader) -> loadFromClasspath(ext, path())
+                                      .onSuccessRun(() -> log.debug(STR."File \{path}.\{ext} successfully loaded via classpath"))
                                       .onFailure(cause -> log.debug(STR."Failed to load file \{path}.\{ext} via classpath: \{cause}", cause))
                                       .flatMap(reader::read)))
                                   .forEach(result -> result.onSuccess(store::append));

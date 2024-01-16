@@ -12,7 +12,7 @@ import java.net.InetAddress;
 import static org.pragmatica.lang.Option.none;
 import static org.pragmatica.lang.Option.some;
 
-//TODO: support for HTTP/2, compression, WebSocket, SSE, etc.
+//TODO: support for HTTP/2, compression, WebSocket, SSE, etc., etc.
 @SuppressWarnings("unused")
 public interface HttpServerConfiguration {
     int DEFAULT_PORT = 8000;

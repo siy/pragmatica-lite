@@ -26,9 +26,7 @@ import org.pragmatica.uri.util.Encoder;
 import java.util.regex.Pattern;
 
 import static org.pragmatica.dns.DomainName.domainName;
-import static org.pragmatica.lang.Option.empty;
-import static org.pragmatica.lang.Option.none;
-import static org.pragmatica.lang.Option.option;
+import static org.pragmatica.lang.Option.*;
 
 /**
  * The implementation of the IRI (Internationalized Resource Identifier) as defined in RFC 3987.

@@ -7,11 +7,8 @@ import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.TypeToken;
 
 import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
+import java.time.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Stream;
@@ -84,7 +81,13 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
 
         @Override
         public Result<Boolean> apply(String param1) {
-            return Result.lift(invalidInput("Boolean", param1), () -> Boolean.parseBoolean(param1));
+            if (param1.equalsIgnoreCase("true") || param1.equalsIgnoreCase("yes")) {
+                return Result.success(true);
+            } else if (param1.equalsIgnoreCase("false") || param1.equalsIgnoreCase("no")) {
+                return Result.success(false);
+            }
+
+            return new InvalidInput(STR."The value [\{param1}] can't be parsed into Boolean").result();
         }
 
         public static final BooleanParameter INSTANCE = new BooleanParameter();
@@ -171,7 +174,6 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
         public static final DurationParameter INSTANCE = new DurationParameter();
     }
 
-    //TODO: support for quoted and escaped strings
     record StringArrayParameter(Option<ParameterType<String>> elementType) implements ParameterType<List<String>> {
         @Override
         public TypeToken<List<String>> token() {
@@ -184,8 +186,8 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
                 .map(Stream::toList);
         }
 
-        static Result<Stream<String>> tryParse(String param1, String type) {
-            var input = param1.trim();
+        static Result<Stream<String>> tryParse(String value, String typeMessage) {
+            var input = value.trim();
 
             if (input.startsWith("[") && input.endsWith("]")) {
                 var values1 = input.substring(1, input.length() - 1).trim();
@@ -194,9 +196,124 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
                     return success(Stream.empty());
                 }
 
-                return success(Stream.of(values1.split(",")).map(String::trim));
+                return splitString(values1, typeMessage)
+                    .map(List::stream);
             } else {
-                return new InvalidInput(STR."The value [\{param1}] can't be parsed into \{type}").result();
+                return new InvalidInput(STR."The value [\{value}] can't be parsed into \{typeMessage}").result();
+            }
+        }
+
+        enum State {
+            INITIAL,
+            SINGLE_QUOTE,
+            SINGLE_QUOTE_ESCAPE,
+            DOUBLE_QUOTE,
+            DOUBLE_QUOTE_ESCAPE,
+            ELEMENT_READY,
+            ELEMENT_READY_COMMA,
+            SKIP_TO_COMMA,
+        }
+
+        static class ParsingState {
+            StringBuilder element = new StringBuilder();
+            State state = State.INITIAL;
+
+            State process(char chr) {
+                return switch (state) {
+                    case INITIAL -> {
+                        if (chr == '\'') {
+                            state = State.SINGLE_QUOTE;
+                            element.setLength(0); //Throw out any spaces before the quote
+                        } else if (chr == '"') {
+                            state = State.DOUBLE_QUOTE;
+                            element.setLength(0); //Throw out any spaces before the quote
+                        } else if (chr == ',') {
+                            state = State.ELEMENT_READY_COMMA;
+                        } else {
+                            element.append(chr);
+                        }
+                        yield state;
+                    }
+                    case SINGLE_QUOTE -> {
+                        if (chr == '\'') {
+                            state = State.ELEMENT_READY;
+                        } else if (chr == '\\') {
+                            state = State.SINGLE_QUOTE_ESCAPE;
+                        } else {
+                            element.append(chr);
+                        }
+                        yield state;
+                    }
+                    case SINGLE_QUOTE_ESCAPE -> {
+                        element.append(translateEscape(chr));
+                        state = State.SINGLE_QUOTE;
+                        yield state;
+                    }
+                    case DOUBLE_QUOTE -> {
+                        if (chr == '"') {
+                            state = State.ELEMENT_READY;
+                        } else if (chr == '\\') {
+                            state = State.DOUBLE_QUOTE_ESCAPE;
+                        } else {
+                            element.append(chr);
+                        }
+                        yield state;
+                    }
+                    case DOUBLE_QUOTE_ESCAPE -> {
+                        element.append(translateEscape(chr));
+                        state = State.DOUBLE_QUOTE;
+                        yield state;
+                    }
+                    case SKIP_TO_COMMA -> {
+                        if (chr == ',') {
+                            state = State.INITIAL;
+                        }
+                        yield state;
+                    }
+                    default -> throw new IllegalStateException(STR."Unexpected state: \{state}");
+                };
+            }
+
+            static char translateEscape(char chr) {
+                return switch (chr) {
+                    case 'b' -> '\b';
+                    case 't' -> '\t';
+                    case 'n' -> '\n';
+                    case 'f' -> '\f';
+                    case 'r' -> '\r';
+                    default -> chr;
+                };
+            }
+        }
+
+        private static Result<List<String>> splitString(String value, String typeMessage) {
+            var chars = value.toCharArray();
+            var state = new ParsingState();
+            var result = new ArrayList<String>();
+
+            for (var chr : chars) {
+                switch (state.process(chr)) {
+                    case ELEMENT_READY -> {
+                        result.add(state.element.toString());
+                        state.element.setLength(0);
+                        state.state = State.SKIP_TO_COMMA;
+                    }
+                    case ELEMENT_READY_COMMA -> {
+                        //Element had no quotes, so we have to strip extra spaces
+                        result.add(state.element.toString().trim());
+                        state.element.setLength(0);
+                        state.state = State.INITIAL;
+                    }
+                    default -> {}
+                }
+            }
+            if (state.state == State.INITIAL || state.state == State.SKIP_TO_COMMA) {
+                if (state.state == State.INITIAL) {
+                    result.add(state.element.toString().trim());
+                }
+                return success(result);
+            } else {
+                return new InvalidInput(STR."The value [\{value}] can't be parsed into \{typeMessage}").result();
             }
         }
 

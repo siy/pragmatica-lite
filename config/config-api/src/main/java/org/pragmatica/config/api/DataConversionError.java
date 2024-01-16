@@ -8,7 +8,6 @@ import org.pragmatica.lang.type.TypeToken;
 
 public sealed interface DataConversionError extends Cause {
     record KeyNotFound(String message) implements DataConversionError {}
-
     record InvalidInput(String message) implements DataConversionError {}
     record CantRetrieveSubType(String message) implements DataConversionError {}
 
