@@ -1,5 +1,6 @@
 package org.pragmatica.db.postgres;
 
+import com.google.auto.service.AutoService;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;

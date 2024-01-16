@@ -3,6 +3,7 @@ package org.pragmatica.http.server.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
+import org.pragmatica.codec.json.JsonCodecFactory;
 import org.pragmatica.http.HttpError;
 import org.pragmatica.http.codec.CustomCodec;
 import org.pragmatica.http.protocol.HttpStatus;
@@ -84,7 +85,9 @@ public class RequestContextImpl implements RequestContext {
 
     @Override
     public <T> Result<T> fromJson(TypeToken<T> literal) {
-        return configuration.jsonCodec().deserialize(request.content(), literal);
+        return configuration.jsonCodec()
+                            .or(JsonCodecFactory.defaultFactory()::withDefaultConfiguration)
+                            .deserialize(request.content(), literal);
     }
 
     @Override
@@ -140,6 +143,7 @@ public class RequestContextImpl implements RequestContext {
                 case PLAIN_TEXT -> success(value).map(Object::toString)
                                                  .map(DataContainer.StringData::from);
                 case JSON -> configuration.jsonCodec()
+                                          .or(JsonCodecFactory.defaultFactory()::withDefaultConfiguration)
                                           .serialize(value)
                                           .map(DataContainer.ByteBufData::from);
                 case CUSTOM -> configuration.customCodec()

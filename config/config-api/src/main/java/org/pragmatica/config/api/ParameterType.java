@@ -11,12 +11,14 @@ import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.ServiceLoader;
 import java.util.stream.Stream;
 
 import static org.pragmatica.config.api.DataConversionError.invalidInput;
 import static org.pragmatica.lang.Option.none;
 import static org.pragmatica.lang.Option.some;
 import static org.pragmatica.lang.Result.success;
+import static org.pragmatica.lang.Tuple.tuple;
 
 /**
  * Supported configuration parameter types. Mostly resembles TOML specification with notable addition of {@link Duration} and use of
@@ -304,7 +306,8 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
                         state.element.setLength(0);
                         state.state = State.INITIAL;
                     }
-                    default -> {}
+                    default -> {
+                    }
                 }
             }
             if (state.state == State.INITIAL || state.state == State.SKIP_TO_COMMA) {
@@ -448,8 +451,11 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
         public static final DurationArrayParameter INSTANCE = new DurationArrayParameter(some(DurationParameter.INSTANCE));
     }
 
-    record BuiltInTypes() {
-        public static final List<ParameterType<?>> LIST = List.of(
+    non-sealed interface CustomParameterType<T> extends ParameterType<T> {
+    }
+
+    static List<ParameterType> knownParameterTypes() {
+        var builtIn = List.of(
             StringParameter.INSTANCE,
             LongParameter.INSTANCE,
             DecimalParameter.INSTANCE,
@@ -471,5 +477,9 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
             DurationArrayParameter.INSTANCE
         );
 
+        return Stream.concat(builtIn.stream(),
+                             ServiceLoader.load(CustomParameterType.class)
+                                          .stream()
+                                          .map(ServiceLoader.Provider::get)).toList();
     }
 }
