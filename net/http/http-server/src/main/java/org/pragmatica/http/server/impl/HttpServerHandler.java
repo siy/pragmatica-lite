@@ -10,7 +10,7 @@ import org.pragmatica.http.HttpError;
 import org.pragmatica.http.protocol.CommonHeaders;
 import org.pragmatica.http.protocol.HttpMethod;
 import org.pragmatica.http.protocol.HttpStatus;
-import org.pragmatica.http.server.HttpServerConfiguration;
+import org.pragmatica.http.server.HttpServerConfig;
 import org.pragmatica.http.server.routing.RequestRouter;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result.Cause;
@@ -27,11 +27,13 @@ class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
     private static final Supplier<String> dateTimeNow = () -> ZonedDateTime.now(Clock.systemUTC())
                                                                    .format(DateTimeFormatter.RFC_1123_DATE_TIME);
 
-    private final HttpServerConfiguration configuration;
+    private final HttpServerConfig configuration;
     private final RequestRouter routingTable;
+    private final ContextConfig contextConfig;
 
-    HttpServerHandler(HttpServerConfiguration configuration, RequestRouter routingTable) {
+    HttpServerHandler(HttpServerConfig configuration, RequestRouter routingTable) {
         this.configuration = configuration;
+        this.contextConfig = ContextConfig.fromHttpServerConfig(configuration);
         this.routingTable = routingTable;
     }
 
@@ -56,7 +58,7 @@ class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
         routingTable.findRoute(HttpMethod.from(request.method()), path)
                     .toResult(() -> HttpError.httpError(HttpStatus.NOT_FOUND, path).result())
                     .onFailure(cause -> sendErrorResponse(ctx, cause))
-                    .onSuccess(route -> RequestContextImpl.handle(ctx, request, route, configuration));
+                    .onSuccess(route -> RequestContextImpl.handle(ctx, request, route, contextConfig));
     }
 
     private void sendErrorResponse(ChannelHandlerContext ctx, Cause cause) {

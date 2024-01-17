@@ -7,14 +7,14 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.codec.http.cors.CorsHandler;
-import org.pragmatica.http.server.HttpServerConfiguration;
+import org.pragmatica.http.server.HttpServerConfig;
 import org.pragmatica.http.server.routing.RequestRouter;
 
 public class HttpServerInitializer extends ChannelInitializer<SocketChannel> {
-    private final HttpServerConfiguration configuration;
+    private final HttpServerConfig configuration;
     private final RequestRouter requestRouter;
 
-    public HttpServerInitializer(HttpServerConfiguration configuration, RequestRouter requestRouter) {
+    public HttpServerInitializer(HttpServerConfig configuration, RequestRouter requestRouter) {
         this.configuration = configuration;
         this.requestRouter = requestRouter;
     }

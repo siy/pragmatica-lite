@@ -9,7 +9,11 @@
         <version>0.1.0</version>
     </parent>
 
-    <artifactId>hello-world</artifactId>
+    <artifactId>qr-generator</artifactId>
+
+    <properties>
+        <zxing.version>3.5.2</zxing.version>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -48,13 +52,25 @@
         </dependency>
 
         <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>${zxing.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>${zxing.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
 
         <dependency>
-        <groupId>org.junit.jupiter</groupId>
+            <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
         </dependency>
@@ -76,7 +92,7 @@
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>org.pragmatica.http.example.urlshortener.UrlShortener</mainClass>
+                                    <mainClass>org.pragmatica.http.example.qrgenerator.QrGenerator</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

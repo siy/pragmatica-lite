@@ -4,7 +4,7 @@ import org.pragmatica.http.CommonContentTypes;
 import org.pragmatica.http.HttpError;
 import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.http.server.HttpServer;
-import org.pragmatica.http.server.HttpServerConfiguration;
+import org.pragmatica.http.server.HttpServerConfig;
 import org.pragmatica.id.nanoid.NanoId;
 import org.pragmatica.lang.Promise;
 
@@ -22,7 +22,7 @@ public class App {
 
     public static HttpServer buildServer() {
         return HttpServer
-            .httpServerWith(HttpServerConfiguration.defaultConfiguration())
+            .httpServerWith(HttpServerConfig.defaultConfiguration())
             .serve(
                 //Full description
                 handleGet("/hello1")

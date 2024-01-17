@@ -1,5 +1,6 @@
 package org.pragmatica.http.example.urlshortener;
 
+import org.pragmatica.config.api.AppConfig;
 import org.pragmatica.db.postgres.DbEnv;
 import org.pragmatica.db.postgres.DbEnvConfig;
 import org.pragmatica.db.postgres.DbEnvConfigTemplate;
@@ -7,17 +8,16 @@ import org.pragmatica.http.example.urlshortener.api.UrlShortenerController;
 import org.pragmatica.http.example.urlshortener.api.UrlShortenerRequest;
 import org.pragmatica.http.example.urlshortener.domain.service.UrlShortenerService;
 import org.pragmatica.http.example.urlshortener.persistence.ShortenedUrlRepository;
-import org.pragmatica.http.server.HttpServerConfiguration;
-import org.pragmatica.http.server.HttpServerConfigurationTemplate;
+import org.pragmatica.http.server.HttpServerConfig;
+import org.pragmatica.http.server.HttpServerConfigTemplate;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.type.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.pragmatica.config.api.AppConfig.loadConfigs;
 import static org.pragmatica.http.server.HttpServer.httpServerWith;
-import static org.pragmatica.http.server.HttpServerConfiguration.defaultConfiguration;
+import static org.pragmatica.http.server.HttpServerConfig.defaultConfiguration;
 import static org.pragmatica.http.server.routing.Route.handlePost;
 
 /**
@@ -33,10 +33,10 @@ public class UrlShortener {
      * @param args command line arguments
      */
     public static void main(String... args) {
-        var configuration = loadConfigs(args);
+        var configuration = AppConfig.defaultApplicationConfig();
 
         Result.all(configuration.load("database", DbEnvConfigTemplate.INSTANCE),
-                   configuration.load("server", HttpServerConfigurationTemplate.INSTANCE))
+                   configuration.load("server", HttpServerConfigTemplate.INSTANCE))
               .map(UrlShortener::runApplication)
               .onFailure(cause -> log.error("Failed to load configuration {}", cause));
     }
@@ -45,11 +45,11 @@ public class UrlShortener {
      * Wire dependencies and run the application with the given configuration.
      *
      * @param dbEnvConfig             database configuration
-     * @param httpServerConfiguration HTTP server configuration
+     * @param httpServerConfig HTTP server configuration
      *
      * @return result of the application run
      */
-    private static Result<Unit> runApplication(DbEnvConfig dbEnvConfig, HttpServerConfiguration httpServerConfiguration) {
+    private static Result<Unit> runApplication(DbEnvConfig dbEnvConfig, HttpServerConfig httpServerConfig) {
         // In this application all dependencies form a chain:
         //
         // ShortenedUrlRepository (used by) -> UrlShortenerService (used by) -> UrlShortenerController
