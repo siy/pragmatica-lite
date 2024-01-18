@@ -6,11 +6,10 @@ Minimalistic web framework for Java 21+.
 
 ## Features
 * Functional style - no NPE, no exceptions, type safety, etc.
-* Consistent Option/Result/Promise monads.
+* Consistent Option/Result/Promise monads with compatible APIs.
 * Simple and convenient to use Promise-based asynchronous API - no low level technical details leaking into business logic.   
-* Minimalistic - no reflection, minimal external dependencies, 
-* Only 3 main components: HttpServer, HttpClient and PostgreSQL DB driver with convenient API.
-* HTTP server and client are fully asynchronous
+* Minimalistic - no reflection, minimal external dependencies.
+* Only 3 main fully asynchronous components: HttpServer, HttpClient and PostgreSQL DB driver.
 * Built-in caching domain name resolver with proper TTL handling.
 
 ## Example 
