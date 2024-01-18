@@ -13,6 +13,7 @@
         <module>json</module>
         <module>db</module>
         <module>config</module>
+        <module>annotation-processor</module>
     </modules>
     <packaging>pom</packaging>
 
