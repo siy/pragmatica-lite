@@ -1,6 +1,6 @@
 # Pragmatica Lite - Micro Web Framework for Pragmatic Functional Java Coding Style
 
-[![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](
+![License](https://img.shields.io/badge/license-Apache%202-blue.svg)
 
 Minimalistic web framework for Java 21+.
 
