@@ -2,11 +2,13 @@ package org.pragmatica.lang.type;
 
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Tuple;
 import org.pragmatica.lang.Tuple.Tuple3;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public interface RecordTemplate<T extends Record> {
     default Result<T> load(KeyToValue mapping) {
@@ -16,7 +18,12 @@ public interface RecordTemplate<T extends Record> {
     Result<T> load(String prefix, KeyToValue mapping);
 
     FieldNames fieldNames();
+
     List<Tuple3<String, TypeToken<?>, Fn1<?, T>>> extractors();
+
+    default Stream<Tuple.Tuple2<TypeToken<?>, Fn1<Result<?>, String>>> customConverters() {
+        return Stream.empty();
+    }
 
     default FieldValues fieldValues(T record) {
         record fieldValues(List<?> values) implements FieldValues {

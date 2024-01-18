@@ -16,6 +16,7 @@ import static io.netty.buffer.Unpooled.EMPTY_BUFFER;
 import static io.netty.buffer.Unpooled.wrappedBuffer;
 import static org.pragmatica.lang.Tuple.tuple;
 
+//TODO: make adding headers to response possible for all data types
 public sealed interface DataContainer {
     HttpStatus status();
     ByteBuf responseBody();

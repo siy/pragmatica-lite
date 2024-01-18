@@ -16,11 +16,7 @@ package com.github.pgasync;
 
 import com.github.pgasync.net.ResultSet;
 import com.github.pgasync.net.SqlException;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.jupiter.api.Tag;
 
 import java.util.Arrays;

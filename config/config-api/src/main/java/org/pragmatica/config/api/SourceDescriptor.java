@@ -17,8 +17,8 @@ import java.nio.file.Path;
  * {@link FileSourceDescriptor.Classpath}) should not specify extension. The list of extensions is determined by available
  * {@link ConfigFormatReader}s.
  * <p>
- * Note that error which happens during loading of the content, does not cause failure of the configuration loading process. The error is logged and
- * process continues with next source (or same source with next file extension, see {@link ConfigStrategy} for more details).
+ * Error which happen during loading of the content, do not cause a failure of the entire configuration loading process. The error is logged and
+ * process continues with next combination of source and file extension.
  */
 public sealed interface SourceDescriptor {
     void load(ConfigStore store);
@@ -31,13 +31,14 @@ public sealed interface SourceDescriptor {
             public void load(ConfigStore store) {
                 ConfigFormatReader.readers()
                                   .map(tuple -> tuple.map((ext, reader) -> readFile(ext, path())
+                                      .onSuccessRun(() -> log.debug(STR."File \{path}.\{ext} successfully read"))
                                       .onFailure(cause -> log.debug(STR."Failed to read file \{path}.\{ext}: \{cause}", cause))
                                       .flatMap(reader::read)))
                                   .forEach(result -> result.onSuccess(store::append));
             }
 
             static Result<String> readFile(String extension, String path) {
-                return Result.lift(Causes::fromThrowable, () -> Files.readString(Path.of(STR."\{path}.\{extension}")));
+                return Result.lift(ConfigError::ioError, () -> Files.readString(Path.of(STR."\{path}.\{extension}")));
             }
         }
 
@@ -48,6 +49,7 @@ public sealed interface SourceDescriptor {
             public void load(ConfigStore store) {
                 ConfigFormatReader.readers()
                                   .map(tuple -> tuple.map((ext, reader) -> loadFromClasspath(ext, path())
+                                      .onSuccessRun(() -> log.debug(STR."File \{path}.\{ext} successfully loaded via classpath"))
                                       .onFailure(cause -> log.debug(STR."Failed to load file \{path}.\{ext} via classpath: \{cause}", cause))
                                       .flatMap(reader::read)))
                                   .forEach(result -> result.onSuccess(store::append));
@@ -66,7 +68,7 @@ public sealed interface SourceDescriptor {
             }
         }
 
-        //TODO: implement Url
+        //TODO: implement Url source
 //        record Url(String url) implements FileSourceDescriptor {}
     }
 

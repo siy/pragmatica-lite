@@ -38,9 +38,9 @@ public class HttpServer {
 
     private static final Logger log = LoggerFactory.getLogger(HttpServer.class);
     private final RequestRouter requestRouter;
-    private final HttpServerConfiguration configuration;
+    private final HttpServerConfig configuration;
 
-    private HttpServer(HttpServerConfiguration configuration, RequestRouter requestRouter) {
+    private HttpServer(HttpServerConfig configuration, RequestRouter requestRouter) {
         this.configuration = configuration;
         this.requestRouter = requestRouter;
     }
@@ -54,7 +54,7 @@ public class HttpServer {
         }
     }
 
-    public static Builder httpServerWith(HttpServerConfiguration configuration) {
+    public static Builder httpServerWith(HttpServerConfig configuration) {
         return (RouteSource... routeSources) -> new HttpServer(configuration, RequestRouter.with(routeSources));
     }
 

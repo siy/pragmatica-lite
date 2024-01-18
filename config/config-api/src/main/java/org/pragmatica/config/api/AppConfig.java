@@ -10,12 +10,12 @@ public interface AppConfig {
 
     ConfigStore store();
 
-    static AppConfig loadDefault(String[] args) {
-        return load(args, ConfigStrategy.defaultStrategy(args));
+    static AppConfig defaultApplicationConfig() {
+        return applicationConfigWithStrategy(ConfigStrategy.defaultStrategy());
     }
 
-    static AppConfig load(String[] args, ConfigStrategy strategy) {
-        var store = ConfigStore.defaultStore();
+    static AppConfig applicationConfigWithStrategy(ConfigStrategy strategy) {
+        var store = ConfigStore.configStore();
 
         strategy.configurationSources()
                 .forEach(source -> source.load(store));

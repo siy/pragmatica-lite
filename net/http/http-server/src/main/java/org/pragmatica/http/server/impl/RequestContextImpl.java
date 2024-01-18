@@ -2,15 +2,12 @@ package org.pragmatica.http.server.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.CombinedHttpHeaders;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpUtil;
-import io.netty.handler.codec.http.QueryStringDecoder;
+import io.netty.handler.codec.http.*;
+import org.pragmatica.codec.json.JsonCodecFactory;
 import org.pragmatica.http.HttpError;
 import org.pragmatica.http.codec.CustomCodec;
 import org.pragmatica.http.protocol.HttpStatus;
-import org.pragmatica.http.server.HttpServerConfiguration;
+import org.pragmatica.http.server.HttpServerConfig;
 import org.pragmatica.http.server.routing.Redirect;
 import org.pragmatica.http.server.routing.RequestContext;
 import org.pragmatica.http.server.routing.Route;
@@ -44,7 +41,7 @@ public class RequestContextImpl implements RequestContext {
 
     private final ChannelHandlerContext ctx;
     private final FullHttpRequest request;
-    private final HttpServerConfiguration configuration;
+    private final ContextConfig configuration;
     private final HttpHeaders responseHeaders = new CombinedHttpHeaders(true);
     private final Route<?> route;
     private final String requestId;
@@ -54,7 +51,7 @@ public class RequestContextImpl implements RequestContext {
     private Supplier<Map<String, String>> headersSupplier = lazy(() -> headersSupplier = value(initHeaders()));
     private boolean keepAlive = false;
 
-    private RequestContextImpl(ChannelHandlerContext ctx, FullHttpRequest request, Route<?> route, HttpServerConfiguration configuration) {
+    private RequestContextImpl(ChannelHandlerContext ctx, FullHttpRequest request, Route<?> route, ContextConfig configuration) {
         this.ctx = ctx;
         this.request = request;
         this.route = route;
@@ -62,7 +59,7 @@ public class RequestContextImpl implements RequestContext {
         this.requestId = ULID.randomULID().encoded();
     }
 
-    public static void handle(ChannelHandlerContext ctx, FullHttpRequest request, Route<?> route, HttpServerConfiguration configuration) {
+    public static void handle(ChannelHandlerContext ctx, FullHttpRequest request, Route<?> route, ContextConfig configuration) {
         new RequestContextImpl(ctx, request, route, configuration).invokeAndRespond();
     }
 
@@ -88,7 +85,8 @@ public class RequestContextImpl implements RequestContext {
 
     @Override
     public <T> Result<T> fromJson(TypeToken<T> literal) {
-        return configuration.jsonCodec().deserialize(request.content(), literal);
+        return configuration.jsonCodec()
+                            .deserialize(request.content(), literal);
     }
 
     @Override
@@ -147,8 +145,8 @@ public class RequestContextImpl implements RequestContext {
                                           .serialize(value)
                                           .map(DataContainer.ByteBufData::from);
                 case CUSTOM -> configuration.customCodec()
-                                            .map(codec -> serializeCustom(value, codec))
-                                            .or(MISSING_CUSTOM_CODEC_ERROR);
+                                            .serialize(value, route.contentType())
+                                            .map(DataContainer.ByteBufData::from);
 
             };
         };

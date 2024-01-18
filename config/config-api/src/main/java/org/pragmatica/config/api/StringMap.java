@@ -6,6 +6,9 @@ import org.pragmatica.lang.Result;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Functional wrapper for map of strings.
+ */
 public interface StringMap {
     Map<String, String> rawMap();
 

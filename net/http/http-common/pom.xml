@@ -25,6 +25,11 @@
 
         <dependency>
             <groupId>org.pragmatica.lite</groupId>
+            <artifactId>config-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.pragmatica.lite</groupId>
             <artifactId>transport-api</artifactId>
         </dependency>
 
@@ -36,6 +41,11 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.auto.service</groupId>
+            <artifactId>auto-service</artifactId>
         </dependency>
 
         <dependency>

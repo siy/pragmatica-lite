@@ -5,25 +5,20 @@ import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.TypeToken;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.pragmatica.config.api.DataConversionError.keyNotFound;
 
 public interface Converter {
+    @SuppressWarnings("unchecked")
     static Converter converter() {
-        return () -> new HashMap<>(ParameterType.BuiltInTypes.LIST
-                                       .stream()
-                                       .collect(Collectors.toMap(ParameterType::token, pt -> pt::apply)));
-    }
+        Map<TypeToken<?>, Fn1<Result<?>, String>> map =
+            ParameterType.knownParameterTypes()
+                         .stream()
+                         .collect(Collectors.toMap(ParameterType::token, pt -> pt));
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    default <T> Converter with(TypeToken<T> typeToken, Fn1<Result<T>, String> converter) {
-        var newMapping = new HashMap<>(typeMapping());
-        newMapping.put(typeToken, (Fn1<Result<?>, String>) (Fn1) converter);
-
-        return () -> newMapping;
+        return () -> map;
     }
 
     @SuppressWarnings("unchecked")

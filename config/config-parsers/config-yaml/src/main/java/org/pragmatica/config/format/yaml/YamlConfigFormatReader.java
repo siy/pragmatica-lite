@@ -1,10 +1,8 @@
 package org.pragmatica.config.format.yaml;
 
 import com.google.auto.service.AutoService;
-import org.pragmatica.config.api.ConfigError;
 import org.pragmatica.config.api.ConfigFormatReader;
 import org.pragmatica.config.api.StringMap;
-import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
 
 import java.util.List;

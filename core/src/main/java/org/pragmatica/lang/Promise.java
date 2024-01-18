@@ -17,26 +17,9 @@
 
 package org.pragmatica.lang;
 
-import org.pragmatica.lang.Functions.Fn1;
-import org.pragmatica.lang.Functions.Fn2;
-import org.pragmatica.lang.Functions.Fn3;
-import org.pragmatica.lang.Functions.Fn4;
-import org.pragmatica.lang.Functions.Fn5;
-import org.pragmatica.lang.Functions.Fn6;
-import org.pragmatica.lang.Functions.Fn7;
-import org.pragmatica.lang.Functions.Fn8;
-import org.pragmatica.lang.Functions.Fn9;
-import org.pragmatica.lang.Functions.FnX;
+import org.pragmatica.lang.Functions.*;
 import org.pragmatica.lang.Result.Cause;
-import org.pragmatica.lang.Tuple.Tuple1;
-import org.pragmatica.lang.Tuple.Tuple2;
-import org.pragmatica.lang.Tuple.Tuple3;
-import org.pragmatica.lang.Tuple.Tuple4;
-import org.pragmatica.lang.Tuple.Tuple5;
-import org.pragmatica.lang.Tuple.Tuple6;
-import org.pragmatica.lang.Tuple.Tuple7;
-import org.pragmatica.lang.Tuple.Tuple8;
-import org.pragmatica.lang.Tuple.Tuple9;
+import org.pragmatica.lang.Tuple.*;
 import org.pragmatica.lang.io.CoreError;
 import org.pragmatica.lang.io.CoreError.Cancelled;
 import org.pragmatica.lang.io.Timeout;

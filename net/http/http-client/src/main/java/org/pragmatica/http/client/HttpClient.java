@@ -3,21 +3,9 @@ package org.pragmatica.http.client;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpClientCodec;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaderValues;
-import io.netty.handler.codec.http.HttpObjectAggregator;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
@@ -39,9 +27,7 @@ import static org.pragmatica.dns.DomainName.domainName;
 import static org.pragmatica.http.HttpError.httpError;
 import static org.pragmatica.http.protocol.HttpStatus.NOT_IMPLEMENTED;
 import static org.pragmatica.lang.Promise.resolved;
-import static org.pragmatica.lang.Result.failure;
-import static org.pragmatica.lang.Result.success;
-import static org.pragmatica.lang.Result.unitResult;
+import static org.pragmatica.lang.Result.*;
 
 //TODO: add customisation for name resolver
 @SuppressWarnings("unused")

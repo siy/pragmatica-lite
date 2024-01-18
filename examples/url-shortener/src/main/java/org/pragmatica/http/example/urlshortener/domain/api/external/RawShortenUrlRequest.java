@@ -1,7 +1,7 @@
 package org.pragmatica.http.example.urlshortener.domain.api.external;
 
-import org.pragmatica.http.example.urlshortener.domain.entity.ShortenedUrl;
 import org.pragmatica.http.example.urlshortener.domain.api.internal.ValidShortenUrlRequest;
+import org.pragmatica.http.example.urlshortener.domain.entity.ShortenedUrl;
 import org.pragmatica.http.example.urlshortener.domain.error.UrlShortenerError;
 import org.pragmatica.lang.Result;
 import org.pragmatica.uri.IRI;

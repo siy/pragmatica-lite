@@ -7,19 +7,18 @@ import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.TypeToken;
 
 import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
+import java.time.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.ServiceLoader;
 import java.util.stream.Stream;
 
 import static org.pragmatica.config.api.DataConversionError.invalidInput;
 import static org.pragmatica.lang.Option.none;
 import static org.pragmatica.lang.Option.some;
 import static org.pragmatica.lang.Result.success;
+import static org.pragmatica.lang.Tuple.tuple;
 
 /**
  * Supported configuration parameter types. Mostly resembles TOML specification with notable addition of {@link Duration} and use of
@@ -41,11 +40,73 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
         }
 
         @Override
-        public Result<String> apply(String param1) {
-            return success(param1);
+        public Result<String> apply(String value) {
+            var chars = value.toCharArray();
+            var state = new StringArrayParameter.ParsingState();
+
+            for (var chr : chars) {
+                switch (state.process(chr)) {
+                    case ELEMENT_READY -> {
+                        state.state = StringArrayParameter.State.SKIP_TO_COMMA;
+                    }
+                    case ELEMENT_READY_COMMA -> {
+                        state.element.append(chr);
+                        state.state = StringArrayParameter.State.INITIAL;
+                    }
+                    default -> {
+                    }
+                }
+            }
+            if (state.state == StringArrayParameter.State.INITIAL || state.state == StringArrayParameter.State.SKIP_TO_COMMA) {
+                return success(state.element.toString().trim());
+            } else {
+                return new InvalidInput(STR."The value [\{value}] can't be parsed into String").result();
+            }
         }
 
         public static final StringParameter INSTANCE = new StringParameter();
+    }
+
+    record ByteParameter() implements ParameterType<Byte> {
+        @Override
+        public TypeToken<Byte> token() {
+            return new TypeToken<>() {};
+        }
+
+        @Override
+        public Result<Byte> apply(String param1) {
+            return Result.lift(invalidInput("Byte", param1), () -> Byte.parseByte(param1));
+        }
+
+        public static final ByteParameter INSTANCE = new ByteParameter();
+    }
+
+    record ShortParameter() implements ParameterType<Short> {
+        @Override
+        public TypeToken<Short> token() {
+            return new TypeToken<>() {};
+        }
+
+        @Override
+        public Result<Short> apply(String param1) {
+            return Result.lift(invalidInput("Short", param1), () -> Short.parseShort(param1));
+        }
+
+        public static final ShortParameter INSTANCE = new ShortParameter();
+    }
+
+    record IntegerParameter() implements ParameterType<Integer> {
+        @Override
+        public TypeToken<Integer> token() {
+            return new TypeToken<>() {};
+        }
+
+        @Override
+        public Result<Integer> apply(String param1) {
+            return Result.lift(invalidInput("Integer", param1), () -> Integer.parseInt(param1));
+        }
+
+        public static final IntegerParameter INSTANCE = new IntegerParameter();
     }
 
     record LongParameter() implements ParameterType<Long> {
@@ -84,7 +145,13 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
 
         @Override
         public Result<Boolean> apply(String param1) {
-            return Result.lift(invalidInput("Boolean", param1), () -> Boolean.parseBoolean(param1));
+            if (param1.equalsIgnoreCase("true") || param1.equalsIgnoreCase("yes")) {
+                return Result.success(true);
+            } else if (param1.equalsIgnoreCase("false") || param1.equalsIgnoreCase("no")) {
+                return Result.success(false);
+            }
+
+            return new InvalidInput(STR."The value [\{param1}] can't be parsed into Boolean").result();
         }
 
         public static final BooleanParameter INSTANCE = new BooleanParameter();
@@ -171,7 +238,6 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
         public static final DurationParameter INSTANCE = new DurationParameter();
     }
 
-    //TODO: support for quoted and escaped strings
     record StringArrayParameter(Option<ParameterType<String>> elementType) implements ParameterType<List<String>> {
         @Override
         public TypeToken<List<String>> token() {
@@ -184,8 +250,8 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
                 .map(Stream::toList);
         }
 
-        static Result<Stream<String>> tryParse(String param1, String type) {
-            var input = param1.trim();
+        static Result<Stream<String>> tryParse(String value, String typeMessage) {
+            var input = value.trim();
 
             if (input.startsWith("[") && input.endsWith("]")) {
                 var values1 = input.substring(1, input.length() - 1).trim();
@@ -194,9 +260,125 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
                     return success(Stream.empty());
                 }
 
-                return success(Stream.of(values1.split(",")).map(String::trim));
+                return splitString(values1, typeMessage)
+                    .map(List::stream);
             } else {
-                return new InvalidInput(STR."The value [\{param1}] can't be parsed into \{type}").result();
+                return new InvalidInput(STR."The value [\{value}] can't be parsed into \{typeMessage}").result();
+            }
+        }
+
+        enum State {
+            INITIAL,
+            SINGLE_QUOTE,
+            SINGLE_QUOTE_ESCAPE,
+            DOUBLE_QUOTE,
+            DOUBLE_QUOTE_ESCAPE,
+            ELEMENT_READY,
+            ELEMENT_READY_COMMA,
+            SKIP_TO_COMMA,
+        }
+
+        static class ParsingState {
+            StringBuilder element = new StringBuilder();
+            State state = State.INITIAL;
+
+            State process(char chr) {
+                return switch (state) {
+                    case INITIAL -> {
+                        if (chr == '\'') {
+                            state = State.SINGLE_QUOTE;
+                            element.setLength(0); //Throw out any spaces before the quote
+                        } else if (chr == '"') {
+                            state = State.DOUBLE_QUOTE;
+                            element.setLength(0); //Throw out any spaces before the quote
+                        } else if (chr == ',') {
+                            state = State.ELEMENT_READY_COMMA;
+                        } else {
+                            element.append(chr);
+                        }
+                        yield state;
+                    }
+                    case SINGLE_QUOTE -> {
+                        if (chr == '\'') {
+                            state = State.ELEMENT_READY;
+                        } else if (chr == '\\') {
+                            state = State.SINGLE_QUOTE_ESCAPE;
+                        } else {
+                            element.append(chr);
+                        }
+                        yield state;
+                    }
+                    case SINGLE_QUOTE_ESCAPE -> {
+                        element.append(translateEscape(chr));
+                        state = State.SINGLE_QUOTE;
+                        yield state;
+                    }
+                    case DOUBLE_QUOTE -> {
+                        if (chr == '"') {
+                            state = State.ELEMENT_READY;
+                        } else if (chr == '\\') {
+                            state = State.DOUBLE_QUOTE_ESCAPE;
+                        } else {
+                            element.append(chr);
+                        }
+                        yield state;
+                    }
+                    case DOUBLE_QUOTE_ESCAPE -> {
+                        element.append(translateEscape(chr));
+                        state = State.DOUBLE_QUOTE;
+                        yield state;
+                    }
+                    case SKIP_TO_COMMA -> {
+                        if (chr == ',') {
+                            state = State.INITIAL;
+                        }
+                        yield state;
+                    }
+                    default -> throw new IllegalStateException(STR."Unexpected state: \{state}");
+                };
+            }
+
+            static char translateEscape(char chr) {
+                return switch (chr) {
+                    case 'b' -> '\b';
+                    case 't' -> '\t';
+                    case 'n' -> '\n';
+                    case 'f' -> '\f';
+                    case 'r' -> '\r';
+                    default -> chr;
+                };
+            }
+        }
+
+        private static Result<List<String>> splitString(String value, String typeMessage) {
+            var chars = value.toCharArray();
+            var state = new ParsingState();
+            var result = new ArrayList<String>();
+
+            for (var chr : chars) {
+                switch (state.process(chr)) {
+                    case ELEMENT_READY -> {
+                        result.add(state.element.toString());
+                        state.element.setLength(0);
+                        state.state = State.SKIP_TO_COMMA;
+                    }
+                    case ELEMENT_READY_COMMA -> {
+                        //Element had no quotes, so we have to strip extra spaces
+                        result.add(state.element.toString().trim());
+                        state.element.setLength(0);
+                        state.state = State.INITIAL;
+                    }
+                    default -> {
+                    }
+                }
+            }
+            if (state.state == State.INITIAL || state.state == State.SKIP_TO_COMMA) {
+                if (state.state == State.INITIAL) {
+                    result.add(state.element.toString().trim());
+                }
+                return success(result);
+            } else {
+                return new InvalidInput(STR."The value [\{value}] can't be parsed into \{typeMessage}").result();
             }
         }
 
@@ -331,9 +513,15 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
         public static final DurationArrayParameter INSTANCE = new DurationArrayParameter(some(DurationParameter.INSTANCE));
     }
 
-    record BuiltInTypes() {
-        public static final List<ParameterType<?>> LIST = List.of(
+    non-sealed interface CustomParameterType<T> extends ParameterType<T> {
+    }
+
+    static List<ParameterType> knownParameterTypes() {
+        var builtIn = List.of(
             StringParameter.INSTANCE,
+            ByteParameter.INSTANCE,
+            ShortParameter.INSTANCE,
+            IntegerParameter.INSTANCE,
             LongParameter.INSTANCE,
             DecimalParameter.INSTANCE,
             BooleanParameter.INSTANCE,
@@ -354,5 +542,9 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
             DurationArrayParameter.INSTANCE
         );
 
+        return Stream.concat(builtIn.stream(),
+                             ServiceLoader.load(CustomParameterType.class)
+                                          .stream()
+                                          .map(ServiceLoader.Provider::get)).toList();
     }
 }

@@ -2,41 +2,18 @@ package org.pragmatica.config.api;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.pragmatica.config.api.ParameterType.BooleanArrayParameter;
-import org.pragmatica.config.api.ParameterType.BooleanParameter;
-import org.pragmatica.config.api.ParameterType.DecimalArrayParameter;
-import org.pragmatica.config.api.ParameterType.DecimalParameter;
-import org.pragmatica.config.api.ParameterType.DurationArrayParameter;
-import org.pragmatica.config.api.ParameterType.DurationParameter;
-import org.pragmatica.config.api.ParameterType.LocalDateArrayParameter;
-import org.pragmatica.config.api.ParameterType.LocalDateParameter;
-import org.pragmatica.config.api.ParameterType.LocalDateTimeArrayParameter;
-import org.pragmatica.config.api.ParameterType.LocalDateTimeParameter;
-import org.pragmatica.config.api.ParameterType.LocalTimeArrayParameter;
-import org.pragmatica.config.api.ParameterType.LocalTimeParameter;
-import org.pragmatica.config.api.ParameterType.LongArrayParameter;
-import org.pragmatica.config.api.ParameterType.LongParameter;
-import org.pragmatica.config.api.ParameterType.OffsetDateTimeArrayParameter;
-import org.pragmatica.config.api.ParameterType.OffsetDateTimeParameter;
-import org.pragmatica.config.api.ParameterType.StringArrayParameter;
-import org.pragmatica.config.api.ParameterType.StringParameter;
-import org.pragmatica.lang.Result;
+import org.pragmatica.config.api.ParameterType.*;
 import org.pragmatica.lang.type.TypeToken;
 
 import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.pragmatica.lang.Result.success;
 
 class ParameterTypeTest {
-
     public static final OffsetDateTime OFFSET_DATE_TIME = OffsetDateTime.of(2007, 12, 3, 10, 15, 30, 0, ZoneOffset.ofHours(1));
     public static final LocalDateTime LOCAL_DATE_TIME = LocalDateTime.of(2007, 12, 3, 10, 15, 30);
     public static final LocalDate LOCAL_DATE = LocalDate.of(2007, 12, 3);
@@ -44,108 +21,96 @@ class ParameterTypeTest {
 
     @Test
     void tokensAreOfCorrectTypeForPlainTypes() {
-        assertEquals(StringParameter.INSTANCE.token(), new TypeToken<String>() {});
-        assertEquals(LongParameter.INSTANCE.token(), new TypeToken<Long>() {});
-        assertEquals(DecimalParameter.INSTANCE.token(), new TypeToken<BigDecimal>() {});
-        assertEquals(BooleanParameter.INSTANCE.token(), new TypeToken<Boolean>() {});
-        assertEquals(OffsetDateTimeParameter.INSTANCE.token(), new TypeToken<OffsetDateTime>() {});
-        assertEquals(LocalDateTimeParameter.INSTANCE.token(), new TypeToken<LocalDateTime>() {});
-        assertEquals(LocalDateParameter.INSTANCE.token(), new TypeToken<LocalDate>() {});
-        assertEquals(LocalTimeParameter.INSTANCE.token(), new TypeToken<LocalTime>() {});
-        assertEquals(DurationParameter.INSTANCE.token(), new TypeToken<Duration>() {});
+        assertEquals(new TypeToken<String>() {}, StringParameter.INSTANCE.token());
+        assertEquals(new TypeToken<Long>() {}, LongParameter.INSTANCE.token());
+        assertEquals(new TypeToken<BigDecimal>() {}, DecimalParameter.INSTANCE.token());
+        assertEquals(new TypeToken<Boolean>() {}, BooleanParameter.INSTANCE.token());
+        assertEquals(new TypeToken<OffsetDateTime>() {}, OffsetDateTimeParameter.INSTANCE.token());
+        assertEquals(new TypeToken<LocalDateTime>() {}, LocalDateTimeParameter.INSTANCE.token());
+        assertEquals(new TypeToken<LocalDate>() {}, LocalDateParameter.INSTANCE.token());
+        assertEquals(new TypeToken<LocalTime>() {}, LocalTimeParameter.INSTANCE.token());
+        assertEquals(new TypeToken<Duration>() {}, DurationParameter.INSTANCE.token());
     }
 
     @Test
     void tokensAreOfCorrectTypeForArrayTypes() {
-        assertEquals(StringArrayParameter.INSTANCE.token(), new TypeToken<List<String>>() {});
-        assertEquals(LongArrayParameter.INSTANCE.token(), new TypeToken<List<Long>>() {});
-        assertEquals(DecimalArrayParameter.INSTANCE.token(), new TypeToken<List<BigDecimal>>() {});
-        assertEquals(BooleanArrayParameter.INSTANCE.token(), new TypeToken<List<Boolean>>() {});
-        assertEquals(OffsetDateTimeArrayParameter.INSTANCE.token(), new TypeToken<List<OffsetDateTime>>() {});
-        assertEquals(LocalDateTimeArrayParameter.INSTANCE.token(), new TypeToken<List<LocalDateTime>>() {});
-        assertEquals(LocalDateArrayParameter.INSTANCE.token(), new TypeToken<List<LocalDate>>() {});
-        assertEquals(LocalTimeArrayParameter.INSTANCE.token(), new TypeToken<List<LocalTime>>() {});
-        assertEquals(DurationArrayParameter.INSTANCE.token(), new TypeToken<List<Duration>>() {});
+        assertEquals(new TypeToken<List<String>>() {}, StringArrayParameter.INSTANCE.token());
+        assertEquals(new TypeToken<List<Long>>() {}, LongArrayParameter.INSTANCE.token());
+        assertEquals(new TypeToken<List<BigDecimal>>() {}, DecimalArrayParameter.INSTANCE.token());
+        assertEquals(new TypeToken<List<Boolean>>() {}, BooleanArrayParameter.INSTANCE.token());
+        assertEquals(new TypeToken<List<OffsetDateTime>>() {}, OffsetDateTimeArrayParameter.INSTANCE.token());
+        assertEquals(new TypeToken<List<LocalDateTime>>() {}, LocalDateTimeArrayParameter.INSTANCE.token());
+        assertEquals(new TypeToken<List<LocalDate>>() {}, LocalDateArrayParameter.INSTANCE.token());
+        assertEquals(new TypeToken<List<LocalTime>>() {}, LocalTimeArrayParameter.INSTANCE.token());
+        assertEquals(new TypeToken<List<Duration>>() {}, DurationArrayParameter.INSTANCE.token());
     }
 
     //TODO: negative tests
     @Test
     void parsingOfCorrectDataWorksAsExpected() {
-        assertEquals(StringParameter.INSTANCE.apply("test"), Result.success("test"));
-        assertEquals(LongParameter.INSTANCE.apply("123456789"), Result.success(123456789L));
-        assertEquals(DecimalParameter.INSTANCE.apply("-3.1415925e-4"), Result.success(BigDecimal.valueOf(-3.1415925e-4)));
-        assertEquals(BooleanParameter.INSTANCE.apply("true"), Result.success(true));
-        assertEquals(BooleanParameter.INSTANCE.apply("false"), Result.success(false));
-        assertEquals(OffsetDateTimeParameter.INSTANCE.apply("2007-12-03T10:15:30+01:00"), Result.success(OFFSET_DATE_TIME));
-        assertEquals(LocalDateTimeParameter.INSTANCE.apply("2007-12-03T10:15:30"), Result.success(LOCAL_DATE_TIME));
-        assertEquals(LocalDateParameter.INSTANCE.apply("2007-12-03"), Result.success(LOCAL_DATE));
-        assertEquals(LocalTimeParameter.INSTANCE.apply("10:15:30"), Result.success(LOCAL_TIME));
-        assertEquals(DurationParameter.INSTANCE.apply("PT3456S"), Result.success(Duration.ofSeconds(3456)));
+        assertEquals(success("test"), StringParameter.INSTANCE.apply("test"));
+        assertEquals(success("test"), StringParameter.INSTANCE.apply("\"test\""));
+        assertEquals(success("te\"st"), StringParameter.INSTANCE.apply("\"te\\\"st\""));
+        assertEquals(success("test"), StringParameter.INSTANCE.apply("'test'"));
+        assertEquals(success("te'st"), StringParameter.INSTANCE.apply("'te\\'st'"));
+        assertEquals(success("test,  test"), StringParameter.INSTANCE.apply(" test,  test "));
+        assertEquals(success("test,"), StringParameter.INSTANCE.apply("test, "));
+        assertEquals(success(123456789L), LongParameter.INSTANCE.apply("123456789"));
+        assertEquals(success(BigDecimal.valueOf(-3.1415925e-4)), DecimalParameter.INSTANCE.apply("-3.1415925e-4"));
+        assertEquals(success(true), BooleanParameter.INSTANCE.apply("true"));
+        assertEquals(success(false), BooleanParameter.INSTANCE.apply("false"));
+        assertEquals(success(OFFSET_DATE_TIME), OffsetDateTimeParameter.INSTANCE.apply("2007-12-03T10:15:30+01:00"));
+        assertEquals(success(LOCAL_DATE_TIME), LocalDateTimeParameter.INSTANCE.apply("2007-12-03T10:15:30"));
+        assertEquals(success(LOCAL_DATE), LocalDateParameter.INSTANCE.apply("2007-12-03"));
+        assertEquals(success(LOCAL_TIME), LocalTimeParameter.INSTANCE.apply("10:15:30"));
+        assertEquals(success(Duration.ofSeconds(3456)), DurationParameter.INSTANCE.apply("PT3456S"));
         // without PT prefix
-        assertEquals(DurationParameter.INSTANCE.apply("3456s"), Result.success(Duration.ofSeconds(3456)));
+        assertEquals(success(Duration.ofSeconds(3456)), DurationParameter.INSTANCE.apply("3456s"));
     }
 
     @Test
     void emptyArraysParsedIntoEmptyResults() {
         StringArrayParameter.INSTANCE.apply("[]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        StringArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        StringArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
+        StringArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertEquals(2, list.size()));
+        StringArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertEquals(3, list.size()));
 
         LongArrayParameter.INSTANCE.apply("[]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        LongArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        LongArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-
         DecimalArrayParameter.INSTANCE.apply("[]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        DecimalArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        DecimalArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-
         BooleanArrayParameter.INSTANCE.apply("[]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        BooleanArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        BooleanArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-
         OffsetDateTimeArrayParameter.INSTANCE.apply("[]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        OffsetDateTimeArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        OffsetDateTimeArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-
         LocalDateTimeArrayParameter.INSTANCE.apply("[]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        LocalDateTimeArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        LocalDateTimeArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-
         LocalDateArrayParameter.INSTANCE.apply("[]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        LocalDateArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        LocalDateArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-
         LocalTimeArrayParameter.INSTANCE.apply("[]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        LocalTimeArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        LocalTimeArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-
         DurationArrayParameter.INSTANCE.apply("[]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        DurationArrayParameter.INSTANCE.apply("[,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
-        DurationArrayParameter.INSTANCE.apply("[,,]").onFailureRun(Assertions::fail).onSuccess(list -> assertTrue(list.isEmpty()));
     }
 
     @Test
     void parsingOfCorrectArrayDataWorksAsExpected() {
-        assertEquals(StringArrayParameter.INSTANCE.apply("[ one ]"), Result.success(List.of("one")));
-        assertEquals(StringArrayParameter.INSTANCE.apply("[ one, two ]"), Result.success(List.of("one", "two")));
+        assertEquals(success(List.of("one")), StringArrayParameter.INSTANCE.apply("[ one ]"));
+        assertEquals(success(List.of("one", "two")), StringArrayParameter.INSTANCE.apply("[ one, two ]"));
+        assertEquals(success(List.of("one", "two")), StringArrayParameter.INSTANCE.apply("[  'one' ,  'two'   ]"));
+        assertEquals(success(List.of("one", "two")), StringArrayParameter.INSTANCE.apply("['one','two']"));
+        assertEquals(success(List.of("o\ne", "two")), StringArrayParameter.INSTANCE.apply("['o\\ne','t\\wo']"));
+        assertEquals(success(List.of("'one", "two'")), StringArrayParameter.INSTANCE.apply("['\\'one','two\\'']"));
 
-        assertEquals(LongArrayParameter.INSTANCE.apply("[123]"), Result.success(List.of(123L)));
-        assertEquals(LongArrayParameter.INSTANCE.apply("[ 123, -456]"), Result.success(List.of(123L, -456L)));
+        assertEquals(success(List.of(123L)), LongArrayParameter.INSTANCE.apply("[123]"));
+        assertEquals(success(List.of(123L, -456L)), LongArrayParameter.INSTANCE.apply("[ 123, -456]"));
 
-        assertEquals(DecimalArrayParameter.INSTANCE.apply("[ 1.23]"), Result.success(List.of(BigDecimal.valueOf(1.23))));
-        assertEquals(DecimalArrayParameter.INSTANCE.apply("[ 1.23, 4.56e7]"), Result.success(List.of(BigDecimal.valueOf(1.23), BigDecimal.valueOf(4.56e7))));
+        assertEquals(success(List.of(BigDecimal.valueOf(1.23))), DecimalArrayParameter.INSTANCE.apply("[ 1.23]"));
+        assertEquals(success(List.of(BigDecimal.valueOf(1.23), BigDecimal.valueOf(4.56e7))), DecimalArrayParameter.INSTANCE.apply("[ 1.23, 4.56e7]"));
 
-        assertEquals(BooleanArrayParameter.INSTANCE.apply("[true]"), Result.success(List.of(true)));
-        assertEquals(BooleanArrayParameter.INSTANCE.apply("[true, false ]"), Result.success(List.of(true, false)));
+        assertEquals(success(List.of(true)), BooleanArrayParameter.INSTANCE.apply("[true]"));
+        assertEquals(success(List.of(true, false)), BooleanArrayParameter.INSTANCE.apply("[true, false ]"));
 
-        assertEquals(OffsetDateTimeArrayParameter.INSTANCE.apply("[2007-12-03T10:15:30+01:00]"), Result.success(List.of(OFFSET_DATE_TIME)));
+        assertEquals(success(List.of(OFFSET_DATE_TIME)), OffsetDateTimeArrayParameter.INSTANCE.apply("[2007-12-03T10:15:30+01:00]"));
 
-        assertEquals(LocalDateTimeArrayParameter.INSTANCE.apply("[2007-12-03T10:15:30]"), Result.success(List.of(LOCAL_DATE_TIME)));
+        assertEquals(success(List.of(LOCAL_DATE_TIME)), LocalDateTimeArrayParameter.INSTANCE.apply("[2007-12-03T10:15:30]"));
 
-        assertEquals(LocalDateArrayParameter.INSTANCE.apply("[2007-12-03]"), Result.success(List.of(LOCAL_DATE)));
+        assertEquals(success(List.of(LOCAL_DATE)), LocalDateArrayParameter.INSTANCE.apply("[2007-12-03]"));
 
-        assertEquals(LocalTimeArrayParameter.INSTANCE.apply("[10:15:30]"), Result.success(List.of(LOCAL_TIME)));
+        assertEquals(success(List.of(LOCAL_TIME)), LocalTimeArrayParameter.INSTANCE.apply("[10:15:30]"));
 
-        assertEquals(DurationArrayParameter.INSTANCE.apply("[25s,P1DT4H6M]"), Result.success(List.of(Duration.ofSeconds(25), Duration.ofDays(1).plusHours(4).plusMinutes(6))));
+        assertEquals(success(List.of(Duration.ofSeconds(25), Duration.ofDays(1).plusHours(4).plusMinutes(6))),
+                     DurationArrayParameter.INSTANCE.apply("[25s,P1DT4H6M]"));
     }
 }
