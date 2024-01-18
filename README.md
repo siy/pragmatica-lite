@@ -1,27 +1,52 @@
-# Pragmatica Lite - Functional Style Micro Web Framework
+# Pragmatica Lite - Micro Web Framework for Pragmatic Functional Java Coding Style
 
-Minimalistic web framework for Java 21+ with minimal dependencies.
+[![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](
+
+Minimalistic web framework for Java 21+.
 
 ## Features
 * Functional style - no NPE, no exceptions, type safety, etc.
 * Consistent Option/Result/Promise monads.
 * Simple and convenient to use Promise-based asynchronous API - no low level technical details leaking into business logic.   
-* Minimalistic - no annotations, no reflection, minimal external dependencies, only 3 main components: HttpServer, HttpClient and DB access layer.
-* Fully asynchronous HTTP server and client, built-in caching domain name resolver with proper TTL handling.
-* Minimal package size (example app jar is less than 7MB with all dependencies included). 
+* Minimalistic - no reflection, minimal external dependencies, 
+* Only 3 main components: HttpServer, HttpClient and PostgreSQL DB driver with convenient API.
+* HTTP server and client are fully asynchronous
+* Built-in caching domain name resolver with proper TTL handling.
 
 ## Example 
 Some examples can be found in the [example's](./examples) folder.
 
-### Traditional Hello World application
+### Minimal Hello World application
+
+```java
+import static org.pragmatica.http.server.HttpServer.httpServerWith;
+import static org.pragmatica.http.server.HttpServerConfig.defaultConfiguration;
+import static org.pragmatica.http.server.routing.Route.handleGet;
+
+/**
+ * Minimal version of "Hello world" example.
+ */
+public static void main(String[] args) {
+    httpServerWith(defaultConfiguration())
+        .serveNow(
+            handleGet("/").withText(() -> "Hello world!")
+        );
+}
+```
+
+### More realistic Hello World application (without imports)
 
 ```java
 public class HelloWorld {
+    private static final Logger log = LoggerFactory.getLogger(HelloWorld.class);
+
     public static void main(String[] args) {
-        httpServerWith(defaultConfiguration().withPort(3000))
-            .serveNow(
+        defaultApplicationConfig()
+            .load("server", HttpServerConfigTemplate.INSTANCE)
+            .onFailure(cause -> log.error("Failed to load configuration {}", cause))
+            .onSuccess(config -> httpServerWith(config).serveNow(
                 handleGet("/").withText(() -> "Hello world!")
-            );
+            ));
     }
 }
 ```
@@ -88,7 +113,7 @@ public class HelloWorld {
     }
 ```
 ### PostgreSQL asynchronous CRUD Repository example
-(actually, there is no update, but it's easy to guess how it will look like)
+(actually, there is no Update implementation)
 
 ```java
 public interface ShortenedUrlRepository {
