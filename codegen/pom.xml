@@ -9,7 +9,14 @@
         <version>0.1.0</version>
     </parent>
 
-    <artifactId>annotation-processor</artifactId>
+    <artifactId>codegen</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>annotations</module>
+        <module>tests</module>
+        <module>annotation-processor</module>
+    </modules>
 
     <dependencyManagement>
         <dependencies>
@@ -19,6 +26,16 @@
                 <version>${project.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.pragmatica.lite</groupId>
+                <artifactId>annotations</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.pragmatica.lite</groupId>
+                <artifactId>processor</artifactId>
+                <version>${project.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -23,8 +23,7 @@ import javax.tools.JavaFileObject;
 @SupportedAnnotationTypes("com.baeldung.annotation.processor.BuilderProperty")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 @AutoService(Processor.class)
-public class BuilderProcessor extends AbstractProcessor {
-
+public class AnnotationProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         for (TypeElement annotation : annotations) {
