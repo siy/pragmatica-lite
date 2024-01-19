@@ -1,139 +1,116 @@
 package org.pragmatica.processor;
 
 import com.google.auto.service.AutoService;
+import org.pragmatica.annotation.Template;
 
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.ExecutableType;
-import javax.tools.Diagnostic;
-import java.io.IOException;
-import java.io.PrintWriter;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-import javax.tools.JavaFileObject;
+import java.util.stream.Stream;
 
-@SupportedAnnotationTypes("com.baeldung.annotation.processor.BuilderProperty")
-@SupportedSourceVersion(SourceVersion.RELEASE_21)
+import static javax.tools.Diagnostic.Kind.ERROR;
+import static javax.tools.Diagnostic.Kind.NOTE;
+
+@SupportedAnnotationTypes("org.pragmatica.annotation.*")
 @AutoService(Processor.class)
 public class AnnotationProcessor extends AbstractProcessor {
     @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
+    }
+
+    @Override
+    public synchronized void init(ProcessingEnvironment processingEnv) {
+        super.init(processingEnv);
+        processingEnv.getMessager().printMessage(NOTE, "AnnotationProcessor initialized");
+        System.out.println("AnnotationProcessor.init");
+    }
+
+    @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        for (TypeElement annotation : annotations) {
-
-            Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);
-
-            Map<Boolean, List<Element>>
-                annotatedMethods = annotatedElements.stream()
-                                                    .collect(Collectors.partitioningBy(element -> ((ExecutableType) element.asType())
-                                                                                                      .getParameterTypes()
-                                                                                                      .size() == 1 && element
-                                                                                                      .getSimpleName()
-                                                                                                      .toString()
-                                                                                                      .startsWith("set")));
-
-            List<Element> setters = annotatedMethods.get(true);
-            List<Element> otherMethods = annotatedMethods.get(false);
-
-            otherMethods.forEach(element -> processingEnv
-                .getMessager()
-                .printMessage(Diagnostic.Kind.ERROR, "@BuilderProperty must be applied to a setXxx method with a single argument", element));
-
-            if (setters.isEmpty()) {
-                continue;
-            }
-
-            String className = ((TypeElement) setters.get(0).getEnclosingElement()).getQualifiedName().toString();
-
-            Map<String, String> setterMap = setters.stream()
-                                                   .collect(Collectors.toMap(setter -> setter.getSimpleName().toString(),
-                                                                             setter -> ((ExecutableType) setter.asType())
-                                                                                 .getParameterTypes()
-                                                                                 .get(0)
-                                                                                 .toString()));
-
-            try {
-                writeBuilderFile(className, setterMap);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        try {
+            System.out.println("AnnotationProcessor.process");
+            processRecords(roundEnv);
+        } catch (Exception e) {
+            processingEnv.getMessager().printMessage(ERROR, "Exception: occurred %s".formatted(e));
         }
-
-        return true;
+        return true;    // claim annotations, do not let them be processed further
     }
 
-    private void writeBuilderFile(String className, Map<String, String> setterMap) throws IOException {
+    private void processRecords(RoundEnvironment roundEnv) {
+        var annotated = roundEnv.getElementsAnnotatedWith(Template.class);
+        var types = ElementFilter.typesIn(annotated);
 
-        String packageName = null;
-        int lastDot = className.lastIndexOf('.');
-        if (lastDot > 0) {
-            packageName = className.substring(0, lastDot);
-        }
+        for (var type : types) {
+            processingEnv.getMessager().printMessage(NOTE, "Found annotated type: %s".formatted(type));
 
-        String simpleClassName = className.substring(lastDot + 1);
-        String builderClassName = className + "Builder";
-        String builderSimpleClassName = builderClassName.substring(lastDot + 1);
+            for (var component : type.getRecordComponents()) {
+                System.out.printf("Component: %s, type: %s%n", component, component.asType());
 
-        JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(builderClassName);
-        try (PrintWriter out = new PrintWriter(builderFile.openWriter())) {
+                var typeContext = TypeContext.from(component.asType());
 
-            if (packageName != null) {
-                out.print("package ");
-                out.print(packageName);
-                out.println(";");
-                out.println();
+                System.out.println(typeContext);
             }
-
-            out.print("public class ");
-            out.print(builderSimpleClassName);
-            out.println(" {");
-            out.println();
-
-            out.print("    private ");
-            out.print(simpleClassName);
-            out.print(" object = new ");
-            out.print(simpleClassName);
-            out.println("();");
-            out.println();
-
-            out.print("    public ");
-            out.print(simpleClassName);
-            out.println(" build() {");
-            out.println("        return object;");
-            out.println("    }");
-            out.println();
-
-            setterMap.entrySet().forEach(setter -> {
-                String methodName = setter.getKey();
-                String argumentType = setter.getValue();
-
-                out.print("    public ");
-                out.print(builderSimpleClassName);
-                out.print(" ");
-                out.print(methodName);
-
-                out.print("(");
-
-                out.print(argumentType);
-                out.println(" value) {");
-                out.print("        object.");
-                out.print(methodName);
-                out.println("(value);");
-                out.println("        return this;");
-                out.println("    }");
-                out.println();
-            });
-
-            out.println("}");
-
         }
     }
 
+    private record TypeContext(String type, List<String> includes) {
+        public static TypeContext from(TypeMirror type) {
+            var typeString = type.toString();
+
+            if (type.getKind() != TypeKind.DECLARED) {
+                return new TypeContext(typeString, List.of());
+            }
+
+            //TODO: use recursive parsing
+            var classList = Stream.of(typeString.replace("<", ",")
+                                                .split(","))
+                                  .map(t -> t.replace(">", ""))
+                                  .toList();
+
+            var typeText = classList.getFirst().substring(classList.getFirst().lastIndexOf(".") + 1);
+            var includes = classList.stream()
+                                    .map(TypeContext::asImport)
+                                    .toList();
+
+            return new TypeContext(typeText, includes);
+        }
+
+        private static String asImport(String t) {
+            var prefix = t.substring(0, t.lastIndexOf("."));
+            var lastElement = prefix.substring(prefix.lastIndexOf(".") + 1);
+
+            return Character.isUpperCase(lastElement.charAt(0)) ? prefix + ".*" : t;
+        }
+
+        private static String simpleName(String source, List<String> collectedImports) {
+            var split = source.split("<", 2);
+
+            split[0] = split[0].substring(split[0].lastIndexOf(".") + 1);
+
+            if (split.length == 1) {
+                return split[0].trim();
+            }
+
+            var type = split[0];
+            collectedImports.add(asImport(type));
+
+            var rest = simpleName(split[1], collectedImports);
+
+            if (rest.isEmpty()) {
+                return type;
+            }
+            //TODO: finish this
+            return null;
+        }
+    }
 }
