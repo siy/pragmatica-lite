@@ -13,8 +13,11 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static javax.tools.Diagnostic.Kind.ERROR;
@@ -32,13 +35,11 @@ public class AnnotationProcessor extends AbstractProcessor {
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
         processingEnv.getMessager().printMessage(NOTE, "AnnotationProcessor initialized");
-        System.out.println("AnnotationProcessor.init");
     }
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         try {
-            System.out.println("AnnotationProcessor.process");
             processRecords(roundEnv);
         } catch (Exception e) {
             processingEnv.getMessager().printMessage(ERROR, "Exception: occurred %s".formatted(e));
@@ -52,14 +53,31 @@ public class AnnotationProcessor extends AbstractProcessor {
 
         for (var type : types) {
             processingEnv.getMessager().printMessage(NOTE, "Found annotated type: %s".formatted(type));
+//            System.out.printf("Type: %s, %s%n", type, type.getQualifiedName());
+//            type.getQualifiedName();
+
+            var imports = new TreeSet<String>();
+            var components = new ArrayList<RecordComponent>();
+            var templateName = type.getQualifiedName().toString() + "Template";
+            var shortName = type.getSimpleName().toString();
 
             for (var component : type.getRecordComponents()) {
-                System.out.printf("Component: %s, type: %s%n", component, component.asType());
+//                System.out.printf("Component: %s, type: %s%n", component, component.asType());
 
                 var typeContext = TypeContext.from(component.asType());
 
-                System.out.println(typeContext);
+                imports.addAll(typeContext.includes());
+                components.add(new RecordComponent(component.toString(), typeContext.type()));
+
+//                System.out.println(typeContext);
             }
+//            System.out.println("Imports: " + imports);
+//            System.out.println("Components: " + components);
+            var recordType = new RecordType(type.toString(), components, imports, templateName, shortName);
+//            System.out.println("Record type: " + recordType);
+
+            var code = recordType.generateCode();
+            System.out.println("Generated code: " + code);
         }
     }
 
@@ -71,16 +89,22 @@ public class AnnotationProcessor extends AbstractProcessor {
                 return new TypeContext(typeString, List.of());
             }
 
-            //TODO: use recursive parsing
             var classList = Stream.of(typeString.replace("<", ",")
                                                 .split(","))
                                   .map(t -> t.replace(">", ""))
                                   .toList();
 
-            var typeText = classList.getFirst().substring(classList.getFirst().lastIndexOf(".") + 1);
+            var prefixes = classList.stream()
+                                    .map(t -> t.substring(0, t.lastIndexOf(".") + 1))
+                                    .toList();
             var includes = classList.stream()
                                     .map(TypeContext::asImport)
                                     .toList();
+            var typeText = typeString;
+
+            for (var prefix : prefixes) {
+                typeText = typeText.replace(prefix, "");
+            }
 
             return new TypeContext(typeText, includes);
         }
@@ -91,26 +115,94 @@ public class AnnotationProcessor extends AbstractProcessor {
 
             return Character.isUpperCase(lastElement.charAt(0)) ? prefix + ".*" : t;
         }
+    }
 
-        private static String simpleName(String source, List<String> collectedImports) {
-            var split = source.split("<", 2);
+    record RecordComponent(String name, String type) {}
 
-            split[0] = split[0].substring(split[0].lastIndexOf(".") + 1);
+    record RecordType(String name, List<RecordComponent> components, Set<String> imports, String templateName, String shortName) {
+        private String generateCode() {
+            var connectedViaArrow = components().stream()
+                                                .map(RecordComponent::name)
+                                                .collect(Collectors.joining(" -> "));
+            var connectedViaComma = components().stream()
+                                                .map(RecordComponent::name)
+                                                .collect(Collectors.joining(", "));
 
-            if (split.length == 1) {
-                return split[0].trim();
-            }
 
-            var type = split[0];
-            collectedImports.add(asImport(type));
 
-            var rest = simpleName(split[1], collectedImports);
+                return
+                """
+                package %s;
+                
+                %s
+                
+                /**
+                 * Generated by annotation processor
+                 */                
+                public interface %sTemplate extends RecordTemplate<%s> {
+                    %sTemplate INSTANCE = new %sTemplate() {};
+                            
+                    static %sBuilder builder() {
+                        return %s -> new %s(%s);
+                    }
+                    
+                    interface %sBuilder {
+                        SrcUrl id(String id);
+                    
+                        interface SrcUrl {
+                            Created srcUrl(String srcUrl);
+                        }
+                    
+                        interface Created {
+                            LastAccessed created(LocalDateTime created);
+                        }
+                    
+                        interface LastAccessed {
+                            ShortenedUrl lastAccessed(LocalDateTime lastAccessed);
+                        }
+                    }
+                    
+                    @Override
+                    default Result<ShortenedUrl> load(String prefix, KeyToValue mapping) {
+                        return Result.all(mapping.get(prefix, "id", new TypeToken<String>() {}),
+                                          mapping.get(prefix, "srcUrl", new TypeToken<String>() {}),
+                                          mapping.get(prefix, "created", new TypeToken<LocalDateTime>() {}),
+                                          mapping.get(prefix, "lastAccessed", new TypeToken<LocalDateTime>() {}))
+                                     .map(ShortenedUrl::new);
+                    }
+                    
+                    
+                    @Override
+                    default FieldNames fieldNames() {
+                        return () -> FORMATTED_NAMES;
+                    }
+                    
+                    @Override
+                    default List<Tuple3<String, TypeToken<?>, Functions.Fn1<?, ShortenedUrl>>> extractors() {
+                        return VALUE_EXTRACTORS;
+                    }
+                    
+                    List<Tuple3<String, TypeToken<?>, Functions.Fn1<?, ShortenedUrl>>> VALUE_EXTRACTORS = List.of(
+                        tuple("id", new TypeToken<String>() {}, ShortenedUrl::id),
+                        tuple("srcUrl", new TypeToken<String>() {}, ShortenedUrl::srcUrl),
+                        tuple("created", new TypeToken<LocalDateTime>() {}, ShortenedUrl::created),
+                        tuple("lastAccessed", new TypeToken<LocalDateTime>() {}, ShortenedUrl::lastAccessed)
+                    );
+                    
+                    String FORMATTED_NAMES = RecordTemplate.buildFormattedNames(VALUE_EXTRACTORS);
+                }
+                """.formatted(
+                    templateName().substring(0, templateName().lastIndexOf(".")), // package
+                    imports().stream().map("import %s;"::formatted).collect(Collectors.joining("\n")), // imports
+                    shortName(), shortName(), // template name, RecordTemplate type parameter
+                    shortName(), shortName(), // instance type, instance type
+                    shortName(), //builder name
+                    connectedViaArrow, shortName(), connectedViaComma // builder parameters, record type, constructor parameters
+                );
 
-            if (rest.isEmpty()) {
-                return type;
-            }
-            //TODO: finish this
-            return null;
         }
     }
+    /*
+
+     */
 }
