@@ -1,7 +1,7 @@
 package org.pragmatica.http.example.urlshortener.domain.api.internal;
 
 import org.pragmatica.http.example.urlshortener.domain.entity.ShortenedUrl;
-import org.pragmatica.http.example.urlshortener.persistence.template.ShortenedUrlTemplate;
+import org.pragmatica.http.example.urlshortener.domain.entity.ShortenedUrlTemplate;
 import org.pragmatica.id.nanoid.NanoId;
 
 import java.time.LocalDateTime;

@@ -76,6 +76,7 @@ public class AnnotationProcessor extends AbstractProcessor {
             imports.add("org.pragmatica.lang.type.KeyToValue");
             imports.add("org.pragmatica.lang.type.RecordTemplate");
             imports.add("org.pragmatica.lang.type.TypeToken");
+            imports.add("java.util.List");
 
             var recordType = new RecordType(type.toString(), components, imports, templateName, shortName);
             var code = recordType.generateCode();
