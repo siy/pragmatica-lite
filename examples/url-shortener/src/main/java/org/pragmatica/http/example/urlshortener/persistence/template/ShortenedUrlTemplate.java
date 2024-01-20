@@ -1,7 +1,7 @@
 package org.pragmatica.http.example.urlshortener.persistence.template;
 
 import org.pragmatica.http.example.urlshortener.domain.entity.ShortenedUrl;
-import org.pragmatica.lang.Functions;
+import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Tuple.Tuple3;
 import org.pragmatica.lang.type.FieldNames;
@@ -40,10 +40,11 @@ public interface ShortenedUrlTemplate extends RecordTemplate<ShortenedUrl> {
 
     @Override
     default Result<ShortenedUrl> load(String prefix, KeyToValue mapping) {
-        return Result.all(mapping.get(prefix, "id", new TypeToken<String>() {}),
-                          mapping.get(prefix, "srcUrl", new TypeToken<String>() {}),
-                          mapping.get(prefix, "created", new TypeToken<LocalDateTime>() {}),
-                          mapping.get(prefix, "lastAccessed", new TypeToken<LocalDateTime>() {}))
+        return Result.all(
+                         mapping.get(prefix, "id", new TypeToken<String>() {}),
+                         mapping.get(prefix, "srcUrl", new TypeToken<String>() {}),
+                         mapping.get(prefix, "created", new TypeToken<LocalDateTime>() {}),
+                         mapping.get(prefix, "lastAccessed", new TypeToken<LocalDateTime>() {}))
                      .map(ShortenedUrl::new);
     }
 
@@ -54,11 +55,11 @@ public interface ShortenedUrlTemplate extends RecordTemplate<ShortenedUrl> {
     }
 
     @Override
-    default List<Tuple3<String, TypeToken<?>, Functions.Fn1<?, ShortenedUrl>>> extractors() {
+    default List<Tuple3<String, TypeToken<?>, Fn1<?, ShortenedUrl>>> extractors() {
         return VALUE_EXTRACTORS;
     }
 
-    List<Tuple3<String, TypeToken<?>, Functions.Fn1<?, ShortenedUrl>>> VALUE_EXTRACTORS = List.of(
+    List<Tuple3<String, TypeToken<?>, Fn1<?, ShortenedUrl>>> VALUE_EXTRACTORS = List.of(
         tuple("id", new TypeToken<String>() {}, ShortenedUrl::id),
         tuple("srcUrl", new TypeToken<String>() {}, ShortenedUrl::srcUrl),
         tuple("created", new TypeToken<LocalDateTime>() {}, ShortenedUrl::created),
