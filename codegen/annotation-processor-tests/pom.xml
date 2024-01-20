@@ -17,6 +17,12 @@
             <groupId>org.pragmatica.lite</groupId>
             <artifactId>core</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.pragmatica.lite</groupId>
+            <artifactId>annotations</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.pragmatica.lite</groupId>
             <artifactId>annotation-processor</artifactId>
@@ -24,8 +30,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

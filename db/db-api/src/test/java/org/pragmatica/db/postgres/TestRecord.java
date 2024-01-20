@@ -1,4 +1,7 @@
 package org.pragmatica.db.postgres;
 
+import org.pragmatica.annotation.Template;
+
+@Template
 public record TestRecord(int id, String value) {
 }

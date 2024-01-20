@@ -41,6 +41,7 @@ import static java.lang.System.out;
 @RunWith(Parameterized.class)
 public class PerformanceTest {
     private static final DatabaseRule dbr;
+    private static final boolean IS_MAC = System.getProperty("os.name").toLowerCase().startsWith("mac");
 
     static {
         // Uncomment to run with single event loop thread, although I see no big value in it
@@ -54,7 +55,7 @@ public class PerformanceTest {
     @Parameters(name = "{index}: maxConnections={0}, threads={1}")
     public static Iterable<Object[]> data() {
         var testData = new ArrayList<Object[]>();
-        var numbers = List.of(1, 6, 12);
+        var numbers = IS_MAC ? List.of(1, 4, 8) : List.of(1, 6, 12);
 
         for (var poolSize : numbers) {
             for (var threads : numbers) {
@@ -64,8 +65,8 @@ public class PerformanceTest {
         return testData;
     }
 
-    private static final int batchSize = 1000;
-    private static final int repeats = 5;
+    private static final int batchSize = IS_MAC ? 300 : 1000;
+    private static final int repeats = IS_MAC ? 3 : 5;
     private static final SortedMap<Integer, SortedMap<Integer, Long>> simpleQueryResults = new TreeMap<>();
     private static final SortedMap<Integer, SortedMap<Integer, Long>> preparedStatementResults = new TreeMap<>();
 

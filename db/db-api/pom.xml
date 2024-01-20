@@ -29,6 +29,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.pragmatica.lite</groupId>
+            <artifactId>annotation-processor</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.google.auto.service</groupId>
             <artifactId>auto-service</artifactId>
         </dependency>
