@@ -4,7 +4,7 @@
 
     <groupId>org.pragmatica.lite</groupId>
     <artifactId>pragmatica-lite</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
     <modules>
         <module>core</module>
         <module>examples</module>

@@ -1,6 +1,10 @@
 package org.pragmatica.http.example.qrgenerator;
 
+import org.pragmatica.http.ContentCategory;
+import org.pragmatica.http.ContentType;
 import org.pragmatica.http.server.HttpServerConfigTemplate;
+import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.type.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,8 +19,17 @@ public class QrGenerator {
         defaultApplicationConfig()
             .load("server", HttpServerConfigTemplate.INSTANCE)
             .onFailure(cause -> log.error("Failed to load configuration {}", cause))
-            .onSuccess(config -> httpServerWith(config).serveNow(
-                handlePost("/qr").withText(() -> "Hello world!")
-            ));
+            .onSuccess(config -> httpServerWith(config)
+                .serveNow(
+                    handlePost("/qr")
+                        .whereBodyIs(new TypeToken<QrRequest>() {})
+                        .with(QrGenerator::handler)
+                        .as(ContentType.custom("image/png", ContentCategory.BINARY))
+                ));
+    }
+
+    private static Promise<byte[]> handler(QrRequest qrRequest) {
+        return QrGeneratorService.generateQR(qrRequest.urlToEmbed(), 512, 512)
+                                 .toPromise();
     }
 }

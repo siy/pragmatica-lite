@@ -3,11 +3,9 @@ package org.pragmatica.http.server.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
-import org.pragmatica.codec.json.JsonCodecFactory;
 import org.pragmatica.http.HttpError;
 import org.pragmatica.http.codec.CustomCodec;
 import org.pragmatica.http.protocol.HttpStatus;
-import org.pragmatica.http.server.HttpServerConfig;
 import org.pragmatica.http.server.routing.Redirect;
 import org.pragmatica.http.server.routing.RequestContext;
 import org.pragmatica.http.server.routing.Route;
@@ -35,9 +33,9 @@ import static org.pragmatica.lang.Result.success;
 @SuppressWarnings("unused")
 public class RequestContextImpl implements RequestContext {
     private static final int PATH_PARAM_LIMIT = 1024;
-    private static final Result<DataContainer> MISSING_CUSTOM_CODEC_ERROR = HttpError.httpError(HttpStatus.INTERNAL_SERVER_ERROR,
-                                                                                                "Custom codec is missing in server configuration")
-                                                                                     .result();
+    private static final Result<DataContainer<?>> MISSING_CUSTOM_CODEC_ERROR = HttpError.httpError(HttpStatus.INTERNAL_SERVER_ERROR,
+                                                                                                   "Custom codec is missing in server configuration")
+                                                                                        .result();
 
     private final ChannelHandlerContext ctx;
     private final FullHttpRequest request;
@@ -126,13 +124,13 @@ public class RequestContextImpl implements RequestContext {
         keepAlive = HttpUtil.isKeepAlive(request);
     }
 
-    private void sendResponse(DataContainer dataContainer) {
+    private void sendResponse(DataContainer<?> dataContainer) {
         HttpServerHandler.sendResponse(ctx, dataContainer, route.contentType(), keepAlive, some(requestId));
     }
 
-    private Result<DataContainer> serializeResponse(Object value) {
+    private Result<DataContainer<?>> serializeResponse(Object value) {
         return switch (value) {
-            case DataContainer dataContainer -> success(dataContainer);
+            case DataContainer<?> dataContainer -> success(dataContainer);
             case Redirect redirect -> success(redirect).map(DataContainer.RedirectData::from);
             case HttpError httpError -> success(httpError).map(DataContainer.StringData::from);
             case String string -> success(string).map(DataContainer.StringData::from);
@@ -147,12 +145,15 @@ public class RequestContextImpl implements RequestContext {
                 case CUSTOM -> configuration.customCodec()
                                             .serialize(value, route.contentType())
                                             .map(DataContainer.ByteBufData::from);
+                case BINARY -> HttpError.httpError(HttpStatus.INTERNAL_SERVER_ERROR,
+                                                   "Content type is binary, but the response is not a byte array")
+                                        .result();
 
             };
         };
     }
 
-    private Result<DataContainer> serializeCustom(Object value, CustomCodec codec) {
+    private Result<DataContainer.ByteBufData> serializeCustom(Object value, CustomCodec codec) {
         return codec.serialize(value, route.contentType())
                     .map(DataContainer.ByteBufData::from);
     }

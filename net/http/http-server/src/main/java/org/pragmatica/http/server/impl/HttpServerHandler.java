@@ -76,13 +76,13 @@ class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
     }
 
 
-    public static DataContainer decodeError(Cause cause) {
+    public static DataContainer.StringData decodeError(Cause cause) {
         return cause instanceof HttpError httpError
                ? DataContainer.StringData.from(httpError)
                : DataContainer.StringData.from(HttpStatus.INTERNAL_SERVER_ERROR, cause);
     }
 
-    public static void sendResponse(ChannelHandlerContext ctx, DataContainer dataContainer, ContentType contentType, boolean keepAlive, Option<String> requestId) {
+    public static void sendResponse(ChannelHandlerContext ctx, DataContainer<?> dataContainer, ContentType contentType, boolean keepAlive, Option<String> requestId) {
         var content = dataContainer.responseBody();
         var response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, dataContainer.status().toInternal(), content);
 
