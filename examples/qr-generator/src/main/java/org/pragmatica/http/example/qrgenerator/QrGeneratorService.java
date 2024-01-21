@@ -15,6 +15,10 @@ public interface QrGeneratorService {
     String FORMAT = "PNG";
 
     static Result<byte[]> generateQR(String text, int width, int height) {
+        if (text == null) {
+            return new QrEncoderError.IllegalArgument("URL to encode is required").result();
+        }
+
         var pngOutputStream = new ByteArrayOutputStream();
 
         return Result.lift(QrGeneratorService::exceptionMapper, () -> {

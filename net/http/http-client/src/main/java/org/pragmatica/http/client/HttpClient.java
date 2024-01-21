@@ -61,6 +61,7 @@ record HttpClientImpl(HttpClientConfiguration configuration, Bootstrap bootstrap
     private static final HttpError ONLY_HTTP_IS_SUPPORTED = httpError(NOT_IMPLEMENTED, "Only HTTP is supported");
     private static final HttpError ONLY_ABSOLUTE_IRI_IS_SUPPORTED = httpError(NOT_IMPLEMENTED, "Only HTTP is supported");
     private static final HttpError MISSING_CUSTOM_CODEC_ERROR = HttpError.httpError(NOT_IMPLEMENTED, "Custom codec is missing in configuration");
+    private static final HttpError NON_BINARY_VALUE_ERROR = HttpError.httpError(NOT_IMPLEMENTED, "Content type is binary, but value is not a byte array or ByteBuf");
     private static final DomainName LOCALHOST = domainName("localhost");
 
     @Override
@@ -178,9 +179,18 @@ record HttpClientImpl(HttpClientConfiguration configuration, Bootstrap bootstrap
         return switch (request.contentType().category()) {
             case PLAIN_TEXT -> success(Unpooled.wrappedBuffer(value.toString().getBytes(StandardCharsets.UTF_8)));
             case JSON -> configuration().jsonCodec().serialize(value);
+            case BINARY -> ensureByteArray(value);
             case CUSTOM -> configuration().customCodec()
                                           .map(codec -> codec.serialize(value, request.contentType()))
                                           .or(() -> failure(MISSING_CUSTOM_CODEC_ERROR));
+        };
+    }
+
+    private static <T> Result<ByteBuf> ensureByteArray(T value) {
+        return switch (value) {
+            case byte[] bytes -> Result.success(Unpooled.wrappedBuffer(bytes));
+            case ByteBuf byteBuf -> Result.success(byteBuf);
+            default -> NON_BINARY_VALUE_ERROR.result();
         };
     }
 }
