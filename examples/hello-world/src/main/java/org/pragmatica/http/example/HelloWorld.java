@@ -4,7 +4,7 @@ package org.pragmatica.http.example;
 import org.pragmatica.http.server.HttpServer;
 import org.pragmatica.http.server.HttpServerConfig;
 import org.pragmatica.http.server.HttpServerConfigTemplate;
-import org.pragmatica.http.server.routing.Route;
+import org.pragmatica.http.server.routing.RouteSource;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
 
@@ -28,7 +28,7 @@ public class HelloWorld {
         return HttpServer.with(configuration, route());
     }
 
-    private static Route<String> route() {
+    private static RouteSource route() {
         return handleGet("/")
             .withText(() -> "Hello world!");
     }

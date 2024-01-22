@@ -7,7 +7,5 @@ import static org.pragmatica.http.server.routing.Route.handleGet;
  */
 public static void main(String[] args) {
     withConfig(defaultConfiguration())
-        .serveNow(
-            handleGet("/").withText(() -> "Hello world!")
-        );
+        .serveNow(handleGet("/").withText(() -> "Hello world!"));
 }

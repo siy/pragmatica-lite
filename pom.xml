@@ -35,6 +35,15 @@
         </license>
     </licenses>
 
+    <developers>
+        <developer>
+            <name>Sergiy Yevtushenko</name>
+            <email>sergiy.yevtushenko@gmail.com</email>
+            <organization>Pragmatica Lite</organization>
+            <organizationUrl>https://www.pragmatica-lite.org</organizationUrl>
+        </developer>
+    </developers>
+
     <!-- TODO: add modules https://github.com/moditect/moditect -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -93,6 +102,51 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>versions-maven-plugin</artifactId>
                 <version>2.16.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.4.1</version>
+                <configuration>
+                    <release>${java.release}</release>
+                    <additionalOptions>${java.enable-preview}</additionalOptions>
+                    <failOnError>false</failOnError> <!-- TODO: fix/add javadocs -->
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
