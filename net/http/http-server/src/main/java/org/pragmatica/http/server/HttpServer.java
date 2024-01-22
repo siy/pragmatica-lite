@@ -54,14 +54,27 @@ public class HttpServer {
         }
     }
 
-    public static Builder httpServerWith(HttpServerConfig configuration) {
+    public static Builder withConfig(HttpServerConfig configuration) {
         return (RouteSource... routeSources) -> new HttpServer(configuration, RequestRouter.with(routeSources));
+    }
+
+    public interface HttpServerRunner {
+        Result<Unit> serveNow(RouteSource... routeSources);
+    }
+
+    public static Result<Unit> with(HttpServerConfig configuration, RouteSource... routeSources) {
+        return withConfig(configuration).serve(routeSources).startNow();
+    }
+
+    public Result<Unit> startNow() {
+        return start().await();
     }
 
     public Promise<Unit> start() {
         var transportConfiguration = transportConfiguration();
         var promise = Promise.<Unit>promise()
-                             .onResultRun(() -> gracefulShutdown(transportConfiguration));
+                             .onResultRun(() -> gracefulShutdown(transportConfiguration))
+                             .onFailure(cause -> log.error("Failed to start server: {}", cause));
 
         try {
             var bindAddress = configuration.bindAddress()

@@ -2,7 +2,7 @@ package org.pragmatica.config.format.property;
 
 
 import com.google.auto.service.AutoService;
-import org.pragmatica.config.api.ConfigFormatReader;
+import org.pragmatica.config.api.FormatReader;
 import org.pragmatica.config.api.StringMap;
 import org.pragmatica.lang.Result;
 
@@ -11,8 +11,8 @@ import java.util.stream.Collectors;
 
 //TODO: tests
 @SuppressWarnings("unused")
-@AutoService(ConfigFormatReader.class)
-public class PropertiesConfigFormatReader implements ConfigFormatReader {
+@AutoService(FormatReader.class)
+public class PropertiesFormatReader implements FormatReader {
     @Override
     public Result<StringMap> read(String source) {
         var valueMap = source.lines()

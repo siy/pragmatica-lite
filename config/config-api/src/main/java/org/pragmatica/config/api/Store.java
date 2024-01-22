@@ -9,16 +9,16 @@ import java.util.Map;
 
 import static org.pragmatica.config.api.Converter.converter;
 
-public final class ConfigStore implements KeyToValue {
+public final class Store implements KeyToValue {
     private final Converter converter;
     private StringMap sourceData = Map::of;
 
-    private ConfigStore(Converter converter) {
+    private Store(Converter converter) {
         this.converter = converter;
     }
 
-    public static ConfigStore configStore() {
-        return new ConfigStore(converter());
+    public static Store configStore() {
+        return new Store(converter());
     }
 
     public void append(StringMap data) {

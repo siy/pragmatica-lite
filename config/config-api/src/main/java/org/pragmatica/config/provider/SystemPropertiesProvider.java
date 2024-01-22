@@ -1,6 +1,6 @@
 package org.pragmatica.config.provider;
 
-import org.pragmatica.config.api.ConfigDataProvider;
+import org.pragmatica.config.api.DataProvider;
 import org.pragmatica.config.api.StringMap;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Tuple.Tuple2;
@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 import static org.pragmatica.lang.Tuple.tuple;
 
-public class SystemPropertiesProvider implements ConfigDataProvider {
+public class SystemPropertiesProvider implements DataProvider {
     public static final SystemPropertiesProvider INSTANCE = new SystemPropertiesProvider();
 
     @Override
