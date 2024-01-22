@@ -1,7 +1,7 @@
 package org.pragmatica.config.format.toml;
 
 import com.google.auto.service.AutoService;
-import org.pragmatica.config.api.ConfigFormatReader;
+import org.pragmatica.config.api.FormatReader;
 import org.pragmatica.config.api.StringMap;
 import org.pragmatica.lang.Result;
 
@@ -15,8 +15,8 @@ import java.util.List;
  * Logically the section name is a common prefix to all variables in the section. The line starting with a hash sign is a comment.
  */
 @SuppressWarnings("unused")
-@AutoService(ConfigFormatReader.class)
-public class ConfConfigFormatReader implements ConfigFormatReader {
+@AutoService(FormatReader.class)
+public class ConfFormatReader implements FormatReader {
     @Override
     public Result<StringMap> read(String content) {
         return ConfParser.parse(content);

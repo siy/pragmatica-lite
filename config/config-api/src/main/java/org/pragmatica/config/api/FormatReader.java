@@ -13,7 +13,7 @@ import static org.pragmatica.lang.Tuple.tuple;
 /**
  * Interface for configuration format readers (pluggable component).
  */
-public interface ConfigFormatReader {
+public interface FormatReader {
     /**
      * Read configuration values from string.
      */
@@ -24,8 +24,8 @@ public interface ConfigFormatReader {
      */
     List<String> supportedExtensions();
 
-    static Stream<Tuple2<String, ConfigFormatReader>> readers() {
-        return ServiceLoader.load(ConfigFormatReader.class)
+    static Stream<Tuple2<String, FormatReader>> readers() {
+        return ServiceLoader.load(FormatReader.class)
                             .stream()
                             .map(Provider::get)
                             .flatMap(reader -> reader.supportedExtensions()

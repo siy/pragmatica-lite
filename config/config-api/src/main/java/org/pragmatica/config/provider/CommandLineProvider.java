@@ -1,6 +1,6 @@
 package org.pragmatica.config.provider;
 
-import org.pragmatica.config.api.ConfigDataProvider;
+import org.pragmatica.config.api.DataProvider;
 import org.pragmatica.config.api.ConfigError;
 import org.pragmatica.config.api.StringMap;
 import org.pragmatica.lang.Result;
@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 import static org.pragmatica.lang.Tuple.tuple;
 
-public interface CommandLineProvider extends ConfigDataProvider {
+public interface CommandLineProvider extends DataProvider {
     String[] arguments();
 
     @Override

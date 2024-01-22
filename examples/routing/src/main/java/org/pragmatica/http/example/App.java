@@ -22,7 +22,7 @@ public class App {
 
     public static HttpServer buildServer() {
         return HttpServer
-            .httpServerWith(HttpServerConfig.defaultConfiguration())
+            .withConfig(HttpServerConfig.defaultConfiguration())
             .serve(
                 //Full description
                 handleGet("/hello1")

@@ -18,10 +18,10 @@ import static org.pragmatica.config.api.SourceDescriptor.EnvironmentSourceDescri
  * <p>
  * The {@link #defaultWithCommandLine} strategy loads everything from {@link #defaultStrategy()} and then adds command line parameters on top of them.
  */
-public interface ConfigStrategy {
+public interface Strategy {
     List<SourceDescriptor> configurationSources();
 
-    default ConfigStrategy with(SourceDescriptor source) {
+    default Strategy with(SourceDescriptor source) {
         var newList = Stream.concat(configurationSources().stream(),
                                     Stream.of(source))
                             .toList();
@@ -29,7 +29,7 @@ public interface ConfigStrategy {
         return () -> newList;
     }
 
-    static ConfigStrategy defaultStrategy() {
+    static Strategy defaultStrategy() {
         return () -> List.of(
             new Classpath("/db/default"),
             new Classpath("/server/default"),
@@ -39,7 +39,7 @@ public interface ConfigStrategy {
             new SystemProperties());
     }
 
-    static ConfigStrategy defaultWithCommandLine(String[] arguments) {
+    static Strategy defaultWithCommandLine(String[] arguments) {
         return defaultStrategy().with(new CommandLine(arguments));
     }
 }

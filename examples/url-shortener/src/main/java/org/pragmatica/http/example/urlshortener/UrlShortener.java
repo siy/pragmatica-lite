@@ -16,7 +16,7 @@ import org.pragmatica.lang.type.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.pragmatica.http.server.HttpServer.httpServerWith;
+import static org.pragmatica.http.server.HttpServer.withConfig;
 import static org.pragmatica.http.server.HttpServerConfig.defaultConfiguration;
 import static org.pragmatica.http.server.routing.Route.handlePost;
 
@@ -33,7 +33,7 @@ public class UrlShortener {
      * @param args command line arguments
      */
     public static void main(String... args) {
-        var configuration = AppConfig.defaultApplicationConfig();
+        var configuration = AppConfig.appConfig();
 
         Result.all(configuration.load("database", DbEnvConfigTemplate.INSTANCE),
                    configuration.load("server", HttpServerConfigTemplate.INSTANCE))
@@ -66,7 +66,7 @@ public class UrlShortener {
         UrlShortenerService service = () -> repository;
         UrlShortenerController controller = () -> service;
 
-        return httpServerWith(defaultConfiguration().withPort(3000))
+        return withConfig(defaultConfiguration().withPort(3000))
             .serveNow(
                 handlePost("/shorten")
                     .whereBodyIs(new TypeToken<UrlShortenerRequest>() {})
