@@ -24,11 +24,6 @@
 
         <dependency>
             <groupId>org.pragmatica.lite</groupId>
-            <artifactId>config-properties</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.pragmatica.lite</groupId>
             <artifactId>db-api</artifactId>
         </dependency>
 

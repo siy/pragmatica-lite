@@ -14,7 +14,6 @@
 
     <modules>
         <module>config-api</module>
-        <module>config-parsers</module>
     </modules>
 
     <dependencyManagement>

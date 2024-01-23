@@ -12,18 +12,20 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.pragmatica.config.api.AppConfig.appConfig;
+import static org.pragmatica.dns.DomainAddress.domainAddress;
 import static org.pragmatica.dns.DomainName.domainName;
-import static org.pragmatica.dns.inet.InetUtils.DEFAULT_DNS_SERVERS;
 import static org.pragmatica.lang.Option.option;
 import static org.pragmatica.lang.Promise.resolved;
+import static org.pragmatica.lang.Promise.successful;
 
-//TODO: load addresses from config
 public interface DomainNameResolver extends AsyncCloseable {
     int DNS_UDP_PORT = 53;
-    Result<DomainAddress> UNKNOWN_DOMAIN = Result.failure(new UnknownDomain("Unknown domain"));
+    Result<DomainAddress> UNKNOWN_DOMAIN = new UnknownDomain("Unknown domain").result();
 
     default Promise<DomainAddress> resolve(String name) {
         return resolve(domainName(name));
@@ -41,7 +43,7 @@ public interface DomainNameResolver extends AsyncCloseable {
         return DefaultResolverHolder.INSTANCE.resolver();
     }
 
-    static DomainNameResolver forServers(List<InetAddress> serverList) {
+    static DomainNameResolver with(List<InetAddress> serverList) {
         record Resolver(DnsClient client, List<InetSocketAddress> serverList, ConcurrentHashMap<DomainName, Promise<DomainAddress>> cache)
             implements DomainNameResolver {
             private static final Logger log = LoggerFactory.getLogger(DomainNameResolver.class);
@@ -77,18 +79,48 @@ public interface DomainNameResolver extends AsyncCloseable {
             }
         }
 
-        var servers = serverList.stream()
-                                .map(ip -> new InetSocketAddress(ip, DNS_UDP_PORT))
-                                .toList();
+        return new Resolver(DnsClient.create(), prepareServers(serverList), buildDnsCache());
+    }
 
-        return new Resolver(DnsClient.create(), servers, new ConcurrentHashMap<>());
+    private static List<InetSocketAddress> prepareServers(List<InetAddress> serverList) {
+        return serverList.stream()
+                         .map(ip -> new InetSocketAddress(ip, DNS_UDP_PORT))
+                         .toList();
+    }
+
+    private static ConcurrentHashMap<DomainName, Promise<DomainAddress>> buildDnsCache() {
+        var cache = new ConcurrentHashMap<DomainName, Promise<DomainAddress>>();
+        var resolvedLocalHost = domainAddress(domainName("localhost"),
+                                              InetAddress.getLoopbackAddress(),
+                                              Duration.ofSeconds(0));   //Duration does not matter for localhost
+
+        cache.put(resolvedLocalHost.name(), successful(resolvedLocalHost));
+        return cache;
     }
 }
 
 enum DefaultResolverHolder {
     INSTANCE;
 
-    private final DomainNameResolver resolver = DomainNameResolver.forServers(DEFAULT_DNS_SERVERS);
+    private final DomainNameResolver resolver;
+
+    {
+        var log = LoggerFactory.getLogger(DefaultResolverHolder.class);
+
+        var serverList = appConfig("dns", DnsServers.template())
+            .map(DnsServers::servers)
+            .fold(cause -> {
+                log.error("Failed to load DNS servers from config, using default ones: {}", cause);
+                throw new IllegalStateException("Unable to start DNS resolver: %s".formatted(cause));
+            }, servers -> {
+                log.debug("Loaded DNS servers from config: {}", servers);
+                return servers;
+            });
+
+        resolver = DomainNameResolver.with(serverList);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(resolver::close));
+    }
 
     public DomainNameResolver resolver() {
         return resolver;

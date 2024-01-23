@@ -7,7 +7,11 @@ import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.TypeToken;
 
 import java.math.BigDecimal;
-import java.time.*;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -18,7 +22,6 @@ import static org.pragmatica.config.api.DataConversionError.invalidInput;
 import static org.pragmatica.lang.Option.none;
 import static org.pragmatica.lang.Option.some;
 import static org.pragmatica.lang.Result.success;
-import static org.pragmatica.lang.Tuple.tuple;
 
 /**
  * Supported configuration parameter types. Mostly resembles TOML specification with notable addition of {@link Duration} and use of
@@ -250,7 +253,7 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
                 .map(Stream::toList);
         }
 
-        static Result<Stream<String>> tryParse(String value, String typeMessage) {
+        public static Result<Stream<String>> tryParse(String value, String typeMessage) {
             var input = value.trim();
 
             if (input.startsWith("[") && input.endsWith("]")) {

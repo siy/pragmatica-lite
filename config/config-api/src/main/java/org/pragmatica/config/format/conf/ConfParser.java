@@ -1,4 +1,4 @@
-package org.pragmatica.config.format.toml;
+package org.pragmatica.config.format.conf;
 
 import org.pragmatica.config.api.DataConversionError;
 import org.pragmatica.config.api.StringMap;

@@ -1,12 +1,12 @@
 package org.pragmatica.config.format.yaml;
 
-import com.google.common.io.Files;
 import org.pragmatica.config.api.StringMap;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.utils.Causes;
 
-import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 /**
  * Yaml file reader. Based on <a href="https://github.com/tvd12/properties-file">properties-file</a> project with significant changes.
  */
-public class YamlFileReader {
+public final class YamlFileReader {
     private static final char TAB_CHAR = '\t';
     private static final char SPACE_CHAR = ' ';
     private static final char DASH_CHAR = '-';
@@ -157,7 +157,7 @@ public class YamlFileReader {
     }
 
     public static Result<StringMap> readFile(String source) {
-        return Result.lift(Causes::fromThrowable, () -> Files.readLines(new File(source), StandardCharsets.UTF_8))
+        return Result.lift(Causes::fromThrowable, () -> Files.readAllLines(Path.of(source), StandardCharsets.UTF_8))
                      .map(List::iterator)
                      .flatMap(YamlFileReader::read);
     }

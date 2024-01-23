@@ -151,24 +151,6 @@
 
             <dependency>
                 <groupId>org.pragmatica.lite</groupId>
-                <artifactId>config-cfg</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.pragmatica.lite</groupId>
-                <artifactId>config-properties</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.pragmatica.lite</groupId>
-                <artifactId>config-yaml</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.pragmatica.lite</groupId>
                 <artifactId>annotation-processor</artifactId>
                 <version>${project.version}</version>
             </dependency>

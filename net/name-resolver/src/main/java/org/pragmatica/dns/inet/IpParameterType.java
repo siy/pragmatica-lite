@@ -10,8 +10,11 @@ import org.pragmatica.lang.utils.Causes;
 import java.net.InetAddress;
 
 @AutoService(CustomParameterType.class)
+@SuppressWarnings("rawtypes") // Required by AutoService because CustomParameterType is generic
 public class IpParameterType implements CustomParameterType<InetAddress> {
     private static final ShortParameter PARSER = ShortParameter.INSTANCE;
+
+    public static final IpParameterType INSTANCE = new IpParameterType();
 
     @Override
     public TypeToken<InetAddress> token() {
