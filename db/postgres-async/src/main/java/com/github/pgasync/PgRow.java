@@ -153,7 +153,7 @@ public class PgRow implements Row, KeyToValue {
 
     @Override
     public LocalTime getLocalTime(int index) {
-        return dataConverter.toTime(columns[index].type(), data.getValue(index));
+        return dataConverter.toLocalTime(columns[index].type(), data.getValue(index));
     }
 
     @Override
@@ -163,7 +163,7 @@ public class PgRow implements Row, KeyToValue {
 
     @Override
     public LocalDateTime getLocalDateTime(int index) {
-        return dataConverter.toDate(columns[index].type(), data.getValue(index));
+        return dataConverter.toLocalDateTime(columns[index].type(), data.getValue(index));
     }
 
     @Override

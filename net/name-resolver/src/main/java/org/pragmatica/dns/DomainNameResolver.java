@@ -20,6 +20,7 @@ import static org.pragmatica.dns.inet.InetUtils.DEFAULT_DNS_SERVERS;
 import static org.pragmatica.lang.Option.option;
 import static org.pragmatica.lang.Promise.resolved;
 
+//TODO: load addresses from config
 public interface DomainNameResolver extends AsyncCloseable {
     int DNS_UDP_PORT = 53;
     Result<DomainAddress> UNKNOWN_DOMAIN = Result.failure(new UnknownDomain("Unknown domain"));

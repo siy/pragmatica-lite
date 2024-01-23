@@ -72,12 +72,11 @@ public class DataConverter {
         return value == null ? null : TemporalConversions.toLocalDate(oid, new String(value, encoding));
     }
 
-    //TODO: get rid of it
-    public LocalDateTime toDate(Oid oid, byte[] value) {
+    public LocalDateTime toLocalDateTime(Oid oid, byte[] value) {
         return value == null ? null : TemporalConversions.toLocalDateTime(oid, new String(value, encoding));
     }
 
-    public LocalTime toTime(Oid oid, byte[] value) {
+    public LocalTime toLocalTime(Oid oid, byte[] value) {
         return value == null ? null : TemporalConversions.toLocalTime(oid, new String(value, encoding));
     }
 
@@ -93,7 +92,7 @@ public class DataConverter {
         return value == null ? null : BooleanConversions.toBoolean(oid, new String(value, encoding));
     }
 
-    public <TArray> TArray toArray(Class<TArray> arrayType, Oid oid, byte[] value) {
+    public <T> T toArray(Class<T> arrayType, Oid oid, byte[] value) {
         if (value == null) {
             return null;
         }
@@ -235,7 +234,7 @@ public class DataConverter {
             case NUMERIC, FLOAT4, FLOAT8 -> toBigDecimal(oid, value);
             case BYTEA -> toBytes(oid, value);
             case DATE -> toLocalDate(oid, value);
-            case TIMETZ, TIME -> toTime(oid, value);
+            case TIMETZ, TIME -> toLocalTime(oid, value);
             case TIMESTAMP, TIMESTAMPTZ -> toInstant(oid, value);
             case UUID -> UUID.fromString(toString(oid, value));
             case BOOL -> toBoolean(oid, value);

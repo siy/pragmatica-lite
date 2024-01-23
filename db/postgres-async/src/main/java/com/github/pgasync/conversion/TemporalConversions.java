@@ -14,8 +14,7 @@ import static java.time.format.DateTimeFormatter.ISO_LOCAL_TIME;
 
 /**
  * @author Antti Laisi
- *     <p>
- *     TODO: Add support for Java 8 temporal types.
+ * @author Sergiy Yevtushenko
  */
 final class TemporalConversions {
     private TemporalConversions() {
