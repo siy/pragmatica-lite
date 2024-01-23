@@ -122,7 +122,7 @@ class SqlTest {
             .onFailure(System.out::println)
             .onFailureRun(Assertions::fail)
             .onSuccess(ra -> assertEquals(10, ra.size()))
-            .flatMap(ra -> ra.as(TestRecordTemplate.INSTANCE))
+            .flatMap(ra -> ra.as(TestRecord.template()))
             .onFailureRun(Assertions::fail)
             .map(stream -> stream.peek(System.out::println))
             .onSuccess(stream -> {
@@ -139,8 +139,8 @@ class SqlTest {
                                             .id(15)
                                             .value("fifteen");
 
-        var columns = TestRecordTemplate.INSTANCE.fieldNames();
-        var values = TestRecordTemplate.INSTANCE.fieldValues(newInstance);
+        var columns = TestRecord.template().fieldNames();
+        var values = TestRecord.template().fieldValues(newInstance);
 
         QRY."INSERT INTO test (\{columns}) VALUES (\{values})"
             .in(dbEnv)
@@ -152,7 +152,7 @@ class SqlTest {
             .in(dbEnv)
             .await()
             .onFailureRun(Assertions::fail)
-            .flatMap(ra -> ra.as(TestRecordTemplate.INSTANCE)
+            .flatMap(ra -> ra.as(TestRecord.template())
                              .map(Stream::toList))
             .onSuccess(list -> assertEquals(1, list.size()))
             .onSuccess(list -> assertEquals(newInstance, list.getFirst()))

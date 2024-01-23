@@ -20,7 +20,7 @@ import static org.pragmatica.http.server.routing.Route.handleGet;
  */
 public class HelloWorld {
     public static void main(String[] args) {
-        appConfig("server", HttpServerConfigTemplate.INSTANCE)
+        appConfig("server", HttpServerConfig.template())
             .flatMap(HelloWorld::runServer);
     }
 

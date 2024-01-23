@@ -27,4 +27,8 @@ public record HttpServerConfig(int port, Option<InetAddress> bindAddress, int se
                                     DEFAULT_MAX_CONTENT_LEN, DEFAULT_NATIVE_TRANSPORT,
                                     none(), none(), none(), none());
     }
+
+    public static HttpServerConfigTemplate template() {
+        return HttpServerConfigTemplate.INSTANCE;
+    }
 }

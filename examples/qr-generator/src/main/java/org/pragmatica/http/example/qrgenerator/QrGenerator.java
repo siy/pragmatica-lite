@@ -4,7 +4,6 @@ import org.pragmatica.http.ContentCategory;
 import org.pragmatica.http.ContentType;
 import org.pragmatica.http.server.HttpServer;
 import org.pragmatica.http.server.HttpServerConfig;
-import org.pragmatica.http.server.HttpServerConfigTemplate;
 import org.pragmatica.http.server.routing.Route;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
@@ -18,7 +17,7 @@ public class QrGenerator {
     public static final ContentType PNG_CONTENT_TYPE = ContentType.custom("image/png", ContentCategory.BINARY);
 
     public static void main(String[] args) {
-        appConfig("server", HttpServerConfigTemplate.INSTANCE)
+        appConfig("server", HttpServerConfig.template())
             .map(QrGenerator::startServer);
     }
 

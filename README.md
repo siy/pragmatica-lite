@@ -37,7 +37,7 @@ This version loads configuration from the file and is ready for adding more rout
 ```java
 public class HelloWorld {
     public static void main(String[] args) {
-        appConfig("server", HttpServerConfigTemplate.INSTANCE)
+        appConfig("server", HttpServerConfig.template())
             .flatMap(HelloWorld::runServer);
     }
 

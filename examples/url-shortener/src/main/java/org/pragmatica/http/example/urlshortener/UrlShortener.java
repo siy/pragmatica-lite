@@ -1,21 +1,19 @@
 package org.pragmatica.http.example.urlshortener;
 
-import org.pragmatica.config.api.AppConfig;
 import org.pragmatica.db.postgres.DbEnv;
 import org.pragmatica.db.postgres.DbEnvConfig;
-import org.pragmatica.db.postgres.DbEnvConfigTemplate;
 import org.pragmatica.http.example.urlshortener.api.UrlShortenerController;
 import org.pragmatica.http.example.urlshortener.api.UrlShortenerRequest;
 import org.pragmatica.http.example.urlshortener.domain.service.UrlShortenerService;
 import org.pragmatica.http.example.urlshortener.persistence.ShortenedUrlRepository;
 import org.pragmatica.http.server.HttpServerConfig;
-import org.pragmatica.http.server.HttpServerConfigTemplate;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.type.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.pragmatica.config.api.AppConfig.appConfig;
 import static org.pragmatica.http.server.HttpServer.withConfig;
 import static org.pragmatica.http.server.HttpServerConfig.defaultConfiguration;
 import static org.pragmatica.http.server.routing.Route.handlePost;
@@ -33,18 +31,16 @@ public class UrlShortener {
      * @param args command line arguments
      */
     public static void main(String... args) {
-        var configuration = AppConfig.appConfig();
-
-        Result.all(configuration.load("database", DbEnvConfigTemplate.INSTANCE),
-                   configuration.load("server", HttpServerConfigTemplate.INSTANCE))
-              .map(UrlShortener::runApplication)
-              .onFailure(cause -> log.error("Failed to load configuration {}", cause));
+        appConfig("database", DbEnvConfig.template(),
+                  "server", HttpServerConfig.template())
+            .map(UrlShortener::runApplication)
+            .onFailure(cause -> log.error("Failed to load configuration {}", cause));
     }
 
     /**
      * Wire dependencies and run the application with the given configuration.
      *
-     * @param dbEnvConfig             database configuration
+     * @param dbEnvConfig      database configuration
      * @param httpServerConfig HTTP server configuration
      *
      * @return result of the application run

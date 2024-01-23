@@ -13,4 +13,8 @@ public record DbEnvConfig(IRI url, String username, String password, int maxConn
     public DbEnvConfig withMaxConnections(int maxConnections) {
         return new DbEnvConfig(url(), username(), password(), maxConnections, maxStatements(), useSsl(), validationQuery(), encoding());
     }
+
+    public static DbEnvConfigTemplate template() {
+        return DbEnvConfigTemplate.INSTANCE;
+    }
 }
