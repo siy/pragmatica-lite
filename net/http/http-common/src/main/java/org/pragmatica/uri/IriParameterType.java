@@ -7,6 +7,7 @@ import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.TypeToken;
 
 @AutoService(CustomParameterType.class)
+@SuppressWarnings("rawtypes") // Required by AutoService because CustomParameterType is generic
 public class IriParameterType implements CustomParameterType<IRI> {
     @Override
     public TypeToken<IRI> token() {
