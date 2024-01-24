@@ -3,10 +3,15 @@ package org.pragmatica.config.api;
 import org.pragmatica.config.api.spi.AppConfigProvider;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.RecordTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public interface AppConfig {
+    Logger log = LoggerFactory.getLogger(AppConfig.class);
+
     default <T extends Record> Result<T> load(String prefix, RecordTemplate<T> template) {
-        return template.load(prefix, store());
+        return template.load(prefix, store())
+                       .onFailure(cause -> log.error("Error loading configuration from {}: {}", prefix, cause));
     }
 
     Store store();
