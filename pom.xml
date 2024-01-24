@@ -4,7 +4,7 @@
 
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>pragmatica-lite</artifactId>
-    <version>0.2.0</version>
+    <version>0.3.0</version>
     <modules>
         <module>core</module>
         <module>examples</module>
@@ -78,6 +78,25 @@
                         <argLine>${java.enable-preview}</argLine>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>3.4.0</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>3.4.0</version>
+                    <executions>
+                        <execution>
+                            <id>parse-version</id>
+                            <goals>
+                                <goal>parse-version</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -89,6 +108,14 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>versions-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
@@ -103,24 +130,6 @@
             </activation>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>build-helper-maven-plugin</artifactId>
-                        <version>3.4.0</version>
-                        <executions>
-                            <execution>
-                                <id>parse-version</id>
-                                <goals>
-                                    <goal>parse-version</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>versions-maven-plugin</artifactId>
-                        <version>2.16.0</version>
-                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
@@ -181,7 +190,6 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>versions-maven-plugin</artifactId>
-
                         <executions>
                             <execution>
                                 <goals>
@@ -189,6 +197,7 @@
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <newVersion>
                                         ${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.nextIncrementalVersion}
                                     </newVersion>
@@ -211,7 +220,6 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>versions-maven-plugin</artifactId>
-
                         <executions>
                             <execution>
                                 <goals>
@@ -219,7 +227,9 @@
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
-                                    <newVersion>${parsedVersion.majorVersion}.${parsedVersion.nextMinorVersion}.0
+                                    <!--suppress UnresolvedMavenProperty -->
+                                    <newVersion>
+                                        ${parsedVersion.majorVersion}.${parsedVersion.nextMinorVersion}.0
                                     </newVersion>
                                 </configuration>
                             </execution>
@@ -240,7 +250,6 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>versions-maven-plugin</artifactId>
-
                         <executions>
                             <execution>
                                 <goals>
@@ -248,6 +257,7 @@
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <newVersion>${parsedVersion.nextMajorVersion}.0.0</newVersion>
                                 </configuration>
                             </execution>
