@@ -1,5 +1,8 @@
 package org.pragmatica.config.api;
 
+import org.pragmatica.config.format.conf.ConfFormatReader;
+import org.pragmatica.config.format.properties.PropertiesFormatReader;
+import org.pragmatica.config.format.yaml.YamlFormatReader;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Tuple.Tuple2;
 
@@ -25,11 +28,16 @@ public interface FormatReader {
     List<String> supportedExtensions();
 
     static Stream<Tuple2<String, FormatReader>> readers() {
-        return ServiceLoader.load(FormatReader.class)
-                            .stream()
-                            .map(Provider::get)
-                            .flatMap(reader -> reader.supportedExtensions()
-                                                     .stream()
-                                                     .map(ext -> tuple(ext, reader)));
+        var externalReaders = ServiceLoader.load(FormatReader.class)
+                                           .stream()
+                                           .map(Provider::get);
+        var builtInReaders = Stream.of(new PropertiesFormatReader(),
+                                       new ConfFormatReader(),
+                                       new YamlFormatReader());
+
+        return Stream.concat(externalReaders, builtInReaders)
+                     .flatMap(reader -> reader.supportedExtensions()
+                                              .stream()
+                                              .map(ext -> tuple(ext, reader)));
     }
 }

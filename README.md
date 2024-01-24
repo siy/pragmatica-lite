@@ -2,23 +2,23 @@
 
 ![License](https://img.shields.io/badge/license-Apache%202-blue.svg)
 
-Minimalistic web framework for Java 21+.
+Minimalistic functional style micro web framework for Java 21+.
 
 ## Features
 * Functional style - no NPE, no exceptions, type safety, etc.
 * Consistent Option/Result/Promise monads with compatible APIs.
-* Simple and convenient to use Promise-based asynchronous API - no low level technical details leaking into business logic.   
+* Simple and convenient to use Promise-based asynchronous API.   
 * Minimalistic - no reflection, minimal external dependencies.
 * Only 3 main fully asynchronous components: HttpServer, HttpClient and PostgreSQL DB driver.
 * Built-in caching domain name resolver with proper TTL handling.
 
 ## Example 
-Some examples can be found in the [example's](./examples) folder.
+Some examples can be found in the [examples](./examples) folder.
 
 ### Minimal Hello World application
 
 ```java
-import static org.pragmatica.http.server.HttpServer.httpServerWith;
+import static org.pragmatica.http.server.HttpServer.withConfig;
 import static org.pragmatica.http.server.HttpServerConfig.defaultConfiguration;
 import static org.pragmatica.http.server.routing.Route.handleGet;
 
@@ -26,26 +26,28 @@ import static org.pragmatica.http.server.routing.Route.handleGet;
  * Minimal version of "Hello world" example.
  */
 public static void main(String[] args) {
-    httpServerWith(defaultConfiguration())
-        .serveNow(
-            handleGet("/").withText(() -> "Hello world!")
-        );
+    withConfig(defaultConfiguration())
+        .serveNow(handleGet("/").withText(() -> "Hello world!"));
 }
 ```
 
-### More realistic Hello World application (without imports)
+### More Realistic App Skeleton 
+This version loads configuration from the file and is ready for adding more routes.
 
 ```java
 public class HelloWorld {
-    private static final Logger log = LoggerFactory.getLogger(HelloWorld.class);
-
     public static void main(String[] args) {
-        defaultApplicationConfig()
-            .load("server", HttpServerConfigTemplate.INSTANCE)
-            .onFailure(cause -> log.error("Failed to load configuration {}", cause))
-            .onSuccess(config -> httpServerWith(config).serveNow(
-                handleGet("/").withText(() -> "Hello world!")
-            ));
+        appConfig("server", HttpServerConfig.template())
+            .flatMap(HelloWorld::runServer);
+    }
+
+    private static Result<Unit> runServer(HttpServerConfig configuration) {
+        return HttpServer.with(configuration, route());
+    }
+
+    private static RouteSource route() {
+        return handleGet("/")
+            .withText(() -> "Hello world!");
     }
 }
 ```
@@ -53,10 +55,6 @@ public class HelloWorld {
 ### Various routing examples
 
 ```java
-    public static HttpServer buildServer() {
-        return HttpServer
-            .httpServerWith(HttpServerConfiguration.defaultConfiguration())
-            .serve(
                 //Full description
                 handleGet("/hello1")
                     .withoutParameters()
@@ -100,16 +98,12 @@ public class HelloWorld {
                     .serve(
                         in("/user")
                             .serve(
-                                handleGet("/list")
+                                handleGet("/list") // -> /v1/user/list
                                     .withJson(request -> successful(request.pathParams())),
-                                handleGet("/query")
+                                handleGet("/query") // -> /v1/user/query
                                     .withJson(request -> successful(request.queryParams())),
-                                handleGet("/profile")
-                                    .withJson(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com")))
-                            )
-                    )
-            );
-    }
+                                handleGet("/profile") // -> /v1/user/profile
+                                    .withJson(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com"))))),
 ```
 ### PostgreSQL asynchronous CRUD Repository example
 (actually, there is no Update implementation)

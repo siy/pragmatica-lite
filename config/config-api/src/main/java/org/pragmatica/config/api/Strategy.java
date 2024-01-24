@@ -33,6 +33,7 @@ public interface Strategy {
         return () -> List.of(
             new Classpath("/db/default"),
             new Classpath("/server/default"),
+            new Classpath("/resolver/default"),
             new Classpath("/application"),
             new File("application"),
             new Environment(),

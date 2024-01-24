@@ -25,6 +25,9 @@ import static javax.tools.Diagnostic.Kind.NOTE;
 /**
  * Rudimentary annotation processor that generates RecordTemplate implementations for annotated records.
  */
+//TODO: fix generation of load() for more than 9 parameters
+//TODO: Generate With-er
+//TODO: Generate CRUD Repo
 @SupportedAnnotationTypes("org.pragmatica.annotation.*")
 @AutoService(Processor.class)
 public class AnnotationProcessor extends AbstractProcessor {

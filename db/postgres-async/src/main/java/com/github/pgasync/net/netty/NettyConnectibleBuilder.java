@@ -20,9 +20,14 @@ import com.github.pgasync.ProtocolStream;
 import com.github.pgasync.async.ThrowingPromise;
 import com.github.pgasync.net.Connectible;
 import com.github.pgasync.net.ConnectibleBuilder;
+import org.pragmatica.dns.DomainAddress;
+import org.pragmatica.dns.DomainNameResolver;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
+
+import static org.pragmatica.dns.DomainNameResolver.defaultResolver;
 
 /**
  * Builder for creating {@link Connectible} instances.
@@ -32,12 +37,15 @@ import java.nio.charset.Charset;
  */
 public class NettyConnectibleBuilder extends ConnectibleBuilder {
     private ThrowingPromise<ProtocolStream> obtainStream() {
-        return ThrowingPromise.successful(new NettyPgProtocolStream(
-            //TODO: use resolver
-            new InetSocketAddress(properties.hostname(), properties.port()),
-            properties.useSsl(),
-            Charset.forName(properties.encoding())
-        ));
+        var promise = ThrowingPromise.<InetAddress>create();
+
+        defaultResolver()
+            .resolve(properties.hostname())
+            .map(DomainAddress::ip)
+            .onSuccess(promise::succeed);
+
+        return promise.map(address -> new InetSocketAddress(address, properties.port()))
+                      .map(sockAddr -> new NettyPgProtocolStream(sockAddr, properties.useSsl(), Charset.forName(properties.encoding())));
     }
 
     public Connectible pool() {

@@ -1,6 +1,5 @@
-package org.pragmatica.config.format.toml;
+package org.pragmatica.config.format.conf;
 
-import com.google.auto.service.AutoService;
 import org.pragmatica.config.api.FormatReader;
 import org.pragmatica.config.api.StringMap;
 import org.pragmatica.lang.Result;
@@ -14,8 +13,6 @@ import java.util.List;
  * pairs are separated by an equal sign, and the key is separated from the value by a equals sign. The key-value pairs are separated by a newline.
  * Logically the section name is a common prefix to all variables in the section. The line starting with a hash sign is a comment.
  */
-@SuppressWarnings("unused")
-@AutoService(FormatReader.class)
 public class ConfFormatReader implements FormatReader {
     @Override
     public Result<StringMap> read(String content) {

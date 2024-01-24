@@ -5,14 +5,15 @@ import org.junit.jupiter.api.Test;
 import org.pragmatica.http.protocol.HttpMethod;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.pragmatica.http.server.routing.Route.whenGet;
 
 class RequestRouterTest {
     private final RequestRouter table = RequestRouter.with(
-        Route.handleGet("/one").withText(() -> "one"),
-        Route.handleGet("/one1").withText(() -> "one1"),
-        Route.handleGet("/one2").withText(() -> "one2"),
-        Route.handleGet("/on").withText(() -> "on"),
-        Route.handleGet("/o").withText(() -> "o")
+        whenGet("/one").returnText(() -> "one"),
+        whenGet("/one1").returnText(() -> "one1"),
+        whenGet("/one2").returnText(() -> "one2"),
+        whenGet("/on").returnText(() -> "on"),
+        whenGet("/o").returnText(() -> "o")
     );
 
     @Test

@@ -8,8 +8,7 @@ import org.pragmatica.http.server.HttpServerConfig;
 import org.pragmatica.id.nanoid.NanoId;
 import org.pragmatica.lang.Promise;
 
-import static org.pragmatica.http.server.routing.Route.handleGet;
-import static org.pragmatica.http.server.routing.Route.in;
+import static org.pragmatica.http.server.routing.Route.*;
 import static org.pragmatica.lang.Promise.failed;
 import static org.pragmatica.lang.Promise.successful;
 
@@ -25,54 +24,54 @@ public class App {
             .withConfig(HttpServerConfig.defaultConfiguration())
             .serve(
                 //Full description
-                handleGet("/hello1")
+                whenGet("/hello1")
                     .withoutParameters()
-                    .with(request -> successful(STR."Hello world! at \{request.route().path()}"))
-                    .as(CommonContentTypes.TEXT_PLAIN),
+                    .returnFrom(request -> successful(STR."Hello world! at \{request.route().path()}"))
+                    .a(CommonContentTypes.TEXT_PLAIN),
 
                 //Assume no parameters
-                handleGet("/hello2")
-                    .with(request -> successful(STR."Hello world! at \{request.route().path()}"))
-                    .as(CommonContentTypes.TEXT_PLAIN),
+                whenGet("/hello2")
+                    .returnFrom(request -> successful(STR."Hello world! at \{request.route().path()}"))
+                    .a(CommonContentTypes.TEXT_PLAIN),
 
                 //Assume no parameters, short content type (text)
-                handleGet("/hello2")
-                    .with(request -> successful(STR."Hello world! at \{request.route().path()}"))
-                    .asText(),
+                whenGet("/hello2")
+                    .returnFrom(request -> successful(STR."Hello world! at \{request.route().path()}"))
+                    .text(),
 
                 //Assume no parameters, even shorter content type (json)
-                handleGet("/hello2")
-                    .withText(request -> successful(STR."Hello world! at \{request.route().path()}")),
+                whenGet("/hello2")
+                    .returnText(request -> successful(STR."Hello world! at \{request.route().path()}")),
 
                 //Assume no parameters, response does not depend on request
-                handleGet("/hello2")
-                    .withText(() -> "Hello world!"),
+                whenGet("/hello2")
+                    .returnText(() -> "Hello world!"),
 
                 //Runtime exception handling example
-                handleGet("/boom-legacy")
-                    .withText(_ -> {
+                whenGet("/boom-legacy")
+                    .returnText(_ -> {
                         throw new RuntimeException("Some exception message");
                     }),
 
                 //Functional error handling
-                handleGet("/boom-functional")
-                    .withText(_ -> failed(HttpError.httpError(HttpStatus.UNPROCESSABLE_ENTITY, "Test error"))),
+                whenGet("/boom-functional")
+                    .returnText(_ -> failed(HttpError.httpError(HttpStatus.UNPROCESSABLE_ENTITY, "Test error"))),
 
                 //Long-running process
-                handleGet("/delay")
-                    .withText(_ -> delayedResponse()),
+                whenGet("/delay")
+                    .returnText(_ -> delayedResponse()),
 
                 //Nested routes
                 in("/v1")
                     .serve(
                         in("/user")
                             .serve(
-                                handleGet("/list")
-                                    .withJson(request -> successful(request.pathParams())),
-                                handleGet("/query")
-                                    .withJson(request -> successful(request.queryParams())),
-                                handleGet("/profile")
-                                    .withJson(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com")))
+                                whenGet("/list")
+                                    .returnJson(request -> successful(request.pathParams())),
+                                whenGet("/query")
+                                    .returnJson(request -> successful(request.queryParams())),
+                                whenGet("/profile")
+                                    .returnJson(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com")))
                             )
                     )
             );

@@ -14,8 +14,7 @@ import java.nio.file.Path;
 
 /**
  * Descriptors for configuration sources. Note that sources which deal with files (e.g. {@link FileSourceDescriptor.File} and
- * {@link FileSourceDescriptor.Classpath}) should not specify extension. The list of extensions is determined by available
- * {@link FormatReader}s.
+ * {@link FileSourceDescriptor.Classpath}) should not specify extension. The list of extensions is determined by available {@link FormatReader}s.
  * <p>
  * Error which happen during loading of the content, do not cause a failure of the entire configuration loading process. The error is logged and
  * process continues with next combination of source and file extension.
@@ -31,9 +30,9 @@ public sealed interface SourceDescriptor {
             public void load(Store store) {
                 FormatReader.readers()
                             .map(tuple -> tuple.map((ext, reader) -> readFile(ext, path())
-                                      .onSuccessRun(() -> log.debug(STR."File \{path}.\{ext} successfully read"))
-                                      .onFailure(cause -> log.debug(STR."Failed to read file \{path}.\{ext}: \{cause}", cause))
-                                      .flatMap(reader::read)))
+                                .onSuccessRun(() -> log.debug(STR."File \{path}.\{ext} successfully read"))
+                                .onFailure(cause -> log.debug(STR."Failed to read file \{path}.\{ext}: \{cause}"))
+                                .flatMap(reader::read)))
                             .forEach(result -> result.onSuccess(store::append));
             }
 
@@ -49,9 +48,9 @@ public sealed interface SourceDescriptor {
             public void load(Store store) {
                 FormatReader.readers()
                             .map(tuple -> tuple.map((ext, reader) -> loadFromClasspath(ext, path())
-                                      .onSuccessRun(() -> log.debug(STR."File \{path}.\{ext} successfully loaded via classpath"))
-                                      .onFailure(cause -> log.debug(STR."Failed to load file \{path}.\{ext} via classpath: \{cause}", cause))
-                                      .flatMap(reader::read)))
+                                .onSuccessRun(() -> log.debug(STR."File \{path}.\{ext} successfully loaded via classpath"))
+                                .onFailure(cause -> log.debug(STR."Failed to load file \{path}.\{ext} via classpath: \{cause}"))
+                                .flatMap(reader::read)))
                             .forEach(result -> result.onSuccess(store::append));
             }
 

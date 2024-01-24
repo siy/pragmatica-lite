@@ -1,7 +1,6 @@
-package org.pragmatica.config.format.property;
+package org.pragmatica.config.format.properties;
 
 
-import com.google.auto.service.AutoService;
 import org.pragmatica.config.api.FormatReader;
 import org.pragmatica.config.api.StringMap;
 import org.pragmatica.lang.Result;
@@ -9,9 +8,6 @@ import org.pragmatica.lang.Result;
 import java.util.List;
 import java.util.stream.Collectors;
 
-//TODO: tests
-@SuppressWarnings("unused")
-@AutoService(FormatReader.class)
 public class PropertiesFormatReader implements FormatReader {
     @Override
     public Result<StringMap> read(String source) {
