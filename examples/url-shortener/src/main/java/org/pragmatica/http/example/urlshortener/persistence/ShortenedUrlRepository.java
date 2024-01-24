@@ -2,11 +2,11 @@ package org.pragmatica.http.example.urlshortener.persistence;
 
 import org.pragmatica.db.postgres.DbEnv;
 import org.pragmatica.http.example.urlshortener.domain.entity.ShortenedUrl;
-import org.pragmatica.http.example.urlshortener.domain.entity.ShortenedUrlTemplate;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 
 import static org.pragmatica.db.postgres.Sql.QRY;
+import static org.pragmatica.http.example.urlshortener.domain.entity.ShortenedUrl.template;
 
 public interface ShortenedUrlRepository {
     default Promise<ShortenedUrl> create(ShortenedUrl shortenedUrl) {
@@ -28,8 +28,4 @@ public interface ShortenedUrlRepository {
     }
 
     DbEnv dbEnv();
-
-    default ShortenedUrlTemplate template() {
-        return ShortenedUrlTemplate.INSTANCE;
-    }
 }

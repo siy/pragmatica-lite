@@ -18,16 +18,17 @@ Some examples can be found in the [examples](./examples) folder.
 ### Minimal Hello World application
 
 ```java
-import static org.pragmatica.http.server.HttpServer.withConfig;
+import static org.pragmatica.http.server.HttpServer.with;
 import static org.pragmatica.http.server.HttpServerConfig.defaultConfiguration;
-import static org.pragmatica.http.server.routing.Route.handleGet;
+import static org.pragmatica.http.server.routing.Route.whenGet;
 
 /**
  * Minimal version of "Hello world" example.
  */
 public static void main(String[] args) {
-    withConfig(defaultConfiguration())
-        .serveNow(handleGet("/").withText(() -> "Hello world!"));
+    with(defaultConfiguration(),
+         whenGet("/")
+             .returnText(() -> "Hello world!"));
 }
 ```
 
@@ -38,16 +39,9 @@ This version loads configuration from the file and is ready for adding more rout
 public class HelloWorld {
     public static void main(String[] args) {
         appConfig("server", HttpServerConfig.template())
-            .flatMap(HelloWorld::runServer);
-    }
-
-    private static Result<Unit> runServer(HttpServerConfig configuration) {
-        return HttpServer.with(configuration, route());
-    }
-
-    private static RouteSource route() {
-        return handleGet("/")
-            .withText(() -> "Hello world!");
+            .flatMap(configuration -> HttpServer.with(configuration,
+                                                      whenGet("/")
+                                                          .returnText(() -> "Hello world!")));
     }
 }
 ```
@@ -55,55 +49,57 @@ public class HelloWorld {
 ### Various routing examples
 
 ```java
-                //Full description
-                handleGet("/hello1")
-                    .withoutParameters()
-                    .with(request -> successful(STR."Hello world! at \{request.route().path()}"))
-                    .as(CommonContentTypes.TEXT_PLAIN),
+    //Full description
+    whenGet("/hello1")
+        .withoutParameters()
+        .returnFrom(request -> successful(STR."Hello world! at \{request.route().path()}"))
+        .a(CommonContentTypes.TEXT_PLAIN),
 
-                //Assume no parameters
-                handleGet("/hello2")
-                    .with(request -> successful(STR."Hello world! at \{request.route().path()}"))
-                    .as(CommonContentTypes.TEXT_PLAIN),
+    //Assume no parameters
+    whenGet("/hello2")
+        .returnFrom(request -> successful(STR."Hello world! at \{request.route().path()}"))
+        .a(CommonContentTypes.TEXT_PLAIN),
 
-                //Assume no parameters, short content type (text)
-                handleGet("/hello2")
-                    .with(request -> successful(STR."Hello world! at \{request.route().path()}"))
-                    .asText(),
+    //Assume no parameters, short content type (text)
+    whenGet("/hello2")
+        .returnFrom(request -> successful(STR."Hello world! at \{request.route().path()}"))
+        .text(),
 
-                //Assume no parameters, even shorter content type (json)
-                handleGet("/hello2")
-                    .withText(request -> successful(STR."Hello world! at \{request.route().path()}")),
+    //Assume no parameters, even shorter content type (json)
+    whenGet("/hello2")
+        .returnText(request -> successful(STR."Hello world! at \{request.route().path()}")),
 
-                //Assume no parameters, response does not depend on request
-                handleGet("/hello2")
-                    .withText(() -> "Hello world!"),
+    //Assume no parameters, response does not depend on request
+    whenGet("/hello2")
+        .returnText(() -> "Hello world!"),
 
-                //Runtime exception handling example
-                handleGet("/boom-legacy")
-                    .withText(_ -> {
-                        throw new RuntimeException("Some exception message");
-                    }),
+    //Runtime exception handling example
+    whenGet("/boom-legacy")
+        .returnText(_ -> {
+            throw new RuntimeException("Some exception message");
+        }),
 
-                //Functional error handling
-                handleGet("/boom-functional")
-                    .withText(_ -> failed(HttpError.httpError(HttpStatus.UNPROCESSABLE_ENTITY, "Test error"))),
+    //Functional error handling
+    whenGet("/boom-functional")
+        .returnText(_ -> failed(HttpError.httpError(HttpStatus.UNPROCESSABLE_ENTITY, "Test error"))),
 
-                //Long-running process
-                handleGet("/delay")
-                    .withText(_ -> delayedResponse()),
+    //Long-running process
+    whenGet("/delay")
+        .returnText(_ -> delayedResponse()),
 
-                //Nested routes
-                in("/v1")
-                    .serve(
-                        in("/user")
-                            .serve(
-                                handleGet("/list") // -> /v1/user/list
-                                    .withJson(request -> successful(request.pathParams())),
-                                handleGet("/query") // -> /v1/user/query
-                                    .withJson(request -> successful(request.queryParams())),
-                                handleGet("/profile") // -> /v1/user/profile
-                                    .withJson(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com"))))),
+    //Nested routes
+    in("/v1")
+        .serve(
+            in("/user")
+                .serve(
+                    whenGet("/list")
+                        .returnJson(request -> successful(request.pathParams())),
+                    whenGet("/query")
+                        .returnJson(request -> successful(request.queryParams())),
+                    whenGet("/profile")
+                        .returnJson(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com")))
+                )
+        )
 ```
 ### PostgreSQL asynchronous CRUD Repository example
 (actually, there is no Update implementation)
@@ -129,9 +125,5 @@ public interface ShortenedUrlRepository {
     }
 
     DbEnv dbEnv();
-
-    default ShortenedUrlTemplate template() {
-        return ShortenedUrlTemplate.INSTANCE;
-    }
 }
 ```

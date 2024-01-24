@@ -29,4 +29,8 @@ public record ShortenedUrl(String id, String srcUrl, LocalDateTime created, Loca
      * Length of the shortened URL.
      */
     public static final int ID_LENGTH = 10;
+
+    public static ShortenedUrlTemplate template() {
+        return ShortenedUrlTemplate.INSTANCE;
+    }
 }
