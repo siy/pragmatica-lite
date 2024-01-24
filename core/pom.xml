@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>pragmatica-lite</artifactId>
-        <groupId>org.pragmatica.lite</groupId>
+        <groupId>org.pragmatica-lite</groupId>
         <version>0.2.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -15,7 +15,7 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.pragmatica.lite</groupId>
+                <groupId>org.pragmatica-lite</groupId>
                 <artifactId>bom-internal</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>

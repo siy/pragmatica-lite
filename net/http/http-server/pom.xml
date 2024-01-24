@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.pragmatica.lite</groupId>
+        <groupId>org.pragmatica-lite</groupId>
         <artifactId>http</artifactId>
         <version>0.2.0</version>
     </parent>
@@ -14,12 +14,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.pragmatica.lite</groupId>
+            <groupId>org.pragmatica-lite</groupId>
             <artifactId>json-codec-api</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.pragmatica.lite</groupId>
+            <groupId>org.pragmatica-lite</groupId>
             <artifactId>routing-api</artifactId>
         </dependency>
 
@@ -54,7 +54,7 @@
         </dependency>
 
         <dependency>
-            <groupId>org.pragmatica.lite</groupId>
+            <groupId>org.pragmatica-lite</groupId>
             <artifactId>json-jackson</artifactId>
             <scope>test</scope>
         </dependency>
@@ -78,13 +78,13 @@
         </dependency>
 
         <dependency>
-            <groupId>org.pragmatica.lite</groupId>
+            <groupId>org.pragmatica-lite</groupId>
             <artifactId>transport-epoll</artifactId>
             <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.pragmatica.lite</groupId>
+            <groupId>org.pragmatica-lite</groupId>
             <artifactId>transport-kqueue</artifactId>
             <scope>test</scope>
         </dependency>
