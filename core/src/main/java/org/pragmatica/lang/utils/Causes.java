@@ -39,6 +39,24 @@ public final class Causes {
     }
 
     /**
+     * This method enables more convenient tracing of the failure. The general pattern is the following:
+     * <pre>
+     *     ...
+     *     .flatMap(...)
+     *     .mapError(Causes::trace)
+     *     ...
+     * </pre>
+     * In case of error this call will leave useful trace of the place where error did happen.
+     *
+     * @param cause original cause of the issue.
+     *
+     * @return new Cause, with {@link  Cause#source()} set to original cause.
+     */
+    public static Cause trace(Cause cause) {
+        return cause(Thread.currentThread().getStackTrace()[5].toString(), cause);
+    }
+
+    /**
      * Simplest possible variant of {@link Cause} which contains only message describing the cause
      */
     record SimpleCause(String message, Option<Cause> source) implements Cause {
@@ -74,8 +92,8 @@ public final class Causes {
     }
 
     /**
-     * Create a mapper which will map a value into a formatted message. Main use case for this function - creation of mappers for {@link
-     * Result#filter(Fn1, Predicate)}:
+     * Create a mapper which will map a value into a formatted message. Main use case for this function - creation of mappers for
+     * {@link Result#filter(Fn1, Predicate)}:
      * <blockquote><pre>
      * filter(Causes.with1("Value {0} is below threshold"), value -> value > 321)
      * </pre></blockquote>

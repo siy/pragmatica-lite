@@ -78,16 +78,23 @@ class ResultTest {
 
     @Test
     void failureResultRemainsUnchangedAfterMap() {
-        Result.<Integer>failure(Causes.cause("Some error")).map(Objects::toString)
+        Result.<Integer>failure(Causes.cause("Some error"))
+              .map(Objects::toString)
               .onFailure(cause -> assertEquals("Some error", cause.message()))
               .onSuccessRun(Assertions::fail);
     }
 
     @Test
     void failureResultRemainsUnchangedAfterFlatMap() {
-        Result.<Integer>failure(Causes.cause("Some error")).flatMap(v -> Result.success(v.toString()))
+        Result.<Integer>failure(Causes.cause("Some error"))
+              .flatMap(v -> Result.success(v.toString()))
               .onFailure(cause -> assertEquals("Some error", cause.message()))
+              .mapError(Causes::trace)
+              .onFailure(System.out::println)
+              .mapError(Causes::trace)
+              .onFailure(System.out::println)
               .onSuccessRun(Assertions::fail);
+
     }
 
     @Test

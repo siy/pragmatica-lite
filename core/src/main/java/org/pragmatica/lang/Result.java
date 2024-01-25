@@ -38,6 +38,7 @@ import static org.pragmatica.lang.Tuple.*;
  *
  * @param <T> Type of value in case of success.
  */
+//TODO: add "mapError" calls through the code
 @SuppressWarnings("unused")
 public sealed interface Result<T> permits Success, Failure {
     /**
