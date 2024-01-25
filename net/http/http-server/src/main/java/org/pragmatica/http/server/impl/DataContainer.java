@@ -20,6 +20,8 @@ import static org.pragmatica.lang.Tuple.tuple;
 public sealed interface DataContainer<T extends DataContainer<T>> {
     HttpStatus status();
     ByteBuf responseBody();
+
+
     List<Tuple2<CommonHeaders, String>> responseHeaders();
 
     T withHeaders(List<Tuple2<CommonHeaders, String>> headers);
