@@ -10,8 +10,6 @@ import org.pragmatica.http.server.HttpServer;
 import org.pragmatica.http.server.HttpServerConfig;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static org.pragmatica.config.api.AppConfig.appConfig;
 import static org.pragmatica.http.server.routing.Route.whenPost;
@@ -21,7 +19,6 @@ import static org.pragmatica.http.server.routing.Route.whenPost;
  * server.
  */
 public class UrlShortener {
-    private static final Logger log = LoggerFactory.getLogger(UrlShortener.class);
 
     /**
      * Load configuration and start the server.
@@ -53,7 +50,9 @@ public class UrlShortener {
      * @return result of the application run
      */
     private static Result<Unit> runApplication(DbEnvConfig dbEnvConfig, HttpServerConfig httpServerConfig) {
-        ShortenedUrlRepository repository = () -> DbEnv.with(dbEnvConfig);
+        DbEnv dbEnv = DbEnv.with(dbEnvConfig);
+
+        ShortenedUrlRepository repository = () -> dbEnv;
         UrlShortenerService service = () -> repository;
         UrlShortenerController controller = () -> service;
 

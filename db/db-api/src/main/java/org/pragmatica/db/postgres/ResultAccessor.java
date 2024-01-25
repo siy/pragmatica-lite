@@ -44,6 +44,4 @@ public interface ResultAccessor {
     static ResultAccessor wrap(PgResultSet resultSet) {
         return () -> resultSet;
     }
-
-
 }

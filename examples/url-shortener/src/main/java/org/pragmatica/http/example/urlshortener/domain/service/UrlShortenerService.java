@@ -16,6 +16,7 @@ public interface UrlShortenerService {
     default Promise<ShortenedUrlResponse> shortenUrl(RawShortenUrlRequest request) {
         return request.parseRequest()
                       .map(ValidShortenUrlRequest::toDomainEntity)
+            .onFailure(cause -> System.out.println("Failed to parse request: " + cause))
                       .toPromise()
                       .flatMap(repository()::create)
                       .map(ShortenedUrlResponse::fromDomainEntity);

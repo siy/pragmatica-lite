@@ -29,6 +29,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.pragmatica.lang.Option.option;
@@ -235,7 +236,7 @@ public class PgRow implements Row, KeyToValue {
     @Override
     public <T> Result<T> get(String prefix, String key, TypeToken<T> typeToken) {
         // Prefix is always empty for mapping of rows to records, so just ignore it
-        var column = columnsByName.get(key);
+        var column = columnsByName.get(key.toLowerCase(Locale.ROOT));
 
         if (column == null) {
             return new SqlError.ColumnNotFound(STR."Unknown column '\{key}'").result();
@@ -255,7 +256,7 @@ public class PgRow implements Row, KeyToValue {
             throw new IllegalArgumentException("Column name is required");
         }
 
-        var column = columnsByName.get(name);
+        var column = columnsByName.get(name.toLowerCase(Locale.ROOT));
 
         if (column == null) {
             throw new SqlException(STR."Unknown column '\{name}'");

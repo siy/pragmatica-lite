@@ -15,6 +15,8 @@ import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.io.AsyncCloseable;
 import org.pragmatica.net.InetPort;
 import org.pragmatica.uri.IRI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 
@@ -28,6 +30,7 @@ public interface DbEnv extends AsyncCloseable {
 
     static DbEnv with(DbEnvConfig configuration) {
         record env(DbEnvConfig configuration, Connectible connectible) implements DbEnv {
+            private static final Logger log = LoggerFactory.getLogger(DbEnv.class);
             static final InetPort DEFAULT_PORT = InetPort.inetPort(5432);
             static final Cause DOMAIN_NAME_REQUIRED = new SqlError.ConfigurationError("Domain name is required");
             static final Cause DATABASE_NAME_REQUIRED = new SqlError.ConfigurationError("Database name is required");
@@ -35,21 +38,32 @@ public interface DbEnv extends AsyncCloseable {
             @Override
             public Promise<Unit> close() {
                 return connectible().close()
-                                    .asPromise();
+                                    .asPromise()
+                                    .onFailure(cause -> log.error("Failed to close connection pool {}", cause));
             }
 
             @Override
             public Promise<ResultAccessor> execute(Query query) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Executing query {}", query);
+                }
+
                 return connectible().completeQuery(query.sql(), query.values())
                                     .asPromise()
-                                    .map(ResultAccessor::wrap);
+                                    .map(ResultAccessor::wrap)
+                                    .onFailure(cause -> log.error("Failed to execute query {}", cause));
             }
 
             @Override
             public Promise<Collection<ResultAccessor>> execute(Script script) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Executing script {}", script);
+                }
+
                 return connectible().completeScript(script.sql())
                                     .asPromise()
-                                    .map(env::wrap);
+                                    .map(env::wrap)
+                                    .onFailure(cause -> log.error("Failed to execute script {}", cause));
             }
 
             private static Collection<ResultAccessor> wrap(Collection<PgResultSet> collection) {
