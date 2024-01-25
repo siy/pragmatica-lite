@@ -3,9 +3,12 @@ package org.pragmatica.http.server.impl;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpUtil;
+import io.netty.handler.codec.http.HttpVersion;
 import org.pragmatica.http.CommonContentTypes;
-import org.pragmatica.http.ContentType;
 import org.pragmatica.http.HttpError;
 import org.pragmatica.http.protocol.CommonHeaders;
 import org.pragmatica.http.protocol.HttpMethod;
@@ -25,14 +28,12 @@ import static org.pragmatica.http.util.Utils.normalize;
 class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
     private static final String SERVER_NAME = "Pragmatica Web Server";
     private static final Supplier<String> dateTimeNow = () -> ZonedDateTime.now(Clock.systemUTC())
-                                                                   .format(DateTimeFormatter.RFC_1123_DATE_TIME);
+                                                                           .format(DateTimeFormatter.RFC_1123_DATE_TIME);
 
-    private final HttpServerConfig configuration;
     private final RequestRouter routingTable;
     private final ContextConfig contextConfig;
 
     HttpServerHandler(HttpServerConfig configuration, RequestRouter routingTable) {
-        this.configuration = configuration;
         this.contextConfig = ContextConfig.fromHttpServerConfig(configuration);
         this.routingTable = routingTable;
     }
@@ -62,7 +63,7 @@ class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
     }
 
     private void sendErrorResponse(ChannelHandlerContext ctx, Cause cause) {
-        sendResponse(ctx, decodeError(cause), CommonContentTypes.TEXT_PLAIN, false, Option.none());
+        sendResponse(ctx, decodeError(cause), false, Option.none());
     }
 
     @Override
@@ -77,19 +78,22 @@ class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
 
 
     public static DataContainer.StringData decodeError(Cause cause) {
-        return cause instanceof HttpError httpError
-               ? DataContainer.StringData.from(httpError)
-               : DataContainer.StringData.from(HttpStatus.INTERNAL_SERVER_ERROR, cause);
+        return (cause instanceof HttpError httpError
+                ? DataContainer.StringData.from(httpError)
+                : DataContainer.StringData.from(HttpStatus.INTERNAL_SERVER_ERROR, cause))
+            .withHeader(CommonHeaders.CONTENT_TYPE, CommonContentTypes.TEXT_PLAIN.headerText());
     }
 
-    public static void sendResponse(ChannelHandlerContext ctx, DataContainer<?> dataContainer, ContentType contentType, boolean keepAlive, Option<String> requestId) {
+    public static void sendResponse(ChannelHandlerContext ctx,
+                                    DataContainer<?> dataContainer,
+                                    boolean keepAlive,
+                                    Option<String> requestId) {
         var content = dataContainer.responseBody();
         var response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, dataContainer.status().toInternal(), content);
 
         response.headers()
                 .set(CommonHeaders.SERVER.asString(), SERVER_NAME)
                 .set(CommonHeaders.DATE.asString(), dateTimeNow.get())
-                .set(CommonHeaders.CONTENT_TYPE.asString(), contentType.headerText())
                 .set(CommonHeaders.CONTENT_LENGTH.asString(), Long.toString(content.readableBytes()));
         dataContainer.responseHeaders()
                      .forEach(header -> response.headers().set(header.first().asString(), header.last()));

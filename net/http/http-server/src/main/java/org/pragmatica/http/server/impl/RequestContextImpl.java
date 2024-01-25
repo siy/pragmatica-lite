@@ -5,6 +5,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
 import org.pragmatica.http.HttpError;
 import org.pragmatica.http.codec.CustomCodec;
+import org.pragmatica.http.protocol.CommonHeaders;
 import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.http.server.routing.Redirect;
 import org.pragmatica.http.server.routing.RequestContext;
@@ -115,6 +116,7 @@ public class RequestContextImpl implements RequestContext {
     private void sendResponse(Result<?> result) {
         result
             .flatMap(this::serializeResponse)
+            .onSuccess(container -> container.withHeader(CommonHeaders.CONTENT_TYPE, route.contentType().headerText()))
             .onSuccessRun(this::setKeepAlive)        // Set keepAlive only for successful responses
             .recover(HttpServerHandler::decodeError)
             .onSuccess(this::sendResponse);
@@ -125,7 +127,7 @@ public class RequestContextImpl implements RequestContext {
     }
 
     private void sendResponse(DataContainer<?> dataContainer) {
-        HttpServerHandler.sendResponse(ctx, dataContainer, route.contentType(), keepAlive, some(requestId));
+        HttpServerHandler.sendResponse(ctx, dataContainer, keepAlive, some(requestId));
     }
 
     private Result<DataContainer<?>> serializeResponse(Object value) {

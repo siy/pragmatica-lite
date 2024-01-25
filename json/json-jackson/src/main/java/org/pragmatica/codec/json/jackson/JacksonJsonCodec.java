@@ -3,6 +3,7 @@ package org.pragmatica.codec.json.jackson;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import org.pragmatica.http.codec.CodecError;
 import org.pragmatica.http.codec.JsonCodec;
 import org.pragmatica.lang.Result;
@@ -28,7 +29,7 @@ public interface JacksonJsonCodec extends JsonCodec {
                 JavaType javaType = objectMapper.constructType(literal.token());
                 return lift(
                     CodecError::fromDecodingThrowable,
-                    () -> objectMapper.readValue(entity.array(), entity.arrayOffset(), entity.readableBytes(), javaType)
+                    () -> objectMapper.readValue(ByteBufUtil.getBytes(entity), javaType)
                 );
             }
         }
