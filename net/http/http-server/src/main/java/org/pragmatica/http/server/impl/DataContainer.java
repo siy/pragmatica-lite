@@ -1,8 +1,10 @@
 package org.pragmatica.http.server.impl;
 
 import io.netty.buffer.ByteBuf;
+import org.pragmatica.http.ContentType;
 import org.pragmatica.http.HttpError;
 import org.pragmatica.http.protocol.CommonHeaders;
+import org.pragmatica.http.protocol.HttpHeaderName;
 import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.http.server.routing.Redirect;
 import org.pragmatica.lang.Result.Cause;
@@ -19,18 +21,23 @@ import static org.pragmatica.lang.Tuple.tuple;
 
 public sealed interface DataContainer<T extends DataContainer<T>> {
     HttpStatus status();
+
     ByteBuf responseBody();
 
 
-    List<Tuple2<CommonHeaders, String>> responseHeaders();
+    List<Tuple2<HttpHeaderName, String>> responseHeaders();
 
-    T withHeaders(List<Tuple2<CommonHeaders, String>> headers);
+    T withHeaders(List<Tuple2<HttpHeaderName, String>> headers);
 
-    default T withHeader(CommonHeaders header, String value) {
+    default T withHeader(HttpHeaderName header, String value) {
         return withHeaders(List.of(tuple(header, value)));
     }
 
-    record StringData(HttpStatus status, String value, List<Tuple2<CommonHeaders, String>> responseHeaders) implements DataContainer<StringData> {
+    default T withContentType(ContentType type) {
+        return withHeader(CommonHeaders.CONTENT_TYPE, type.headerText());
+    }
+
+    record StringData(HttpStatus status, String value, List<Tuple2<HttpHeaderName, String>> responseHeaders) implements DataContainer<StringData> {
         @Override
         public ByteBuf responseBody() {
             return wrappedBuffer(value.getBytes(StandardCharsets.UTF_8));
@@ -49,12 +56,12 @@ public sealed interface DataContainer<T extends DataContainer<T>> {
         }
 
         @Override
-        public StringData withHeaders(List<Tuple2<CommonHeaders, String>> headers) {
+        public StringData withHeaders(List<Tuple2<HttpHeaderName, String>> headers) {
             return new StringData(status, value, merge(responseHeaders, headers));
         }
     }
 
-    record BinaryData(HttpStatus status, byte[] value, List<Tuple2<CommonHeaders, String>> responseHeaders) implements DataContainer<BinaryData> {
+    record BinaryData(HttpStatus status, byte[] value, List<Tuple2<HttpHeaderName, String>> responseHeaders) implements DataContainer<BinaryData> {
         @Override
         public ByteBuf responseBody() {
             return wrappedBuffer(value);
@@ -65,23 +72,25 @@ public sealed interface DataContainer<T extends DataContainer<T>> {
         }
 
         @Override
-        public BinaryData withHeaders(List<Tuple2<CommonHeaders, String>> headers) {
+        public BinaryData withHeaders(List<Tuple2<HttpHeaderName, String>> headers) {
             return new BinaryData(status, value, merge(responseHeaders, headers));
         }
     }
 
-    record ByteBufData(HttpStatus status, ByteBuf responseBody, List<Tuple2<CommonHeaders, String>> responseHeaders) implements DataContainer<ByteBufData> {
+    record ByteBufData(HttpStatus status, ByteBuf responseBody, List<Tuple2<HttpHeaderName, String>> responseHeaders)
+        implements DataContainer<ByteBufData> {
         public static ByteBufData from(ByteBuf value) {
             return new ByteBufData(HttpStatus.OK, value, List.of());
         }
 
         @Override
-        public ByteBufData withHeaders(List<Tuple2<CommonHeaders, String>> headers) {
+        public ByteBufData withHeaders(List<Tuple2<HttpHeaderName, String>> headers) {
             return new ByteBufData(status, responseBody, merge(responseHeaders, headers));
         }
     }
 
-    record RedirectData(HttpStatus status, String redirectUrl, List<Tuple2<CommonHeaders, String>> responseHeaders) implements DataContainer<RedirectData> {
+    record RedirectData(HttpStatus status, String redirectUrl, List<Tuple2<HttpHeaderName, String>> responseHeaders)
+        implements DataContainer<RedirectData> {
         @Override
         public ByteBuf responseBody() {
             return EMPTY_BUFFER;
@@ -93,12 +102,13 @@ public sealed interface DataContainer<T extends DataContainer<T>> {
         }
 
         @Override
-        public RedirectData withHeaders(List<Tuple2<CommonHeaders, String>> headers) {
+        public RedirectData withHeaders(List<Tuple2<HttpHeaderName, String>> headers) {
             return new RedirectData(status, redirectUrl, merge(responseHeaders, headers));
         }
     }
 
-    private static List<Tuple2<CommonHeaders, String>> merge(List<Tuple2<CommonHeaders, String>> first, List<Tuple2<CommonHeaders, String>> second) {
+    private static List<Tuple2<HttpHeaderName, String>> merge(List<Tuple2<HttpHeaderName, String>> first,
+                                                              List<Tuple2<HttpHeaderName, String>> second) {
         var list = new ArrayList<>(first);
         list.addAll(second);
         return list;

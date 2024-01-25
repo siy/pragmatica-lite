@@ -3,9 +3,9 @@ package org.pragmatica.http.server.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
+import org.pragmatica.http.CommonContentTypes;
 import org.pragmatica.http.HttpError;
 import org.pragmatica.http.codec.CustomCodec;
-import org.pragmatica.http.protocol.CommonHeaders;
 import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.http.server.routing.Redirect;
 import org.pragmatica.http.server.routing.RequestContext;
@@ -116,7 +116,6 @@ public class RequestContextImpl implements RequestContext {
     private void sendResponse(Result<?> result) {
         result
             .flatMap(this::serializeResponse)
-            .map(container -> container.withHeader(CommonHeaders.CONTENT_TYPE, route.contentType().headerText()))
             .onSuccessRun(this::setKeepAlive)        // Set keepAlive only for successful responses
             .recover(HttpServerHandler::decodeError)
             .onSuccess(this::sendResponse);
@@ -132,21 +131,28 @@ public class RequestContextImpl implements RequestContext {
 
     private Result<DataContainer<?>> serializeResponse(Object value) {
         return switch (value) {
-            case DataContainer<?> dataContainer -> success(dataContainer);
-            case Redirect redirect -> success(redirect).map(DataContainer.RedirectData::from);
-            case HttpError httpError -> success(httpError).map(DataContainer.StringData::from);
-            case String string -> success(string).map(DataContainer.StringData::from);
-            case byte[] bytes -> success(bytes).map(DataContainer.BinaryData::from);
+            case DataContainer<?> dataContainer -> success(dataContainer).map(ctr -> ctr.withContentType(route.contentType()));
+            case Redirect redirect -> success(redirect).map(DataContainer.RedirectData::from)
+                                                       .map(ctr -> ctr.withContentType(route.contentType()));
+            case String string -> success(string).map(DataContainer.StringData::from)
+                                                 .map(ctr -> ctr.withContentType(route.contentType()));
+            case byte[] bytes -> success(bytes).map(DataContainer.BinaryData::from)
+                                               .map(ctr -> ctr.withContentType(route.contentType()));
+            case HttpError httpError -> success(httpError).map(DataContainer.StringData::from)
+                                                          .map(ctr -> ctr.withContentType(CommonContentTypes.TEXT_PLAIN));
 
             default -> switch (route.contentType().category()) {
                 case PLAIN_TEXT -> success(value).map(Object::toString)
-                                                 .map(DataContainer.StringData::from);
+                                                 .map(DataContainer.StringData::from)
+                                                 .map(ctr -> ctr.withContentType(route.contentType()));
                 case JSON -> configuration.jsonCodec()
                                           .serialize(value)
-                                          .map(DataContainer.ByteBufData::from);
+                                          .map(DataContainer.ByteBufData::from)
+                                          .map(ctr -> ctr.withContentType(route.contentType()));
                 case CUSTOM -> configuration.customCodec()
                                             .serialize(value, route.contentType())
-                                            .map(DataContainer.ByteBufData::from);
+                                            .map(DataContainer.ByteBufData::from)
+                                            .map(ctr -> ctr.withContentType(route.contentType()));
                 case BINARY -> HttpError.httpError(HttpStatus.INTERNAL_SERVER_ERROR,
                                                    "Content type is binary, but the response is not a byte array")
                                         .result();
