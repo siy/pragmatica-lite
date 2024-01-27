@@ -11,21 +11,21 @@ import static org.pragmatica.http.example.urlshortener.domain.entity.ShortenedUr
 public interface ShortenedUrlRepository {
     default Promise<ShortenedUrl> create(ShortenedUrl shortenedUrl) {
         return QRY."INSERT INTO shortenedurl (\{template().fieldNames()}) VALUES (\{template().fieldValues(shortenedUrl)}) RETURNING *"
-            .in(dbEnv())
-            .mapResult(ra -> ra.asSingle(template()));
+            .in(db())
+            .asSingle(template());
     }
 
     default Promise<ShortenedUrl> read(String id) {
         return QRY."SELECT * FROM shortenedurl WHERE id = \{id}"
-            .in(dbEnv())
-            .mapResult(ra -> ra.asSingle(template()));
+            .in(db())
+            .asSingle(template());
     }
 
     default Promise<Unit> delete(String id) {
         return QRY."DELETE FROM shortenedurl WHERE id = \{id}"
-            .in(dbEnv())
-            .mapToUnit();
+            .in(db())
+            .asUnit();
     }
 
-    DbEnv dbEnv();
+    DbEnv db();
 }
