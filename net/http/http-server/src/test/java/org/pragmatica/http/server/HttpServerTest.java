@@ -62,8 +62,7 @@ class HttpServerTest {
         checkOneParametrizedPath("/two/123/space/456", 200, "Received 123, space, 456");
         checkOneParametrizedPath("/two/123/space/786/456", 200, "Received 123, space, 786");
         checkOneParametrizedPath("/two/123/space1/786", 404, "Not Found: Unknown request path");
-        checkOneParametrizedPath("/two/a123/space/786", 422, "Unprocessable Entity: org.pragmatica.http.server.routing.PathParameter.lambda$aInteger$4(PathParameter.java:41)\n"
-                                                             + "\tThe value [a123] can't be parsed into Integer: For input string: \"a123\"");
+        checkOneParametrizedPath("/two/a123/space/786", 422, "Unprocessable Entity: The value [a123] can't be parsed into Integer: For input string: \"a123\"");
     }
 
     private static void checkOneTextPath(String path, String value) {

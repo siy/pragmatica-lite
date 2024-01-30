@@ -19,73 +19,61 @@ public interface PathParameter<T> {
 
     static PathParameter<String> aString() {
         return value -> StringParameter.INSTANCE.apply(value)
-                                                .traceError()
                                                 .mapError(HttpError::unprocessableEntity);
     }
 
     static PathParameter<Byte> aByte() {
         return value -> ByteParameter.INSTANCE.apply(value)
-                                              .traceError()
                                               .mapError(HttpError::unprocessableEntity);
     }
 
     static PathParameter<Short> aShort() {
         return value -> ShortParameter.INSTANCE.apply(value)
-                                               .traceError()
                                                .mapError(HttpError::unprocessableEntity);
     }
 
     static PathParameter<Integer> aInteger() {
         return value -> IntegerParameter.INSTANCE.apply(value)
-                                                 .traceError()
                                                  .mapError(HttpError::unprocessableEntity);
     }
 
     static PathParameter<Long> aLong() {
         return value -> LongParameter.INSTANCE.apply(value)
-                                              .traceError()
                                               .mapError(HttpError::unprocessableEntity);
     }
 
     static PathParameter<BigDecimal> aDecimal() {
         return value -> DecimalParameter.INSTANCE.apply(value)
-                                                 .traceError()
                                                  .mapError(HttpError::unprocessableEntity);
     }
 
     static PathParameter<Boolean> aBoolean() {
         return value -> BooleanParameter.INSTANCE.apply(value)
-                                                 .traceError()
                                                  .mapError(HttpError::unprocessableEntity);
     }
 
     static PathParameter<OffsetDateTime> aOffsetDateTime() {
         return value -> OffsetDateTimeParameter.INSTANCE.apply(value)
-                                                        .traceError()
                                                         .mapError(HttpError::unprocessableEntity);
     }
 
     static PathParameter<LocalDateTime> aLocalDateTime() {
         return value -> LocalDateTimeParameter.INSTANCE.apply(value)
-                                                       .traceError()
                                                        .mapError(HttpError::unprocessableEntity);
     }
 
     static PathParameter<LocalDate> aLocalDate() {
         return value -> LocalDateParameter.INSTANCE.apply(value)
-                                                   .traceError()
                                                    .mapError(HttpError::unprocessableEntity);
     }
 
     static PathParameter<LocalTime> aLocalTime() {
         return value -> LocalTimeParameter.INSTANCE.apply(value)
-                                                   .traceError()
                                                    .mapError(HttpError::unprocessableEntity);
     }
 
     static PathParameter<Duration> aDuration() {
         return value -> DurationParameter.INSTANCE.apply(value)
-                                                  .traceError()
                                                   .mapError(HttpError::unprocessableEntity);
     }
 }
