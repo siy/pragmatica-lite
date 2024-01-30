@@ -19,6 +19,7 @@ package org.pragmatica.lang;
 import org.pragmatica.lang.Functions.*;
 import org.pragmatica.lang.Result.Failure;
 import org.pragmatica.lang.Result.Success;
+import org.pragmatica.lang.utils.Causes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,6 +70,10 @@ public sealed interface Result<T> permits Success, Failure {
 
     default Result<T> mapError(Fn1<Cause, ? super Cause> mapper) {
         return fold(cause -> mapper.apply(cause).result(), _ -> this);
+    }
+
+    default Result<T> traceError() {
+        return mapError(Causes::trace);
     }
 
     default Result<T> recover(Fn1<T, ? super Cause> mapper) {

@@ -23,6 +23,7 @@ import org.pragmatica.lang.Tuple.*;
 import org.pragmatica.lang.io.CoreError;
 import org.pragmatica.lang.io.CoreError.Cancelled;
 import org.pragmatica.lang.io.Timeout;
+import org.pragmatica.lang.utils.Causes;
 import org.pragmatica.lang.utils.ResultCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,6 +93,10 @@ public interface Promise<T> {
 
     default Promise<T> mapError(Fn1<Cause, Cause> transformation) {
         return replaceResult(result -> result.mapError(transformation));
+    }
+
+    default Promise<T> traceError() {
+        return mapError(Causes::trace);
     }
 
     default <U> Promise<U> replace(Supplier<U> transformation) {
