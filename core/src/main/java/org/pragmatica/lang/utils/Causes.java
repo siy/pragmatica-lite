@@ -53,7 +53,7 @@ public final class Causes {
      * @return new Cause, with {@link  Cause#source()} set to original cause.
      */
     public static Cause trace(Cause cause) {
-        return cause(Thread.currentThread().getStackTrace()[5].toString(), cause);
+        return cause(Thread.currentThread().getStackTrace()[6].toString(), cause);
     }
 
     /**

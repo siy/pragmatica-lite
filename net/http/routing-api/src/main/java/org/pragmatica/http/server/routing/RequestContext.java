@@ -2,6 +2,9 @@ package org.pragmatica.http.server.routing;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaders;
+import org.pragmatica.http.HttpError;
+import org.pragmatica.http.protocol.HttpStatus;
+import org.pragmatica.http.server.routing.ParameterError.MissingParameter;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.TypeToken;
 
@@ -12,6 +15,10 @@ import static org.pragmatica.lang.Result.*;
 
 @SuppressWarnings("unused")
 public interface RequestContext {
+
+    Result<String> NOT_FOUND = HttpError.httpError(HttpStatus.NOT_FOUND, new MissingParameter("Unknown request path"))
+                                        .result();
+
     Route<?> route();
 
     String requestId();
@@ -33,7 +40,7 @@ public interface RequestContext {
     default Result<String> pathParam(int index) {
         return pathParams().size() > index
                ? Result.success(pathParams().get(index))
-               : new ParameterError.MissingParameter(STR."Missing path parameter at index \{index}").result();
+               : NOT_FOUND;
     }
 
     default <T1>

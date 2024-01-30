@@ -47,7 +47,17 @@ class RequestRouterTest {
         assertTrue(table.findRoute(HttpMethod.GET, "/one3").isEmpty());
     }
 
-
+    @Test
+    void routesAreProperlyLocatedForParametrizedRoutes() {
+        assertTrue(table.findRoute(HttpMethod.PATCH, "/one").isPresent());
+        assertTrue(table.findRoute(HttpMethod.PATCH, "/one/param1").isPresent());
+        assertTrue(table.findRoute(HttpMethod.PATCH, "/one/param1/eee").isPresent());
+        assertTrue(table.findRoute(HttpMethod.PATCH, "/two").isPresent());
+        assertTrue(table.findRoute(HttpMethod.PATCH, "/two/10").isPresent());
+        assertTrue(table.findRoute(HttpMethod.PATCH, "/two/10/space").isPresent());
+        assertTrue(table.findRoute(HttpMethod.PATCH, "/two/10/space/11").isPresent());
+        assertTrue(table.findRoute(HttpMethod.PATCH, "/two/10/space/11/dfdd").isPresent());
+    }
 
     private void checkSingle(String path) {
         table.findRoute(HttpMethod.GET, path)

@@ -18,9 +18,22 @@ public interface HttpError extends Cause {
 
     static HttpError httpError(HttpStatus status, Cause source) {
         record httpError(HttpStatus status, Cause origin) implements HttpError {
+            @SuppressWarnings("deprecation")
             @Override
             public String message() {
-                return STR."\{status().message()}: \{origin().message()}";
+                var builder = new StringBuilder()
+                    .append(status().message())
+                    .append(": ")
+                    .append(origin().message());
+
+                var cause = origin().source();
+
+                while (cause.isPresent()) {
+                    cause.onPresent(c -> builder.append("\n\t").append(c.message()));
+                    cause = cause.unwrap().source();
+                }
+
+                return builder.toString();
             }
 
             @Override
