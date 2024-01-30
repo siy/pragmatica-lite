@@ -9,7 +9,6 @@ import org.pragmatica.lang.Promise;
 
 import static org.pragmatica.config.api.AppConfig.appConfig;
 import static org.pragmatica.http.example.qrgenerator.QrGeneratorService.generateQR;
-import static org.pragmatica.http.server.routing.Route.whenPost;
 
 public class QrGenerator {
     public static final ContentType PNG_CONTENT_TYPE = ContentType.custom("image/png", ContentCategory.BINARY);
@@ -20,8 +19,10 @@ public class QrGenerator {
     }
 
     private static Route<byte[]> route() {
-        return whenPost("/qr").withBody(QrRequest.class)
-                              .returnFrom(QrGenerator::handler).a(PNG_CONTENT_TYPE);
+        return Route.<byte[], QrRequest>post("/qr")
+                    .withBody(QrRequest.class)
+                    .to(QrGenerator::handler)
+                    .as(PNG_CONTENT_TYPE);
     }
 
     private static Promise<byte[]> handler(QrRequest qrRequest) {

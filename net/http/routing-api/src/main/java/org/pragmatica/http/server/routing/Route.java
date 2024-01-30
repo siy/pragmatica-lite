@@ -7,14 +7,12 @@ import org.pragmatica.http.util.Utils;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
-import org.pragmatica.lang.Tuple.Tuple2;
 import org.pragmatica.lang.type.TypeToken;
 
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.pragmatica.http.protocol.HttpMethod.*;
-import static org.pragmatica.lang.Tuple.tuple;
 
 //TODO: better support for path parameter extraction
 @SuppressWarnings("unused")
@@ -65,132 +63,108 @@ public interface Route<T> extends RouteSource {
         }
     }
 
-    static ParameterBuilder whenOptions(String path) {
-        return when(OPTIONS, path);
+    static <R, T> ParameterBuilder<R, T> options(String path) {
+        return method(OPTIONS, path);
     }
 
-    static ParameterBuilder whenGet(String path) {
-        return when(GET, path);
+    static <R, T> ParameterBuilder<R, T> get(String path) {
+        return method(GET, path);
     }
 
-    static ParameterBuilder whenHead(String path) {
-        return when(HEAD, path);
+    static <R, T> ParameterBuilder<R, T> head(String path) {
+        return method(HEAD, path);
     }
 
-    static ParameterBuilder whenPost(String path) {
-        return when(POST, path);
+    static <R, T> ParameterBuilder<R, T> post(String path) {
+        return method(POST, path);
     }
 
-    static ParameterBuilder whenPut(String path) {
-        return when(PUT, path);
+    static <R, T> ParameterBuilder<R, T> put(String path) {
+        return method(PUT, path);
     }
 
-    static ParameterBuilder whenPatch(String path) {
-        return when(PATCH, path);
+    static <R, T> ParameterBuilder<R, T> patch(String path) {
+        return method(PATCH, path);
     }
 
-    static ParameterBuilder whenDelete(String path) {
-        return when(DELETE, path);
+    static <R, T> ParameterBuilder<R, T> delete(String path) {
+        return method(DELETE, path);
     }
 
-    static ParameterBuilder whenTrace(String path) {
-        return when(TRACE, path);
+    static <R, T> ParameterBuilder<R, T> trace(String path) {
+        return method(TRACE, path);
     }
 
-    static ParameterBuilder whenConnect(String path) {
-        return when(CONNECT, path);
+    static <R, T> ParameterBuilder<R, T> connect(String path) {
+        return method(CONNECT, path);
     }
 
-    static ParameterBuilder when(HttpMethod method, String path) {
-        return () -> tuple(path, method);
+    static <R, T> ParameterBuilder<R, T> method(HttpMethod method, String path) {
+        return handler -> contentType -> route(method, path, handler, contentType);
     }
 
-    interface ParameterBuilder {
-        Tuple2<String, HttpMethod> pathAndMethod();
+    interface ParameterBuilder<R, T> {
+        ContentTypeBuilder<R> to(Handler<R> handler);
 
-        default RawHandlerBuilder withoutParameters() {
-            return this::pathAndMethod;
+        default RawHandlerBuilder<R> withoutParameters() {
+            return this::to;
         }
 
-        default <T> JsonBodyParameterBuilder<T> withBody(TypeToken<T> type) {
-            return () -> tuple(pathAndMethod(), type);
+        default JsonBodyParameterBuilder<R, T> withBody(TypeToken<T> type) {
+            return fn -> to(ctx -> ctx.fromJson(type).toPromise().flatMap(fn));
         }
 
-        default <T> JsonBodyParameterBuilder<T> withBody(Class<T> type) {
+        default JsonBodyParameterBuilder<R, T> withBody(Class<T> type) {
             return withBody(TypeToken.of(type));
         }
 
-        //TODO: support for path and query parameters
-
-        //Shortcuts for frequent case of no input parameters and popular content types
-        default <T> ContentTypeBuilder<T> returnFrom(Handler<T> handler) {
-            return withoutParameters().returnFrom(handler);
+        default ContentTypeBuilder<R> toImmediate(Fn1<Result<R>, RequestContext> handler) {
+            return withoutParameters().toImmediate(handler);
         }
 
-        default <T> ContentTypeBuilder<T> returnNow(Fn1<Result<T>, RequestContext> handler) {
-            return withoutParameters().returnNow(handler);
+        default Route<R> toText(Handler<R> handler) {
+            return to(handler).asText();
         }
 
-        default <T> Route<T> returnText(Handler<T> handler) {
-            return returnFrom(handler).text();
+        default Route<R> toText(Supplier<R> handler) {
+            return to(_ -> Promise.successful(handler.get())).asText();
         }
 
-        default <T> Route<T> returnText(Supplier<T> handler) {
-            return returnFrom(_ -> Promise.successful(handler.get())).text();
+        default Route<R> toJson(Handler<R> handler) {
+            return to(handler).asJson();
         }
 
-        default <T> Route<T> returnJson(Handler<T> handler) {
-            return returnFrom(handler).json();
-        }
-
-        default <T> Route<T> returnJson(Supplier<T> handler) {
-            return returnFrom(_ -> Promise.successful(handler.get())).json();
+        default Route<R> toJson(Supplier<R> handler) {
+            return to(_ -> Promise.successful(handler.get())).asJson();
         }
     }
 
-    // Short, but low level path
-    interface RawHandlerBuilder {
-        Tuple2<String, HttpMethod> pathAndMethod();
+    interface RawHandlerBuilder<T> {
+        ContentTypeBuilder<T> to(Handler<T> handler);
 
-        default <T> ContentTypeBuilder<T> returnFrom(Handler<T> handler) {
-            return contentType -> route(pathAndMethod().last(), pathAndMethod().first(), handler, contentType);
-        }
-
-        default <T> ContentTypeBuilder<T> returnNow(Fn1<Result<T>, RequestContext> handler) {
-            return contentType -> route(pathAndMethod().last(), pathAndMethod().first(), ctx -> Promise.resolved(handler.apply(ctx)), contentType);
+        default ContentTypeBuilder<T> toImmediate(Fn1<Result<T>, RequestContext> handler) {
+            return to(ctx -> Promise.resolved(handler.apply(ctx)));
         }
         // No shortcuts are provided. If we're here, we chose to be explicit and therefore need to specify content type
     }
 
-    interface JsonBodyParameterBuilder<T> {
-        Tuple2<Tuple2<String, HttpMethod>, TypeToken<T>> pathMethodAndBodyType();
+    interface JsonBodyParameterBuilder<R, T> {
+        ContentTypeBuilder<R> to(Fn1<Promise<R>, T> handler);
 
-        default <R> ContentTypeBuilder<R> returnFrom(Fn1<Promise<R>, T> handler) {
-            var pathMethod = pathMethodAndBodyType().first();
-            var bodyType = pathMethodAndBodyType().last();
-
-            return contentType -> route(pathMethod.last(),
-                                        pathMethod.first(),
-                                        ctx -> ctx.fromJson(bodyType)
-                                                  .toPromise()
-                                                  .flatMap(handler),
-                                        contentType);
-        }
-
-        default <R> Route<R> returnJson(Fn1<Promise<R>, T> handler) {
-            return returnFrom(handler).json();
+        default Route<R> toJson(Fn1<Promise<R>, T> handler) {
+            return to(handler).asJson();
         }
     }
 
     interface ContentTypeBuilder<T> {
-        Route<T> a(ContentType contentType);
+        Route<T> as(ContentType contentType);
 
-        default Route<T> text() {
-            return a(CommonContentTypes.TEXT_PLAIN);
+        default Route<T> asText() {
+            return as(CommonContentTypes.TEXT_PLAIN);
         }
 
-        default Route<T> json() {
-            return a(CommonContentTypes.APPLICATION_JSON);
+        default Route<T> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
         }
     }
 }

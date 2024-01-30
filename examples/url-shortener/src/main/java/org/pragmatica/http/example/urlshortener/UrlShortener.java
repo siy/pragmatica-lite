@@ -4,15 +4,16 @@ import org.pragmatica.db.postgres.DbEnv;
 import org.pragmatica.db.postgres.DbEnvConfig;
 import org.pragmatica.http.example.urlshortener.api.UrlShortenerController;
 import org.pragmatica.http.example.urlshortener.api.UrlShortenerRequest;
+import org.pragmatica.http.example.urlshortener.api.UrlShortenerResponse;
 import org.pragmatica.http.example.urlshortener.domain.service.UrlShortenerService;
 import org.pragmatica.http.example.urlshortener.persistence.ShortenedUrlRepository;
 import org.pragmatica.http.server.HttpServer;
 import org.pragmatica.http.server.HttpServerConfig;
+import org.pragmatica.http.server.routing.Route;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
 
 import static org.pragmatica.config.api.AppConfig.appConfig;
-import static org.pragmatica.http.server.routing.Route.whenPost;
 
 /**
  * This is the main class of the application. It is responsible for loading configuration, wiring all the dependencies together and starting the
@@ -57,8 +58,8 @@ public class UrlShortener {
         UrlShortenerController controller = () -> service;
 
         return HttpServer.with(httpServerConfig,
-                               whenPost("/shorten")
-                                   .withBody(UrlShortenerRequest.class)
-                                   .returnJson(controller::shortenUrl));
+                               Route.<UrlShortenerResponse, UrlShortenerRequest>post("/shorten")
+                                    .withBody(UrlShortenerRequest.class)
+                                    .toJson(controller::shortenUrl));
     }
 }

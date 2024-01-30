@@ -4,16 +4,17 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.http.protocol.HttpMethod;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.pragmatica.http.server.routing.Route.whenGet;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class RequestRouterTest {
     private final RequestRouter table = RequestRouter.with(
-        whenGet("/one").returnText(() -> "one"),
-        whenGet("/one1").returnText(() -> "one1"),
-        whenGet("/one2").returnText(() -> "one2"),
-        whenGet("/on").returnText(() -> "on"),
-        whenGet("/o").returnText(() -> "o")
+        Route.get("/one").toText(() -> "one"),
+        Route.get("/one1").toText(() -> "one1"),
+        Route.get("/one2").toText(() -> "one2"),
+        Route.get("/on").toText(() -> "on"),
+        Route.get("/o").toText(() -> "o")
     );
 
     @Test
@@ -37,7 +38,7 @@ class RequestRouterTest {
         table.findRoute(HttpMethod.GET, path)
             .onEmpty(Assertions::fail)
             .onPresent(route -> route.handler().handle(null)
-                .onSuccess(value -> assertEquals(path, "/" + value))
+                .onSuccess(value -> assertEquals(path, STR."/\{value}"))
                 .onFailure(_ -> fail()));
     }
 }
