@@ -22,16 +22,15 @@ public sealed interface NanoId {
     }
 
     static String customNanoId(Random random, int size) {
-        byte[] bytes = new byte[size];
-        int step = (int) Math.ceil(1.6 * MASK * size / ALPHABET.length);
-        int cursor = 0;
-
+        var bytes = new byte[size];
+        var step = (int) Math.ceil(1.6 * MASK * size / ALPHABET.length);
+        var cursor = 0;
         var randomBytes = new byte[step];
 
         while (true) {
             random.nextBytes(randomBytes);
 
-            for (int i = 0; i < step; i++) {
+            for (var i = 0; i < step; i++) {
                 var index = randomBytes[i] & MASK;
 
                 bytes[cursor++] = ALPHABET[index];
@@ -48,8 +47,6 @@ public sealed interface NanoId {
     byte[] ALPHABET = "_-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".getBytes(StandardCharsets.US_ASCII);
     int DEFAULT_LEN = 21;
     int MASK = (2 << (int) Math.floor(Math.log(ALPHABET.length - 1) / Math.log(2))) - 1;
-//    int STEP = (int) Math.ceil(1.6 * MASK * SIZE / ALPHABET.length);
-
 
     record unused() implements NanoId {}
 }
