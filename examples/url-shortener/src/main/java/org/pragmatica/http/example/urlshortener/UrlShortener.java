@@ -51,7 +51,7 @@ public class UrlShortener {
      * @return result of the application run
      */
     private static Result<Unit> runApplication(DbEnvConfig dbEnvConfig, HttpServerConfig httpServerConfig) {
-        DbEnv dbEnv = DbEnv.with(dbEnvConfig);
+        var dbEnv = DbEnv.with(dbEnvConfig);
 
         ShortenedUrlRepository repository = () -> dbEnv;
         UrlShortenerService service = () -> repository;
