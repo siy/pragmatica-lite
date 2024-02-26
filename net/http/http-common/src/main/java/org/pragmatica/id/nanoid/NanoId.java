@@ -1,27 +1,37 @@
 package org.pragmatica.id.nanoid;
 
+import org.pragmatica.config.api.DataConversionError;
+import org.pragmatica.lang.Result;
+
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Random;
 
-public sealed interface NanoId {
-    static String secureNanoId() {
+public interface NanoId extends Comparable<NanoId> {
+    String value();
+
+    @Override
+    default int compareTo(NanoId other) {
+        return value().compareTo(other.value());
+    }
+
+    static NanoId secureNanoId() {
         return secureNanoId(DEFAULT_LEN);
     }
 
-    static String secureNanoId(int len) {
+    static NanoId secureNanoId(int len) {
         return customNanoId(SECURE_RANDOM, len);
     }
 
-    static String nonSecureNanoId() {
+    static NanoId nonSecureNanoId() {
         return nonSecureNanoId(DEFAULT_LEN);
     }
 
-    static String nonSecureNanoId(int len) {
+    static NanoId nonSecureNanoId(int len) {
         return customNanoId(NON_SECURE_RANDOM, len);
     }
 
-    static String customNanoId(Random random, int size) {
+    static NanoId customNanoId(Random random, int size) {
         var bytes = new byte[size];
         var step = (int) Math.ceil(1.6 * MASK * size / ALPHABET.length);
         var cursor = 0;
@@ -36,10 +46,30 @@ public sealed interface NanoId {
                 bytes[cursor++] = ALPHABET[index];
 
                 if (cursor == size) {
-                    return new String(bytes, StandardCharsets.US_ASCII);
+                    record nanoId(String value) implements NanoId {}
+                    return new nanoId(new String(bytes, StandardCharsets.US_ASCII));
                 }
             }
         }
+    }
+
+    static Result<NanoId> parse(String input) {
+        var value = input.trim();
+
+        if (value.length() != DEFAULT_LEN) {
+            return new DataConversionError.InvalidInput(STR."Invalid NanoId length \{value.length()}").result();
+        }
+
+        for (var i = 0; i < value.length(); i++) {
+            var c = value.charAt(i);
+
+            if (c < 45 || c > 122 || (c > 57 && c < 65) || (c > 90 && c < 95)) {
+                return new DataConversionError.InvalidInput(STR."Invalid NanoId character \{c}").result();
+            }
+        }
+
+        record nanoId(String value) implements NanoId {}
+        return Result.success(new nanoId(value));
     }
 
     Random SECURE_RANDOM = new SecureRandom();
@@ -47,6 +77,4 @@ public sealed interface NanoId {
     byte[] ALPHABET = "_-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".getBytes(StandardCharsets.US_ASCII);
     int DEFAULT_LEN = 21;
     int MASK = (2 << (int) Math.floor(Math.log(ALPHABET.length - 1) / Math.log(2))) - 1;
-
-    record unused() implements NanoId {}
 }
