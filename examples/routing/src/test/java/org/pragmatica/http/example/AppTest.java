@@ -69,7 +69,7 @@ public class AppTest {
                .get("/delay").then()
                .statusCode(200)
                .contentType("text/plain; charset=UTF-8")
-               .header("Content-Length", Integer::parseInt, equalTo(21));
+               .header("Content-Length", Integer::parseInt, equalTo(35));
     }
 
     @Test

@@ -1,6 +1,7 @@
 package org.pragmatica.http.example.urlshortener.domain.entity;
 
 import org.pragmatica.annotation.Template;
+import org.pragmatica.id.nanoid.NanoId;
 
 import java.time.LocalDateTime;
 
@@ -19,7 +20,7 @@ import java.time.LocalDateTime;
  * @param lastAccessed - last access timestamp
  */
 @Template
-public record ShortenedUrl(String id, String srcUrl, LocalDateTime created, LocalDateTime lastAccessed) {
+public record ShortenedUrl(NanoId id, String srcUrl, LocalDateTime created, LocalDateTime lastAccessed) {
     /**
      * Maximum length of the original URL.
      */

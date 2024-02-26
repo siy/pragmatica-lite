@@ -4,16 +4,30 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.http.protocol.HttpMethod;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.pragmatica.http.server.routing.Route.whenGet;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.pragmatica.http.server.routing.PathParameter.aInteger;
+import static org.pragmatica.http.server.routing.PathParameter.aLong;
+import static org.pragmatica.http.server.routing.PathParameter.aString;
+import static org.pragmatica.http.server.routing.PathParameter.spacer;
 
 class RequestRouterTest {
     private final RequestRouter table = RequestRouter.with(
-        whenGet("/one").returnText(() -> "one"),
-        whenGet("/one1").returnText(() -> "one1"),
-        whenGet("/one2").returnText(() -> "one2"),
-        whenGet("/on").returnText(() -> "on"),
-        whenGet("/o").returnText(() -> "o")
+        Route.get("/one").toText(() -> "one"),
+        Route.get("/one1").toText(() -> "one1"),
+        Route.get("/one2").toText(() -> "one2"),
+        Route.get("/on").toText(() -> "on"),
+        Route.get("/o").toText(() -> "o"),
+
+        Route.patch("/one")
+             .withPath(aString())
+             .toValue(param1 -> STR."Received /\{param1}")
+             .asText(),
+        Route.patch("/two")
+             .withPath(aInteger(), spacer("space"), aLong())
+             .toValue((param1, param2, param3) -> STR."Received /\{param1}, \{param2}, \{param3}")
+             .asText()
     );
 
     @Test
@@ -33,11 +47,23 @@ class RequestRouterTest {
         assertTrue(table.findRoute(HttpMethod.GET, "/one3").isEmpty());
     }
 
+    @Test
+    void routesAreProperlyLocatedForParametrizedRoutes() {
+        assertTrue(table.findRoute(HttpMethod.PATCH, "/one").isPresent());
+        assertTrue(table.findRoute(HttpMethod.PATCH, "/one/param1").isPresent());
+        assertTrue(table.findRoute(HttpMethod.PATCH, "/one/param1/eee").isPresent());
+        assertTrue(table.findRoute(HttpMethod.PATCH, "/two").isPresent());
+        assertTrue(table.findRoute(HttpMethod.PATCH, "/two/10").isPresent());
+        assertTrue(table.findRoute(HttpMethod.PATCH, "/two/10/space").isPresent());
+        assertTrue(table.findRoute(HttpMethod.PATCH, "/two/10/space/11").isPresent());
+        assertTrue(table.findRoute(HttpMethod.PATCH, "/two/10/space/11/dfdd").isPresent());
+    }
+
     private void checkSingle(String path) {
         table.findRoute(HttpMethod.GET, path)
             .onEmpty(Assertions::fail)
             .onPresent(route -> route.handler().handle(null)
-                .onSuccess(value -> assertEquals(path, "/" + value))
+                .onSuccess(value -> assertEquals(path, STR."/\{value}"))
                 .onFailure(_ -> fail()));
     }
 }

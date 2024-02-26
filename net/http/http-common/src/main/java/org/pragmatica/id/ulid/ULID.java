@@ -151,12 +151,12 @@ public final class ULID implements Comparable<ULID> {
      *
      * @return parsing result
      */
-    public static Result<ULID> fromString(final CharSequence input) {
-        return validate(input).map(ULID::parse);
+    public static Result<ULID> parse(final String input) {
+        return validate(input)
+            .map(ULID::parseValid);
     }
 
-    private static ULID parse(final CharSequence input) {
-        final var representation = input.toString();
+    private static ULID parseValid(final String representation) {
         final var content = representation.toCharArray();
 
         final long timestamp = (long) V[content[0]] << 45
@@ -221,7 +221,7 @@ public final class ULID implements Comparable<ULID> {
         return new ULID(new String(chars), timestamp, entropy);
     }
 
-    public static Result<CharSequence> validate(final CharSequence input) {
+    public static Result<String> validate(final String input) {
         if (input == null || input.length() != ULID_LENGTH) {
             return Result.failure(new CoreError.InvalidInput("Input is too short or empty"));
         }

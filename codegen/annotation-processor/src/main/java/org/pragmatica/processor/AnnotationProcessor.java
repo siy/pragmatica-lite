@@ -210,10 +210,7 @@ public class AnnotationProcessor extends AbstractProcessor {
         private String builderInterface() {
             var stageFormat =
                 """
-                    interface %sBuilderStage%d {
-                        %s
-                    }
-                    
+                    interface %sBuilderStage%d { %s }
                 """;
 
             var cnt = 1;

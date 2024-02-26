@@ -19,6 +19,7 @@ package org.pragmatica.lang;
 import org.pragmatica.lang.Functions.*;
 import org.pragmatica.lang.Result.Failure;
 import org.pragmatica.lang.Result.Success;
+import org.pragmatica.lang.utils.Causes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,6 +70,10 @@ public sealed interface Result<T> permits Success, Failure {
 
     default Result<T> mapError(Fn1<Cause, ? super Cause> mapper) {
         return fold(cause -> mapper.apply(cause).result(), _ -> this);
+    }
+
+    default Result<T> traceError() {
+        return mapError(Causes::trace);
     }
 
     default Result<T> recover(Fn1<T, ? super Cause> mapper) {
@@ -676,6 +681,10 @@ public sealed interface Result<T> permits Success, Failure {
         default <R> Result<R> flatMap(Fn1<Result<R>, T1> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
+
+        default Promise.Mapper1<T1> toPromise() {
+            return () -> id().toPromise();
+        }
     }
 
     /**
@@ -698,6 +707,10 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> flatMap(Fn2<Result<R>, T1, T2> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
+        }
+
+        default Promise.Mapper2<T1, T2> toPromise() {
+            return () -> id().toPromise();
         }
     }
 
@@ -722,6 +735,10 @@ public sealed interface Result<T> permits Success, Failure {
         default <R> Result<R> flatMap(Fn3<Result<R>, T1, T2, T3> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
+
+        default Promise.Mapper3<T1, T2, T3> toPromise() {
+            return () -> id().toPromise();
+        }
     }
 
     /**
@@ -744,6 +761,10 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> flatMap(Fn4<Result<R>, T1, T2, T3, T4> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
+        }
+
+        default Promise.Mapper4<T1, T2, T3, T4> toPromise() {
+            return () -> id().toPromise();
         }
     }
 
@@ -768,6 +789,10 @@ public sealed interface Result<T> permits Success, Failure {
         default <R> Result<R> flatMap(Fn5<Result<R>, T1, T2, T3, T4, T5> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
+
+        default Promise.Mapper5<T1, T2, T3, T4, T5> toPromise() {
+            return () -> id().toPromise();
+        }
     }
 
     /**
@@ -790,6 +815,10 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> flatMap(Fn6<Result<R>, T1, T2, T3, T4, T5, T6> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
+        }
+
+        default Promise.Mapper6<T1, T2, T3, T4, T5, T6> toPromise() {
+            return () -> id().toPromise();
         }
     }
 
@@ -814,6 +843,10 @@ public sealed interface Result<T> permits Success, Failure {
         default <R> Result<R> flatMap(Fn7<Result<R>, T1, T2, T3, T4, T5, T6, T7> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
+
+        default Promise.Mapper7<T1, T2, T3, T4, T5, T6, T7> toPromise() {
+            return () -> id().toPromise();
+        }
     }
 
     /**
@@ -837,6 +870,10 @@ public sealed interface Result<T> permits Success, Failure {
         default <R> Result<R> flatMap(Fn8<Result<R>, T1, T2, T3, T4, T5, T6, T7, T8> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
+
+        default Promise.Mapper8<T1, T2, T3, T4, T5, T6, T7, T8> toPromise() {
+            return () -> id().toPromise();
+        }
     }
 
     /**
@@ -859,6 +896,10 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> flatMap(Fn9<Result<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
+        }
+
+        default Promise.Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> toPromise() {
+            return () -> id().toPromise();
         }
     }
 

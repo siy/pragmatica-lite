@@ -1,0 +1,1 @@
+./mvnw nexus-staging:release

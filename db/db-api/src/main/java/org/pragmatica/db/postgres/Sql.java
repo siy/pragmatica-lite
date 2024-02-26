@@ -2,12 +2,15 @@ package org.pragmatica.db.postgres;
 
 import com.github.pgasync.net.SqlException;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.type.FieldNames;
 import org.pragmatica.lang.type.FieldValues;
+import org.pragmatica.lang.type.RecordTemplate;
 
 import java.lang.StringTemplate.Processor;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.stream.Stream;
 
 public sealed interface Sql {
     Object[] EMPTY_VALUES = new Object[0];
@@ -17,12 +20,29 @@ public sealed interface Sql {
     Object[] values();
 
     record Query(String sql, Object... values) implements Sql {
-        public Promise<ResultAccessor> in(DbEnv env) {
-            return env.execute(this);
+        public QueryResponseBuilder in(DbEnv env) {
+            return () -> env.execute(this);
+        }
+    }
+
+    interface QueryResponseBuilder {
+        Promise<ResultAccessor> get();
+
+        default <T extends Record> Promise<Stream<T>> as(RecordTemplate<T> template) {
+            return get().mapResult(resultAccessor -> resultAccessor.as(template));
+        }
+
+        default <T extends Record> Promise<T> asSingle(RecordTemplate<T> template) {
+            return get().mapResult(resultAccessor -> resultAccessor.asSingle(template));
+        }
+
+        default Promise<Unit> asUnit() {
+            return get().mapToUnit();
         }
     }
 
     record Script(String sql) implements Sql {
+        @Override
         public Object[] values() {
             return EMPTY_VALUES;
         }

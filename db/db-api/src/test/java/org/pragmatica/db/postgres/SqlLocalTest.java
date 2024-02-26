@@ -57,6 +57,7 @@ class SqlLocalTest {
         (\{ids.next()}, \{values.next()}),
         (\{ids.next()}, \{values.next()})
         """.in(dbEnv)
+           .get()
            .await()
            .unwrap();
     }
@@ -103,6 +104,7 @@ class SqlLocalTest {
 
         QRY."SELECT * FROM test WHERE id = \{id}"
             .in(dbEnv)
+            .get()
             .await()
             .onFailure(System.out::println)
             .onFailureRun(Assertions::fail)
@@ -127,6 +129,7 @@ class SqlLocalTest {
         var start = System.nanoTime();
         IntStream.range(0, iterationsCount)
                  .forEach(i -> QRY."SELECT * FROM test WHERE id = \{i % 10}".in(dbEnv)
+                                                                            .get()
                                                                             .onSuccessRun(successes::incrementAndGet)
                                                                             .onFailureRun(successes::incrementAndGet)
                                                                             .onResult(_ -> latch.countDown()));

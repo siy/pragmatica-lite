@@ -61,6 +61,7 @@ class SqlTest {
         (\{ids.next()}, \{values.next()}),
         (\{ids.next()}, \{values.next()})
         """.in(dbEnv)
+           .get()
            .await()
            .unwrap();
     }
@@ -102,6 +103,7 @@ class SqlTest {
 
         QRY."SELECT * FROM test WHERE id = \{id}"
             .in(dbEnv)
+            .get()
             .await()
             .onFailure(System.out::println)
             .onFailureRun(Assertions::fail)
@@ -118,6 +120,7 @@ class SqlTest {
     void recordInstancesCanBeRetrieved() {
         QRY."SELECT * FROM test"
             .in(dbEnv)
+            .get()
             .await()
             .onFailure(System.out::println)
             .onFailureRun(Assertions::fail)
@@ -144,12 +147,14 @@ class SqlTest {
 
         QRY."INSERT INTO test (\{columns}) VALUES (\{values})"
             .in(dbEnv)
+            .get()
             .await()
             .onFailure(System.out::println)
             .onFailureRun(Assertions::fail);
 
         QRY."SELECT * FROM test WHERE id = \{newInstance.id()}"
             .in(dbEnv)
+            .get()
             .await()
             .onFailureRun(Assertions::fail)
             .flatMap(ra -> ra.as(TestRecord.template())
@@ -171,6 +176,7 @@ class SqlTest {
         var start = System.nanoTime();
         IntStream.range(0, iterationsCount)
                  .forEach(i -> QRY."SELECT * FROM test WHERE id = \{i % 10}".in(dbEnv)
+                                                                            .get()
                                                                             .onSuccessRun(successes::incrementAndGet)
                                                                             .onFailureRun(successes::incrementAndGet)
                                                                             .onResult(_ -> latch.countDown()));
