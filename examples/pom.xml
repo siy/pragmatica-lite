@@ -17,6 +17,7 @@
         <module>hello-world</module>
         <module>url-shortener</module>
         <module>qr-generator</module>
+        <module>snippets</module>
     </modules>
 
     <dependencyManagement>
