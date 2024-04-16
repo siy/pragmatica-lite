@@ -1,0 +1,1 @@
+./mvnw versions:display-dependency-updates

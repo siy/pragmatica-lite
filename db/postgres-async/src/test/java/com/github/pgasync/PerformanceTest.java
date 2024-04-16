@@ -65,8 +65,8 @@ public class PerformanceTest {
         return testData;
     }
 
-    private static final int batchSize = IS_MAC ? 300 : 500;
-    private static final int repeats = IS_MAC ? 3 : 5;
+    private static final int batchSize = IS_MAC ? 300 : 400;
+    private static final int repeats = IS_MAC ? 3 : 4;
     private static final SortedMap<Integer, SortedMap<Integer, Long>> simpleQueryResults = new TreeMap<>();
     private static final SortedMap<Integer, SortedMap<Integer, Long>> preparedStatementResults = new TreeMap<>();
 

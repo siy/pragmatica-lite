@@ -18,18 +18,18 @@
 
     <properties>
         <!-- Code dependencies -->
-        <jackson.version>2.16.0</jackson.version>
+        <jackson.version>2.17.0</jackson.version>
         <genson.version>1.6</genson.version>
         <gson.version>2.10.1</gson.version>
-        <jsonio.version>4.19.1</jsonio.version>
-        <netty.version>4.1.100.Final</netty.version>
-        <netty.io_uring.version>0.0.24.Final</netty.io_uring.version>
+        <jsonio.version>4.19.13</jsonio.version>
+        <netty.version>4.1.108.Final</netty.version>
+        <netty.io_uring.version>0.0.25.Final</netty.io_uring.version>
 
         <!-- Logging dependencies -->
-        <slf4j.version>2.0.9</slf4j.version>
-        <tinylog.version>2.6.2</tinylog.version>
-        <log4j2.version>2.22.0</log4j2.version>
-        <disruptor.version>3.4.4</disruptor.version>
+        <slf4j.version>2.0.12</slf4j.version>
+        <tinylog.version>2.7.0</tinylog.version>
+        <log4j2.version>2.23.1</log4j2.version>
+        <disruptor.version>4.0.0</disruptor.version>
     </properties>
 
     <dependencyManagement>
