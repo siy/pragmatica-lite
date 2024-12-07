@@ -16,9 +16,9 @@
         <!-- Service loader helper -->
         <auto-service.version>1.1.1</auto-service.version>
         <!-- Test dependencies -->
-        <junit.version>5.11.0</junit.version>
+        <junit.version>5.11.3</junit.version>
         <rest-assured.version>5.5.0</rest-assured.version>
-        <testcontainers.version>1.20.1</testcontainers.version>
+        <testcontainers.version>1.20.4</testcontainers.version>
     </properties>
 
 

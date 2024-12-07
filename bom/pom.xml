@@ -18,11 +18,11 @@
 
     <properties>
         <!-- Code dependencies -->
-        <jackson.version>2.17.0</jackson.version>
+        <jackson.version>2.18.2</jackson.version>
         <genson.version>1.6</genson.version>
         <gson.version>2.11.0</gson.version>
-        <jsonio.version>4.26.0</jsonio.version>
-        <netty.version>4.1.108.Final</netty.version>
+        <jsonio.version>4.30.0</jsonio.version>
+        <netty.version>4.1.112.Final</netty.version>
         <netty.io_uring.version>0.0.25.Final</netty.io_uring.version>
 
         <!-- Logging dependencies -->
