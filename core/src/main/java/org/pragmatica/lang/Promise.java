@@ -75,6 +75,7 @@ This makes synchronization points in code more explicit, easier to write and rea
   Only two base methods are used to implement all dependent and independent action methods. All remaining transformations
   and event handling methods are implemented in terms of these two methods.
  */
+@SuppressWarnings("unused")
 public interface Promise<T> {
 
     // For all dependent actions
@@ -201,7 +202,7 @@ public interface Promise<T> {
     }
 
     default Promise<Unit> mapToUnit() {
-        return map(Unit::unit);
+        return map(Unit::toUnit);
     }
 
     static <T> Promise<T> promise() {
@@ -725,7 +726,7 @@ final class PromiseImpl<T> implements Promise<T> {
     @Override
     public String toString() {
         return result == null ? "Promise<>"
-                              : STR."Promise<\{result}\{'>'}";
+                              : "Promise<" + result + '>';
     }
 
     @Override

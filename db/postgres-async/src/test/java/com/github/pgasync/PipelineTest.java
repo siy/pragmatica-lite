@@ -72,7 +72,7 @@ public class PipelineTest {
         Deque<Long> results = new LinkedBlockingDeque<>();
         long startWrite = currentTimeMillis();
         for (int i = 0; i < count; ++i) {
-            pool.completeQuery(STR."select \{i}, pg_sleep(\{sleep})")
+            pool.completeQuery("select " + i + ", pg_sleep(" + sleep + ")")
                 .onSuccess(_ -> results.add(currentTimeMillis()))
                 .tryRecover(th -> {
                     throw new AssertionError("failed", th.throwable());
@@ -104,7 +104,7 @@ public class PipelineTest {
 
         try {
             ThrowingPromise.allOf(IntStream.range(0, 10)
-                                           .mapToObj(i -> connection.completeQuery(STR."select \{i}, pg_sleep(10)")
+                                           .mapToObj(i -> connection.completeQuery("select " + i + ", pg_sleep(10)")
                                                                           .tryRecover(th -> {
                                                                               throw new IllegalStateException(new SqlException(th.message()));
                                                                           }))).await();

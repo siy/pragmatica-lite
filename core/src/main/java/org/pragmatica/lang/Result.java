@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 
 import static org.pragmatica.lang.Result.unitResult;
 import static org.pragmatica.lang.Tuple.*;
+import static org.pragmatica.lang.Unit.unit;
 
 
 /**
@@ -341,7 +342,7 @@ public sealed interface Result<T> permits Success, Failure {
     }
 
     default Result<Unit> mapToUnit() {
-        return map(Unit::unit);
+        return map(Unit::toUnit);
     }
 
     default Promise<T> toPromise() {
@@ -349,7 +350,7 @@ public sealed interface Result<T> permits Success, Failure {
     }
 
 
-    Result<Unit> UNIT_RESULT = success(Unit.aUnit());
+    Result<Unit> UNIT_RESULT = success(unit());
 
     static Result<Unit> unitResult() {
         return UNIT_RESULT;

@@ -5,8 +5,6 @@ import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.Future;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.netty.util.internal.logging.Slf4JLoggerFactory;
-import org.pragmatica.http.HttpError;
-import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.http.server.impl.HttpServerInitializer;
 import org.pragmatica.http.server.routing.RequestRouter;
 import org.pragmatica.http.server.routing.RouteSource;
@@ -20,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 
+import static org.pragmatica.http.protocol.HttpStatus.SERVICE_UNAVAILABLE;
 import static org.pragmatica.lang.Result.unitResult;
 import static org.pragmatica.net.transport.api.TransportConfiguration.transportConfiguration;
 
@@ -56,10 +55,6 @@ public class HttpServer {
 
     public static Builder withConfig(HttpServerConfig configuration) {
         return (RouteSource... routeSources) -> new HttpServer(configuration, RequestRouter.with(routeSources));
-    }
-
-    public interface HttpServerRunner {
-        Result<Unit> serveNow(RouteSource... routeSources);
     }
 
     public static Result<Unit> with(HttpServerConfig configuration, RouteSource... routeSources) {
@@ -100,7 +95,7 @@ public class HttpServer {
         } catch (InterruptedException e) {
             //In rare cases when .sync() will be interrupted, fail with error
             log.error("Failed to start server", e);
-            promise.resolve(HttpError.httpError(HttpStatus.SERVICE_UNAVAILABLE, e).result());
+            promise.fail(SERVICE_UNAVAILABLE.with(e));
         }
 
         return promise;

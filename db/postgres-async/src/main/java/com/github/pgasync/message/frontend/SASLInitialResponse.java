@@ -23,17 +23,19 @@ public class SASLInitialResponse implements Message {
         this.userName = userName;
         this.nonce = clientNonce;
 
-        String channelBinding = channelBindingType != null && !channelBindingType.isBlank() ? STR."p=\{channelBindingType}," : "n,";
-        gs2Header = STR."\{channelBinding},"; // It could be '"a=" + msg.getUsername() + ",";' but it is not needed unless we are using impersonate techniques.
+        String channelBinding = channelBindingType != null && !channelBindingType.isBlank() ? "p=" + channelBindingType + "," : "n,";
+        gs2Header = channelBinding + ","; // It could be '"a=" + msg.getUsername() + ",";' but it is not needed unless we are using impersonate techniques.
 
-        clientFirstMessageBare = STR."n=\{SaslPrep.asQueryString(userName)},r=\{clientNonce}";
+        clientFirstMessageBare = "n=" + SaslPrep.asQueryString(userName) + ",r=" + clientNonce;
         clientFirstMessage = gs2Header + clientFirstMessageBare;
     }
 
+    @SuppressWarnings("unused")
     public String userName() {
         return userName;
     }
 
+    @SuppressWarnings("unused")
     public String channelBindingType() {
         return channelBindingType;
     }
@@ -42,6 +44,7 @@ public class SASLInitialResponse implements Message {
         return saslMechanism;
     }
 
+    @SuppressWarnings("unused")
     public String nonce() {
         return nonce;
     }

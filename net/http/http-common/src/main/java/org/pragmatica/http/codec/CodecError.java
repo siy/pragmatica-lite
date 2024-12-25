@@ -12,6 +12,6 @@ public sealed interface CodecError extends Result.Cause {
     }
 
     static CodecError fromDecodingThrowable(Throwable issue) {
-        return new DecodingError(STR."Decoding error \{issue.getMessage()} at \{issue.getStackTrace()[0]}");
+        return new DecodingError("Decoding error " + issue.getMessage() + " at " + issue.getStackTrace()[0]);
     }
 }

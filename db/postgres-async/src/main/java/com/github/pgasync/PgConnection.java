@@ -247,13 +247,13 @@ public class PgConnection implements Connection {
         @Override
         public ThrowingPromise<Unit> commit() {
             return PgConnection.this.completeScript("COMMIT")
-                                    .map(Unit::unit);
+                                    .map(Unit::toUnit);
         }
 
         @Override
         public ThrowingPromise<Unit> rollback() {
             return PgConnection.this.completeScript("ROLLBACK")
-                                    .map(Unit::unit);
+                                    .map(Unit::toUnit);
         }
 
         @Override
@@ -309,13 +309,13 @@ public class PgConnection implements Connection {
         @Override
         public ThrowingPromise<Unit> commit() {
             return PgConnection.this.completeScript("RELEASE SAVEPOINT sp_" + depth)
-                                    .map(Unit::unit);
+                                    .map(Unit::toUnit);
         }
 
         @Override
         public ThrowingPromise<Unit> rollback() {
             return PgConnection.this.completeScript("ROLLBACK TO SAVEPOINT sp_" + depth)
-                                    .map(Unit::unit);
+                                    .map(Unit::toUnit);
         }
     }
 }

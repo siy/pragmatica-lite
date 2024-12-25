@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.pragmatica.lang.Option.option;
-import static org.pragmatica.lang.Result.unitResult;
+import static org.pragmatica.lang.Unit.unit;
 import static org.pragmatica.lang.io.Timeout.timeout;
 
 public interface DnsClient extends AsyncCloseable {
@@ -97,7 +97,7 @@ record DnsClientImpl(Bootstrap bootstrap, ConcurrentHashMap<Integer, Request> re
     public Promise<Unit> close() {
         return Promise.promise(promise -> bootstrap().config().group()
                                                      .shutdownGracefully()
-                                                     .addListener(_ -> promise.resolve(unitResult())));
+                                                     .addListener(_ -> promise.succeed(unit())));
     }
 
     void handleDatagram(DatagramDnsResponse msg) {
@@ -113,7 +113,7 @@ record DnsClientImpl(Bootstrap bootstrap, ConcurrentHashMap<Integer, Request> re
         log.debug("Handling response {} for request {}", msg, request);
 
         if (!msg.code().equals(DnsResponseCode.NOERROR)) {
-            var errorMessage = STR."Server responded with error code \{msg.code()}";
+            var errorMessage = "Server responded with error code " + msg.code();
 
             log.warn(errorMessage);
 

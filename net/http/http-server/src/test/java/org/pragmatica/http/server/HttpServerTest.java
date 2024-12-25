@@ -11,9 +11,11 @@ import org.slf4j.LoggerFactory;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.pragmatica.http.server.routing.PathParameter.*;
+import static org.pragmatica.http.server.routing.PathParameter.aInteger;
 import static org.pragmatica.http.server.routing.PathParameter.aLong;
-import static org.pragmatica.lang.Result.unitResult;
+import static org.pragmatica.http.server.routing.PathParameter.aString;
+import static org.pragmatica.http.server.routing.PathParameter.spacer;
+import static org.pragmatica.lang.Unit.unit;
 
 class HttpServerTest {
     private static final Logger log = LoggerFactory.getLogger(HttpServerTest.class);
@@ -40,7 +42,7 @@ class HttpServerTest {
 
     @AfterAll
     public static void cleanup() {
-        serverPromise.resolve(unitResult()).await().onResult(() -> log.info("Server stopped"));
+        serverPromise.succeed(unit()).await().onResult(() -> log.info("Server stopped"));
     }
 
     @Test

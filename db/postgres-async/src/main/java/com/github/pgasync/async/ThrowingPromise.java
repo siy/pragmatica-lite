@@ -10,6 +10,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static org.pragmatica.lang.Unit.unit;
+
 public class ThrowingPromise<T> extends CompletableFuture<T> {
     public static <U> ThrowingPromise<U> successful(U value) {
         return ThrowingPromise.<U>create().succeed(value);
@@ -36,7 +38,7 @@ public class ThrowingPromise<T> extends CompletableFuture<T> {
                              if (th != null) {
                                  promise.fail(ThrowableCause.asCause(th));
                              } else {
-                                 promise.succeed(Unit.aUnit());
+                                 promise.succeed(unit());
                              }
                          });
         return promise;
@@ -86,7 +88,7 @@ public class ThrowingPromise<T> extends CompletableFuture<T> {
     }
 
     public ThrowingPromise<Unit> mapToUnit() {
-        return map(_ -> Unit.aUnit());
+        return map(_ -> unit());
     }
 
     public ThrowingPromise<T> onSuccess(Consumer<? super T> action) {

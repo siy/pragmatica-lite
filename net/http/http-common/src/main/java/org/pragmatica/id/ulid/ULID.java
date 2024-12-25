@@ -233,7 +233,7 @@ public final class ULID implements Comparable<ULID> {
             final char c = input.charAt(i);
 
             if (c > V.length || V[c] == (byte) 0xFF) {
-                return Result.failure(new CoreError.InvalidInput(STR."Invalid character \{c} in ULID string"));
+                return Result.failure(new CoreError.InvalidInput("Invalid character " + c + " in ULID string"));
             }
         }
 

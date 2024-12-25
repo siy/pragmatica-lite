@@ -50,57 +50,65 @@ public class HelloWorld {
 ### Various routing examples
 
 ```java
-    //Full description
-    Route.get("/hello1")
-         .withoutParameters()
-         .to(request -> successful(STR."Hello world! at \{request.route().path()}"))
-         .as(CommonContentTypes.TEXT_PLAIN),
+import java.util.stream.Stream;
 
-    //Assume no parameters
-    Route.get("/hello2")
-         .to(request -> successful(STR."Hello world! at \{request.route().path()}"))
-         .as(CommonContentTypes.TEXT_PLAIN),
+public class RouteConfig implements RouteSource {
+    public Stream<Route> routes() {
+        return Stream.of(
+            //Full description
+            Route.get("/hello1")
+                 .withoutParameters()
+                 .to(request -> successful("Hello world! at " + request.route().path()))
+                 .as(CommonContentTypes.TEXT_PLAIN),
 
-    //Assume no parameters, short content type (text)
-    Route.get("/hello2")
-         .to(request -> successful(STR."Hello world! at \{request.route().path()}"))
-         .asText(),
+            //Assume no parameters
+            Route.get("/hello2")
+                 .to(request -> successful("Hello world! at " + request.route().path()))
+                 .as(CommonContentTypes.TEXT_PLAIN),
 
-    //Assume no parameters, even shorter content type (json)
-    Route.get("/hello2")
-         .toText(request -> successful(STR."Hello world! at \{request.route().path()}")),
+            //Assume no parameters, short content type (text)
+            Route.get("/hello2")
+                 .to(request -> successful("Hello world! at " + request.route().path()))
+                 .asText(),
 
-    //Assume no parameters, response does not depend on request
-    Route.get("/hello2")
-         .toText(() -> "Hello world!"),
+            //Assume no parameters, even shorter content type (json)
+            Route.get("/hello2")
+                 .to(request -> successful("Hello world! at " + request.route().path())),
 
-    //Runtime exception handling example
-    Route.get("/boom-legacy")
-         .toText(_ -> {
-             throw new RuntimeException("Some exception message");
-         }),
+            //Assume no parameters, response does not depend on request
+            Route.get("/hello2")
+                 .toText(() -> "Hello world!"),
 
-    //Functional error handling
-    Route.get("/boom-functional")
-         .toText(_ -> failed(HttpError.httpError(HttpStatus.UNPROCESSABLE_ENTITY, "Test error"))),
+            //Runtime exception handling example
+            Route.get("/boom-legacy")
+                 .toText(_ -> {
+                     throw new RuntimeException("Some exception message");
+                 }),
 
-    //Long-running process
-    Route.<NanoId, Unit>get("/delay")
-         .toText(_ -> delayedResponse()),
+            //Functional error handling
+            Route.get("/boom-functional")
+                 .toText(_ -> failed(HttpError.httpError(HttpStatus.UNPROCESSABLE_ENTITY, "Test error"))),
 
-    //Nested routes
-    Route.in("/v1")
-         .serve(
-             Route.in("/user")
-                  .serve(
-                      Route.get("/list")
-                           .toJson(request -> successful(request.pathParams())),
-                      Route.get("/query")
-                           .toJson(request -> successful(request.queryParams())),
-                      Route.get("/profile")
-                           .toJson(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com")))
-                  )
-         )
+            //Long-running process
+            Route.<NanoId, Unit>get("/delay")
+                 .toText(_ -> delayedResponse()),
+
+            //Nested routes
+            Route.in("/v1")
+                 .serve(
+                     Route.in("/user")
+                          .serve(
+                              Route.get("/list")
+                                   .toJson(request -> successful(request.pathParams())),
+                              Route.get("/query")
+                                   .toJson(request -> successful(request.queryParams())),
+                              Route.get("/profile")
+                                   .toJson(_ -> successful(new UserProfile("John", "Doe", "john.doe@gmail.com")))
+                          )
+                 ));
+    }
+}
+
 ```
 ### PostgreSQL asynchronous CRUD Repository example
 (actually, there is no Update implementation)

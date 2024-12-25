@@ -9,7 +9,7 @@ import org.pragmatica.lang.Unit;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringStartsWith.startsWith;
-import static org.pragmatica.lang.Result.unitResult;
+import static org.pragmatica.lang.Unit.unit;
 
 /**
  * Unit test for simple App.
@@ -20,7 +20,7 @@ public class AppTest {
 
     @AfterAll
     static void waitServer() {
-        serverPromise.async(promise -> promise.resolve(unitResult())).await();
+        serverPromise.async(promise -> promise.succeed(unit())).await();
     }
 
     @Test

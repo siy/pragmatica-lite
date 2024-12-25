@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.pragmatica.lang.Unit.unit;
 
 public class PromiseTest {
     private static final Cause FAULT_CAUSE = new CoreError.Fault("Test fault");
@@ -184,7 +185,7 @@ public class PromiseTest {
                .map((integer, bool) -> {
                    assertEquals(1, integer);
                    assertTrue(bool);
-                   return Unit.aUnit();
+                   return unit();
                }).await();
     }
 
@@ -293,7 +294,7 @@ public class PromiseTest {
                    assertEquals("1", string);
                    assertEquals(1L, aLong);
                    assertEquals(1, counter);
-                   return Unit.aUnit();
+                   return unit();
                }).onFailureRun(Assertions::fail)
                .await();
     }

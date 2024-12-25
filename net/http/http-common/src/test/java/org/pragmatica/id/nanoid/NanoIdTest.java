@@ -38,13 +38,13 @@ class NanoIdTest {
             assertEquals(21, NanoId.secureNanoId().value().length());
         }
         var end = System.nanoTime();
-        System.out.println(STR."Secure: \{(end - start) / count }ns per id");
+        System.out.println("Secure: " + (end - start) / count + "ns per id");
 
         start = System.nanoTime();
         for (int i = 0; i < count; i++) {
             assertEquals(21, NanoId.nonSecureNanoId().value().length());
         }
         end = System.nanoTime();
-        System.out.println(STR."Non-secure: \{(end - start) / count }ns per id");
+        System.out.println("Non-secure: " + (end - start) / count + "ns per id");
     }
 }

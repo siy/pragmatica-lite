@@ -32,6 +32,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.pragmatica.lang.Functions.Fn1;
+import static org.pragmatica.lang.Unit.unit;
 
 /**
  * Resource pool for backend connections.
@@ -121,7 +122,7 @@ public class PgConnectionPool extends PgConnectible {
         @Override
         public ThrowingPromise<Unit> close() {
             release(this);
-            return ThrowingPromise.successful(Unit.aUnit());
+            return ThrowingPromise.successful(unit());
         }
 
         @Override
@@ -201,7 +202,7 @@ public class PgConnectionPool extends PgConnectible {
                         log.warn(DUPLICATED_PREPARED_STATEMENT_DETECTED, already.sql);
                         return already.delegate.close();
                     } else {
-                        return ThrowingPromise.successful(Unit.aUnit());
+                        return ThrowingPromise.successful(unit());
                     }
                 }
             }
@@ -347,7 +348,7 @@ public class PgConnectionPool extends PgConnectible {
     private Runnable checkClosed() {
         if (closing != null && size <= connections.size()) {
             assert pending.isEmpty();
-            return () -> closing.succeed(Unit.aUnit());
+            return () -> closing.succeed(unit());
         } else {
             return NO_OP;
         }

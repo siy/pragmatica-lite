@@ -139,11 +139,16 @@ class SqlLocalTest {
         var freq = (int) (iterationsCount / ((end - start) / 1_000_000_000.0));
 
         System.out.println(
-            STR."""
-                Executed \{iterationsCount} queries in \{(end - start) / 1_000_000} ms
-                Requests per second \{freq}
-                Successful requests \{successes.get()}
-                Failed requests \{failures.get()} failed");
-                """);
+            "Executed "
+            + iterationsCount
+            + " queries in "
+            + (end - start) / 1_000_000
+            + " ms\nRequests per second "
+            + freq
+            + "\nSuccessful requests "
+            + successes.get()
+            + "\nFailed requests "
+            + failures.get()
+            + " failed\");\n");
     }
 }

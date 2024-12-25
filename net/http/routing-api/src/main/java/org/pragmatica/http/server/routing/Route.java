@@ -42,7 +42,7 @@ public interface Route<T> extends RouteSource {
 
             @Override
             public String toString() {
-                return STR."Route: \{method} \{path}, \{contentType}";
+                return "Route: " + method + " " + path + ", " + contentType;
             }
         }
 
@@ -364,6 +364,10 @@ public interface Route<T> extends RouteSource {
 
     interface JsonBodyParameterBuilder<R, T> {
         ContentTypeBuilder<R> to(Fn1<Promise<R>, T> handler);
+
+        default ContentTypeBuilder<R> toResult(Fn1<Result<R>, T> handler) {
+            return to(body -> handler.apply(body).toPromise());
+        }
 
         default Route<R> toJson(Fn1<Promise<R>, T> handler) {
             return to(handler).asJson();

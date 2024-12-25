@@ -115,7 +115,7 @@ public class DataConverter {
                 byte[] first = BlobConversions.toBytes(oide, svaluee.substring(2));
                 return parseHexBinary(new String(first, 1, first.length - 1, encoding));
             };
-            default -> throw new IllegalStateException(STR."Unsupported array type: \{oid}");
+            default -> throw new IllegalStateException("Unsupported array type: " + oid);
         };
     }
 
@@ -124,7 +124,7 @@ public class DataConverter {
         var converter = (Converter<T>) typeToConverter.get(type);
 
         if (converter == null) {
-            throw new IllegalArgumentException(STR."Unknown conversion target: \{type}");
+            throw new IllegalArgumentException("Unknown conversion target: " + type);
         }
 
         return converter;
@@ -137,6 +137,7 @@ public class DataConverter {
             case LocalTime localTime -> fromLocalTime(localTime);
             case LocalDateTime localDateTime -> fromLocalDateTime(localDateTime);
             case ZonedDateTime zonedDateTime -> fromZoneDateTime(zonedDateTime);
+            case OffsetDateTime offsetDateTime -> fromOffsetDateTime(offsetDateTime);
             case Instant instant -> fromInstant(instant);
             case byte[] bytes -> BlobConversions.fromBytes(bytes);
             case Boolean bool -> BooleanConversions.fromBoolean(bool);
@@ -158,6 +159,7 @@ public class DataConverter {
         return converter.from(value);
     }
 
+    @SuppressWarnings("unused")
     public byte[][] fromParameters(List<Object> parameters) {
         return fromParameters(parameters.toArray(new Object[]{}));
     }
@@ -221,7 +223,7 @@ public class DataConverter {
                 return (T) knownConverter.apply(oid, new String(value, encoding));
             }
 
-            throw new IllegalArgumentException(STR."Unknown conversion target: \{type}");
+            throw new IllegalArgumentException("Unknown conversion target: " + type);
         }
 
         // Convert by oid
@@ -241,7 +243,7 @@ public class DataConverter {
             case INT2_ARRAY, INT4_ARRAY, INT8_ARRAY, NUMERIC_ARRAY, FLOAT4_ARRAY, FLOAT8_ARRAY,
                 TEXT_ARRAY, CHAR_ARRAY, BPCHAR_ARRAY, VARCHAR_ARRAY,
                 TIMESTAMP_ARRAY, TIMESTAMPTZ_ARRAY, TIMETZ_ARRAY, TIME_ARRAY, BOOL_ARRAY -> toArray(Object[].class, oid, value);
-            default -> throw new IllegalArgumentException(STR."Unknown conversion target: \{oid}");
+            default -> throw new IllegalArgumentException("Unknown conversion target: " + oid);
         };
     }
 
