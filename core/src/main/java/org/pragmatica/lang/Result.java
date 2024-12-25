@@ -315,7 +315,7 @@ public sealed interface Result<T> permits Success, Failure {
     @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     default T unwrap() {
-        return fold(v -> {throw new IllegalStateException(STR."Unwrap error: \{v.message()}");}, Functions::id);
+        return fold(v -> {throw new IllegalStateException("Unwrap error: " + v.message());}, Functions::id);
     }
 
     /**
@@ -374,7 +374,7 @@ public sealed interface Result<T> permits Success, Failure {
 
         @Override
         public String toString() {
-            return STR."Success(\{value.toString()})";
+            return "Success(" + value.toString() + ")";
         }
     }
 
@@ -401,7 +401,7 @@ public sealed interface Result<T> permits Success, Failure {
 
         @Override
         public String toString() {
-            return STR."Failure(\{cause})";
+            return "Failure(" + cause + ")";
         }
     }
 

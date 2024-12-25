@@ -26,7 +26,7 @@ public sealed interface SqlError extends Result.Cause {
         String readableCode();
 
         default String message() {
-            return STR."\{response().level()}: SQLSTATE=\{response().code()}, MESSAGE=\{response().message()}";
+            return response().level() + ": SQLSTATE=" + response().code() + ", MESSAGE=" + response().message();
         }
     }
 

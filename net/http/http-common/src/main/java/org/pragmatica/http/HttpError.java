@@ -18,7 +18,6 @@ public interface HttpError extends Cause {
 
     static HttpError httpError(HttpStatus status, Cause source) {
         record httpError(HttpStatus status, Cause origin) implements HttpError {
-            @SuppressWarnings("deprecation")
             @Override
             public String message() {
                 var builder = new StringBuilder()
@@ -30,7 +29,7 @@ public interface HttpError extends Cause {
 
                 while (cause.isPresent()) {
                     cause.onPresent(c -> builder.append("\n\t").append(c.message()));
-                    cause = cause.unwrap().source();
+                    cause = cause.fold(Option::none, Cause::source);
                 }
 
                 return builder.toString();

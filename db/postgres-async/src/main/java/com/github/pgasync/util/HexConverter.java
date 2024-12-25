@@ -12,7 +12,7 @@ final public class HexConverter {
         var chars = s.toCharArray();
 
         if (chars.length % 2 != 0) {
-            throw new IllegalArgumentException(STR."Input string length must be even <\{s}> = \{s.length()}");
+            throw new IllegalArgumentException("Input string length must be even <" + s + "> = " + s.length());
         }
 
         var out = new byte[chars.length / 2];
@@ -39,7 +39,7 @@ final public class HexConverter {
             case 'A', 'B', 'C', 'D', 'E', 'F' -> ch - 'A' + 10;
             case 'a', 'b', 'c', 'd', 'e', 'f' -> ch - 'a' + 10;
 
-            default -> throw new IllegalArgumentException(STR."illegal hexadecimal character '\{ch}'");
+            default -> throw new IllegalArgumentException("illegal hexadecimal character '" + ch + "'");
         };
     }
 }

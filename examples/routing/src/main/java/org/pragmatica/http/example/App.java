@@ -14,7 +14,7 @@ import static org.pragmatica.lang.Promise.failed;
 import static org.pragmatica.lang.Promise.successful;
 
 public class App {
-    public static void main(final String[] args) {
+    public static void main(@SuppressWarnings("unused") final String[] args) {
         buildServer()
             .start()
             .await();
@@ -27,22 +27,22 @@ public class App {
     //Full description
     Route.get("/hello1")
          .withoutParameters()
-         .to(request -> successful(STR."Hello world! at \{request.route().path()}"))
+         .to(request -> successful("Hello world! at " + request.route().path()))
          .as(CommonContentTypes.TEXT_PLAIN),
 
     //Assume no parameters
     Route.get("/hello2")
-         .to(request -> successful(STR."Hello world! at \{request.route().path()}"))
+         .to(request -> successful("Hello world! at " + request.route().path()))
          .as(CommonContentTypes.TEXT_PLAIN),
 
     //Assume no parameters, short content type (text)
     Route.get("/hello2")
-         .to(request -> successful(STR."Hello world! at \{request.route().path()}"))
+         .to(request -> successful("Hello world! at " + request.route().path()))
          .asText(),
 
     //Assume no parameters, even shorter content type (json)
     Route.get("/hello2")
-         .toText(request -> successful(STR."Hello world! at \{request.route().path()}")),
+         .toText(request -> successful("Hello world! at " + request.route().path())),
 
     //Assume no parameters, response does not depend on request
     Route.get("/hello2")

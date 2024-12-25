@@ -9,6 +9,6 @@ public interface KeyToValue {
     <T> Result<T> get(String prefix, String key, TypeToken<T> typeToken);
 
     default String prependPrefix(String prefix, String key) {
-        return prefix.isEmpty() ? key : STR."\{prefix}.\{key}";
+        return prefix.isEmpty() ? key : prefix + "." + key;
     }
 }

@@ -339,7 +339,7 @@ public sealed interface Option<T> permits Some, None {
 
         @Override
         public String toString() {
-            return STR."Some(\{value})";
+            return "Some(" + value + ")";
         }
     }
 

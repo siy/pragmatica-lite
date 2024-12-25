@@ -8,6 +8,8 @@ import org.pragmatica.lang.Unit;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.pragmatica.lang.Option.none;
+
 //TODO: tests
 public class ConfParser {
     private static class ConfParserState {
@@ -17,7 +19,7 @@ public class ConfParser {
         Result<Unit> process(String line) {
             if (line.startsWith("[")) {
                 if (!line.endsWith("]")) {
-                    return new DataConversionError.InvalidInput(STR."The line \{line} does not represent a valid section name")
+                    return new DataConversionError.InvalidInput("The line " + line + " does not represent a valid section name", none())
                         .result();
                 }
 
@@ -28,13 +30,13 @@ public class ConfParser {
             var parts = line.split("=", 2);
 
             if (parts.length != 2) {
-                return new DataConversionError.InvalidInput(STR."The line \{line} does not represent a valid key/value pair")
+                return new DataConversionError.InvalidInput("The line " + line + " does not represent a valid key/value pair", none())
                     .result();
             }
 
             var key = currentSection.isBlank()
                       ? parts[0].strip()
-                      : STR."\{currentSection}.\{parts[0].strip()}";
+                      : currentSection + "." + parts[0].strip();
 
             values.put(key, parts[1].strip());
 

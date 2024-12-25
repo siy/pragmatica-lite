@@ -23,11 +23,11 @@ class HttpServerTest {
                                                               Route.get("/three").toText(() -> "three"),
                                                               Route.patch("/one")
                                                                    .withPath(aString())
-                                                                   .toValue(param1 -> STR."Received \{param1}")
+                                                                   .toValue(param1 -> "Received " + param1)
                                                                    .asText(),
                                                               Route.patch("/two")
                                                                    .withPath(aInteger(), spacer("space"), aLong())
-                                                                   .toValue((param1, param2, param3) -> STR."Received \{param1}, \{param2}, \{param3}")
+                                                                   .toValue((param1, param2, param3) -> "Received " + param1 + ", " + param2 + ", " + param3)
                                                                    .asText());
 
     private static Promise<Unit> serverPromise;

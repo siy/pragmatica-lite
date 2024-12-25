@@ -35,7 +35,7 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
     }
 
     public static <T> TypeToken<T> of(Class<T> clazz) {
-        return new TypeToken<T>(clazz) {};
+        return new TypeToken<>(clazz) {};
     }
 
     public Type token() {
@@ -99,7 +99,7 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
         return switch (type) {
             case Class<?> clazz -> clazz;
             case ParameterizedType parameterizedType -> (Class<?>) parameterizedType.getRawType();
-            default -> throw new IllegalStateException(STR."Unexpected value: \{type}");
+            default -> throw new IllegalStateException("Unexpected value: " + type);
         };
     }
 
@@ -159,6 +159,6 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
 
     @Override
     public String toString() {
-        return STR."TypeToken<\{token}\{'>'}";
+        return "TypeToken<" + token + '>';
     }
 }

@@ -6,8 +6,10 @@ import org.pragmatica.config.api.ParameterType.CustomParameterType;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.TypeToken;
 
+import static org.pragmatica.lang.Option.none;
+
 @AutoService(CustomParameterType.class)
-@SuppressWarnings("rawtypes") // Required by AutoService because CustomParameterType is generic
+@SuppressWarnings("unused")
 public class IriParameterType implements CustomParameterType<IRI> {
     @Override
     public TypeToken<IRI> token() {
@@ -18,7 +20,7 @@ public class IriParameterType implements CustomParameterType<IRI> {
     public Result<IRI> apply(String value) {
         var iri = IRI.fromString(value);
 
-        return iri == IRI.EMPTY ? new DataConversionError.InvalidInput(STR."The value [\{value}] can't be parsed into IRI").result()
+        return iri == IRI.EMPTY ? new DataConversionError.InvalidInput("The value [" + value + "] can't be parsed into IRI", none()).result()
                                 : Result.success(iri);
     }
 }

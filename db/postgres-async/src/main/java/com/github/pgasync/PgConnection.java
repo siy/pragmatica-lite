@@ -104,7 +104,7 @@ public class PgConnection implements Connection {
         private String next() {
             if (counter == Long.MAX_VALUE) {
                 counter = 0;
-                prefix = STR."_\{prefix}";
+                prefix = "_" + prefix;
             }
             return prefix + ++counter;
         }
@@ -207,12 +207,12 @@ public class PgConnection implements Connection {
 
     public ThrowingPromise<Listening> subscribe(String channel, Consumer<String> onNotification) {
         // TODO: wait for commit before sending unlisten as otherwise it can be rolled back
-        return completeScript(STR."LISTEN \{channel}")
+        return completeScript("LISTEN " + channel)
             .map(_ -> {
                 var unsubscribe = stream.subscribe(channel, onNotification);
 
-                return () -> completeScript(STR."UNLISTEN \{channel}").onSuccess(_ -> unsubscribe.run())
-                                                                      .mapToUnit();
+                return () -> completeScript("UNLISTEN " + channel).onSuccess(_ -> unsubscribe.run())
+                                                                  .mapToUnit();
             });
     }
 
@@ -302,19 +302,19 @@ public class PgConnection implements Connection {
 
         @Override
         public ThrowingPromise<Transaction> begin() {
-            return completeScript(STR."SAVEPOINT sp_\{depth + 1}")
+            return completeScript("SAVEPOINT sp_" + (depth + 1))
                 .map(_ -> new PgConnectionNestedTransaction(depth + 1));
         }
 
         @Override
         public ThrowingPromise<Unit> commit() {
-            return PgConnection.this.completeScript(STR."RELEASE SAVEPOINT sp_\{depth}")
+            return PgConnection.this.completeScript("RELEASE SAVEPOINT sp_" + depth)
                                     .map(Unit::unit);
         }
 
         @Override
         public ThrowingPromise<Unit> rollback() {
-            return PgConnection.this.completeScript(STR."ROLLBACK TO SAVEPOINT sp_\{depth}")
+            return PgConnection.this.completeScript("ROLLBACK TO SAVEPOINT sp_" + depth)
                                     .map(Unit::unit);
         }
     }

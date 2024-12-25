@@ -75,11 +75,11 @@ public class AuthenticationDecoder implements Decoder<Authentication> {
                 yield  new Authentication(false, false, md5Salt, null, null);
             }
             case AUTHENTICATION_SSPI -> throw new UnsupportedOperationException(AUTHENTICATION_IS_NOT_SUPPORTED);
-            case AUTHENTICATION_GSS -> throw new UnsupportedOperationException(STR."AuthenticationGss\{AUTHENTICATION_IS_NOT_SUPPORTED}");
+            case AUTHENTICATION_GSS -> throw new UnsupportedOperationException("AuthenticationGss" + AUTHENTICATION_IS_NOT_SUPPORTED);
             case AUTHENTICATION_SCM_CREDENTIAL ->
-                throw new UnsupportedOperationException(STR."AuthenticationScmCredential\{AUTHENTICATION_IS_NOT_SUPPORTED}");
+                throw new UnsupportedOperationException("AuthenticationScmCredential" + AUTHENTICATION_IS_NOT_SUPPORTED);
             case AUTHENTICATION_KERBEROS_V5 ->
-                throw new UnsupportedOperationException(STR."AuthenticationKerberosV5\{AUTHENTICATION_IS_NOT_SUPPORTED}");
+                throw new UnsupportedOperationException("AuthenticationKerberosV5" + AUTHENTICATION_IS_NOT_SUPPORTED);
             case OK -> Authentication.OK;
             case SASL -> {
                 boolean scramSha256Met = false;
@@ -93,7 +93,7 @@ public class AuthenticationDecoder implements Decoder<Authentication> {
                 if (scramSha256Met) {
                     yield  Authentication.SCRAM_SHA_256;
                 } else {
-                    throw new UnsupportedOperationException(STR."The server doesn't support \{Authentication.SUPPORTED_SASL} SASL mechanism");
+                    throw new UnsupportedOperationException("The server doesn't support " + Authentication.SUPPORTED_SASL + " SASL mechanism");
                 }
             }
             case SASL_CONTINUE -> {
@@ -106,7 +106,7 @@ public class AuthenticationDecoder implements Decoder<Authentication> {
                 buffer.get(saslAdditionalData);
                 yield new Authentication(false, false, null, null, saslAdditionalData);
             }
-            default -> throw new UnsupportedOperationException(STR."Unsupported authentication type: \{type}");
+            default -> throw new UnsupportedOperationException("Unsupported authentication type: " + type);
         };
     }
 

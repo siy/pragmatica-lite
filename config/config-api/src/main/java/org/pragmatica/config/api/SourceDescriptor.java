@@ -30,14 +30,15 @@ public sealed interface SourceDescriptor {
             public void load(Store store) {
                 FormatReader.readers()
                             .map(tuple -> tuple.map((ext, reader) -> readFile(ext, path())
-                                .onSuccessRun(() -> log.debug(STR."File \{path}.\{ext} successfully read"))
-                                .onFailure(cause -> log.debug(STR."Failed to read file \{path}.\{ext}: \{cause}"))
+                                .onSuccessRun(() -> log.debug("File {}.{} successfully read", path, ext))
+                                .onFailure(cause -> log.debug("Failed to read file {}.{}: {}", path, ext, cause))
+                                .traceError()
                                 .flatMap(reader::read)))
                             .forEach(result -> result.onSuccess(store::append));
             }
 
             static Result<String> readFile(String extension, String path) {
-                return Result.lift(ConfigError::ioError, () -> Files.readString(Path.of(STR."\{path}.\{extension}")));
+                return Result.lift(ConfigError::ioError, () -> Files.readString(Path.of(path + "." + extension)));
             }
         }
 
@@ -48,16 +49,17 @@ public sealed interface SourceDescriptor {
             public void load(Store store) {
                 FormatReader.readers()
                             .map(tuple -> tuple.map((ext, reader) -> loadFromClasspath(ext, path())
-                                .onSuccessRun(() -> log.debug(STR."File \{path}.\{ext} successfully loaded via classpath"))
-                                .onFailure(cause -> log.debug(STR."Failed to load file \{path}.\{ext} via classpath: \{cause}"))
+                                .onSuccessRun(() -> log.debug("File {}.{} successfully loaded via classpath", path, ext))
+                                .onFailure(cause -> log.debug("Failed to load file {}.{} via classpath: {}", path, ext, cause))
+                                .traceError()
                                 .flatMap(reader::read)))
                             .forEach(result -> result.onSuccess(store::append));
             }
 
             static Result<String> loadFromClasspath(String extension, String path) {
-                try (var input = SourceDescriptor.class.getResourceAsStream(STR."\{path}.\{extension}")) {
+                try (var input = SourceDescriptor.class.getResourceAsStream(path + "." + extension)) {
                     if (input == null) {
-                        return Result.failure(new ConfigError.InputIsMissing(STR."File \{path}.\{extension} not found in classpath"));
+                        return Result.failure(new ConfigError.InputIsMissing("File " + path + "." + extension + " not found in classpath"));
                     }
 
                     return Result.success(new String(input.readAllBytes(), StandardCharsets.UTF_8));
@@ -80,7 +82,7 @@ public sealed interface SourceDescriptor {
         default void load(Store store) {
             provider().read()
                       .onSuccess(store::append)
-                      .onFailure(cause -> log.debug(STR."Failed to load \{getClass().getSimpleName()}: \{cause}", cause));
+                      .onFailure(cause -> log.debug("Failed to load {}: {}", getClass().getSimpleName(), cause));
         }
 
         record Environment() implements EnvironmentSourceDescriptor {

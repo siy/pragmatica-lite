@@ -2,7 +2,7 @@ package org.pragmatica.lang.type;
 
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Result;
-import org.pragmatica.lang.Tuple;
+import org.pragmatica.lang.Tuple.Tuple2;
 import org.pragmatica.lang.Tuple.Tuple3;
 
 import java.util.List;
@@ -21,7 +21,8 @@ public interface RecordTemplate<T extends Record> {
 
     List<Tuple3<String, TypeToken<?>, Fn1<?, T>>> extractors();
 
-    default Stream<Tuple.Tuple2<TypeToken<?>, Fn1<Result<?>, String>>> customConverters() {
+    @SuppressWarnings("unused")
+    default Stream<Tuple2<TypeToken<?>, Fn1<Result<?>, String>>> customConverters() {
         return Stream.empty();
     }
 
@@ -30,7 +31,7 @@ public interface RecordTemplate<T extends Record> {
             @Override
             public int formatParameters(StringBuilder builder, int startIndex) {
                 var paramString = IntStream.range(startIndex, startIndex + values.size())
-                                           .mapToObj(i -> STR."$\{i}")
+                                           .mapToObj(i -> "$" + i)
                                            .collect(Collectors.joining(", "));
                 builder.append(paramString);
 
@@ -49,7 +50,7 @@ public interface RecordTemplate<T extends Record> {
     static <T> String buildFormattedNames(List<Tuple3<String, TypeToken<?>, Fn1<?, T>>> extractors) {
         return extractors.stream()
                          .map(Tuple3::first)
-                         .reduce((a, b) -> STR."\{a}, \{b}")
+                         .reduce((a, b) -> a + ", " + b)
                          .orElse("");
     }
 }

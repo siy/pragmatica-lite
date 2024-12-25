@@ -1,11 +1,13 @@
 package org.pragmatica.id.nanoid;
 
-import org.pragmatica.config.api.DataConversionError;
+import org.pragmatica.config.api.DataConversionError.InvalidInput;
 import org.pragmatica.lang.Result;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Random;
+
+import static org.pragmatica.lang.Option.none;
 
 public interface NanoId extends Comparable<NanoId> {
     String value();
@@ -57,14 +59,14 @@ public interface NanoId extends Comparable<NanoId> {
         var value = input.trim();
 
         if (value.length() != DEFAULT_LEN) {
-            return new DataConversionError.InvalidInput(STR."Invalid NanoId length \{value.length()}").result();
+            return new InvalidInput("Invalid NanoId length " + value.length(), none()).result();
         }
 
         for (var i = 0; i < value.length(); i++) {
             var c = value.charAt(i);
 
             if (c < 45 || c > 122 || (c > 57 && c < 65) || (c > 90 && c < 95)) {
-                return new DataConversionError.InvalidInput(STR."Invalid NanoId character \{c}").result();
+                return new InvalidInput("Invalid NanoId character " + c, none()).result();
             }
         }
 
