@@ -9,4 +9,8 @@ public interface RouteSource {
         return () -> routes()
             .map(route -> (Route<?>) route.withPrefix(prefix));
     }
+
+    static RouteSource of(RouteSource... routes) {
+        return () -> Stream.of(routes).flatMap(RouteSource::routes);
+    }
 }

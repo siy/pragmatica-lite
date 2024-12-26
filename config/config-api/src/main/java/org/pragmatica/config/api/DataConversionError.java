@@ -4,7 +4,7 @@ import org.pragmatica.lang.Functions.Fn0;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
-import org.pragmatica.lang.Result.Cause;
+import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.type.TypeToken;
 import org.pragmatica.lang.utils.Causes;
 

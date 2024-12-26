@@ -1,6 +1,6 @@
 package org.pragmatica.http.example.qrgenerator;
 
-import org.pragmatica.lang.Result.Cause;
+import org.pragmatica.lang.Cause;
 
 public sealed interface QrEncoderError extends Cause {
     record IllegalArgument(String message) implements QrEncoderError {}

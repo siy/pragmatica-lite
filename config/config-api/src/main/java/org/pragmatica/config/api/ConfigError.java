@@ -1,7 +1,7 @@
 package org.pragmatica.config.api;
 
 import org.pragmatica.lang.Option;
-import org.pragmatica.lang.Result.Cause;
+import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.utils.Causes;
 
 import static org.pragmatica.lang.Option.some;

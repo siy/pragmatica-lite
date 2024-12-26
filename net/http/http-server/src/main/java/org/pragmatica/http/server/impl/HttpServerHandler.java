@@ -3,11 +3,7 @@ package org.pragmatica.http.server.impl;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpUtil;
-import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.*;
 import org.pragmatica.http.CommonContentTypes;
 import org.pragmatica.http.HttpError;
 import org.pragmatica.http.protocol.CommonHeaders;
@@ -15,14 +11,15 @@ import org.pragmatica.http.protocol.HttpMethod;
 import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.http.server.HttpServerConfig;
 import org.pragmatica.http.server.routing.RequestRouter;
+import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Option;
-import org.pragmatica.lang.Result.Cause;
 
 import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.function.Supplier;
 
+import static org.pragmatica.http.protocol.HttpStatus.NOT_FOUND;
 import static org.pragmatica.http.util.Utils.normalize;
 
 class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
@@ -57,7 +54,7 @@ class HttpServerHandler extends SimpleChannelInboundHandler<Object> {
         var path = normalize(request.uri());
 
         routingTable.findRoute(HttpMethod.from(request.method()), path)
-                    .toResult(() -> HttpError.httpError(HttpStatus.NOT_FOUND, path).result())
+                    .toResult(() -> NOT_FOUND.with(path).result())
                     .onFailure(cause -> sendErrorResponse(ctx, cause))
                     .onSuccess(route -> RequestContextImpl.handle(ctx, request, route, contextConfig));
     }

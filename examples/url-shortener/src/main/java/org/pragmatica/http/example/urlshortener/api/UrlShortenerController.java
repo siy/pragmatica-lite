@@ -14,7 +14,7 @@ public interface UrlShortenerController {
     UrlShortenerService service();
 
     default Promise<UrlShortenerResponse> shortenUrl(UrlShortenerRequest request) {
-        return Promise.successful(request.toDomainRequest())                // transform to domain request
+        return Promise.success(request.toDomainRequest())                // transform to domain request
                       .flatMap(service()::shortenUrl)                       // Call business logic
                       .map(UrlShortenerResponse::fromShortenedUrl)          // Transform response to API response
                       .mapError(UNPROCESSABLE_ENTITY::with);                // Map domain errors to HTTP errors

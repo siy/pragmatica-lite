@@ -1,8 +1,8 @@
 package org.pragmatica.http.codec;
 
-import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Cause;
 
-public sealed interface CodecError extends Result.Cause {
+public sealed interface CodecError extends Cause {
     record EncodingError(String message) implements CodecError {}
 
     record DecodingError(String message) implements CodecError {}

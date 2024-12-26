@@ -17,9 +17,9 @@
 
 package org.pragmatica.lang.io;
 
-import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Cause;
 
-public sealed interface CoreError extends Result.Cause {
+public sealed interface CoreError extends Cause {
     record Cancelled(String message) implements CoreError {}
     record Timeout(String message) implements CoreError {}
     record Fault(String message) implements CoreError {}

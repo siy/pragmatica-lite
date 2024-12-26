@@ -21,7 +21,7 @@ import static org.pragmatica.dns.DomainAddress.domainAddress;
 import static org.pragmatica.dns.DomainName.domainName;
 import static org.pragmatica.lang.Option.option;
 import static org.pragmatica.lang.Promise.resolved;
-import static org.pragmatica.lang.Promise.successful;
+import static org.pragmatica.lang.Promise.success;
 
 public interface DomainNameResolver extends AsyncCloseable {
     int DNS_UDP_PORT = 53;
@@ -94,7 +94,7 @@ public interface DomainNameResolver extends AsyncCloseable {
                                               InetAddress.getLoopbackAddress(),
                                               Duration.ofSeconds(0));   //Duration does not matter for localhost
 
-        cache.put(resolvedLocalHost.name(), successful(resolvedLocalHost));
+        cache.put(resolvedLocalHost.name(), success(resolvedLocalHost));
         return cache;
     }
 }

@@ -1,6 +1,6 @@
 package org.pragmatica.config.format.yaml;
 
-import org.pragmatica.lang.Result.Cause;
+import org.pragmatica.lang.Cause;
 
 public sealed interface YamlParseError extends Cause {
     record InvalidSyntaxError(String message) implements YamlParseError {}

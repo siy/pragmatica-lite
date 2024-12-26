@@ -1,9 +1,9 @@
 package com.github.pgasync;
 
-import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Cause;
 
 @SuppressWarnings("unused")
-public sealed interface SqlError extends Result.Cause {
+public sealed interface SqlError extends Cause {
     record ConfigurationError(String message) implements SqlError {}
     record ChannelClosed(String message) implements SqlError {}
     record SimultaneousUseDetected(String message) implements SqlError {}

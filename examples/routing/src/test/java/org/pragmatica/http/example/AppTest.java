@@ -3,6 +3,7 @@ package org.pragmatica.http.example;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.http.server.HttpServer;
+import org.pragmatica.http.server.HttpServerConfig;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 
@@ -15,7 +16,8 @@ import static org.pragmatica.lang.Unit.unit;
  * Unit test for simple App.
  */
 public class AppTest {
-    private static final HttpServer server = App.buildServer();
+    private static final HttpServer server = HttpServer.withConfig(HttpServerConfig.defaultConfiguration())
+                                                       .serve(App.routes());
     private static final Promise<Unit> serverPromise = server.start();
 
     @AfterAll

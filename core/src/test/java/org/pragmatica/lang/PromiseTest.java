@@ -19,7 +19,6 @@ package org.pragmatica.lang;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.pragmatica.lang.Result.Cause;
 import org.pragmatica.lang.io.CoreError;
 import org.pragmatica.lang.io.Timeout;
 
@@ -53,24 +52,22 @@ public class PromiseTest {
 
     @Test
     void promiseCanSucceedAsynchronously() {
-        var promise = Promise.<Integer>promise();
         var ref = new AtomicInteger();
 
-        promise.succeedAsync(() -> 1);
-        promise.onSuccess(ref::set);
-
-        promise.await().onSuccess(v -> assertEquals(1, v));
+        Promise.<Integer>promise()
+               .succeedAsync(() -> 1)
+               .onSuccess(ref::set)
+               .await()
+               .onSuccess(v -> assertEquals(1, v));
 
         assertEquals(1, ref.get());
     }
 
     @Test
     void promiseCanFailAsynchronously() {
-        var promise = Promise.<Integer>promise();
-
-        promise.failAsync(() -> FAULT_CAUSE);
-
-        promise.await()
+        Promise.<Integer>promise()
+               .failAsync(() -> FAULT_CAUSE)
+               .await()
                .onSuccessRun(Assertions::fail);
     }
 

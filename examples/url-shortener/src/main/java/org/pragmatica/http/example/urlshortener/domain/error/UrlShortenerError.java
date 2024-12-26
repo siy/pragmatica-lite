@@ -1,6 +1,6 @@
 package org.pragmatica.http.example.urlshortener.domain.error;
 
-import org.pragmatica.lang.Result.Cause;
+import org.pragmatica.lang.Cause;
 
 /**
  * Business logic domain level errors. Modelled as sealed interface, but in many cases simple enum is enough.

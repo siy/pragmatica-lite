@@ -367,6 +367,10 @@ public sealed interface Result<T> permits Success, Failure {
         return new Success<>(value);
     }
 
+    static <R> Result<R> ok(R value) {
+        return success(value);
+    }
+
     record Success<T>(T value) implements Result<T> {
         @Override
         public <R> R fold(Fn1<? extends R, ? super Cause> failureMapper, Fn1<? extends R, ? super T> successMapper) {
@@ -901,33 +905,6 @@ public sealed interface Result<T> permits Success, Failure {
 
         default Promise.Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> toPromise() {
             return () -> id().toPromise();
-        }
-    }
-
-
-    /**
-     * Basic interface for failure cause types.
-     */
-    interface Cause {
-        /**
-         * Message associated with the failure.
-         */
-        String message();
-
-        /**
-         * The original cause (if any) of the error.
-         */
-        default Option<Cause> source() {
-            return Option.empty();
-        }
-
-        /**
-         * Represent cause as a failure {@link Result} instance.
-         *
-         * @return cause converted into {@link Result} with necessary type.
-         */
-        default <T> Result<T> result() {
-            return failure(this);
         }
     }
 }
