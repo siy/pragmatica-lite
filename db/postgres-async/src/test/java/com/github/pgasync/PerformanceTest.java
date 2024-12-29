@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.pragmatica.lang.Unit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +35,7 @@ import java.util.stream.LongStream;
 
 import static java.lang.System.currentTimeMillis;
 import static java.lang.System.out;
+import static org.pragmatica.lang.Unit.unit;
 
 @Tag("Slow")
 @RunWith(Parameterized.class)
@@ -177,7 +177,7 @@ public class PerformanceTest {
                 })
                 .tryRecover(th -> {
                     onBatch.fail(th);
-                    return Unit.aUnit();
+                    return unit();
                 });
 
         }
@@ -214,7 +214,7 @@ public class PerformanceTest {
         out.println();
 
         results.values().iterator().next().keySet().forEach(threads -> {
-            out.print(STR."    \{threads}");
+            out.print("    " + threads);
             results.keySet().forEach(connections -> {
                 long batchDuration = results.get(connections).get(threads);
                 double rps = 1000 * batchSize * connections / (double) batchDuration;

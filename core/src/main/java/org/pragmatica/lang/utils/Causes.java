@@ -20,7 +20,7 @@ package org.pragmatica.lang.utils;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
-import org.pragmatica.lang.Result.Cause;
+import org.pragmatica.lang.Cause;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

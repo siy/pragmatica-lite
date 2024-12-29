@@ -9,7 +9,7 @@ import org.pragmatica.db.postgres.Sql.Query;
 import org.pragmatica.db.postgres.Sql.Script;
 import org.pragmatica.dns.DomainName;
 import org.pragmatica.lang.Promise;
-import org.pragmatica.lang.Result.Cause;
+import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Result.Mapper3;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.io.AsyncCloseable;

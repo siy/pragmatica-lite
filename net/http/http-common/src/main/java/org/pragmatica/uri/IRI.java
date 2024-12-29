@@ -87,7 +87,7 @@ public record IRI(
                 IRI iri = fromString(url.substring("jdbc:".length()));
 
                 var newScheme = iri.scheme()
-                                   .map(s -> STR."jdbc:\{s}").or("jdbc");
+                                   .map(s -> "jdbc:" + s).or("jdbc");
 
                 return iri.withScheme(newScheme);
             }

@@ -15,13 +15,13 @@ public class SaslStepsTest {
     private static final String SERVER_NONCE = "3rfcNHYJY1ZVvWVs7j";
     private static final String SERVER_SALT = "QSXCR+Q6sek8bf92";
     private static final int I = 4096;
-    private static final String SERVER_FIRST_MESSAGE = STR."r=\{CLIENT_NONCE}\{SERVER_NONCE},s=\{SERVER_SALT},i=\{I}";
+    private static final String SERVER_FIRST_MESSAGE = "r=" + CLIENT_NONCE + SERVER_NONCE + ",s=" + SERVER_SALT + ",i=" + I;
 
     @Test
     public void clientFirstMessage() {
         SASLInitialResponse saslInitialResponse = new SASLInitialResponse(Authentication.SUPPORTED_SASL, null, USER_NAME, CLIENT_NONCE);
         assertEquals("n,,", saslInitialResponse.gs2Header());
-        assertEquals(STR."n,,n=\{USER_NAME},r=\{CLIENT_NONCE}", saslInitialResponse.clientFirstMessage());
+        assertEquals("n,,n=" + USER_NAME + ",r=" + CLIENT_NONCE, saslInitialResponse.clientFirstMessage());
         // Here should be "n,,n=<USER_NAME>,r=" + CLIENT_NONCE, but Postgres expects an empty user name because of the startup message
     }
 
@@ -32,7 +32,7 @@ public class SaslStepsTest {
 
         assertEquals("n,,", saslResponse.gs2Header());
         assertEquals(CLIENT_NONCE + SERVER_NONCE, saslResponse.serverNonce());
-        assertEquals(STR."n=\{USER_NAME},r=\{CLIENT_NONCE}", saslResponse.clientFirstMessageBare());
+        assertEquals("n=" + USER_NAME + ",r=" + CLIENT_NONCE, saslResponse.clientFirstMessageBare());
         // Here should be "n,,n=<USER_NAME>,r=" + CLIENT_NONCE, but Postgres expects an empty user name because of the startup message
         assertEquals(I, saslResponse.i());
         assertEquals(USER_PASSWORD, saslResponse.password());

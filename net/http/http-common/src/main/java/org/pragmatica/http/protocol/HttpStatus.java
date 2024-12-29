@@ -1,12 +1,17 @@
 package org.pragmatica.http.protocol;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
+import org.pragmatica.http.HttpError;
 import org.pragmatica.lang.Option;
+import org.pragmatica.lang.Cause;
+import org.pragmatica.lang.utils.Causes;
 
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.pragmatica.http.HttpError.httpError;
 
 @SuppressWarnings("unused")
 public enum HttpStatus {
@@ -82,6 +87,18 @@ public enum HttpStatus {
     HttpStatus(int code, String reasonPhrase) {
         this.code = code;
         this.message = reasonPhrase;
+    }
+
+    public HttpError with(Throwable cause) {
+        return httpError(this, Causes.fromThrowable(cause));
+    }
+
+    public HttpError with(String message) {
+        return httpError(this, Causes.cause(message));
+    }
+
+    public HttpError with(Cause cause) {
+        return httpError(this, cause);
     }
 
     public String message() {

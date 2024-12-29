@@ -6,7 +6,6 @@ import io.netty.handler.codec.http.*;
 import org.pragmatica.http.CommonContentTypes;
 import org.pragmatica.http.HttpError;
 import org.pragmatica.http.codec.CustomCodec;
-import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.http.server.routing.Redirect;
 import org.pragmatica.http.server.routing.RequestContext;
 import org.pragmatica.http.server.routing.Route;
@@ -23,10 +22,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static org.pragmatica.http.protocol.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.pragmatica.http.util.Utils.lazy;
 import static org.pragmatica.http.util.Utils.value;
 import static org.pragmatica.lang.Option.some;
-import static org.pragmatica.lang.Promise.failed;
 import static org.pragmatica.lang.Result.success;
 
 //TODO: support structured error responses. See https://www.rfc-editor.org/rfc/rfc7807 for more details
@@ -34,14 +33,14 @@ import static org.pragmatica.lang.Result.success;
 @SuppressWarnings("unused")
 public class RequestContextImpl implements RequestContext {
     private static final int PATH_PARAM_LIMIT = 1024;
-    private static final Result<DataContainer<?>> MISSING_CUSTOM_CODEC_ERROR = HttpError.httpError(HttpStatus.INTERNAL_SERVER_ERROR,
-                                                                                                   "Custom codec is missing in server configuration")
-                                                                                        .result();
+    private static final Result<DataContainer<?>> MISSING_CUSTOM_CODEC_ERROR = INTERNAL_SERVER_ERROR.with(
+                                                                                                        "Custom codec is missing in server configuration")
+                                                                                                    .result();
 
     private final ChannelHandlerContext ctx;
     private final FullHttpRequest request;
     private final ContextConfig configuration;
-    private final HttpHeaders responseHeaders = new CombinedHttpHeaders(true);
+    private final HttpHeaders responseHeaders = DefaultHttpHeadersFactory.headersFactory().withCombiningHeaders(true).newHeaders();
     private final Route<?> route;
     private final String requestId;
 
@@ -153,9 +152,8 @@ public class RequestContextImpl implements RequestContext {
                                             .serialize(value, route.contentType())
                                             .map(DataContainer.ByteBufData::from)
                                             .map(ctr -> ctr.withContentType(route.contentType()));
-                case BINARY -> HttpError.httpError(HttpStatus.INTERNAL_SERVER_ERROR,
-                                                   "Content type is binary, but the response is not a byte array")
-                                        .result();
+                case BINARY -> INTERNAL_SERVER_ERROR.with("Content type is binary, but the response is not a byte array")
+                                                    .result();
 
             };
         };
@@ -192,7 +190,7 @@ public class RequestContextImpl implements RequestContext {
             MDC.put("requestId", requestId);
             return route().handler().handle(this);
         } catch (Throwable t) {
-            return failed(HttpError.httpError(HttpStatus.INTERNAL_SERVER_ERROR, t));
+            return INTERNAL_SERVER_ERROR.with(t).promise();
         } finally {
             MDC.remove("requestId");
         }

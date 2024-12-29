@@ -46,7 +46,7 @@ public record Authentication(boolean authenticationOk, boolean saslScramSha256, 
     public record SaslContinueServerFirstMessage(String augmentedNonce, String salt, int iterations) {
         @Override
         public String toString() {
-            return STR."SaslContinueServerFirstMessage{augmentedNonce='\{augmentedNonce}\{'\''}, salt='\{salt}\{'\''}, iterations=\{iterations}\{'}'}";
+            return "SaslContinueServerFirstMessage{augmentedNonce='" + augmentedNonce + '\'' + ", salt='" + salt + '\'' + ", iterations=" + iterations + '}';
         }
 
         public static SaslContinueServerFirstMessage parse(String text) {

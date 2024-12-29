@@ -20,9 +20,7 @@ public record RawShortenUrlRequest(String srcUrl) {
         }
 
         if (srcUrl().length() > ShortenedUrl.MAX_URL_LENGTH) {
-            return new UrlShortenerError.InputUrlIsTooLong(STR."Input URL is too long \{this
-                .srcUrl()
-                .length()} > \{ShortenedUrl.MAX_URL_LENGTH}").result();
+            return new UrlShortenerError.InputUrlIsTooLong("Input URL is too long " + this.srcUrl().length() + " > " + ShortenedUrl.MAX_URL_LENGTH).result();
         }
 
         return IRI.fromString(srcUrl())

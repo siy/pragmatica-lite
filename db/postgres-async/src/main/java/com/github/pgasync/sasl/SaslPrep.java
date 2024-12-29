@@ -24,7 +24,7 @@ public class SaslPrep {
 
         private void addRange(int start, int end) {
             if (start > end) {
-                throw new IllegalStateException(STR."An empty range [\{start}, \{end}] detected");
+                throw new IllegalStateException("An empty range [" + start + ", " + end + "] detected");
             }
 
             int coalescedStart = start;
@@ -155,6 +155,7 @@ public class SaslPrep {
     /**
      * C.1.1 ASCII space characters
      */
+    @SuppressWarnings("unused")
     static final CharsClass C11 = CharsClass.fromList(0x0020);
 
     /**

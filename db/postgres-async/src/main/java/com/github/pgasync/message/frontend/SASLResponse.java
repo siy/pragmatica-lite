@@ -71,7 +71,7 @@ public class SASLResponse implements Message {
     public String clientFinalMessage(String hMacName, String digestName) {
         var encoded = new String(Base64.getEncoder().withoutPadding().encode(gs2Header.getBytes(StandardCharsets.US_ASCII)),
                                  StandardCharsets.UTF_8);
-        var clientFinalMessageWithoutProof = STR."c=\{encoded},r=\{serverNonce}";
+        var clientFinalMessageWithoutProof = "c=" + encoded + ",r=" + serverNonce;
         var clientProof = saslClientProof(password,
                                           serverSalt,
                                           i,
@@ -80,7 +80,7 @@ public class SASLResponse implements Message {
                                           clientFinalMessageWithoutProof,
                                           hMacName,
                                           digestName);
-        return STR."\{clientFinalMessageWithoutProof},p=\{clientProof}";
+        return clientFinalMessageWithoutProof + ",p=" + clientProof;
     }
 
     private static final byte[] INT_1 = {0, 0, 0, 1};
@@ -170,7 +170,7 @@ public class SASLResponse implements Message {
                                                         i,
                                                         hMacName);
 
-            var authMessage = STR."\{clientFirstMessageBare},\{serverFirstMessage},\{clientFinalMessageWithoutProof}";
+            var authMessage = clientFirstMessageBare + "," + serverFirstMessage + "," + clientFinalMessageWithoutProof;
             var clientKey = computeHmac(saltedPassword, hMacName, "Client Key");
             var storedKey = MessageDigest.getInstance(digestName).digest(clientKey);
             var clientSignature = computeHmac(storedKey, hMacName, authMessage);

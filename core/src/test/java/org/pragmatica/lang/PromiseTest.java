@@ -19,7 +19,6 @@ package org.pragmatica.lang;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.pragmatica.lang.Result.Cause;
 import org.pragmatica.lang.io.CoreError;
 import org.pragmatica.lang.io.Timeout;
 
@@ -32,6 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.pragmatica.lang.Unit.unit;
 
 public class PromiseTest {
     private static final Cause FAULT_CAUSE = new CoreError.Fault("Test fault");
@@ -52,24 +52,22 @@ public class PromiseTest {
 
     @Test
     void promiseCanSucceedAsynchronously() {
-        var promise = Promise.<Integer>promise();
         var ref = new AtomicInteger();
 
-        promise.succeedAsync(() -> 1);
-        promise.onSuccess(ref::set);
-
-        promise.await().onSuccess(v -> assertEquals(1, v));
+        Promise.<Integer>promise()
+               .succeedAsync(() -> 1)
+               .onSuccess(ref::set)
+               .await()
+               .onSuccess(v -> assertEquals(1, v));
 
         assertEquals(1, ref.get());
     }
 
     @Test
     void promiseCanFailAsynchronously() {
-        var promise = Promise.<Integer>promise();
-
-        promise.failAsync(() -> FAULT_CAUSE);
-
-        promise.await()
+        Promise.<Integer>promise()
+               .failAsync(() -> FAULT_CAUSE)
+               .await()
                .onSuccessRun(Assertions::fail);
     }
 
@@ -184,7 +182,7 @@ public class PromiseTest {
                .map((integer, bool) -> {
                    assertEquals(1, integer);
                    assertTrue(bool);
-                   return Unit.aUnit();
+                   return unit();
                }).await();
     }
 
@@ -293,7 +291,7 @@ public class PromiseTest {
                    assertEquals("1", string);
                    assertEquals(1L, aLong);
                    assertEquals(1, counter);
-                   return Unit.aUnit();
+                   return unit();
                }).onFailureRun(Assertions::fail)
                .await();
     }

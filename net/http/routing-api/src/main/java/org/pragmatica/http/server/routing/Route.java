@@ -42,7 +42,7 @@ public interface Route<T> extends RouteSource {
 
             @Override
             public String toString() {
-                return STR."Route: \{method} \{path}, \{contentType}";
+                return "Route: " + method + " " + path + ", " + contentType;
             }
         }
 
@@ -224,7 +224,7 @@ public interface Route<T> extends RouteSource {
             }
 
             default ContentTypeBuilder<R> toValue(Fn1<R, T1> handler) {
-                return to(p1 -> Promise.successful(handler.apply(p1)));
+                return to(p1 -> Promise.success(handler.apply(p1)));
             }
         }
 
@@ -236,7 +236,7 @@ public interface Route<T> extends RouteSource {
             }
 
             default ContentTypeBuilder<R> toValue(Fn2<R, T1, T2> handler) {
-                return to((p1, p2) -> Promise.successful(handler.apply(p1, p2)));
+                return to((p1, p2) -> Promise.success(handler.apply(p1, p2)));
             }
         }
 
@@ -248,7 +248,7 @@ public interface Route<T> extends RouteSource {
             }
 
             default ContentTypeBuilder<R> toValue(Fn3<R, T1, T2, T3> handler) {
-                return to((p1, p2, p3) -> Promise.successful(handler.apply(p1, p2, p3)));
+                return to((p1, p2, p3) -> Promise.success(handler.apply(p1, p2, p3)));
             }
         }
 
@@ -260,7 +260,7 @@ public interface Route<T> extends RouteSource {
             }
 
             default ContentTypeBuilder<R> toValue(Fn4<R, T1, T2, T3, T4> handler) {
-                return to((p1, p2, p3, p4) -> Promise.successful(handler.apply(p1, p2, p3, p4)));
+                return to((p1, p2, p3, p4) -> Promise.success(handler.apply(p1, p2, p3, p4)));
             }
         }
 
@@ -272,7 +272,7 @@ public interface Route<T> extends RouteSource {
             }
 
             default ContentTypeBuilder<R> toValue(Fn5<R, T1, T2, T3, T4, T5> handler) {
-                return to((p1, p2, p3, p4, p5) -> Promise.successful(handler.apply(p1, p2, p3, p4, p5)));
+                return to((p1, p2, p3, p4, p5) -> Promise.success(handler.apply(p1, p2, p3, p4, p5)));
             }
         }
 
@@ -284,7 +284,7 @@ public interface Route<T> extends RouteSource {
             }
 
             default ContentTypeBuilder<R> toValue(Fn6<R, T1, T2, T3, T4, T5, T6> handler) {
-                return to((p1, p2, p3, p4, p5, p6) -> Promise.successful(handler.apply(p1, p2, p3, p4, p5, p6)));
+                return to((p1, p2, p3, p4, p5, p6) -> Promise.success(handler.apply(p1, p2, p3, p4, p5, p6)));
             }
         }
 
@@ -296,7 +296,7 @@ public interface Route<T> extends RouteSource {
             }
 
             default ContentTypeBuilder<R> toValue(Fn7<R, T1, T2, T3, T4, T5, T6, T7> handler) {
-                return to((p1, p2, p3, p4, p5, p6, p7) -> Promise.successful(handler.apply(p1, p2, p3, p4, p5, p6, p7)));
+                return to((p1, p2, p3, p4, p5, p6, p7) -> Promise.success(handler.apply(p1, p2, p3, p4, p5, p6, p7)));
             }
         }
 
@@ -308,7 +308,7 @@ public interface Route<T> extends RouteSource {
             }
 
             default ContentTypeBuilder<R> toValue(Fn8<R, T1, T2, T3, T4, T5, T6, T7, T8> handler) {
-                return to((p1, p2, p3, p4, p5, p6, p7, p8) -> Promise.successful(handler.apply(p1, p2, p3, p4, p5, p6, p7, p8)));
+                return to((p1, p2, p3, p4, p5, p6, p7, p8) -> Promise.success(handler.apply(p1, p2, p3, p4, p5, p6, p7, p8)));
             }
         }
 
@@ -320,7 +320,7 @@ public interface Route<T> extends RouteSource {
             }
 
             default ContentTypeBuilder<R> toValue(Fn9<R, T1, T2, T3, T4, T5, T6, T7, T8, T9> handler) {
-                return to((p1, p2, p3, p4, p5, p6, p7, p8, p9) -> Promise.successful(handler.apply(p1, p2, p3, p4, p5, p6, p7, p8, p9)));
+                return to((p1, p2, p3, p4, p5, p6, p7, p8, p9) -> Promise.success(handler.apply(p1, p2, p3, p4, p5, p6, p7, p8, p9)));
             }
         }
 
@@ -341,7 +341,7 @@ public interface Route<T> extends RouteSource {
         }
 
         default Route<R> toText(Supplier<R> handler) {
-            return to(_ -> Promise.successful(handler.get())).asText();
+            return to(_ -> Promise.success(handler.get())).asText();
         }
 
         default Route<R> toJson(Handler<R> handler) {
@@ -349,7 +349,7 @@ public interface Route<T> extends RouteSource {
         }
 
         default Route<R> toJson(Supplier<R> handler) {
-            return to(_ -> Promise.successful(handler.get())).asJson();
+            return to(_ -> Promise.success(handler.get())).asJson();
         }
     }
 
@@ -364,6 +364,10 @@ public interface Route<T> extends RouteSource {
 
     interface JsonBodyParameterBuilder<R, T> {
         ContentTypeBuilder<R> to(Fn1<Promise<R>, T> handler);
+
+        default ContentTypeBuilder<R> toResult(Fn1<Result<R>, T> handler) {
+            return to(body -> handler.apply(body).toPromise());
+        }
 
         default Route<R> toJson(Fn1<Promise<R>, T> handler) {
             return to(handler).asJson();

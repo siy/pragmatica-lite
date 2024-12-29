@@ -18,7 +18,6 @@
 package org.pragmatica.lang;
 
 import org.pragmatica.lang.Functions.*;
-import org.pragmatica.lang.Result.Cause;
 import org.pragmatica.lang.Tuple.*;
 import org.pragmatica.lang.io.CoreError;
 import org.pragmatica.lang.io.CoreError.Cancelled;
@@ -75,6 +74,7 @@ This makes synchronization points in code more explicit, easier to write and rea
   Only two base methods are used to implement all dependent and independent action methods. All remaining transformations
   and event handling methods are implemented in terms of these two methods.
  */
+@SuppressWarnings("unused")
 public interface Promise<T> {
 
     // For all dependent actions
@@ -88,7 +88,7 @@ public interface Promise<T> {
     }
 
     default <U> Promise<U> flatMap(Fn1<Promise<U>, ? super T> transformation) {
-        return fold(result -> result.fold(Promise::<U>failed, transformation));
+        return fold(result -> result.fold(Promise::<U>failure, transformation));
     }
 
     default Promise<T> mapError(Fn1<Cause, Cause> transformation) {
@@ -134,7 +134,7 @@ public interface Promise<T> {
     }
 
     default <U> Promise<T> onSuccessDo(Fn1<Promise<U>, T> action) {
-        return fold(result -> result.fold(Promise::<T>failed,
+        return fold(result -> result.fold(Promise::<T>failure,
                                           value -> action.apply(value)
                                                          .flatMap(_ -> resolved(result))));
     }
@@ -155,7 +155,7 @@ public interface Promise<T> {
     default <U> Promise<T> onFailureDo(Fn1<Promise<U>, Cause> action) {
         return fold(result -> result.fold(cause -> action.apply(cause)
                                                          .flatMap(_ -> resolved(result)),
-                                          Promise::successful));
+                                          Promise::success));
     }
 
     default Promise<T> withFailure(Consumer<Cause> consumer) {
@@ -201,7 +201,7 @@ public interface Promise<T> {
     }
 
     default Promise<Unit> mapToUnit() {
-        return map(Unit::unit);
+        return map(Unit::toUnit);
     }
 
     static <T> Promise<T> promise() {
@@ -212,20 +212,20 @@ public interface Promise<T> {
         return new PromiseImpl<>(value);
     }
 
-    static <T> Promise<T> successful(T value) {
+    static <T> Promise<T> success(T value) {
         return new PromiseImpl<>(Result.success(value));
     }
 
     static <T> Promise<T> ok(T value) {
-        return successful(value);
+        return success(value);
     }
 
-    static <T> Promise<T> failed(Cause cause) {
+    static <T> Promise<T> failure(Cause cause) {
         return new PromiseImpl<>(Result.failure(cause));
     }
 
     static <T> Promise<T> err(Cause cause) {
-        return failed(cause);
+        return failure(cause);
     }
 
     static <T> Promise<T> promise(Consumer<Promise<T>> consumer) {
@@ -320,7 +320,7 @@ public interface Promise<T> {
     @SuppressWarnings("unchecked")
     static <T> Promise<List<Result<T>>> allOf(Collection<Promise<T>> promises) {
         if (promises.isEmpty()) {
-            return Promise.successful(List.of());
+            return Promise.success(List.of());
         }
 
         var array = promises.toArray(new Promise[0]);
@@ -725,7 +725,7 @@ final class PromiseImpl<T> implements Promise<T> {
     @Override
     public String toString() {
         return result == null ? "Promise<>"
-                              : STR."Promise<\{result}\{'>'}";
+                              : "Promise<" + result + '>';
     }
 
     @Override

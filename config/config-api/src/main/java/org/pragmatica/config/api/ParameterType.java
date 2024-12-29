@@ -7,11 +7,7 @@ import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.TypeToken;
 
 import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
+import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -30,6 +26,7 @@ import static org.pragmatica.lang.Result.success;
  * Use of sealed interface and records enables preserving type information. All possible combinations of parameter types are defined as constants.
  */
 public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
+    @SuppressWarnings("unused")
     default <R> Option<ParameterType<R>> elementType() {
         return none();
     }
@@ -49,9 +46,7 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
 
             for (var chr : chars) {
                 switch (state.process(chr)) {
-                    case ELEMENT_READY -> {
-                        state.state = StringArrayParameter.State.SKIP_TO_COMMA;
-                    }
+                    case ELEMENT_READY -> state.state = StringArrayParameter.State.SKIP_TO_COMMA;
                     case ELEMENT_READY_COMMA -> {
                         state.element.append(chr);
                         state.state = StringArrayParameter.State.INITIAL;
@@ -63,7 +58,7 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
             if (state.state == StringArrayParameter.State.INITIAL || state.state == StringArrayParameter.State.SKIP_TO_COMMA) {
                 return success(state.element.toString().trim());
             } else {
-                return new InvalidInput(STR."The value [\{value}] can't be parsed into String").result();
+                return new InvalidInput("The value [" + value + "] can't be parsed into String", none()).result();
             }
         }
 
@@ -154,7 +149,7 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
                 return Result.success(false);
             }
 
-            return new InvalidInput(STR."The value [\{param1}] can't be parsed into Boolean").result();
+            return new InvalidInput("The value [" + param1 + "] can't be parsed into Boolean", none()).result();
         }
 
         public static final BooleanParameter INSTANCE = new BooleanParameter();
@@ -231,7 +226,7 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
             var upperCase = param1.toUpperCase(Locale.ROOT);
 
             return tryParse(upperCase)
-                .orElse(() -> tryParse(STR."PT\{upperCase}"));
+                .orElse(() -> tryParse("PT" + upperCase));
         }
 
         private static Result<Duration> tryParse(String param1) {
@@ -266,7 +261,7 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
                 return splitString(values1, typeMessage)
                     .map(List::stream);
             } else {
-                return new InvalidInput(STR."The value [\{value}] can't be parsed into \{typeMessage}").result();
+                return new InvalidInput("The value [" + value + "] can't be parsed into " + typeMessage, none()).result();
             }
         }
 
@@ -337,7 +332,7 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
                         }
                         yield state;
                     }
-                    default -> throw new IllegalStateException(STR."Unexpected state: \{state}");
+                    default -> throw new IllegalStateException("Unexpected state: " + state);
                 };
             }
 
@@ -381,7 +376,7 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
                 }
                 return success(result);
             } else {
-                return new InvalidInput(STR."The value [\{value}] can't be parsed into \{typeMessage}").result();
+                return new InvalidInput("The value [" + value + "] can't be parsed into " + typeMessage, none()).result();
             }
         }
 
@@ -519,6 +514,7 @@ public sealed interface ParameterType<T> extends Fn1<Result<T>, String> {
     non-sealed interface CustomParameterType<T> extends ParameterType<T> {
     }
 
+    @SuppressWarnings("rawtypes")
     static List<ParameterType> knownParameterTypes() {
         var builtIn = List.of(
             StringParameter.INSTANCE,

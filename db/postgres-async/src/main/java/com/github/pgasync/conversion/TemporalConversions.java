@@ -48,7 +48,7 @@ final class TemporalConversions {
                 default -> returnError(oid, "LocalDate");
             };
         } catch (DateTimeParseException e) {
-            throw new SqlException(STR."Invalid date: \{value}");
+            throw new SqlException("Invalid date: " + value);
         }
     }
 
@@ -60,7 +60,7 @@ final class TemporalConversions {
                 default -> returnError(oid, "LocalTime");
             };
         } catch (DateTimeParseException e) {
-            throw new SqlException(STR."Invalid time: \{value}");
+            throw new SqlException("Invalid time: " + value);
         }
     }
 
@@ -72,7 +72,7 @@ final class TemporalConversions {
                 default -> returnError(oid, "LocalDateTime");
             };
         } catch (DateTimeParseException e) {
-            throw new SqlException(STR."Invalid date/time: \{value}");
+            throw new SqlException("Invalid date/time: " + value);
         }
     }
 
@@ -84,7 +84,7 @@ final class TemporalConversions {
                 default -> returnError(oid, "ZonedDateTime");
             };
         } catch (DateTimeParseException e) {
-            throw new SqlException(STR."Invalid date/time: \{value}");
+            throw new SqlException("Invalid date/time: " + value);
         }
     }
 
@@ -96,7 +96,7 @@ final class TemporalConversions {
                 default -> returnError(oid, "OffsetDateTime");
             };
         } catch (DateTimeParseException e) {
-            throw new SqlException(STR."Invalid date/time: \{value}");
+            throw new SqlException("Invalid date/time: " + value);
         }
     }
 
@@ -108,7 +108,7 @@ final class TemporalConversions {
                 default -> returnError(oid, "Instant");
             };
         } catch (DateTimeParseException e) {
-            throw new SqlException(STR."Invalid time: \{value}");
+            throw new SqlException("Invalid time: " + value);
         }
     }
 

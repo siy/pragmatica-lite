@@ -103,10 +103,10 @@ public final class YamlFileReader {
                             if (lineTrim.length() > 1) {
                                 var value = lineTrim.substring(1).trim();
 
-                                map.compute(currentKey, (_, v) -> v == null ? value : (STR."\{v},\{value}"));
+                                map.compute(currentKey, (_, v) -> v == null ? value : (v + "," + value));
                             }
                         } else {
-                            map.compute(currentKey, (_, v) -> v == null ? lineTrim : (STR."\{v} \{lineTrim}"));
+                            map.compute(currentKey, (_, v) -> v == null ? lineTrim : (v + " " + lineTrim));
                         }
                         continue;
                     }
@@ -125,10 +125,12 @@ public final class YamlFileReader {
                     int spaceCount = countLeadingIndent(line);
 
                     if (currentKey == null || spaceCount <= lastSpaceCount) {
-                        return YamlParseError.invalidSyntax(STR."invalid key \{keyTrim}", lineIndex, line).result();
+                        return YamlParseError.invalidSyntax("invalid key " + keyTrim, lineIndex, line).result();
                     }
 
-                    map.compute(currentKey, (_, v) -> v == null ? lineTrim : STR."\{v} \{lineTrim}");
+                    map.compute(currentKey, (_, v) -> v == null
+                                                      ? lineTrim
+                                                      : v + " " + lineTrim);
                     continue;
                 }
 
@@ -137,7 +139,9 @@ public final class YamlFileReader {
                 var parentNode = parentEntry != null ? parentEntry.getValue() : null;
 
                 if (keyValue[1].isBlank()) {
-                    lastParentKey = parentNode != null ? STR."\{parentNode}.\{keyTrim}" : key;
+                    lastParentKey = parentNode != null
+                                    ? parentNode + "." + keyTrim
+                                    : key;
                     nodes.put(spaceCount, lastParentKey);
                     currentKey = lastParentKey;
                 } else {
@@ -145,7 +149,7 @@ public final class YamlFileReader {
                         lastParentKey = null;
                     }
 
-                    var fullKey = lastParentKey != null ? STR."\{lastParentKey}.\{key}" : key;
+                    var fullKey = lastParentKey != null ? lastParentKey + "." + key : key;
 
                     map.put(fullKey, extractValue(keyValue[1]));
                     currentKey = fullKey;

@@ -3,12 +3,14 @@ package com.github.pgasync.async;
 import com.github.pgasync.SqlError;
 import com.github.pgasync.net.SqlException;
 import org.pragmatica.lang.Option;
-import org.pragmatica.lang.Result.Cause;
+import org.pragmatica.lang.Cause;
+
+import java.util.Arrays;
 
 public record ThrowableCause(Throwable throwable, Option<Cause> source) implements Cause {
     @Override
     public String message() {
-        return STR."\{throwable.getMessage()}\n\{throwable.getStackTrace()}";
+        return throwable.getMessage() + "\n" + Arrays.toString(throwable.getStackTrace());
     }
 
     public static ThrowableCause asCause(Throwable throwable) {

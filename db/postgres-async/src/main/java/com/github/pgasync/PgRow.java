@@ -239,7 +239,7 @@ public class PgRow implements Row, KeyToValue {
         var column = columnsByName.get(key.toLowerCase(Locale.ROOT));
 
         if (column == null) {
-            return new SqlError.ColumnNotFound(STR."Unknown column '\{key}'").result();
+            return new SqlError.ColumnNotFound("Unknown column '" + key + "'").result();
         }
 
         if (typeToken.rawType().equals(Option.class)) {
@@ -259,7 +259,7 @@ public class PgRow implements Row, KeyToValue {
         var column = columnsByName.get(name.toLowerCase(Locale.ROOT));
 
         if (column == null) {
-            throw new SqlException(STR."Unknown column '\{name}'");
+            throw new SqlException("Unknown column '" + name + "'");
         }
 
         return column;

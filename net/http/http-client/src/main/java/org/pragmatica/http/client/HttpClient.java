@@ -24,7 +24,6 @@ import org.pragmatica.uri.IRI;
 import java.nio.charset.StandardCharsets;
 
 import static org.pragmatica.dns.DomainName.domainName;
-import static org.pragmatica.http.HttpError.httpError;
 import static org.pragmatica.http.protocol.HttpStatus.NOT_IMPLEMENTED;
 import static org.pragmatica.lang.Promise.resolved;
 import static org.pragmatica.lang.Result.*;
@@ -58,20 +57,20 @@ public interface HttpClient {
 }
 
 record HttpClientImpl(HttpClientConfiguration configuration, Bootstrap bootstrap) implements HttpClient {
-    private static final HttpError ONLY_HTTP_IS_SUPPORTED = httpError(NOT_IMPLEMENTED, "Only HTTP is supported");
-    private static final HttpError ONLY_ABSOLUTE_IRI_IS_SUPPORTED = httpError(NOT_IMPLEMENTED, "Only HTTP is supported");
-    private static final HttpError MISSING_CUSTOM_CODEC_ERROR = HttpError.httpError(NOT_IMPLEMENTED, "Custom codec is missing in configuration");
-    private static final HttpError NON_BINARY_VALUE_ERROR = HttpError.httpError(NOT_IMPLEMENTED, "Content type is binary, but value is not a byte array or ByteBuf");
+    private static final HttpError ONLY_HTTP_IS_SUPPORTED = NOT_IMPLEMENTED.with("Only HTTP is supported");
+    private static final HttpError ONLY_ABSOLUTE_IRI_IS_SUPPORTED = NOT_IMPLEMENTED.with("Only HTTP is supported");
+    private static final HttpError MISSING_CUSTOM_CODEC_ERROR = NOT_IMPLEMENTED.with("Custom codec is missing in configuration");
+    private static final HttpError NON_BINARY_VALUE_ERROR = NOT_IMPLEMENTED.with("Content type is binary, but value is not a byte array or ByteBuf");
     private static final DomainName LOCALHOST = domainName("localhost");
 
     @Override
     public <T> Promise<HttpClientResponse> call(HttpClientRequest<T> request) {
         if (!request.iri().isAbsolute()) {
-            return Promise.failed(ONLY_ABSOLUTE_IRI_IS_SUPPORTED);
+            return ONLY_ABSOLUTE_IRI_IS_SUPPORTED.promise();
         }
 
         if (!request.iri().isHttp()) {
-            return Promise.failed(ONLY_HTTP_IS_SUPPORTED);
+            return ONLY_HTTP_IS_SUPPORTED.promise();
         }
 
         var domain = request.iri()
@@ -121,7 +120,7 @@ record HttpClientImpl(HttpClientConfiguration configuration, Bootstrap bootstrap
         return resolved(serializedRequest)
             .flatMap(requestContent -> Promise.promise(promise -> {
                 channel.pipeline()
-                       .addLast(new ContextHandler<>(promise, request, configuration));
+                       .addLast(new ContextHandler(promise, configuration));
                 channel.write(requestContent);
             }));
     }
@@ -195,14 +194,12 @@ record HttpClientImpl(HttpClientConfiguration configuration, Bootstrap bootstrap
     }
 }
 
-class ContextHandler<T> extends SimpleChannelInboundHandler<FullHttpResponse> {
+class ContextHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
     private final Promise<HttpClientResponse> promise;
-    private final HttpClientRequest<T> request;
     private final HttpClientConfiguration configuration;
 
-    public ContextHandler(Promise<HttpClientResponse> promise, HttpClientRequest<T> request, HttpClientConfiguration configuration) {
+    public ContextHandler(Promise<HttpClientResponse> promise, HttpClientConfiguration configuration) {
         this.promise = promise;
-        this.request = request;
         this.configuration = configuration;
     }
 

@@ -3,7 +3,7 @@ package org.pragmatica.dns.inet;
 import org.pragmatica.dns.ResolverErrors.InvalidIpAddress;
 import org.pragmatica.dns.ResolverErrors.UnknownError;
 import org.pragmatica.lang.Result;
-import org.pragmatica.lang.Result.Cause;
+import org.pragmatica.lang.Cause;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;

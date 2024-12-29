@@ -40,6 +40,8 @@ import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.util.List;
 
+import static org.pragmatica.lang.Unit.unit;
+
 /**
  * Netty messages stream to Postgres backend.
  *
@@ -96,7 +98,7 @@ public class NettyPgProtocolStream extends PgProtocolStream {
                    ctx.close()
                       .addListener(closed -> {
                           if (closed.isSuccess()) {
-                              uponClose.succeed(Unit.aUnit());
+                              uponClose.succeed(unit());
                           } else {
                               uponClose.fail(ThrowableCause.asCause(closed.cause()));
                           }

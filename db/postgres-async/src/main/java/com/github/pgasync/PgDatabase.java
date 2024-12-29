@@ -8,6 +8,8 @@ import org.pragmatica.lang.Unit;
 
 import java.util.function.Supplier;
 
+import static org.pragmatica.lang.Unit.unit;
+
 public class PgDatabase extends PgConnectible {
 
     public PgDatabase(ConnectibleBuilder.ConnectibleConfiguration properties, Supplier<ThrowingPromise<ProtocolStream>> obtainStream) {
@@ -33,6 +35,6 @@ public class PgDatabase extends PgConnectible {
 
     @Override
     public ThrowingPromise<Unit> close() {
-        return ThrowingPromise.successful(Unit.aUnit());
+        return ThrowingPromise.successful(unit());
     }
 }

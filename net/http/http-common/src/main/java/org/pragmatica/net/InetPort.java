@@ -27,6 +27,6 @@ public record InetPort(int port) {
 
     @Override
     public String toString() {
-        return STR."InetPort(\{port})";
+        return "InetPort(" + port + ")";
     }
 }

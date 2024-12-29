@@ -231,13 +231,13 @@ public sealed interface Option<T> permits Some, None {
 
     /**
      * Convert current instance to instance of {@link Result}. The present instance is converted into success result. The empty instance is converted
-     * into failure result with provided {@link Result.Cause}.
+     * into failure result with provided {@link Cause}.
      *
      * @param cause the failure necessary for conversion of empty instance.
      *
      * @return created instance
      */
-    default Result<T> toResult(Result.Cause cause) {
+    default Result<T> toResult(Cause cause) {
         return fold(cause::result, Result::success);
     }
 
@@ -339,7 +339,7 @@ public sealed interface Option<T> permits Some, None {
 
         @Override
         public String toString() {
-            return STR."Some(\{value})";
+            return "Some(" + value + ")";
         }
     }
 

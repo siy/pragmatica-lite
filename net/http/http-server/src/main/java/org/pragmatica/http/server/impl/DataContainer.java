@@ -7,7 +7,7 @@ import org.pragmatica.http.protocol.CommonHeaders;
 import org.pragmatica.http.protocol.HttpHeaderName;
 import org.pragmatica.http.protocol.HttpStatus;
 import org.pragmatica.http.server.routing.Redirect;
-import org.pragmatica.lang.Result.Cause;
+import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Tuple.Tuple2;
 
 import java.net.URLEncoder;

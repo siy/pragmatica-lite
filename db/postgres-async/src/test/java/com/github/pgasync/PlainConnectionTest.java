@@ -63,7 +63,7 @@ public class PlainConnectionTest {
         final int count = 100;
 
         range(0, count)
-            .mapToObj(value -> STR."\{value}")
+            .boxed()
             .forEach(value -> plain.completeQuery("INSERT INTO PC_TEST_1 VALUES($1)", value).await());
 
         assertEquals(count,
@@ -77,7 +77,15 @@ public class PlainConnectionTest {
     public void shouldRunScript() {
         final int count = 25;
         range(0, count).forEach(value -> plain.completeScript(
-            STR."INSERT INTO PC_TEST_2 VALUES('\{value}');INSERT INTO PC_TEST_2 VALUES('_\{value}');INSERT INTO PC_TEST_2 VALUES('__\{value}');INSERT INTO PC_TEST_2 VALUES('___\{value}');"
+            "INSERT INTO PC_TEST_2 VALUES('"
+            + value
+            + "');INSERT INTO PC_TEST_2 VALUES('_"
+            + value
+            + "');INSERT INTO PC_TEST_2 VALUES('__"
+            + value
+            + "');INSERT INTO PC_TEST_2 VALUES('___"
+            + value
+            + "');"
         ).await());
 
         assertEquals(count * 4,

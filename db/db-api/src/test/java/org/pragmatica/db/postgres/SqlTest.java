@@ -30,7 +30,7 @@ class SqlTest {
     static void start() {
         postgres.start();
         dbEnv = DbEnv.with(new DbEnvConfig(
-            IRI.fromString(STR."postgres://localhost:\{postgres.getMappedPort(5432)}/\{postgres.getDatabaseName()}"),
+            IRI.fromString("postgres://localhost:" + postgres.getMappedPort(5432) + "/" + postgres.getDatabaseName()),
             postgres.getUsername(),
             postgres.getPassword(),
             -1,
@@ -185,7 +185,17 @@ class SqlTest {
 
         var freq = (int) (iterationsCount / ((end - start) / 1_000_000_000.0));
 
-        System.out.println(STR."Executed \{iterationsCount} queries in \{(end - start)
-                                                                         / 1_000_000} ms (\{freq} RPS), \{successes.get()} succeeded, \{failures.get()} failed");
+        System.out.println("Executed "
+                           + iterationsCount
+                           + " queries in "
+                           + (end - start)
+                             / 1_000_000
+                           + " ms ("
+                           + freq
+                           + " RPS), "
+                           + successes.get()
+                           + " succeeded, "
+                           + failures.get()
+                           + " failed");
     }
 }

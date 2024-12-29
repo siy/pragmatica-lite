@@ -22,11 +22,11 @@ class RequestRouterTest {
 
         Route.patch("/one")
              .withPath(aString())
-             .toValue(param1 -> STR."Received /\{param1}")
+             .toValue(param1 -> "Received /" + param1)
              .asText(),
         Route.patch("/two")
              .withPath(aInteger(), spacer("space"), aLong())
-             .toValue((param1, param2, param3) -> STR."Received /\{param1}, \{param2}, \{param3}")
+             .toValue((param1, param2, param3) -> "Received /" + param1 + ", " + param2 + ", " + param3)
              .asText()
     );
 
@@ -63,7 +63,7 @@ class RequestRouterTest {
         table.findRoute(HttpMethod.GET, path)
             .onEmpty(Assertions::fail)
             .onPresent(route -> route.handler().handle(null)
-                .onSuccess(value -> assertEquals(path, STR."/\{value}"))
+                .onSuccess(value -> assertEquals(path, "/" + value))
                 .onFailure(_ -> fail()));
     }
 }
