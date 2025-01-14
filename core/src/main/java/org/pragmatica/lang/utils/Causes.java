@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2023 Sergiy Yevtushenko.
+ *  Copyright (c) 2023-2025 Sergiy Yevtushenko.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,7 +25,10 @@ import org.pragmatica.lang.Cause;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static org.pragmatica.lang.Option.none;
 import static org.pragmatica.lang.Option.some;
@@ -34,9 +37,8 @@ import static org.pragmatica.lang.Option.some;
  * Frequently used variants of {@link Cause}.
  */
 @SuppressWarnings("unused")
-public final class Causes {
-    private Causes() {
-    }
+public sealed interface Causes {
+    record unused() implements Causes {}
 
     /**
      * This method enables more convenient tracing of the failure. The general pattern is the following:
@@ -52,7 +54,7 @@ public final class Causes {
      *
      * @return new Cause, with {@link  Cause#source()} set to original cause.
      */
-    public static Cause trace(Cause cause) {
+    static Cause trace(Cause cause) {
         return cause(Thread.currentThread().getStackTrace()[6].toString(), cause);
     }
 
@@ -69,11 +71,11 @@ public final class Causes {
      *
      * @return created instance
      */
-    public static Cause cause(String message) {
+    static Cause cause(String message) {
         return new SimpleCause(message, none());
     }
 
-    public static Cause cause(String message, Cause source) {
+    static Cause cause(String message, Cause source) {
         return new SimpleCause(message, some(source));
     }
 
@@ -84,7 +86,7 @@ public final class Causes {
      *
      * @return created instance
      */
-    public static Cause fromThrowable(Throwable throwable) {
+    static Cause fromThrowable(Throwable throwable) {
         var sw = new StringWriter();
         throwable.printStackTrace(new PrintWriter(sw));
 
@@ -102,7 +104,34 @@ public final class Causes {
      *
      * @return created mapping function
      */
-    public static <T> Fn1<Cause, T> with1(String template) {
+    static <T> Fn1<Cause, T> forValue(String template) {
         return (T input) -> cause(MessageFormat.format(template, input));
+    }
+
+    interface CompositeCause extends Cause {
+        CompositeCause append(Cause cause);
+        boolean isEmpty();
+    }
+
+    static CompositeCause composite() {
+        record compositeCause(String message, Option<Cause> source, List<Cause> causes) implements CompositeCause {
+            @Override
+            public CompositeCause append(Cause cause) {
+                causes().add(cause);
+                return this;
+            }
+
+            @Override
+            public Stream<Cause> stream() {
+                return causes().stream();
+            }
+
+            @Override
+            public boolean isEmpty() {
+                return causes().isEmpty();
+            }
+        }
+
+        return new compositeCause("", none(), new ArrayList<>());
     }
 }

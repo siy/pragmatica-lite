@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2023 Sergiy Yevtushenko.
+ *  Copyright (c) 2023-2025 Sergiy Yevtushenko.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ public sealed interface CoreError extends Cause {
     record Cancelled(String message) implements CoreError {}
     record Timeout(String message) implements CoreError {}
     record Fault(String message) implements CoreError {}
-    record InvalidInput(String message) implements CoreError {}
     record Exception(String message, Throwable cause) implements CoreError {
         public Exception(Throwable cause) {
             this(cause.getMessage(), cause);

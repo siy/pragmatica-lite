@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020-2023 Sergiy Yevtushenko.
+ *  Copyright (c) 2020-2025 Sergiy Yevtushenko.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ package org.pragmatica.lang;
 import org.pragmatica.lang.Functions.*;
 import org.pragmatica.lang.Tuple.*;
 import org.pragmatica.lang.io.CoreError;
-import org.pragmatica.lang.io.CoreError.Cancelled;
 import org.pragmatica.lang.io.Timeout;
 import org.pragmatica.lang.utils.Causes;
 import org.pragmatica.lang.utils.ResultCollector;
@@ -281,7 +280,7 @@ public interface Promise<T> {
 
     /**
      * Return promise which will be resolved once any of the promises provided as a parameters will be resolved with success. If none of the promises
-     * will be resolved with success, then created instance will be resolved with {@link Cancelled}.
+     * will be resolved with success, then created instance will be resolved with {@link CoreError.Cancelled}.
      *
      * @param promises Input promises
      *
@@ -344,7 +343,10 @@ public interface Promise<T> {
      * @return Promise instance, which will be resolved with all collected results.
      */
     static <T1> Mapper1<T1> all(Promise<T1> promise1) {
-        return () -> promise1.map(Tuple::tuple);
+        var causes = Causes.composite();
+
+        return () -> promise1.map(Tuple::tuple)
+                             .mapError(causes::append);
     }
 
     /**
@@ -358,7 +360,7 @@ public interface Promise<T> {
      */
     @SuppressWarnings("unchecked")
     static <T1, T2> Mapper2<T1, T2> all(Promise<T1> promise1, Promise<T2> promise2) {
-        return () -> setup(values -> Tuple.tuple((T1) values[0], (T2) values[1]), promise1, promise2);
+        return () -> setupResult(values -> Result.all((Result<T1>) values[0], (Result<T2>) values[1]).id(), promise1, promise2);
     }
 
     /**
@@ -375,7 +377,8 @@ public interface Promise<T> {
     static <T1, T2, T3> Mapper3<T1, T2, T3> all(
         Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3) {
 
-        return () -> setup(values -> Tuple.tuple((T1) values[0], (T2) values[1], (T3) values[2]), promise1, promise2, promise3);
+        return () -> setupResult(values -> Result.all((Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2]).id(),
+                                 promise1, promise2, promise3);
     }
 
     /**
@@ -393,8 +396,10 @@ public interface Promise<T> {
     static <T1, T2, T3, T4> Mapper4<T1, T2, T3, T4> all(
         Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4) {
 
-        return () -> setup(values -> Tuple.tuple((T1) values[0], (T2) values[1], (T3) values[2], (T4) values[3]),
-                           promise1, promise2, promise3, promise4);
+        return () -> setupResult(values -> Result.all(
+                                     (Result<T1>) values[0], (Result<T2>) values[1],
+                                     (Result<T3>) values[2], (Result<T4>) values[3]).id(),
+                                 promise1, promise2, promise3, promise4);
     }
 
     /**
@@ -413,8 +418,10 @@ public interface Promise<T> {
     static <T1, T2, T3, T4, T5> Mapper5<T1, T2, T3, T4, T5> all(
         Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4, Promise<T5> promise5) {
 
-        return () -> setup(values -> Tuple.tuple((T1) values[0], (T2) values[1], (T3) values[2], (T4) values[3], (T5) values[4]),
-                           promise1, promise2, promise3, promise4, promise5);
+        return () -> setupResult(values -> Result.all(
+                                     (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2],
+                                     (Result<T4>) values[3], (Result<T5>) values[4]).id(),
+                                 promise1, promise2, promise3, promise4, promise5);
     }
 
     /**
@@ -435,9 +442,10 @@ public interface Promise<T> {
         Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4,
         Promise<T5> promise5, Promise<T6> promise6) {
 
-        return () -> setup(values -> Tuple.tuple(
-                               (T1) values[0], (T2) values[1], (T3) values[2], (T4) values[3], (T5) values[4], (T6) values[5]),
-                           promise1, promise2, promise3, promise4, promise5, promise6);
+        return () -> setupResult(values -> Result.all(
+                                     (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2],
+                                     (Result<T4>) values[3], (Result<T5>) values[4], (Result<T6>) values[5]).id(),
+                                 promise1, promise2, promise3, promise4, promise5, promise6);
     }
 
     /**
@@ -459,10 +467,10 @@ public interface Promise<T> {
         Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4,
         Promise<T5> promise5, Promise<T6> promise6, Promise<T7> promise7) {
 
-        return () -> setup(values -> Tuple.tuple(
-                               (T1) values[0], (T2) values[1], (T3) values[2], (T4) values[3],
-                               (T5) values[4], (T6) values[5], (T7) values[6]),
-                           promise1, promise2, promise3, promise4, promise5, promise6, promise7);
+        return () -> setupResult(values -> Result.all(
+                                     (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2],
+                                     (Result<T4>) values[3], (Result<T5>) values[4], (Result<T6>) values[5], (Result<T7>) values[6]).id(),
+                                 promise1, promise2, promise3, promise4, promise5, promise6, promise7);
     }
 
     /**
@@ -485,10 +493,10 @@ public interface Promise<T> {
         Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4,
         Promise<T5> promise5, Promise<T6> promise6, Promise<T7> promise7, Promise<T8> promise8) {
 
-        return () -> setup(values -> Tuple.tuple(
-                               (T1) values[0], (T2) values[1], (T3) values[2], (T4) values[3],
-                               (T5) values[4], (T6) values[5], (T7) values[6], (T8) values[7]),
-                           promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8);
+        return () -> setupResult(values -> Result.all(
+                                     (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2], (Result<T4>) values[3],
+                                     (Result<T5>) values[4], (Result<T6>) values[5], (Result<T7>) values[6], (Result<T8>) values[7]).id(),
+                                 promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8);
     }
 
     /**
@@ -512,17 +520,17 @@ public interface Promise<T> {
         Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4, Promise<T5> promise5,
         Promise<T6> promise6, Promise<T7> promise7, Promise<T8> promise8, Promise<T9> promise9) {
 
-        return () -> setup(values -> Tuple.tuple(
-                               (T1) values[0], (T2) values[1], (T3) values[2], (T4) values[3], (T5) values[4],
-                               (T6) values[5], (T7) values[6], (T8) values[7], (T9) values[8]),
-                           promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8, promise9);
+        return () -> setupResult(values -> Result.all(
+                                     (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2], (Result<T4>) values[3], (Result<T5>) values[4],
+                                     (Result<T6>) values[5], (Result<T7>) values[6], (Result<T8>) values[7], (Result<T9>) values[8]).id(),
+                                 promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8, promise9);
     }
 
     Promise<?> UNIT = Promise.resolved(unitResult());
 
-    Result<?> OTHER_SUCCEEDED = Result.failure(new Cancelled("Cancelled because other Promise instance succeeded"));
+    Result<?> OTHER_SUCCEEDED = Result.failure(new CoreError.Cancelled("Cancelled because other Promise instance succeeded"));
 
-    Cancelled PROMISE_CANCELLED = new Cancelled("Promise cancelled");
+    CoreError.Cancelled PROMISE_CANCELLED = new CoreError.Cancelled("Promise cancelled");
 
     /**
      * Helper interface for convenient tuple transformation.
@@ -677,14 +685,14 @@ public interface Promise<T> {
         }
     }
 
-    private static <R> Promise<R> setup(FnX<R> transformer, Promise<?>... promises) {
+    private static <R> Promise<R> setupResult(FnX<Result<R>> transformer, Promise<?>... promises) {
         var promise = Promise.<R>promise();
-        var collector = resultCollector(promises.length, values -> promise.succeed(transformer.apply(values)));
+        var collector = resultCollector(promises.length, values -> promise.resolve(transformer.apply(values)));
 
         int count = 0;
         for (var p : promises) {
             final var index = count++;
-            p.onResult(result -> result.accept(promise::fail, value -> collector.registerEvent(index, value)));
+            p.onResult(result -> collector.registerEvent(index, result));
         }
 
         return promise;

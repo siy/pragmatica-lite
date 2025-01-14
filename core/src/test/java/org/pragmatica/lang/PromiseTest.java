@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2023 Sergiy Yevtushenko.
+ *  Copyright (c) 2023-2025 Sergiy Yevtushenko.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.lang.io.CoreError;
 import org.pragmatica.lang.io.Timeout;
+import org.pragmatica.lang.utils.Causes;
 
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
@@ -525,9 +526,14 @@ public class PromiseTest {
     }
 
     void assertIsFault(Cause cause) {
-        //noinspection SwitchStatementWithTooFewBranches
         switch (cause) {
             case CoreError.Fault _ -> {
+            }
+            case Causes.CompositeCause compositeCause -> {
+                if (compositeCause.isEmpty()) {
+                    fail("Composite cause is empty");
+                }
+                compositeCause.stream().forEach(this::assertIsFault);
             }
             default -> fail("Unexpected cause");
         }

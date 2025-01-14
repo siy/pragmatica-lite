@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020-2022 Sergiy Yevtushenko.
+ *  Copyright (c) 2020-2025 Sergiy Yevtushenko.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.pragmatica.lang.Result.err;
 
 class ResultTest {
     @Test
@@ -38,8 +39,8 @@ class ResultTest {
 
     @Test
     void failureResultsAreEqualIfFailureIsEqual() {
-        assertEquals(Result.failure(Causes.cause("123")), Result.success(123).filter(Causes.with1("{0}"), v -> v < 0));
-        assertNotEquals(Result.failure(Causes.cause("321")), Result.success(123).filter(Causes.with1("{0}"), v -> v < 0));
+        assertEquals(Result.failure(Causes.cause("123")), Result.success(123).filter(Causes.forValue("{0}"), v -> v < 0));
+        assertNotEquals(Result.failure(Causes.cause("321")), Result.success(123).filter(Causes.forValue("{0}"), v -> v < 0));
     }
 
     @Test
@@ -196,7 +197,7 @@ class ResultTest {
         Result.success(231)
               .onSuccess(value -> assertEquals(231, value))
               .onFailureRun(Assertions::fail)
-              .filter(Causes.with1("Value {0} is below threshold"), value -> value > 321)
+              .filter(Causes.forValue("Value {0} is below threshold"), value -> value > 321)
               .onSuccessRun(Assertions::fail)
               .onFailure(cause -> assertEquals("Value 231 is below threshold", cause.message()));
     }
@@ -210,6 +211,13 @@ class ResultTest {
         Result.lift(Causes::fromThrowable, () -> throwingFunction(4))
               .onFailure(cause -> fail(cause.message()))
               .onSuccess(value -> assertEquals("Input:4", value));
+    }
+
+    @Test
+    void causeIsProperlyFormatted() {
+        var cause = Causes.cause("Some error", Causes.cause("Some extra information"));
+
+        assertEquals("Failure:\n  Some error\n  Some extra information", err(cause).toString());
     }
 
     static String throwingFunction(int i) {
