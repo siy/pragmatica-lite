@@ -16,6 +16,8 @@
 
 package org.pragmatica.lang;
 
+import org.pragmatica.lang.Functions.Fn0;
+import org.pragmatica.lang.Functions.ThrowingFn0;
 import org.pragmatica.lang.io.CoreError;
 
 /**
@@ -101,12 +103,12 @@ public final class Unit implements Tuple.Tuple0 {
     }
 
     @Override
-    public <T> T map(Functions.Fn0<T> mapper) {
+    public <T> T map(Fn0<T> mapper) {
         return mapper.apply();
     }
 
     @Override
-    public <T> Result<T> lift(Functions.ThrowingFn0<T> mapper) {
+    public <T> Result<T> lift(ThrowingFn0<T> mapper) {
         try {
             return Result.success(mapper.apply());
         } catch (Throwable throwable) {

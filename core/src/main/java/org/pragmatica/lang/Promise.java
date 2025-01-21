@@ -76,87 +76,103 @@ This makes synchronization points in code more explicit, easier to write and rea
 @SuppressWarnings("unused")
 public interface Promise<T> {
 
-    // For all dependent actions
+    // Underlying method for all dependent actions
     <U> Promise<U> fold(Fn1<Promise<U>, Result<T>> action);
 
-    // For all independent actions
+    // Underlying method for all independent actions
     Promise<T> onResult(Consumer<Result<T>> action);
 
+    // Dependent
     default <U> Promise<U> map(Fn1<U, ? super T> transformation) {
         return replaceResult(result -> result.map(transformation));
     }
 
+    // Dependent
     default <U> Promise<U> flatMap(Fn1<Promise<U>, ? super T> transformation) {
         return fold(result -> result.fold(Promise::<U>failure, transformation));
     }
 
+    // Dependent
     default Promise<T> mapError(Fn1<Cause, Cause> transformation) {
         return replaceResult(result -> result.mapError(transformation));
     }
 
-    default Promise<T> traceError() {
+    // Dependent
+    default Promise<T> trace() {
         return mapError(Causes::trace);
     }
 
+    // Dependent
     default <U> Promise<U> replace(Supplier<U> transformation) {
         return map(_ -> transformation.get());
     }
 
-    default <U> Promise<U> mapResult(Fn1<Result<U>, T> transformation) {
+    // Dependent
+    default <U> Promise<U> mapResult(Fn1<Result<U>, ? super T> transformation) {
         return replaceResult(result -> result.flatMap(transformation));
     }
 
+    // Dependent
     default <U> Promise<U> replaceResult(Fn1<Result<U>, Result<T>> transformation) {
         return fold(result -> Promise.resolved(transformation.apply(result)));
     }
 
+    // Independent
     default Promise<T> onResultRun(Runnable action) {
         return onResult(_ -> action.run());
     }
 
-    default <U> Promise<T> onResultDo(Fn1<Promise<U>, Result<T>> action) {
+    // Dependent
+    default <U> Promise<T> withResultDo(Fn1<Promise<U>, Result<? super T>> action) {
         return fold(result -> action.apply(result)
                                     .flatMap(_ -> resolved(result)));
     }
 
     // Consume result as dependent action
-    default Promise<T> withResult(Consumer<Result<T>> consumer) {
+    default Promise<T> withResult(Consumer<Result<? super T>> consumer) {
         return fold(result -> Promise.resolved(result.onResult(() -> consumer.accept(result))));
     }
 
+    // Independent
     default Promise<T> onSuccess(Consumer<T> action) {
         return onResult(result -> result.onSuccess(action));
     }
 
+    // Independent
     default Promise<T> onSuccessRun(Runnable action) {
         return onResult(result -> result.onSuccessRun(action));
     }
 
-    default <U> Promise<T> onSuccessDo(Fn1<Promise<U>, T> action) {
+    // Dependent
+    default <U> Promise<T> withSuccessDo(Fn1<Promise<U>, ? super T> action) {
         return fold(result -> result.fold(Promise::<T>failure,
                                           value -> action.apply(value)
                                                          .flatMap(_ -> resolved(result))));
     }
 
-    // Consume result as dependent action
+    // Dependent
     default Promise<T> withSuccess(Consumer<T> consumer) {
         return fold(result -> Promise.resolved(result.onSuccess(consumer)));
     }
 
+    // Independent
     default Promise<T> onFailure(Consumer<Cause> action) {
         return onResult(result -> result.onFailure(action));
     }
 
+    // Independent
     default Promise<T> onFailureRun(Runnable action) {
         return onResult(result -> result.onFailureRun(action));
     }
 
-    default <U> Promise<T> onFailureDo(Fn1<Promise<U>, Cause> action) {
+    // Dependent
+    default <U> Promise<T> withFailureDo(Fn1<Promise<U>, Cause> action) {
         return fold(result -> result.fold(cause -> action.apply(cause)
                                                          .flatMap(_ -> resolved(result)),
                                           Promise::success));
     }
 
+    // Dependent
     default Promise<T> withFailure(Consumer<Cause> consumer) {
         return fold(result -> Promise.resolved(result.onFailure(consumer)));
     }
@@ -165,6 +181,7 @@ public interface Promise<T> {
 
     Promise<T> resolve(Result<T> value);
 
+    @SuppressWarnings("UnusedReturnValue")
     default Promise<T> succeed(T value) {
         return resolve(Result.success(value));
     }

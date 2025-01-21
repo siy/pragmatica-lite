@@ -155,7 +155,7 @@ public sealed interface Option<T> permits Some, None {
     }
 
     /**
-     * Return current value stored in current instance if current instance is present. If current instance is empty then return provided replacement
+     * Return value stored in current instance if current instance is present. If current instance is empty then return provided replacement
      * value.
      *
      * @param replacement Replacement value returned in case if current instance is empty
@@ -167,7 +167,7 @@ public sealed interface Option<T> permits Some, None {
     }
 
     /**
-     * Return current value stored in current instance if current instance is present. If current instance is empty then return value returned by
+     * Return value stored in current instance if current instance is present. If current instance is empty then return value returned by
      * provided supplier. If current instance is not empty then supplier is not invoked.
      *
      * @param supplier Supplier for replacement value returned in case if current instance is empty
