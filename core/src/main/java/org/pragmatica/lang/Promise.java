@@ -42,7 +42,7 @@ import static org.pragmatica.lang.utils.ActionableThreshold.threshold;
 import static org.pragmatica.lang.utils.ResultCollector.resultCollector;
 
 /**
- * This is a simple implementation of Promise monad. Promise is an one of the three {@code Core Monads} (along with {@link Option} and {@link Result})
+ * This is a simple implementation of Promise monad. Promise is a one of the three {@code Core Monads} (along with {@link Option} and {@link Result})
  * which are used to represent special variable states. Promise is a representation of the {@code eventually available value}.
  * <p>
  * This implementation serves three purposes:
@@ -54,7 +54,7 @@ import static org.pragmatica.lang.utils.ResultCollector.resultCollector;
  * Last two purposes are closely related - they both react on resolution event. But the semantics and requirements to the
  * event handling behavior is quite different.
  * <p>Promise-based asynchronous processing mental model built around representing processing
- * as sequence of transformations which are applied to the some value. Each transformation is applied to input values exactly once, executed
+ * as sequence of transformations which are applied to the same value. Each transformation is applied to input values exactly once, executed
  * with exactly one thread, in the order in which transformations are applied in the code. This mental model is easy to write and reason about
  * and has very low "asynchronous" mental overhead. Since each promise in the chain "depends" on the previous one, actions (transformations)
  * attached to the promise are called "dependent actions".
@@ -65,206 +65,468 @@ import static org.pragmatica.lang.utils.ResultCollector.resultCollector;
 /* Implementation notes: this version of the implementation is heavily inspired by the implementation of
 the CompletableFuture. There are several differences though:
 - Method naming consistent with widely used Optional and Streams.
-- More orthogonal API. No duplicates with "Async" suffix, for example. Instead provided "async" method, which accepts promise consumer lambda.
-- No methods which do a complex combination of futures. Instead provided type-safe "all" and "any" predicates for up to 9 promises.
+- More orthogonal API. No duplicates with "Async" suffix, for example. Instead, provided "async" method, which accepts promise consumer lambda.
+- No methods which do a complex combination of futures. Instead, provided type-safe "all" and "any" predicates for up to 9 promises.
 This makes synchronization points in code more explicit, easier to write and reason about.
 - No exceptions, no nulls. This makes implementation exceptionally simple comparing to the CompletableFuture.
-- Interface-heavy implementation, with only minimal number of methods actually implemented in the implementation class.
+- Interface-heavy implementation, with only minimal number of methods to implement.
   Only two base methods are used to implement all dependent and independent action methods. All remaining transformations
   and event handling methods are implemented in terms of these two methods.
  */
 @SuppressWarnings("unused")
 public interface Promise<T> {
-
-    // Underlying method for all dependent actions
+    /**
+     * Underlying method for all dependent actions. It applies provided action to the result of the promise and returns new promise.
+     *
+     * @param action Function to be applied to the result of the promise.
+     *
+     * @return New promise instance.
+     */
     <U> Promise<U> fold(Fn1<Promise<U>, Result<T>> action);
 
-    // Underlying method for all independent actions
+    /**
+     * Underlying method for all independent actions. It asynchronously runs consumer with the promise result once it is available.
+     *
+     * @param action Consumer to be executed with the result of the promise.
+     *
+     * @return Current promise instance.
+     */
     Promise<T> onResult(Consumer<Result<T>> action);
 
-    // Dependent
+    /**
+     * Transform the success value of the promise once promise is resolved.
+     * <br>
+     * This method is a dependent action and executed in the order in which transformations are written in the code.
+     *
+     * @param transformation Function to be applied to the success value of the promise.
+     *
+     * @return New promise instance.
+     */
     default <U> Promise<U> map(Fn1<U, ? super T> transformation) {
         return replaceResult(result -> result.map(transformation));
     }
 
-    // Dependent
+    /**
+     * Transform the success value of the promise once promise is resolved. The transformation function returns a new promise.
+     * <br>
+     * This method is a dependent action and executed in the order in which transformations are written in the code.
+     *
+     * @param transformation Function to be applied to the success value of the promise.
+     *
+     * @return New promise instance.
+     */
     default <U> Promise<U> flatMap(Fn1<Promise<U>, ? super T> transformation) {
         return fold(result -> result.fold(Promise::<U>failure, transformation));
     }
 
-    // Dependent
+    /**
+     * Transform the failure value of the promise once promise is resolved.
+     * <br>
+     * This method is a dependent action and executed in the order in which transformations are written in the code.
+     *
+     * @param transformation Function to be applied to the failure value of the promise.
+     *
+     * @return New promise instance.
+     */
     default Promise<T> mapError(Fn1<Cause, Cause> transformation) {
         return replaceResult(result -> result.mapError(transformation));
     }
 
-    // Dependent
+    /**
+     * Add tracing information to the failure value of the promise once promise is resolved.
+     * <br>
+     * This method is a dependent action and executed in the order in which transformations are written in the code.
+     *
+     * @return New promise instance.
+     */
     default Promise<T> trace() {
         return mapError(Causes::trace);
     }
 
-    // Dependent
-    default <U> Promise<U> replace(Supplier<U> transformation) {
-        return map(_ -> transformation.get());
+    /**
+     * Replace the value of the promise with the provided value once promise is resolved into success result.
+     * <br>
+     * This method is a dependent action and executed in the order in which transformations are written in the code.
+     *
+     * @param supplier New value supplier.
+     *
+     * @return New promise instance.
+     */
+    default <U> Promise<U> replace(Supplier<U> supplier) {
+        return map(_ -> supplier.get());
     }
 
-    // Dependent
+    /**
+     * Transform the result of the promise once promise is resolved.
+     * <br>
+     * This method is a dependent action and executed in the order in which transformations are written in the code.
+     *
+     * @param transformation Function to be applied to the result of the promise.
+     *
+     * @return New promise instance.
+     */
     default <U> Promise<U> mapResult(Fn1<Result<U>, ? super T> transformation) {
         return replaceResult(result -> result.flatMap(transformation));
     }
 
-    // Dependent
+    /**
+     * Replace the result of the promise with the transformed result once promise is resolved.
+     * <br>
+     * This method is a dependent action and executed in the order in which transformations are written in the code.
+     *
+     * @param transformation Function to be applied to the result of the promise.
+     *
+     * @return New promise instance.
+     */
     default <U> Promise<U> replaceResult(Fn1<Result<U>, Result<T>> transformation) {
         return fold(result -> Promise.resolved(transformation.apply(result)));
     }
 
-    // Independent
+    /**
+     * Run an asynchronous action once promise is resolved.
+     * <br>
+     * This method is an independent action and executed asynchronously.
+     *
+     * @param action Action to be executed once promise is resolved.
+     *
+     * @return Current promise instance.
+     */
     default Promise<T> onResultRun(Runnable action) {
         return onResult(_ -> action.run());
     }
 
-    // Dependent
+    /**
+     * Run an action once promise is resolved. The result of the action is ignored, but the action is executed in the order in which transformations
+     * are written in the code.
+     *
+     * @param action Action to be executed once promise is resolved.
+     *
+     * @return New promise instance.
+     */
     default <U> Promise<T> withResultDo(Fn1<Promise<U>, Result<? super T>> action) {
         return fold(result -> action.apply(result)
                                     .flatMap(_ -> resolved(result)));
     }
 
-    // Consume result as dependent action
+    /**
+     * Run an action once promise is resolved. The action is executed in the order in which transformations
+     *
+     * @param consumer Action to be executed once promise is resolved.
+     *
+     * @return New promise instance.
+     */
     default Promise<T> withResult(Consumer<Result<? super T>> consumer) {
         return fold(result -> Promise.resolved(result.onResult(() -> consumer.accept(result))));
     }
 
-    // Independent
+    /**
+     * Run an action once promise is resolved with success. The action is executed asynchronously.
+     *
+     * @param action Action to be executed once promise is resolved with success.
+     *
+     * @return Current promise instance.
+     */
     default Promise<T> onSuccess(Consumer<T> action) {
         return onResult(result -> result.onSuccess(action));
     }
 
-    // Independent
+    /**
+     * Run an action once promise is resolved with success. The action is executed asynchronously.
+     *
+     * @param action Action to be executed once promise is resolved with success.
+     *
+     * @return Current promise instance.
+     */
     default Promise<T> onSuccessRun(Runnable action) {
         return onResult(result -> result.onSuccessRun(action));
     }
 
-    // Dependent
-    default <U> Promise<T> withSuccessDo(Fn1<Promise<U>, ? super T> action) {
-        return fold(result -> result.fold(Promise::<T>failure,
-                                          value -> action.apply(value)
-                                                         .flatMap(_ -> resolved(result))));
-    }
-
-    // Dependent
+    /**
+     * Run an action once promise is resolved with success. The action is executed in the order in which transformations are written in the code.
+     *
+     * @param consumer Action to be executed once promise is resolved with success.
+     *
+     * @return New promise instance.
+     */
     default Promise<T> withSuccess(Consumer<T> consumer) {
         return fold(result -> Promise.resolved(result.onSuccess(consumer)));
     }
 
-    // Independent
+    /**
+     * Run an action once promise is resolved with success. The action is executed asynchronously.
+     *
+     * @param action Action to be executed once promise is resolved with success.
+     *
+     * @return Current promise instance.
+     */
     default Promise<T> onFailure(Consumer<Cause> action) {
         return onResult(result -> result.onFailure(action));
     }
 
-    // Independent
+    /**
+     * Run an action once promise is resolved with success. The action is executed asynchronously.
+     *
+     * @param action Action to be executed
+     */
     default Promise<T> onFailureRun(Runnable action) {
         return onResult(result -> result.onFailureRun(action));
     }
 
-    // Dependent
-    default <U> Promise<T> withFailureDo(Fn1<Promise<U>, Cause> action) {
-        return fold(result -> result.fold(cause -> action.apply(cause)
-                                                         .flatMap(_ -> resolved(result)),
-                                          Promise::success));
-    }
-
-    // Dependent
+    /**
+     * Run an action once promise is resolved with failure. The action is executed in the order in which transformations are written in the code.
+     *
+     * @param consumer Action to be executed once promise is resolved with failure.
+     *
+     * @return New promise instance.
+     */
     default Promise<T> withFailure(Consumer<Cause> consumer) {
         return fold(result -> Promise.resolved(result.onFailure(consumer)));
     }
 
+    /**
+     * Check if the promise is resolved.
+     *
+     * @return {@code true} if the promise is resolved, {@code false} otherwise.
+     */
     boolean isResolved();
 
+    /**
+     * Resolve the promise with the provided result.
+     *
+     * @param value Value to resolve the promise with.
+     *
+     * @return Current promise instance.
+     */
     Promise<T> resolve(Result<T> value);
 
+    /**
+     * Resolve the promise to success with the provided value.
+     *
+     * @param value Value to resolve the promise with.
+     *
+     * @return Current promise instance.
+     */
     @SuppressWarnings("UnusedReturnValue")
     default Promise<T> succeed(T value) {
         return resolve(Result.success(value));
     }
 
+    /**
+     * Resolve the promise to failure with the provided cause.
+     *
+     * @param cause Cause to resolve the promise with.
+     *
+     * @return Current promise instance.
+     */
     default Promise<T> fail(Cause cause) {
         return resolve(Result.failure(cause));
     }
 
+    /**
+     * Asynchronously resolve the promise to success with the provided value.
+     *
+     * @param supplier Supplier of the value to resolve the promise with.
+     *
+     * @return Current promise instance.
+     */
     default Promise<T> succeedAsync(Supplier<? extends T> supplier) {
         return async(promise -> promise.succeed(supplier.get()));
     }
 
+    /**
+     * Asynchronously resolve the promise to failure with the provided cause.
+     *
+     * @param supplier Supplier of the cause to resolve the promise with.
+     *
+     * @return Current promise instance.
+     */
     default Promise<T> failAsync(Supplier<Cause> supplier) {
         return async(promise -> promise.fail(supplier.get()));
     }
 
+    /**
+     * Cancel the promise.
+     *
+     * @return Current promise instance.
+     */
     default Promise<T> cancel() {
         return fail(PROMISE_CANCELLED);
     }
 
+    /**
+     * Await the resolution of the promise.
+     *
+     * @return Result of the promise resolution.
+     */
     Result<T> await();
 
+    /**
+     * Await the resolution of the promise with the provided timeout.
+     *
+     * @param timeout Timeout to wait for the resolution.
+     *
+     * @return Result of the promise resolution.
+     */
     Result<T> await(Timeout timeout);
 
+    /**
+     * Run the provided consumer asynchronously and pass current instance as a parameter.
+     *
+     * @param consumer Consumer to execute asynchronously.
+     *
+     * @return Current promise instance.
+     */
     default Promise<T> async(Consumer<Promise<T>> consumer) {
         AsyncExecutor.INSTANCE.runAsync(() -> consumer.accept(this));
         return this;
     }
 
+    /**
+     * Run the provided consumer asynchronously and pass current instance as a parameter. The consumer is executed after the specified timeout.
+     *
+     * @param timeout Timeout to wait before executing the consumer.
+     * @param action  Consumer to execute asynchronously.
+     *
+     * @return Current promise instance.
+     */
     default Promise<T> async(Timeout timeout, Consumer<Promise<T>> action) {
         AsyncExecutor.INSTANCE.runAsync(timeout, () -> action.accept(this));
         return this;
     }
 
+    /**
+     * Transform the promise into a promise resolved to {@link Unit}. This is useful when promise is used in a "event broker" and actual value does
+     * not matter.
+     * <br>
+     * This method is a dependent action and executed in the order in which transformations are written in the code.
+     *
+     * @return New promise instance.
+     */
     default Promise<Unit> mapToUnit() {
         return map(Unit::toUnit);
     }
 
+    /**
+     * Create new unresolved promise instance.
+     *
+     * @return New promise instance.
+     */
     static <T> Promise<T> promise() {
         return new PromiseImpl<>(null);
     }
 
+    /**
+     * Create new resolved promise instance resolved with the provided value.
+     *
+     * @param value Value to resolve the promise with.
+     *
+     * @return New resolved promise instance.
+     */
     static <T> Promise<T> resolved(Result<T> value) {
         return new PromiseImpl<>(value);
     }
 
+    /**
+     * Create new resolved promise instance resolved into success with the provided value.
+     *
+     * @param value Value to resolve the promise with.
+     *
+     * @return New resolved promise instance.
+     */
     static <T> Promise<T> success(T value) {
         return new PromiseImpl<>(Result.success(value));
     }
 
+    /**
+     * Create new resolved promise instance resolved into success with the provided value.
+     *
+     * @param value Value to resolve the promise with.
+     *
+     * @return New resolved promise instance.
+     */
     static <T> Promise<T> ok(T value) {
         return success(value);
     }
 
+    /**
+     * Create new resolved promise instance resolved into failure with the provided cause.
+     *
+     * @param cause Cause to resolve the promise with.
+     *
+     * @return New resolved promise instance.
+     */
     static <T> Promise<T> failure(Cause cause) {
         return new PromiseImpl<>(Result.failure(cause));
     }
 
+    /**
+     * Create new resolved promise instance resolved into failure with the provided cause.
+     *
+     * @param cause Cause to resolve the promise with.
+     *
+     * @return New resolved promise instance.
+     */
     static <T> Promise<T> err(Cause cause) {
         return failure(cause);
     }
 
+    /**
+     * Create new unresolved promise instance and run the provided consumer asynchronously with the newly created instance.
+     *
+     * @param consumer Consumer to execute asynchronously with the created instance.
+     *
+     * @return Created instance.
+     */
     static <T> Promise<T> promise(Consumer<Promise<T>> consumer) {
         return Promise.<T>promise().async(consumer);
     }
 
+    /**
+     * Create new unresolved promise instance and run the provided consumer asynchronously with the newly created instance after specified timeout.
+     *
+     * @param consumer Consumer to execute asynchronously with the created instance.
+     *
+     * @return Created instance.
+     */
     static <T> Promise<T> promise(Timeout timeout, Consumer<Promise<T>> consumer) {
         return Promise.<T>promise().async(timeout, consumer);
     }
 
+    /**
+     * Use underlying executor to run provided runnable asynchronously.
+     *
+     * @param runnable Runnable to run asynchronously.
+     */
     static void async(Runnable runnable) {
         AsyncExecutor.INSTANCE.runAsync(runnable);
     }
 
+    /**
+     * Fail all provided promises with the provided cause.
+     *
+     * @param cause    Cause to fail the promises with.
+     * @param promises Promises to fail.
+     */
     @SafeVarargs
     static <T> void failAll(Cause cause, Promise<T>... promises) {
         failAll(cause, List.of(promises));
     }
 
+    /**
+     * Fail all provided promises with the provided cause.
+     *
+     * @param cause    Cause to fail the promises with.
+     * @param promises Promises to fail.
+     */
     static <T> void failAll(Cause cause, List<Promise<T>> promises) {
         promises.forEach(promise -> promise.fail(cause));
     }
 
+    /**
+     * Instance of the {@link Promise} resolved into success with {@link Unit}.
+     *
+     * @return The singleton instance of the {@link Promise} resolved into success with {@link Unit}.
+     */
     @SuppressWarnings("unchecked")
     static <R> Promise<R> unitPromise() {
         return (Promise<R>) UNIT;
@@ -288,6 +550,15 @@ public interface Promise<T> {
                                                         .onResultRun(at::registerEvent))));
     }
 
+    /**
+     * Return promise which will be resolved once any of the promises provided as a parameters will be resolved with success. If none of the promises
+     * will be resolved with success, then created instance will be resolved with provided {@code failureResult}.
+     *
+     * @param failureResult Result in case if no instances were resolved with success
+     * @param promises      Input promises
+     *
+     * @return Created instance
+     */
     static <T> Promise<T> anySuccess(Result<T> failureResult, List<Promise<T>> promises) {
         return Promise.promise(anySuccess -> threshold(promises.size(), () -> anySuccess.resolve(failureResult))
             .apply(at -> promises.forEach(promise -> promise.onResult(result -> result.onSuccess(anySuccess::succeed)
@@ -309,6 +580,14 @@ public interface Promise<T> {
         return anySuccess((Result<T>) OTHER_SUCCEEDED, promises);
     }
 
+    /**
+     * Return promise which will be resolved once any of the promises provided as a parameters will be resolved with success. If none of the promises
+     * will be resolved with success, then created instance will be resolved with {@link CoreError.Cancelled}.
+     *
+     * @param promises Input promises
+     *
+     * @return Created instance
+     */
     @SuppressWarnings("unchecked")
     static <T> Promise<T> anySuccess(List<Promise<T>> promises) {
         return anySuccess((Result<T>) OTHER_SUCCEEDED, promises);
@@ -333,6 +612,13 @@ public interface Promise<T> {
         failAll(PROMISE_CANCELLED, promises);
     }
 
+    /**
+     * Return a promise which will be resolved with the list of results of execution of all passed promises.
+     *
+     * @param promises Collection of promises to be resolved.
+     *
+     * @return Promise instance, which will be resolved with the list of results of resolved promises.
+     */
     @SuppressWarnings("unchecked")
     static <T> Promise<List<Result<T>>> allOf(Collection<Promise<T>> promises) {
         if (promises.isEmpty()) {
