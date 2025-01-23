@@ -51,21 +51,45 @@ public sealed interface Result<T> permits Success, Failure {
      * @return transformed value (in case of success) or current instance (in case of failure)
      */
     @SuppressWarnings("unchecked")
-    default <R> Result<R> map(Fn1<R, ? super T> mapper) {
-        return fold(_ -> (Result<R>) this, r -> success(mapper.apply(r)));
+    default <U> Result<U> map(Fn1<U, ? super T> mapper) {
+        return fold(_ -> (Result<U>) this, r -> success(mapper.apply(r)));
     }
 
     /**
-     * Replace value stored in current instance with value of other type. Replacing takes place only if current instance (this) contains successful
-     * result, otherwise current instance remains unchanged.
+     * Replace successful result with the value obtained from provided supplier.
      *
-     * @param supplier Source of the replacement value.
+     * @param supplier Source of the replacement value
+     *
+     * @return replaced value (in case of success) or current instance (in case of failure)
+     */
+    default <U> Result<U> map(Supplier<U> supplier) {
+        return map(_ -> supplier.get());
+    }
+
+    /**
+     * Transform operation result into another operation result. In case if current instance (this) is an error, transformation function is not
+     * invoked and value remains the same.
+     *
+     * @param mapper Function to apply to result
      *
      * @return transformed value (in case of success) or current instance (in case of failure)
      */
     @SuppressWarnings("unchecked")
-    default <R> Result<R> replace(Supplier<R> supplier) {
-        return fold(_ -> (Result<R>) this, _ -> success(supplier.get()));
+    default <U> Result<U> flatMap(Fn1<Result<U>, ? super T> mapper) {
+        return fold(_ -> (Result<U>) this, mapper);
+    }
+
+    /**
+     * Replace current instance with the instance returned by provided {@link Supplier}. The replacement happens only if current instance contains
+     * successful result, otherwise current instance remains unchanged.
+     *
+     * @param mapper Source of the replacement result.
+     *
+     * @return replacement result (in case of success) or current instance (in case of failure)
+     */
+    @SuppressWarnings("unchecked")
+    default <U> Result<U> flatMap(Supplier<Result<U>> mapper) {
+        return fold(_ -> (Result<U>) this, _ -> mapper.get());
     }
 
     /**
@@ -97,32 +121,6 @@ public sealed interface Result<T> permits Success, Failure {
      */
     default Result<T> recover(Fn1<T, ? super Cause> mapper) {
         return fold(cause -> success(mapper.apply(cause)), _ -> this);
-    }
-
-    /**
-     * Transform operation result into another operation result. In case if current instance (this) is an error, transformation function is not
-     * invoked and value remains the same.
-     *
-     * @param mapper Function to apply to result
-     *
-     * @return transformed value (in case of success) or current instance (in case of failure)
-     */
-    @SuppressWarnings("unchecked")
-    default <R> Result<R> flatMap(Fn1<Result<R>, ? super T> mapper) {
-        return fold(_ -> (Result<R>) this, mapper);
-    }
-
-    /**
-     * Replace current instance with the instance returned by provided {@link Supplier}. The replacement happens only if current instance contains
-     * successful result, otherwise current instance remains unchanged.
-     *
-     * @param mapper Source of the replacement result.
-     *
-     * @return replacement result (in case of success) or current instance (in case of failure)
-     */
-    @SuppressWarnings("unchecked")
-    default <R> Result<R> flatReplace(Supplier<Result<R>> mapper) {
-        return fold(_ -> (Result<R>) this, _ -> mapper.get());
     }
 
     /**
@@ -318,9 +316,13 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(_ -> supplier.get(), _ -> this);
     }
 
-    default Result<T> onResult(Runnable runnable) {
-        runnable.run();
+    default Result<T> onResult(Consumer<Result<T>> consumer) {
+        consumer.accept(this);
         return this;
+    }
+
+    default Result<T> onResultRun(Runnable runnable) {
+        return onResult(_ -> runnable.run());
     }
 
     /**
@@ -344,27 +346,7 @@ public sealed interface Result<T> permits Success, Failure {
      *
      * @return result of application of one of the mappers.
      */
-    <R> R fold(Fn1<? extends R, ? super Cause> failureMapper, Fn1<? extends R, ? super T> successMapper);
-
-    /**
-     * Pass cause or success value to provided consumers. Only one consumer receives the value, depending on the state of the current instance.
-     *
-     * @param failureConsumer The consumer to accept failure cause
-     * @param successConsumer The consumer to accept success value
-     *
-     * @return current instance for fluent call chaining
-     */
-    default Result<T> accept(Consumer<Cause> failureConsumer, Consumer<T> successConsumer) {
-        return fold(
-            failure -> {
-                failureConsumer.accept(failure);
-                return this;
-            },
-            success -> {
-                successConsumer.accept(success);
-                return this;
-            });
-    }
+    <U> U fold(Fn1<? extends U, ? super Cause> failureMapper, Fn1<? extends U, ? super T> successMapper);
 
     default Result<Unit> mapToUnit() {
         return map(Unit::toUnit);
@@ -398,17 +380,17 @@ public sealed interface Result<T> permits Success, Failure {
      *
      * @return created instance
      */
-    static <R> Result<R> success(R value) {
+    static <U> Result<U> success(U value) {
         return new Success<>(value);
     }
 
-    static <R> Result<R> ok(R value) {
+    static <U> Result<U> ok(U value) {
         return success(value);
     }
 
     record Success<T>(T value) implements Result<T> {
         @Override
-        public <R> R fold(Fn1<? extends R, ? super Cause> failureMapper, Fn1<? extends R, ? super T> successMapper) {
+        public <U> U fold(Fn1<? extends U, ? super Cause> failureMapper, Fn1<? extends U, ? super T> successMapper) {
             return successMapper.apply(value);
         }
 
@@ -425,17 +407,17 @@ public sealed interface Result<T> permits Success, Failure {
      *
      * @return created instance
      */
-    static <R> Result<R> failure(Cause value) {
+    static <U> Result<U> failure(Cause value) {
         return new Failure<>(value);
     }
 
-    static <R> Result<R> err(Cause value) {
+    static <U> Result<U> err(Cause value) {
         return new Failure<>(value);
     }
 
     record Failure<T>(Cause cause) implements Result<T> {
         @Override
-        public <R> R fold(Fn1<? extends R, ? super Cause> failureMapper, Fn1<? extends R, ? super T> successMapper) {
+        public <U> U fold(Fn1<? extends U, ? super Cause> failureMapper, Fn1<? extends U, ? super T> successMapper) {
             return failureMapper.apply(cause);
         }
 
@@ -457,7 +439,7 @@ public sealed interface Result<T> permits Success, Failure {
      *
      * @return result of execution of the provided lambda wrapped into {@link Result}
      */
-    static <R> Result<R> lift(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn0<R> supplier) {
+    static <U> Result<U> lift(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn0<U> supplier) {
         try {
             return success(supplier.apply());
         } catch (Throwable e) {
@@ -490,7 +472,7 @@ public sealed interface Result<T> permits Success, Failure {
      *
      * @return result of execution of the provided lambda wrapped into {@link Result}
      */
-    static <R> Result<R> lift(Cause cause, ThrowingFn0<R> supplier) {
+    static <U> Result<U> lift(Cause cause, ThrowingFn0<U> supplier) {
         return lift(_ -> cause, supplier);
     }
 

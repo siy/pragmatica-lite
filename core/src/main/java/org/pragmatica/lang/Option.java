@@ -56,7 +56,7 @@ public sealed interface Option<T> permits Some, None {
      *
      * @return current instance if it is empty or the instance with the replacement value if current instance is present.
      */
-    default <U> Option<U> replace(Supplier<U> supplier) {
+    default <U> Option<U> map(Supplier<U> supplier) {
         return fold(Option::empty, _ -> present(supplier.get()));
     }
 
@@ -80,7 +80,7 @@ public sealed interface Option<T> permits Some, None {
      *
      * @return current instance if it is empty or the instance with the replacement value if current instance is present.
      */
-    default <U> Option<U> flatReplace(Supplier<Option<U>> supplier) {
+    default <U> Option<U> flatMap(Supplier<Option<U>> supplier) {
         return fold(Option::empty, _ -> supplier.get());
     }
 
@@ -113,9 +113,8 @@ public sealed interface Option<T> permits Some, None {
         return this;
     }
 
-    default Option<T> onSome(Consumer<? super T> consumer) {
-        apply(Functions::unitFn, consumer);
-        return this;
+    default Option<T> onPresentRun(Runnable runnable) {
+        return onPresent(_ -> runnable.run());
     }
 
     /**
@@ -130,9 +129,8 @@ public sealed interface Option<T> permits Some, None {
         return this;
     }
 
-    default Option<T> onNone(Runnable action) {
-        apply(action, Functions::unitFn);
-        return this;
+    default Option<T> onEmptyRun(Runnable action) {
+        return onEmpty(action);
     }
 
     /**
@@ -241,8 +239,16 @@ public sealed interface Option<T> permits Some, None {
         return fold(cause::result, Result::success);
     }
 
-    default Result<T> toResult(Fn0<Result<T>> resultSupplier) {
-        return fold(resultSupplier::apply, Result::success);
+    default Result<T> toResult(Supplier<Result<T>> supplier) {
+        return fold(supplier, Result::success);
+    }
+
+    default Promise<T> toPromise(Cause cause) {
+        return fold(cause::promise, Promise::success);
+    }
+
+    default Promise<T> toPromise(Supplier<Promise<T>> supplier) {
+        return fold(supplier, Promise::success);
     }
 
     /**
@@ -263,7 +269,7 @@ public sealed interface Option<T> permits Some, None {
      *
      * @return result of application of one of the mappers.
      */
-    <R> R fold(Supplier<? extends R> emptyMapper, Fn1<? extends R, ? super T> presentMapper);
+    <U> U fold(Supplier<? extends U> emptyMapper, Fn1<? extends U, ? super T> presentMapper);
 
     /**
      * Convert nullable value into instance of {@link Option}. This method converts {@code null} to empty instance and any other value into present
@@ -295,8 +301,8 @@ public sealed interface Option<T> permits Some, None {
      * @return Created instance
      */
     @SuppressWarnings("unchecked")
-    static <R> Option<R> empty() {
-        return (Option<R>) NONE;
+    static <U> Option<U> empty() {
+        return (Option<U>) NONE;
     }
 
     /**
@@ -305,8 +311,8 @@ public sealed interface Option<T> permits Some, None {
      * @return Created instance
      */
     @SuppressWarnings("unchecked")
-    static <R> Option<R> none() {
-        return (Option<R>) NONE;
+    static <U> Option<U> none() {
+        return (Option<U>) NONE;
     }
 
     /**
@@ -316,7 +322,7 @@ public sealed interface Option<T> permits Some, None {
      *
      * @return Created instance
      */
-    static <R> Option<R> present(R value) {
+    static <U> Option<U> present(U value) {
         return new Some<>(value);
     }
 
@@ -327,13 +333,13 @@ public sealed interface Option<T> permits Some, None {
      *
      * @return Created instance
      */
-    static <R> Option<R> some(R value) {
+    static <U> Option<U> some(U value) {
         return new Some<>(value);
     }
 
     record Some<T>(T value) implements Option<T> {
         @Override
-        public <R> R fold(Supplier<? extends R> emptyMapper, Fn1<? extends R, ? super T> presentMapper) {
+        public <U> U fold(Supplier<? extends U> emptyMapper, Fn1<? extends U, ? super T> presentMapper) {
             return presentMapper.apply(value);
         }
 
@@ -345,7 +351,7 @@ public sealed interface Option<T> permits Some, None {
 
     record None<T>() implements Option<T> {
         @Override
-        public <R> R fold(Supplier<? extends R> emptyMapper, Fn1<? extends R, ? super T> presentMapper) {
+        public <U> U fold(Supplier<? extends U> emptyMapper, Fn1<? extends U, ? super T> presentMapper) {
             return emptyMapper.get();
         }
 

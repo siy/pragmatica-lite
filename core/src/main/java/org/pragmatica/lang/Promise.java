@@ -107,6 +107,19 @@ public interface Promise<T> {
     }
 
     /**
+     * Replace the value of the promise with the provided value once promise is resolved into success result.
+     * <br>
+     * This method is a dependent action and executed in the order in which transformations are written in the code.
+     *
+     * @param supplier New value supplier.
+     *
+     * @return New promise instance.
+     */
+    default <U> Promise<U> map(Supplier<U> supplier) {
+        return map(_ -> supplier.get());
+    }
+
+    /**
      * Transform the success value of the promise once promise is resolved. The transformation function returns a new promise.
      * <br>
      * This method is a dependent action and executed in the order in which transformations are written in the code.
@@ -120,6 +133,19 @@ public interface Promise<T> {
     }
 
     /**
+     * Replace the success value of the promise once promise is resolved with the promise obtained from the provided supplier.
+     * <br>
+     * This method is a dependent action and executed in the order in which transformations are written in the code.
+     *
+     * @param supplier Supplier of the new promise.
+     *
+     * @return New promise instance.
+     */
+    default <U> Promise<U> flatMap(Supplier<Promise<U>> supplier) {
+        return flatMap(_ -> supplier.get());
+    }
+
+    /**
      * Transform the failure value of the promise once promise is resolved.
      * <br>
      * This method is a dependent action and executed in the order in which transformations are written in the code.
@@ -128,7 +154,7 @@ public interface Promise<T> {
      *
      * @return New promise instance.
      */
-    default Promise<T> mapError(Fn1<Cause, Cause> transformation) {
+    default Promise<T> mapError(Fn1<Cause, ? super Cause> transformation) {
         return replaceResult(result -> result.mapError(transformation));
     }
 
@@ -144,16 +170,14 @@ public interface Promise<T> {
     }
 
     /**
-     * Replace the value of the promise with the provided value once promise is resolved into success result.
-     * <br>
-     * This method is a dependent action and executed in the order in which transformations are written in the code.
+     * Recover from failure by transforming failure cause into new value.
      *
-     * @param supplier New value supplier.
+     * @param mapper Function to transform failure cause
      *
-     * @return New promise instance.
+     * @return current instance (in case of success) or transformed instance (in case of failure)
      */
-    default <U> Promise<U> replace(Supplier<U> supplier) {
-        return map(_ -> supplier.get());
+    default Promise<T> recover(Fn1<T, ? super Cause> mapper) {
+        return replaceResult(result -> result.recover(mapper));
     }
 
     /**
@@ -196,19 +220,6 @@ public interface Promise<T> {
     }
 
     /**
-     * Run an action once promise is resolved. The result of the action is ignored, but the action is executed in the order in which transformations
-     * are written in the code.
-     *
-     * @param action Action to be executed once promise is resolved.
-     *
-     * @return New promise instance.
-     */
-    default <U> Promise<T> withResultDo(Fn1<Promise<U>, Result<? super T>> action) {
-        return fold(result -> action.apply(result)
-                                    .flatMap(_ -> resolved(result)));
-    }
-
-    /**
      * Run an action once promise is resolved. The action is executed in the order in which transformations
      *
      * @param consumer Action to be executed once promise is resolved.
@@ -216,7 +227,7 @@ public interface Promise<T> {
      * @return New promise instance.
      */
     default Promise<T> withResult(Consumer<Result<? super T>> consumer) {
-        return fold(result -> Promise.resolved(result.onResult(() -> consumer.accept(result))));
+        return fold(result -> Promise.resolved(result.onResultRun(() -> consumer.accept(result))));
     }
 
     /**
@@ -281,6 +292,28 @@ public interface Promise<T> {
      */
     default Promise<T> withFailure(Consumer<Cause> consumer) {
         return fold(result -> Promise.resolved(result.onFailure(consumer)));
+    }
+
+    /**
+     * Replace current instance with provided promise if current instance is resolved with failure.
+     *
+     * @param promise Promise to replace current instance with.
+     *
+     * @return New promise instance.
+     */
+    default Promise<T> orElse(Promise<T> promise) {
+        return fold(result -> result.fold(_ -> promise, _ -> this));
+    }
+
+    /**
+     * Replace current instance with the promise obtained from provided supplier if current instance is resolved with failure.
+     *
+     * @param supplier Supplier of the promise to replace current instance with.
+     *
+     * @return New promise instance.
+     */
+    default Promise<T> orElse(Supplier<Promise<T>> supplier) {
+        return fold(result -> result.fold(_ -> supplier.get(), _ -> this));
     }
 
     /**
@@ -528,8 +561,8 @@ public interface Promise<T> {
      * @return The singleton instance of the {@link Promise} resolved into success with {@link Unit}.
      */
     @SuppressWarnings("unchecked")
-    static <R> Promise<R> unitPromise() {
-        return (Promise<R>) UNIT;
+    static <U> Promise<U> unitPromise() {
+        return (Promise<U>) UNIT;
     }
 
     /**
