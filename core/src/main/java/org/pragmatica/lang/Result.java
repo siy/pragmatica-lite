@@ -361,7 +361,6 @@ public sealed interface Result<T> permits Success, Failure {
         return Promise.resolved(this);
     }
 
-
     Result<Unit> UNIT_RESULT = success(unit());
 
     /**
@@ -423,11 +422,7 @@ public sealed interface Result<T> permits Success, Failure {
 
         @Override
         public String toString() {
-            var builder = new StringBuilder("Failure:");
-
-            return cause().iterate(issue -> builder.append("\n  ")
-                    .append(issue.message()))
-                .toString();
+            return "Failure(" + cause.toString() + ")";
         }
     }
 
@@ -537,7 +532,7 @@ public sealed interface Result<T> permits Success, Failure {
     }
 
     /**
-     * Transform list of {@link Result} instances into {@link Result} with list of values.
+     * Transform stream of {@link Result} instances into {@link Result} with list of values.
      *
      * @param results input stream of {@link Result} instances
      *
@@ -552,15 +547,35 @@ public sealed interface Result<T> permits Success, Failure {
         return causes.isEmpty() ? success(values) : failure(causes);
     }
 
+    /**
+     * Transform provided {@link Result} instances into {@link Result} with list of values.
+     *
+     * @param results input stream of {@link Result} instances
+     *
+     * @return success instance if all {@link Result} instances in list are successes or failure instance with any instances in list is a failure
+     */
     @SafeVarargs
-    static Result<Unit> allOf(Result<Unit>... values) {
-        var causes = Causes.composite();
+    static <T> Result<List<T>> allOf(Result<T>... results) {
+        return allOf(List.of(results));
+    }
 
-        for (var value : values) {
-            value.onFailure(causes::append);
+    /**
+     * Transform list of {@link Result} instances into {@link Result} with list of values.
+     *
+     * @param results input list of {@link Result} instances
+     *
+     * @return success instance if all {@link Result} instances in list are successes or failure instance with any instances in list is a failure
+     */
+    static <T> Result<List<T>> allOf(List<Result<T>> results) {
+        var causes = Causes.composite();
+        var values = new ArrayList<T>();
+
+        for (var value : results) {
+            value.onFailure(causes::append)
+                 .onSuccess(values::add);
         }
 
-        return causes.isEmpty() ? unitResult() : failure(causes);
+        return causes.isEmpty() ? success(values) : failure(causes);
     }
 
     /**

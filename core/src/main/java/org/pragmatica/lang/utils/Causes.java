@@ -55,13 +55,21 @@ public sealed interface Causes {
      * @return new Cause, with {@link  Cause#source()} set to original cause.
      */
     static Cause trace(Cause cause) {
-        return cause(Thread.currentThread().getStackTrace()[6].toString(), cause);
+        return cause(Thread.currentThread().getStackTrace()[5].toString(), cause);
     }
 
     /**
      * Simplest possible variant of {@link Cause} which contains only message describing the cause
      */
     record SimpleCause(String message, Option<Cause> source) implements Cause {
+        @Override
+        public String toString() {
+            var builder = new StringBuilder("Cause: ").append(message());
+
+            iterate(issue -> builder.append("\n  ")
+                                    .append(issue.message()));
+            return builder.toString();
+        }
     }
 
     /**
@@ -110,6 +118,7 @@ public sealed interface Causes {
 
     interface CompositeCause extends Cause {
         CompositeCause append(Cause cause);
+
         boolean isEmpty();
     }
 
@@ -129,6 +138,15 @@ public sealed interface Causes {
             @Override
             public boolean isEmpty() {
                 return causes().isEmpty();
+            }
+
+            @Override
+            public String toString() {
+                var builder = new StringBuilder("Composite:");
+
+                stream().forEach(issue -> builder.append("\n  ")
+                                                 .append(issue.message()));
+                return builder.toString();
             }
         }
 

@@ -428,7 +428,7 @@ public interface Promise<T> {
     }
 
     /**
-     * Transform the promise into a promise resolved to {@link Unit}. This is useful when promise is used in a "event broker" and actual value does
+     * Transform the promise into a promise resolved to {@link Unit}. This is useful when promise is used in an "event broker" and actual value does
      * not matter.
      * <br>
      * This method is a dependent action and executed in the order in which transformations are written in the code.
