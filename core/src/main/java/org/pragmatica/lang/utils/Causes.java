@@ -41,24 +41,6 @@ public sealed interface Causes {
     record unused() implements Causes {}
 
     /**
-     * This method enables more convenient tracing of the failure. The general pattern is the following:
-     * <pre>
-     *     ...
-     *     .flatMap(...)
-     *     .mapError(Causes::trace)
-     *     ...
-     * </pre>
-     * In case of error this call will leave useful trace of the place where error did happen.
-     *
-     * @param cause original cause of the issue.
-     *
-     * @return new Cause, with {@link  Cause#source()} set to original cause.
-     */
-    static Cause trace(Cause cause) {
-        return cause(Thread.currentThread().getStackTrace()[5].toString(), cause);
-    }
-
-    /**
      * Simplest possible variant of {@link Cause} which contains only message describing the cause
      */
     record SimpleCause(String message, Option<Cause> source) implements Cause {
@@ -117,6 +99,13 @@ public sealed interface Causes {
     }
 
     interface CompositeCause extends Cause {
+        static Cause toComposite(String text, Cause cause) {
+            if (cause instanceof CompositeCause composite) {
+                return composite.append(cause(text));
+            }
+            return composite().append(cause(text, cause));
+        }
+
         CompositeCause append(Cause cause);
 
         boolean isEmpty();

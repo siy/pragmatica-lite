@@ -109,7 +109,9 @@ public sealed interface Result<T> permits Success, Failure {
      * @return current instance (in case of success) or instance with tracing information (in case of failure)
      */
     default Result<T> trace() {
-        return mapError(Causes::trace);
+        var text = Thread.currentThread().getStackTrace()[2].toString();
+
+        return mapError(cause -> Causes.CompositeCause.toComposite(text, cause));
     }
 
     /**
@@ -588,7 +590,7 @@ public sealed interface Result<T> permits Success, Failure {
         var causes = Causes.composite();
 
         return () -> value.flatMap(vv1 -> success(tuple(vv1)))
-            .mapError(causes::append);
+                          .mapError(causes::append);
     }
 
     /**
@@ -601,10 +603,10 @@ public sealed interface Result<T> permits Success, Failure {
         var causes = Causes.composite();
 
         return () -> value1.flatMap(
-                vv1 -> value2.flatMap(
-                        vv2 -> success(tuple(vv1, vv2)))
-                    .mapError(causes::append))
-            .mapError(causes::append);
+                               vv1 -> value2.flatMap(
+                                                vv2 -> success(tuple(vv1, vv2)))
+                                            .mapError(causes::append))
+                           .mapError(causes::append);
     }
 
     /**
@@ -617,12 +619,12 @@ public sealed interface Result<T> permits Success, Failure {
         var causes = Causes.composite();
 
         return () -> value1.flatMap(
-                vv1 -> value2.flatMap(
-                        vv2 -> value3.flatMap(
-                                vv3 -> success(tuple(vv1, vv2, vv3)))
-                            .mapError(causes::append))
-                    .mapError(causes::append))
-            .mapError(causes::append);
+                               vv1 -> value2.flatMap(
+                                                vv2 -> value3.flatMap(
+                                                                 vv3 -> success(tuple(vv1, vv2, vv3)))
+                                                             .mapError(causes::append))
+                                            .mapError(causes::append))
+                           .mapError(causes::append);
     }
 
     /**
@@ -637,14 +639,14 @@ public sealed interface Result<T> permits Success, Failure {
         var causes = Causes.composite();
 
         return () -> value1.flatMap(
-                vv1 -> value2.flatMap(
-                        vv2 -> value3.flatMap(
-                                vv3 -> value4.flatMap(
-                                        vv4 -> success(tuple(vv1, vv2, vv3, vv4)))
-                                    .mapError(causes::append))
-                            .mapError(causes::append))
-                    .mapError(causes::append))
-            .mapError(causes::append);
+                               vv1 -> value2.flatMap(
+                                                vv2 -> value3.flatMap(
+                                                                 vv3 -> value4.flatMap(
+                                                                                  vv4 -> success(tuple(vv1, vv2, vv3, vv4)))
+                                                                              .mapError(causes::append))
+                                                             .mapError(causes::append))
+                                            .mapError(causes::append))
+                           .mapError(causes::append);
     }
 
     /**
@@ -659,16 +661,16 @@ public sealed interface Result<T> permits Success, Failure {
         var causes = Causes.composite();
 
         return () -> value1.flatMap(
-                vv1 -> value2.flatMap(
-                        vv2 -> value3.flatMap(
-                                vv3 -> value4.flatMap(
-                                        vv4 -> value5.flatMap(
-                                                vv5 -> success(tuple(vv1, vv2, vv3, vv4, vv5)))
+                               vv1 -> value2.flatMap(
+                                                vv2 -> value3.flatMap(
+                                                                 vv3 -> value4.flatMap(
+                                                                                  vv4 -> value5.flatMap(
+                                                                                                   vv5 -> success(tuple(vv1, vv2, vv3, vv4, vv5)))
+                                                                                               .mapError(causes::append))
+                                                                              .mapError(causes::append))
+                                                             .mapError(causes::append))
                                             .mapError(causes::append))
-                                    .mapError(causes::append))
-                            .mapError(causes::append))
-                    .mapError(causes::append))
-            .mapError(causes::append);
+                           .mapError(causes::append);
     }
 
     /**
@@ -684,18 +686,18 @@ public sealed interface Result<T> permits Success, Failure {
         var causes = Causes.composite();
 
         return () -> value1.flatMap(
-                vv1 -> value2.flatMap(
-                        vv2 -> value3.flatMap(
-                                vv3 -> value4.flatMap(
-                                        vv4 -> value5.flatMap(
-                                                vv5 -> value6.flatMap(
-                                                        vv6 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6)))
-                                                    .mapError(causes::append))
+                               vv1 -> value2.flatMap(
+                                                vv2 -> value3.flatMap(
+                                                                 vv3 -> value4.flatMap(
+                                                                                  vv4 -> value5.flatMap(
+                                                                                                   vv5 -> value6.flatMap(
+                                                                                                                    vv6 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6)))
+                                                                                                                .mapError(causes::append))
+                                                                                               .mapError(causes::append))
+                                                                              .mapError(causes::append))
+                                                             .mapError(causes::append))
                                             .mapError(causes::append))
-                                    .mapError(causes::append))
-                            .mapError(causes::append))
-                    .mapError(causes::append))
-            .mapError(causes::append);
+                           .mapError(causes::append);
     }
 
     /**
@@ -712,20 +714,20 @@ public sealed interface Result<T> permits Success, Failure {
         var causes = Causes.composite();
 
         return () -> value1.flatMap(
-                vv1 -> value2.flatMap(
-                        vv2 -> value3.flatMap(
-                                vv3 -> value4.flatMap(
-                                        vv4 -> value5.flatMap(
-                                                vv5 -> value6.flatMap(
-                                                        vv6 -> value7.flatMap(
-                                                                vv7 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6, vv7)))
-                                                            .mapError(causes::append))
-                                                    .mapError(causes::append))
+                               vv1 -> value2.flatMap(
+                                                vv2 -> value3.flatMap(
+                                                                 vv3 -> value4.flatMap(
+                                                                                  vv4 -> value5.flatMap(
+                                                                                                   vv5 -> value6.flatMap(
+                                                                                                                    vv6 -> value7.flatMap(
+                                                                                                                                     vv7 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6, vv7)))
+                                                                                                                                 .mapError(causes::append))
+                                                                                                                .mapError(causes::append))
+                                                                                               .mapError(causes::append))
+                                                                              .mapError(causes::append))
+                                                             .mapError(causes::append))
                                             .mapError(causes::append))
-                                    .mapError(causes::append))
-                            .mapError(causes::append))
-                    .mapError(causes::append))
-            .mapError(causes::append);
+                           .mapError(causes::append);
     }
 
     /**
@@ -742,22 +744,22 @@ public sealed interface Result<T> permits Success, Failure {
         var causes = Causes.composite();
 
         return () -> value1.flatMap(
-                vv1 -> value2.flatMap(
-                        vv2 -> value3.flatMap(
-                                vv3 -> value4.flatMap(
-                                        vv4 -> value5.flatMap(
-                                                vv5 -> value6.flatMap(
-                                                        vv6 -> value7.flatMap(
-                                                                vv7 -> value8.flatMap(
-                                                                        vv8 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6, vv7, vv8)))
-                                                                    .mapError(causes::append))
-                                                            .mapError(causes::append))
-                                                    .mapError(causes::append))
+                               vv1 -> value2.flatMap(
+                                                vv2 -> value3.flatMap(
+                                                                 vv3 -> value4.flatMap(
+                                                                                  vv4 -> value5.flatMap(
+                                                                                                   vv5 -> value6.flatMap(
+                                                                                                                    vv6 -> value7.flatMap(
+                                                                                                                                     vv7 -> value8.flatMap(
+                                                                                                                                                      vv8 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6, vv7, vv8)))
+                                                                                                                                                  .mapError(causes::append))
+                                                                                                                                 .mapError(causes::append))
+                                                                                                                .mapError(causes::append))
+                                                                                               .mapError(causes::append))
+                                                                              .mapError(causes::append))
+                                                             .mapError(causes::append))
                                             .mapError(causes::append))
-                                    .mapError(causes::append))
-                            .mapError(causes::append))
-                    .mapError(causes::append))
-            .mapError(causes::append);
+                           .mapError(causes::append);
     }
 
     /**
@@ -774,24 +776,24 @@ public sealed interface Result<T> permits Success, Failure {
         var causes = Causes.composite();
 
         return () -> value1.flatMap(
-                vv1 -> value2.flatMap(
-                        vv2 -> value3.flatMap(
-                                vv3 -> value4.flatMap(
-                                        vv4 -> value5.flatMap(
-                                                vv5 -> value6.flatMap(
-                                                        vv6 -> value7.flatMap(
-                                                                vv7 -> value8.flatMap(
-                                                                        vv8 -> value9.flatMap(
-                                                                                vv9 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6, vv7, vv8, vv9)))
-                                                                            .mapError(causes::append))
-                                                                    .mapError(causes::append))
-                                                            .mapError(causes::append))
-                                                    .mapError(causes::append))
+                               vv1 -> value2.flatMap(
+                                                vv2 -> value3.flatMap(
+                                                                 vv3 -> value4.flatMap(
+                                                                                  vv4 -> value5.flatMap(
+                                                                                                   vv5 -> value6.flatMap(
+                                                                                                                    vv6 -> value7.flatMap(
+                                                                                                                                     vv7 -> value8.flatMap(
+                                                                                                                                                      vv8 -> value9.flatMap(
+                                                                                                                                                                       vv9 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6, vv7, vv8, vv9)))
+                                                                                                                                                                   .mapError(causes::append))
+                                                                                                                                                  .mapError(causes::append))
+                                                                                                                                 .mapError(causes::append))
+                                                                                                                .mapError(causes::append))
+                                                                                               .mapError(causes::append))
+                                                                              .mapError(causes::append))
+                                                             .mapError(causes::append))
                                             .mapError(causes::append))
-                                    .mapError(causes::append))
-                            .mapError(causes::append))
-                    .mapError(causes::append))
-            .mapError(causes::append);
+                           .mapError(causes::append);
     }
 
     /**

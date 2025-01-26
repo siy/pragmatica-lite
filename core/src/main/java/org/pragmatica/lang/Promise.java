@@ -166,7 +166,8 @@ public interface Promise<T> {
      * @return New promise instance.
      */
     default Promise<T> trace() {
-        return mapError(Causes::trace);
+        var text = Thread.currentThread().getStackTrace()[2].toString();
+        return mapError(cause -> Causes.CompositeCause.toComposite(text, cause));
     }
 
     /**
@@ -1259,7 +1260,7 @@ final class PromiseImpl<T> implements Promise<T> {
         Completion<T> prevStack;
         do {
             if (result != null) {
-                // In rare circumstances, when one thread is resolved instance while other tries to
+                // In rare circumstances, when one thread resolves instance while other tries to
                 // add new independent completion, we resolve completion here. There might be chances, that this might
                 // lead to race condition if actions done by completions attached to this Promise have shared data.
                 // Otherwise, dependency chain is still maintained properly even with this invocation.

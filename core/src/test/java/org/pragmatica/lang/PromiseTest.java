@@ -211,7 +211,59 @@ public class PromiseTest {
     }
 
     @Test
-    void joinReturnsErrorAfterTimeoutThenPromiseRemainsInSameStateAndNoActionsAreExecuted() {
+    void promiseCanBeRecovered() {
+        Promise.<Integer>err(Causes.cause("Test cause"))
+               .onSuccess(_ -> fail("Promise should be failed"))
+               .recover(_ -> 1)
+               .await()
+               .onSuccess(v -> assertEquals(1, v));
+    }
+
+    @Test
+    void promiseResultCanBeMapped() {
+        Promise.success(123)
+               .onSuccess(v -> assertEquals(123, v))
+               .mapResult(value -> Result.success(value + 1))
+               .onSuccess(v -> assertEquals(124, v))
+               .mapResult(_ -> Result.failure(Causes.cause("Test cause")))
+               .await()
+               .onSuccessRun(Assertions::fail);
+    }
+
+    @Test
+    void promiseCanBeUsedAfterTimeout() {
+        var promise = Promise.promise(Timeout.timeout(100).millis(), p -> p.succeed(1));
+
+        assertFalse(promise.isResolved());
+
+        promise.await()
+               .onSuccess(v -> assertEquals(1, v))
+               .onFailureRun(Assertions::fail);
+    }
+
+    @Test
+    void allPromisesCanBeFailedInBatch() {
+        var promise1 = Promise.<Integer>promise();
+        var promise2 = Promise.<Integer>promise();
+        var promise3 = Promise.<Integer>promise();
+
+        assertFalse(promise1.isResolved());
+        assertFalse(promise2.isResolved());
+        assertFalse(promise3.isResolved());
+
+        Promise.cancelAll(promise1, promise2, promise3);
+
+        assertTrue(promise1.isResolved());
+        assertTrue(promise2.isResolved());
+        assertTrue(promise3.isResolved());
+
+        assertTrue(promise1.await().isFailure());
+        assertTrue(promise2.await().isFailure());
+        assertTrue(promise3.await().isFailure());
+    }
+
+    @Test
+    void awaitReturnsErrorAfterTimeoutThenPromiseRemainsInSameStateAndNoActionsAreExecuted() {
         var ref1 = new AtomicReference<Result<Integer>>();
         var ref2 = new AtomicBoolean(false);
         var promise = Promise.<Integer>promise()
@@ -227,6 +279,206 @@ public class PromiseTest {
 
         assertNull(ref1.get());
         assertFalse(ref2.get());
+    }
+
+    @Test
+    void resultActionsAreExecutedWhenPromiseIsResolvedToSuccess() throws InterruptedException {
+        var latch = new CountDownLatch(3);
+        var ref1 = new AtomicReference<Result<Integer>>();
+        var ref2 = new AtomicBoolean(false);
+        var promise = Promise.<Integer>promise();
+
+        var lastPromise = promise.onResult(newValue -> {
+                   ref1.set(newValue);
+                   latch.countDown();
+               })
+               .onResultRun(() -> {
+                   ref2.set(true);
+                   latch.countDown();
+               })
+               .withResult(_ -> latch.countDown());
+
+        assertNull(ref1.get());
+        assertFalse(ref2.get());
+
+        promise.succeedAsync(() -> 1);
+
+        latch.await();
+
+        assertEquals(Result.success(1), ref1.get());
+        assertTrue(ref2.get());
+        assertTrue(lastPromise.isResolved());
+    }
+
+    @Test
+    void resultActionsAreExecutedWhenPromiseIsResolvedToFailure() throws InterruptedException {
+        var latch = new CountDownLatch(3);
+        var ref1 = new AtomicReference<Result<Integer>>();
+        var ref2 = new AtomicBoolean(false);
+        var promise = Promise.<Integer>promise();
+
+        promise
+            .onResult(newValue -> {
+                ref1.set(newValue);
+                latch.countDown();
+            })
+            .onResultRun(() -> {
+                ref2.set(true);
+                latch.countDown();
+            })
+            .withResult(_ -> latch.countDown());
+
+        assertNull(ref1.get());
+        assertFalse(ref2.get());
+
+        promise.resolve(Result.failure(Causes.cause("Test cause")));
+
+        latch.await();
+
+        assertEquals(Result.failure(Causes.cause("Test cause")), ref1.get());
+        assertTrue(ref2.get());
+    }
+
+    @Test
+    void successActionsAreExecutedWhenPromiseIsResolvedToSuccess() throws InterruptedException {
+        var latch = new CountDownLatch(3);
+        var ref1 = new AtomicReference<Integer>();
+        var ref2 = new AtomicBoolean(false);
+        var promise = Promise.<Integer>promise();
+
+        promise.onSuccess(newValue -> {
+                   ref1.set(newValue);
+                   latch.countDown();
+               })
+               .onSuccessRun(() -> {
+                   ref2.set(true);
+                   latch.countDown();
+               })
+               .withSuccess(_ -> latch.countDown());
+
+        assertNull(ref1.get());
+        assertFalse(ref2.get());
+
+        promise.succeedAsync(() -> 1);
+
+        latch.await();
+
+        assertEquals(1, ref1.get());
+        assertTrue(ref2.get());
+    }
+
+    @Test
+    void successActionsAreNotExecutedWhenPromiseIsResolvedToFailure() throws InterruptedException {
+        var latch = new CountDownLatch(1);
+        var ref1 = new AtomicReference<Integer>();
+        var ref2 = new AtomicBoolean(false);
+        var ref3 = new AtomicBoolean(false);
+        var promise = Promise.<Integer>promise();
+
+        promise.onSuccess(ref1::set)
+               .onSuccessRun(() -> ref2.set(true))
+               .withSuccess(_ -> ref3.set(true))
+               .withFailure(_ -> latch.countDown());
+
+        assertNull(ref1.get());
+        assertFalse(ref2.get());
+        assertFalse(ref3.get());
+
+        promise.failAsync(() -> Causes.cause("Some cause"));
+
+        latch.await();
+
+        assertNull(ref1.get());
+        assertFalse(ref2.get());
+        assertFalse(ref3.get());
+    }
+
+    @Test
+    void failureActionsAreExecutedWhenPromiseIsResolvedToFailure() throws InterruptedException {
+        var latch = new CountDownLatch(3);
+        var ref1 = new AtomicReference<Cause>();
+        var ref2 = new AtomicBoolean(false);
+        var promise = Promise.<Integer>promise();
+
+        promise
+            .onFailure(newValue -> {
+                ref1.set(newValue);
+                latch.countDown();
+            })
+            .onFailureRun(() -> {
+                ref2.set(true);
+                latch.countDown();
+            })
+            .withFailure(_ -> latch.countDown());
+
+        assertNull(ref1.get());
+        assertFalse(ref2.get());
+
+        promise.resolve(Result.failure(Causes.cause("Test cause")));
+
+        latch.await();
+
+        assertEquals(Causes.cause("Test cause"), ref1.get());
+        assertTrue(ref2.get());
+    }
+
+    @Test
+    void failureActionsAreNotExecutedWhenPromiseIsResolvedToSuccess() throws InterruptedException {
+        var latch = new CountDownLatch(1);
+        var ref1 = new AtomicReference<Cause>();
+        var ref2 = new AtomicBoolean(false);
+        var ref3 = new AtomicBoolean(false);
+        var promise = Promise.<Integer>promise();
+
+        promise.onFailure(ref1::set)
+               .onFailureRun(() -> ref2.set(true))
+               .withFailure(_ -> ref3.set(true))
+               .withSuccess(_ -> latch.countDown());
+
+        assertNull(ref1.get());
+        assertFalse(ref2.get());
+        assertFalse(ref3.get());
+
+        promise.succeedAsync(() -> 1);
+
+        latch.await();
+
+        assertNull(ref1.get());
+        assertFalse(ref2.get());
+        assertFalse(ref3.get());
+    }
+
+    @Test
+    void alternativeCanBeChosenIfPromiseIsResolvedToFailure() {
+        var promise = Promise.<Integer>promise();
+
+        promise.failAsync(() -> Causes.cause("Test cause"))
+               .orElse(Promise.success(1))
+               .await()
+               .onSuccess(v -> assertEquals(1, v))
+               .onFailureRun(Assertions::fail);
+    }
+
+    @Test
+    void alternativeCanBeChosenIfPromiseIsResolvedToFailure2() {
+        var promise = Promise.<Integer>promise();
+
+        promise.failAsync(() -> Causes.cause("Test cause"))
+               .orElse(() -> Promise.ok(1))
+               .await()
+               .onSuccess(v -> assertEquals(1, v))
+               .onFailureRun(Assertions::fail);
+    }
+
+    @Test
+    void promiseCanBeMappedToUnit() {
+        var promise = Promise.<Integer>promise();
+
+        promise.succeedAsync(() -> 1)
+               .mapToUnit()
+               .await()
+               .onSuccess(v -> assertEquals(Unit.unit(), v))
+               .onFailureRun(Assertions::fail);
     }
 
     @Test
@@ -262,6 +514,7 @@ public class PromiseTest {
         var stringPromise = Promise.<String>promise();
         var longPromise = Promise.<Long>promise();
         var counterPromise = Promise.<Integer>promise();
+        var replacementPromise = Promise.<Long>promise();
 
         promise
             .onSuccess(integerPromise::succeed)
@@ -276,7 +529,9 @@ public class PromiseTest {
                 } catch (InterruptedException e) {
                     //ignore
                 }
-            });
+            })
+            .map(() -> 123L)
+            .onSuccess(replacementPromise::succeed);
 
         assertFalse(promise.isResolved());
         assertFalse(integerPromise.isResolved());
@@ -286,15 +541,21 @@ public class PromiseTest {
 
         promise.resolve(Result.success(1));
 
-        Promise.all(integerPromise, stringPromise, longPromise, counterPromise)
-               .map((integer, string, aLong, counter) -> {
+        Promise.all(integerPromise, stringPromise, longPromise, counterPromise, replacementPromise)
+               .map((integer, string, aLong, counter, increment) -> {
                    assertEquals(1, integer);
                    assertEquals("1", string);
                    assertEquals(1L, aLong);
                    assertEquals(1, counter);
+                   assertEquals(123L, increment);
                    return unit();
-               }).onFailureRun(Assertions::fail)
-               .await();
+               })
+               .flatMap(() -> Promise.failure(Causes.cause("Test cause")))
+               .trace()
+               .await()
+               .onSuccessRun(Assertions::fail)
+               .onFailure(System.out::println)
+               .onFailure(cause -> assertInstanceOf(Causes.CompositeCause.class, cause));
     }
 
     @Test
