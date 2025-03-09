@@ -93,6 +93,10 @@ public interface Promise<T> {
      */
     Promise<T> onResult(Consumer<Result<T>> action);
 
+    default Promise<T> onResultAsync(Consumer<Result<T>> action) {
+        return onResult(action);
+    }
+
     /**
      * Transform the success value of the promise once promise is resolved.
      * <br>
@@ -220,6 +224,10 @@ public interface Promise<T> {
         return onResult(_ -> action.run());
     }
 
+    default Promise<T> onResultRunAsync(Runnable action) {
+        return onResult(_ -> action.run());
+    }
+
     /**
      * Run an action once promise is resolved. The action is executed in the order in which transformations
      *
@@ -227,8 +235,11 @@ public interface Promise<T> {
      *
      * @return New promise instance.
      */
-    default Promise<T> withResult(Consumer<Result<? super T>> consumer) {
-        return fold(result -> Promise.resolved(result.onResultRun(() -> consumer.accept(result))));
+    default Promise<T> withResult(Consumer<Result<T>> consumer) {
+        return fold(result -> {
+            result.onResult(consumer);
+            return this;
+        });
     }
 
     /**
@@ -242,6 +253,10 @@ public interface Promise<T> {
         return onResult(result -> result.onSuccess(action));
     }
 
+    default Promise<T> onSuccessAsync(Consumer<T> action) {
+        return onSuccess(action);
+    }
+
     /**
      * Run an action once promise is resolved with success. The action is executed asynchronously.
      *
@@ -251,6 +266,10 @@ public interface Promise<T> {
      */
     default Promise<T> onSuccessRun(Runnable action) {
         return onResult(result -> result.onSuccessRun(action));
+    }
+
+    default Promise<T> onSuccessRunAsync(Runnable action) {
+        return onSuccessRun(action);
     }
 
     /**
@@ -275,6 +294,10 @@ public interface Promise<T> {
         return onResult(result -> result.onFailure(action));
     }
 
+    default Promise<T> onFailureAsync(Consumer<Cause> action) {
+        return onFailure(action);
+    }
+
     /**
      * Run an action once promise is resolved with success. The action is executed asynchronously.
      *
@@ -282,6 +305,10 @@ public interface Promise<T> {
      */
     default Promise<T> onFailureRun(Runnable action) {
         return onResult(result -> result.onFailureRun(action));
+    }
+
+    default Promise<T> onFailureRunAsync(Runnable action) {
+        return onFailureRun(action);
     }
 
     /**
@@ -641,10 +668,12 @@ public interface Promise<T> {
     @SafeVarargs
     static <T> Promise<T> anySuccess(Result<T> failureResult, Promise<T>... promises) {
         return Promise.promise(anySuccess -> threshold(promises.length, () -> anySuccess.resolve(failureResult))
-            .apply(at -> List.of(promises)
-                             .forEach(promise -> promise.onResult(result -> result.onSuccess(anySuccess::succeed)
-                                                                                  .onSuccessRun(() -> cancelAll(promises)))
-                                                        .onResultRun(at::registerEvent))));
+            .apply(at -> List.of(promises).forEach(
+                promise -> promise.withResult(result ->
+                                                  result
+                                                      .onSuccess(anySuccess::succeed)
+                                                      .onSuccessRun(() -> cancelAll(promises))
+                                                      .onResultRun(at::registerEvent)))));
     }
 
     /**
@@ -658,9 +687,12 @@ public interface Promise<T> {
      */
     static <T> Promise<T> anySuccess(Result<T> failureResult, List<Promise<T>> promises) {
         return Promise.promise(anySuccess -> threshold(promises.size(), () -> anySuccess.resolve(failureResult))
-            .apply(at -> promises.forEach(promise -> promise.onResult(result -> result.onSuccess(anySuccess::succeed)
-                                                                                      .onSuccessRun(() -> cancelAll(promises)))
-                                                            .onResultRun(at::registerEvent))));
+            .apply(at -> promises.forEach(
+                promise -> promise.withResult(result ->
+                                                     result
+                                                         .onSuccess(anySuccess::succeed)
+                                                         .onSuccessRun(() -> cancelAll(promises))
+                                                         .onResultRun(at::registerEvent)))));
     }
 
     /**
@@ -727,7 +759,7 @@ public interface Promise<T> {
         var collector = ResultCollector.resultCollector(promises.size(),
                                                         values -> promise.succeed(List.of(values)));
         IntStream.range(0, promises.size())
-                 .forEach(index -> array[index].onResult(result -> collector.registerEvent(index, result)));
+                 .forEach(index -> array[index].withResult(result -> collector.registerEvent(index, result)));
 
         return promise.map(list -> (List<Result<T>>) list);
     }
@@ -1092,7 +1124,7 @@ public interface Promise<T> {
         int count = 0;
         for (var p : promises) {
             final var index = count++;
-            p.onResult(result -> collector.registerEvent(index, result));
+            p.withResult(result -> collector.registerEvent(index, result));
         }
 
         return promise;
@@ -1121,6 +1153,7 @@ enum AsyncExecutor {
 }
 
 final class PromiseImpl<T> implements Promise<T> {
+    @SuppressWarnings("LoggerInitializedWithForeignClass")
     private static final Logger log = LoggerFactory.getLogger(Promise.class);
 
     volatile Result<T> result;
