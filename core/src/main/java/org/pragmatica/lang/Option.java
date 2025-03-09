@@ -19,6 +19,7 @@ package org.pragmatica.lang;
 import org.pragmatica.lang.Functions.*;
 import org.pragmatica.lang.Option.None;
 import org.pragmatica.lang.Option.Some;
+import org.pragmatica.lang.io.CoreError;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -153,8 +154,7 @@ public sealed interface Option<T> permits Some, None {
     }
 
     /**
-     * Return value stored in current instance if current instance is present. If current instance is empty then return provided replacement
-     * value.
+     * Return value stored in current instance if current instance is present. If current instance is empty then return provided replacement value.
      *
      * @param replacement Replacement value returned in case if current instance is empty
      *
@@ -165,8 +165,8 @@ public sealed interface Option<T> permits Some, None {
     }
 
     /**
-     * Return value stored in current instance if current instance is present. If current instance is empty then return value returned by
-     * provided supplier. If current instance is not empty then supplier is not invoked.
+     * Return value stored in current instance if current instance is present. If current instance is empty then return value returned by provided
+     * supplier. If current instance is not empty then supplier is not invoked.
      *
      * @param supplier Supplier for replacement value returned in case if current instance is empty
      *
@@ -229,7 +229,7 @@ public sealed interface Option<T> permits Some, None {
 
     /**
      * Convert current instance to instance of {@link Result}. The present instance is converted into success result. The empty instance is converted
-     * into failure result with provided {@link Cause}.
+     * into failure {@link Result} with provided {@link Cause}.
      *
      * @param cause the failure necessary for conversion of empty instance.
      *
@@ -239,16 +239,128 @@ public sealed interface Option<T> permits Some, None {
         return fold(cause::result, Result::success);
     }
 
+    /**
+     * Convert current instance to instance of {@link Result}. The present instance is converted into success result. The empty instance is converted
+     * into failure {@link Result} with provided {@link Cause}. Same as {@link #toResult(Cause)}.
+     *
+     * @param cause the failure necessary for conversion of empty instance.
+     *
+     * @return created instance
+     */
+    default Result<T> await(Cause cause) {
+        return toResult(cause);
+    }
+
+    /**
+     * Convert current instance to instance of {@link Result}. The present instance is converted into success result. The empty is replaced with the
+     * instance of {@link Result} with {@link CoreError.CoreErrors} as a cause.
+     *
+     * @return created instance
+     */
+    default Result<T> toResult() {
+        return toResult(CoreError.emptyOption());
+    }
+
+    /**
+     * Convert current instance to instance of {@link Result}. The present instance is converted into success result. The empty is replaced with the
+     * instance of {@link Result} with {@link CoreError.CoreErrors} as a cause. Same as {@link #toResult()}.
+     *
+     * @return created instance
+     */
+    default Result<T> await() {
+        return toResult();
+    }
+
+    /**
+     * Convert current instance to instance of {@link Result}. The present instance is converted into success result. The empty is replaced with the
+     * instance of {@link Result} returned by provided supplier.
+     *
+     * @param supplier the supplier for the result necessary for conversion of empty instance.
+     *
+     * @return created instance
+     */
     default Result<T> toResult(Supplier<Result<T>> supplier) {
         return fold(supplier, Result::success);
     }
 
+    /**
+     * Convert current instance to instance of {@link Result}. The present instance is converted into success result. The empty is replaced with the
+     * instance of {@link Result} returned by provided supplier. Same as {@link #toResult(Supplier)}.
+     *
+     * @param supplier the supplier for the result necessary for conversion of empty instance.
+     *
+     * @return created instance
+     */
+    default Result<T> await(Supplier<Result<T>> supplier) {
+        return toResult(supplier);
+    }
+
+    /**
+     * Convert current instance to instance of {@link Promise}. The present instance is converted into success {@link Promise}. The empty instance is
+     * converted into failure {@link Promise} with provided {@link Cause}.
+     *
+     * @param cause the failure necessary for conversion of empty instance.
+     *
+     * @return created instance
+     */
     default Promise<T> toPromise(Cause cause) {
         return fold(cause::promise, Promise::success);
     }
 
+    /**
+     * Convert current instance to instance of {@link Promise}. The present instance is converted into success {@link Promise}. The empty instance is
+     * converted into failure {@link Promise} with provided {@link Cause}. Same as {@link #toPromise(Cause)}.
+     *
+     * @param cause the failure necessary for conversion of empty instance.
+     *
+     * @return created instance
+     */
+    default Promise<T> async(Cause cause) {
+        return toPromise(cause);
+    }
+
+    /**
+     * Convert current instance to instance of {@link Promise}. The present instance is converted into success {@link Promise}. The empty is replaced
+     * with the instance of {@link Promise} with {@link CoreError.CoreErrors} as a cause.
+     *
+     * @return created instance
+     */
+    default Promise<T> toPromise() {
+        return toPromise(CoreError.emptyOption());
+    }
+
+    /**
+     * Convert current instance to instance of {@link Promise}. The present instance is converted into success {@link Promise}. The empty is replaced
+     * with the instance of {@link Promise} with {@link CoreError.CoreErrors} as a cause. Same as {@link #toPromise()}.
+     *
+     * @return created instance
+     */
+    default Promise<T> async() {
+        return toPromise();
+    }
+
+    /**
+     * Convert current instance to instance of {@link Promise}. The present instance is converted into success {@link Promise}. The empty is replaced with the
+     * instance of {@link Promise} returned by provided supplier.
+     *
+     * @param supplier the supplier for the result necessary for conversion of empty instance.
+     *
+     * @return created instance
+     */
     default Promise<T> toPromise(Supplier<Promise<T>> supplier) {
         return fold(supplier, Promise::success);
+    }
+
+    /**
+     * Convert current instance to instance of {@link Promise}. The present instance is converted into success {@link Promise}. The empty is replaced with the
+     * instance of {@link Promise} returned by provided supplier. Same as {@link #toPromise(Supplier)}.
+     *
+     * @param supplier the supplier for the result necessary for conversion of empty instance.
+     *
+     * @return created instance
+     */
+    default Promise<T> async(Supplier<Promise<T>> supplier) {
+        return toPromise(supplier);
     }
 
     /**
@@ -372,9 +484,10 @@ public sealed interface Option<T> permits Some, None {
      *
      * @return value stored inside present instance.
      */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     default T unwrap() {
-        return fold(() -> { throw new IllegalStateException("Option is empty!!!"); }, Functions::id);
+        return fold(() -> {throw new IllegalStateException("Option is empty!!!");}, Functions::id);
     }
 
     /**

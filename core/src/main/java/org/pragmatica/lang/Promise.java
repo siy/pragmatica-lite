@@ -404,6 +404,15 @@ public interface Promise<T> {
     Result<T> await(Timeout timeout);
 
     /**
+     * This method is necessary to make {@link Result} and {@link Promise} API consistent.
+     *
+     * @return current instance
+     */
+    default Promise<T> async() {
+        return this;
+    }
+
+    /**
      * Run the provided consumer asynchronously and pass current instance as a parameter.
      *
      * @param consumer Consumer to execute asynchronously.
@@ -527,12 +536,66 @@ public interface Promise<T> {
     }
 
     /**
-     * Use underlying executor to run provided runnable asynchronously.
+     * Asynchronously run provided lambda and eventually resolve returned {@link Promise} with the value returned by lambda if call succeeds or with
+     * the failure if call throws exception.
      *
-     * @param runnable Runnable to run asynchronously.
+     * @param exceptionMapper the function which will transform exception into instance of {@link Cause}
+     * @param supplier        the call to wrap
+     *
+     * @return the {@link Promise} instance which eventually will be resolved with the result of execution of the provided lambda
      */
-    static void async(Runnable runnable) {
-        AsyncExecutor.INSTANCE.runAsync(runnable);
+    static <U> Promise<U> lift(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn0<U> supplier) {
+        return Promise.promise(promise -> promise.resolve(Result.lift(exceptionMapper, supplier)));
+    }
+
+    /**
+     * Asynchronously run provided lambda and eventually resolve returned {@link Promise} with the {@link Unit} if call succeeds or with the failure
+     * if call throws exception.
+     *
+     * @param exceptionMapper the function which will transform exception into instance of {@link Cause}
+     * @param runnable        the call to wrap
+     *
+     * @return the {@link Promise} instance which eventually will be resolved with the {@link Unit} or with the failure with provided cause.
+     */
+    static Promise<Unit> lift(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingRunnable runnable) {
+        return Promise.promise(promise -> promise.resolve(Result.lift(exceptionMapper, runnable)));
+    }
+
+    /**
+     * Asynchronously run provided lambda and eventually resolve returned {@link Promise} with the {@link Unit} if call succeeds or with the failure
+     * if call throws exception.
+     *
+     * @param cause    the cause which will be used to create failure result
+     * @param supplier the call to wrap
+     *
+     * @return the {@link Promise} instance which eventually will be resolved with the result of execution of the provided lambda
+     */
+    static <U> Promise<U> lift(Cause cause, ThrowingFn0<U> supplier) {
+        return Promise.promise(promise -> promise.resolve(Result.lift(cause, supplier)));
+    }
+
+    /**
+     * Asynchronously run provided lambda and eventually resolve returned {@link Promise} with the {@link Unit} if call succeeds or with the failure
+     * if call throws exception.
+     *
+     * @param cause    the cause which will be used to create failure result
+     * @param runnable the call to wrap
+     *
+     * @return the {@link Promise} instance which eventually will be resolved with the {@link Unit} or with the failure with provided cause.
+     */
+    static Promise<Unit> lift(Cause cause, ThrowingRunnable runnable) {
+        return Promise.promise(promise -> promise.resolve(Result.lift(cause, runnable)));
+    }
+
+    /**
+     * Asynchronously run provided lambda and eventually resolve returned {@link Promise} with the {@link Unit} if call succeeds or with the failure
+     *
+     * @param action the action to run
+     *
+     * @return the {@link Promise} instance which eventually will be resolved with the {@link Unit} or with the failure with provided cause.
+     */
+    static Promise<Unit> async(Runnable action) {
+        return Promise.lift(CoreError::exception, action::run);
     }
 
     /**

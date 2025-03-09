@@ -28,4 +28,26 @@ public sealed interface CoreError extends Cause {
             this(cause.getMessage(), cause);
         }
     }
+
+    enum CoreErrors implements CoreError {
+        EMPTY_OPTION("The instance of Option is empty");
+
+        private final String message;
+
+        CoreErrors(String message) {
+            this.message = message;
+        }
+
+        public String message() {
+            return message;
+        }
+    }
+
+    static CoreError emptyOption() {
+        return CoreErrors.EMPTY_OPTION;
+    }
+
+    static CoreError exception(Throwable cause) {
+        return new Exception(cause);
+    }
 }

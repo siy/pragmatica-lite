@@ -335,6 +335,7 @@ public sealed interface Result<T> permits Success, Failure {
      *
      * @return value stored inside present instance.
      */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     default T unwrap() {
         return fold(v -> {throw new IllegalStateException("Unwrap error: " + v.message());}, Functions::id);
@@ -361,6 +362,15 @@ public sealed interface Result<T> permits Success, Failure {
      */
     default Promise<T> toPromise() {
         return Promise.resolved(this);
+    }
+
+    /**
+     * Convert current instance into {@link Promise} instance resolved with current instance. Alias for {@link #toPromise()}.
+     *
+     * @return created promise
+     */
+    default Promise<T> async() {
+        return toPromise();
     }
 
     Result<Unit> UNIT_RESULT = success(unit());
