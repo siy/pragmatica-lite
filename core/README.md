@@ -1,6 +1,6 @@
-# Core Pragmatic Functional Java Classes
+# Pragmatic Functional Java (PFJ) Coding Style Library: Pragmatica Lite Core
 
-The PFJ Core library provides three main monads (`Option<T>`, `Result<T>` and `Promise<T>`) and a few utility classes to make common use cases more convenient.
+The **Pragmatica Lite Core** library provides three main monads (`Option<T>`, `Result<T>` and `Promise<T>`) and a few utility classes to make common use cases more convenient.
 
 ## Motivation
 
@@ -15,7 +15,7 @@ The library provides three main monads:
 
 All monads are designed to be compatible with each other and provide a consistent API. Methods for transformation of one monad to another are also provided.
 
-### Option<T>
+### Option&lt;T>
 
 The `Option<T>` monad represents an optional value. It should be used for all public APIs to represent a potentially missing value. This applies to all cases when such values may appear - method return value, method parameters and class/record fields.
 The `Option<T>` is designed to support pattern matching. There are two implementations of `Option<T>`: `Some<T>` and `None<T>`. For memory optimization, the `None<T>` implementation is a singleton.
@@ -58,7 +58,7 @@ var uppercaseName = switch(name) {
 };
 ```
 
-### Result<T>
+### Result&lt;T>
 
 This monad is a main tool for handling errors in the code. It should be used for all methods that may fail. The `Result<T>` contains either, the the value obtained from the computation, or an error. The error must be an instance implementing `Cause` interface. This interface in some sense serves purpose similar to `Throwable` class and is a root for all possible errors in the application. For convenience, there is `Causes` utility interface, which provides convenience methods for creating `Cause` instances in simple cases. For more complex cases, it is recommended to create custom implementations of `Cause` interface (see [corresponding section](#application-specific-errors)). 
 
@@ -151,7 +151,7 @@ Result<SomeType5> method(SomeType1 inputParameter) {
 ```
 The `trace()` method can be placed anywhere in the chain of transformations and as many times as necessary. It is triggered only if error passes through it, otherwise it has no effect and does not cause any overhead.
 
-### Promise<T>
+### Promise&lt;§T>
 The `Promise<T>` monad represents a computation that may fail and the result of computation is eventually available. The `Promise<T>` is very similar to `Result<T>` and underlying mental model is designed to be very similar too: all `map()` and `flatMap()` transformations are applied in order they are written in code. This makes code easy to reason about despite the asynchronous nature of computations. Nevertheless, there are cases, when strict sequential processing is not necessary. For this purpose `Promise<T>` contains a set of methods, which are designed to perform actions in parallel with main processing pipeline. 
 
 Basic usage looks like this:

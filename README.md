@@ -9,6 +9,7 @@ Set of libraries for Pragmatic Functional Java coding style.
 * Option<T>/Result<T>/Promise<T> monads with consistent and compatible APIs.
 * Simple and convenient to use Promise-based asynchronous API.   
 
-## Example 
-Some examples can be found in the [examples](./examples) folder.
+## Core Library
+The Pragmatica Lite Core contains implementation of basic monads:
+`Option<T>`, `Result<T>` and `Promise<T>`. See [README.md](core/README.md) for more information.
 
