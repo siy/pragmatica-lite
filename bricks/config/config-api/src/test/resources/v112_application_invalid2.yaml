@@ -1,3 +1,0 @@
-app.hello: world
-app.hi: ${app.hello}
-(##$@): 100

@@ -4,11 +4,11 @@
 
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>pragmatica-lite</artifactId>
-    <version>0.5.0</version>
+    <version>0.6.0</version>
     <modules>
         <module>core</module>
-        <module>bom</module>
     </modules>
+
     <packaging>pom</packaging>
 
     <name>Pragmatica Lite</name>
@@ -38,7 +38,6 @@
         </developer>
     </developers>
 
-    <!-- TODO: add modules https://github.com/moditect/moditect -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.release>21</java.release>
@@ -147,15 +146,15 @@
                 <artifactId>site-maven-plugin</artifactId>
                 <version>0.12</version>
                 <configuration>
-                    <message>Maven artifacts for ${project.version}</message> <!-- git commit message -->
-                    <noJekyll>true</noJekyll>  <!-- disable webpage processing -->
-                    <outputDirectory>${project.build.directory}/mvn-repo</outputDirectory> <!-- matches distribution management repository url above -->
-                    <branch>refs/heads/mvn-repo</branch> <!-- remote branch name -->
+                    <message>Maven artifacts for ${project.version}</message>
+                    <noJekyll>true</noJekyll>
+                    <outputDirectory>${project.build.directory}/mvn-repo</outputDirectory>
+                    <branch>refs/heads/mvn-repo</branch>
                     <includes><include>**/*</include></includes>
-                    <repositoryName>pragmatica-lite</repositoryName> <!-- github repo name -->
-                    <repositoryOwner>siy</repositoryOwner> <!-- organization or user name  -->
+                    <repositoryName>pragmatica-lite</repositoryName>
+                    <repositoryOwner>siy</repositoryOwner>
                 </configuration>
-                <executions> <!-- run site-maven-plugin's 'site' target as part of the build's normal 'deploy' phase -->
+                <executions>
                     <execution>
                         <goals>
                             <goal>site</goal>
