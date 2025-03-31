@@ -39,8 +39,10 @@ class ResultTest {
 
     @Test
     void failureResultsAreEqualIfFailureIsEqual() {
-        assertEquals(Result.failure(Causes.cause("123")), Result.success(123).filter(Causes.forValue("{0}"), v -> v < 0));
-        assertNotEquals(Result.failure(Causes.cause("321")), Result.success(123).filter(Causes.forValue("{0}"), v -> v < 0));
+        assertEquals(Result.failure(Causes.cause("123")),
+                     Result.success(123).filter(Causes.forValue("{0}"), v -> v < 0));
+        assertNotEquals(Result.failure(Causes.cause("321")),
+                        Result.success(123).filter(Causes.forValue("{0}"), v -> v < 0));
     }
 
     @Test
@@ -130,12 +132,16 @@ class ResultTest {
         Result.<Integer>failure(Causes.cause("Some error"))
               .flatMap(v -> Result.success(v.toString()))
               .onFailure(cause -> assertEquals("Some error", cause.message()))
-              .trace()
-              .onFailure(System.out::println)
-              .trace()
-              .onFailure(System.out::println)
               .onSuccessRun(Assertions::fail);
 
+    }
+
+    @Test
+    void resultCanBeTraced() {
+        Result.<Integer>failure(Causes.cause("Some error"))
+              .trace()
+              .onSuccessRun(Assertions::fail)
+              .onFailure(cause -> assertTrue(cause.message().contains("ResultTest")));
     }
 
     @Test
@@ -165,13 +171,13 @@ class ResultTest {
     @Test
     void onlyOneMethodIsInvokedOnApply() {
         Result.success(321).apply(
-            failure -> fail(failure.message()),
-            Functions::unitFn
+                failure -> fail(failure.message()),
+                Functions::unitFn
         );
 
         Result.failure(Causes.cause("Some error")).apply(
-            Functions::unitFn,
-            value -> fail(value.toString())
+                Functions::unitFn,
+                value -> fail(value.toString())
         );
     }
 
@@ -269,7 +275,8 @@ class ResultTest {
     @Test
     void liftWrapsCodeWhichCanThrowExceptions() {
         Result.lift(Causes::fromThrowable, () -> throwingFunction(3))
-              .onFailure(cause -> assertTrue(cause.message().startsWith("java.lang.IllegalStateException: Just throw exception 3")))
+              .onFailure(cause -> assertTrue(cause.message()
+                                                  .startsWith("java.lang.IllegalStateException: Just throw exception 3")))
               .onSuccess(_ -> fail("Expecting failure"));
 
         Result.lift(Causes::fromThrowable, () -> throwingFunction(4))
@@ -288,18 +295,20 @@ class ResultTest {
               .onFailure(cause -> fail(cause.message()))
               .onSuccess(value -> assertEquals("Input:4", value));
 
-        Result.lift(Causes.cause("Oops!"), (Functions.ThrowingRunnable) () -> {throw new IllegalStateException();})
+        Result.lift(Causes.cause("Oops!"), (Functions.ThrowingRunnable) () -> {
+                  throw new IllegalStateException();
+              })
               .onSuccess(_ -> fail("Expecting failure"));
     }
 
     @Test
-    void resultCanBeConvertedIntoOptional() {
+    void resultCanBeConvertedToOptional() {
         assertTrue(Result.success(321).toOptional().isPresent());
         assertFalse(Result.failure(Causes.cause("Some error")).toOptional().isPresent());
     }
 
     @Test
-    void resultCanBeConvertedIntoStream() {
+    void resultCanBeConvertedToStream() {
         assertEquals(321, Result.success(321).stream().findFirst().orElseThrow());
         assertTrue(Result.failure(Causes.cause("Some error")).stream().findFirst().isEmpty());
     }
@@ -609,7 +618,11 @@ class ResultTest {
 
     @Test
     void allReturnsSuccessFor5SuccessInputs() {
-        Result.all(Result.success(321), Result.success(123), Result.success(456), Result.success(789), Result.success(654))
+        Result.all(Result.success(321),
+                   Result.success(123),
+                   Result.success(456),
+                   Result.success(789),
+                   Result.success(654))
               .map((value1, value2, value3, value4, value5) -> {
                   assertEquals(321, value1);
                   assertEquals(123, value2);
@@ -623,7 +636,12 @@ class ResultTest {
 
     @Test
     void allReturnsSuccessFor6SuccessInputs() {
-        Result.all(Result.success(321), Result.success(123), Result.success(456), Result.success(789), Result.success(654), Result.success(987))
+        Result.all(Result.success(321),
+                   Result.success(123),
+                   Result.success(456),
+                   Result.success(789),
+                   Result.success(654),
+                   Result.success(987))
               .map((value1, value2, value3, value4, value5, value6) -> {
                   assertEquals(321, value1);
                   assertEquals(123, value2);
@@ -756,7 +774,11 @@ class ResultTest {
 
     @Test
     void allFor5SuccessInputsCanFlatMap() {
-        Result.all(Result.success(321), Result.success(123), Result.success(456), Result.success(789), Result.success(654))
+        Result.all(Result.success(321),
+                   Result.success(123),
+                   Result.success(456),
+                   Result.success(789),
+                   Result.success(654))
               .flatMap((value1, value2, value3, value4, value5) -> {
                   assertEquals(321, value1);
                   assertEquals(123, value2);
@@ -770,7 +792,12 @@ class ResultTest {
 
     @Test
     void allFor6SuccessInputsCanFlatMap() {
-        Result.all(Result.success(321), Result.success(123), Result.success(456), Result.success(789), Result.success(654), Result.success(987))
+        Result.all(Result.success(321),
+                   Result.success(123),
+                   Result.success(456),
+                   Result.success(789),
+                   Result.success(654),
+                   Result.success(987))
               .flatMap((value1, value2, value3, value4, value5, value6) -> {
                   assertEquals(321, value1);
                   assertEquals(123, value2);
@@ -911,7 +938,11 @@ class ResultTest {
 
     @Test
     void allFor5SuccessInputsConvertibleToPromise() {
-        Result.all(Result.success(321), Result.success(123), Result.success(456), Result.success(789), Result.success(654))
+        Result.all(Result.success(321),
+                   Result.success(123),
+                   Result.success(456),
+                   Result.success(789),
+                   Result.success(654))
               .toPromise()
               .map((value1, value2, value3, value4, value5) -> {
                   assertEquals(321, value1);
@@ -927,7 +958,12 @@ class ResultTest {
 
     @Test
     void allFor6SuccessInputsConvertibleToPromise() {
-        Result.all(Result.success(321), Result.success(123), Result.success(456), Result.success(789), Result.success(654), Result.success(987))
+        Result.all(Result.success(321),
+                   Result.success(123),
+                   Result.success(456),
+                   Result.success(789),
+                   Result.success(654),
+                   Result.success(987))
               .toPromise()
               .map((value1, value2, value3, value4, value5, value6) -> {
                   assertEquals(321, value1);
@@ -1032,7 +1068,7 @@ class ResultTest {
     void allReturnsFailureForAnyFailureIn2Inputs() {
         Result.all(Result.success(321), Result.<Integer>failure(Causes.cause("Some error")))
               .map((value1, value2) ->
-                       value1 + value2)
+                           value1 + value2)
               .onSuccessRun(Assertions::fail);
     }
 
@@ -1040,15 +1076,18 @@ class ResultTest {
     void allReturnsFailureForAnyFailureIn3Inputs() {
         Result.all(Result.success(321), Result.success(123), Result.<Integer>failure(Causes.cause("Some error")))
               .map((value1, value2, value3) ->
-                       value1 + value2 + value3)
+                           value1 + value2 + value3)
               .onSuccessRun(Assertions::fail);
     }
 
     @Test
     void allReturnsFailureForAnyFailureIn4Inputs() {
-        Result.all(Result.success(321), Result.success(123), Result.success(456), Result.<Integer>failure(Causes.cause("Some error")))
+        Result.all(Result.success(321),
+                   Result.success(123),
+                   Result.success(456),
+                   Result.<Integer>failure(Causes.cause("Some error")))
               .map((value1, value2, value3, value4) ->
-                       value1 + value2 + value3 + value4)
+                           value1 + value2 + value3 + value4)
               .onSuccessRun(Assertions::fail);
     }
 
@@ -1060,7 +1099,7 @@ class ResultTest {
                    Result.success(789),
                    Result.<Integer>failure(Causes.cause("Some error")))
               .map((value1, value2, value3, value4, value5) ->
-                       value1 + value2 + value3 + value4 + value5)
+                           value1 + value2 + value3 + value4 + value5)
               .onSuccessRun(Assertions::fail);
     }
 
@@ -1073,7 +1112,7 @@ class ResultTest {
                    Result.success(654),
                    Result.<Integer>failure(Causes.cause("Some error")))
               .map((value1, value2, value3, value4, value5, value6) ->
-                       value1 + value2 + value3 + value4 + value5 + value6)
+                           value1 + value2 + value3 + value4 + value5 + value6)
               .onSuccessRun(Assertions::fail);
     }
 
@@ -1087,7 +1126,7 @@ class ResultTest {
                    Result.success(987),
                    Result.<Integer>failure(Causes.cause("Some error")))
               .map((value1, value2, value3, value4, value5, value6, value7) ->
-                       value1 + value2 + value3 + value4 + value5 + value6 + value7)
+                           value1 + value2 + value3 + value4 + value5 + value6 + value7)
               .onSuccessRun(Assertions::fail);
     }
 
@@ -1102,14 +1141,14 @@ class ResultTest {
                    Result.success(321),
                    Result.<Integer>failure(Causes.cause("Some error")))
               .map((value1, value2, value3, value4, value5, value6, value7, value8) ->
-                       value1
-                       + value2
-                       + value3
-                       + value4
-                       + value5
-                       + value6
-                       + value7
-                       + value8)
+                           value1
+                                   + value2
+                                   + value3
+                                   + value4
+                                   + value5
+                                   + value6
+                                   + value7
+                                   + value8)
               .onSuccessRun(Assertions::fail);
     }
 
@@ -1125,15 +1164,15 @@ class ResultTest {
                    Result.success(123),
                    Result.<Integer>failure(Causes.cause("Some error")))
               .map((value1, value2, value3, value4, value5, value6, value7, value8, value9) ->
-                       value1
-                       + value2
-                       + value3
-                       + value4
-                       + value5
-                       + value6
-                       + value7
-                       + value8
-                       + value9)
+                           value1
+                                   + value2
+                                   + value3
+                                   + value4
+                                   + value5
+                                   + value6
+                                   + value7
+                                   + value8
+                                   + value9)
               .onSuccessRun(Assertions::fail);
     }
 

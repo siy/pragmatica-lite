@@ -112,7 +112,7 @@ public sealed interface Causes {
     }
 
     static CompositeCause composite() {
-        record compositeCause(String message, Option<Cause> source, List<Cause> causes) implements CompositeCause {
+        record compositeCause(Option<Cause> source, List<Cause> causes) implements CompositeCause {
             @Override
             public CompositeCause append(Cause cause) {
                 causes().add(cause);
@@ -130,15 +130,20 @@ public sealed interface Causes {
             }
 
             @Override
-            public String toString() {
+            public String message() {
                 var builder = new StringBuilder("Composite:");
 
                 stream().forEach(issue -> builder.append("\n  ")
                                                  .append(issue.message()));
                 return builder.toString();
             }
+
+            @Override
+            public String toString() {
+                return message();
+            }
         }
 
-        return new compositeCause("", none(), new ArrayList<>());
+        return new compositeCause(none(), new ArrayList<>());
     }
 }
