@@ -40,9 +40,9 @@ class ResultTest {
     @Test
     void failureResultsAreEqualIfFailureIsEqual() {
         assertEquals(Result.failure(Causes.cause("123")),
-                     Result.success(123).filter(Causes.forValue("{0}"), v -> v < 0));
+                     Result.success(123).filter(Causes.forValue("%d"), v -> v < 0));
         assertNotEquals(Result.failure(Causes.cause("321")),
-                        Result.success(123).filter(Causes.forValue("{0}"), v -> v < 0));
+                        Result.success(123).filter(Causes.forValue("%d"), v -> v < 0));
     }
 
     @Test
@@ -267,7 +267,7 @@ class ResultTest {
         Result.success(231)
               .onSuccess(value -> assertEquals(231, value))
               .onFailureRun(Assertions::fail)
-              .filter(Causes.forValue("Value {0} is below threshold"), value -> value > 321)
+              .filter(Causes.forValue("Value %d is below threshold"), value -> value > 321)
               .onSuccessRun(Assertions::fail)
               .onFailure(cause -> assertEquals("Value 231 is below threshold", cause.message()));
     }
@@ -329,12 +329,12 @@ class ResultTest {
     @Test
     void resultCanBeFiltered2() {
         Result.success(321)
-              .filter(Causes.forValue("Value {0} is below threshold"), value -> value > 123)
+              .filter(Causes.forValue("Value %d is below threshold"), value -> value > 123)
               .onSuccess(value -> assertEquals(321, value))
               .onFailureRun(Assertions::fail);
 
         Result.success(321)
-              .filter(Causes.forValue("Value {0} is below threshold"), value -> value > 321)
+              .filter(Causes.forValue("Value %d is below threshold"), value -> value > 321)
               .onSuccessRun(Assertions::fail)
               .onFailure(cause -> assertEquals("Value 321 is below threshold", cause.message()));
     }

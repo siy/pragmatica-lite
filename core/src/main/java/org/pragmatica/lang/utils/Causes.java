@@ -17,10 +17,10 @@
 
 package org.pragmatica.lang.utils;
 
+import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
-import org.pragmatica.lang.Cause;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -30,7 +30,8 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static org.pragmatica.lang.Option.*;
+import static org.pragmatica.lang.Option.none;
+import static org.pragmatica.lang.Option.option;
 
 /**
  * Frequently used variants of {@link Cause}.
@@ -97,7 +98,7 @@ public sealed interface Causes {
      * @return created mapping function
      */
     static <T> Fn1<Cause, T> forValue(String template) {
-        return (T input) -> cause(MessageFormat.format(template, input));
+        return (T input) -> cause(String.format(template, input));
     }
 
     interface CompositeCause extends Cause {
