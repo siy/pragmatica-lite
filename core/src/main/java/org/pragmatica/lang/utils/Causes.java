@@ -30,8 +30,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static org.pragmatica.lang.Option.none;
-import static org.pragmatica.lang.Option.some;
+import static org.pragmatica.lang.Option.*;
 
 /**
  * Frequently used variants of {@link Cause}.
@@ -43,13 +42,12 @@ public sealed interface Causes {
     /**
      * Simplest possible variant of {@link Cause} which contains only message describing the cause
      */
-    record SimpleCause(String message, Option<Cause> source) implements Cause {
-        @Override
-        public String toString() {
+    interface SimpleCause extends Cause {
+        default String completeMessage() {
             var builder = new StringBuilder("Cause: ").append(message());
 
-            iterate(issue -> builder.append("\n  ")
-                                    .append(issue.message()));
+            iterate(issue -> builder.append("\n  ").append(issue.message()));
+
             return builder.toString();
         }
     }
@@ -58,22 +56,27 @@ public sealed interface Causes {
      * Construct a simple cause with a given message.
      *
      * @param message message describing the cause
-     *
      * @return created instance
      */
     static Cause cause(String message) {
-        return new SimpleCause(message, none());
+        return cause(message, none());
     }
 
-    static Cause cause(String message, Cause source) {
-        return new SimpleCause(message, some(source));
+    static Cause cause(String message, Option<Cause> source) {
+        record simpleCause(String message, Option<Cause> source) implements SimpleCause {
+            @Override
+            public String toString() {
+                return completeMessage();
+            }
+        }
+
+        return new simpleCause(message, source);
     }
 
     /**
      * Construct a simple cause from provided {@link Throwable}.
      *
      * @param throwable the instance of {@link Throwable} to extract stack trace and message from
-     *
      * @return created instance
      */
     static Cause fromThrowable(Throwable throwable) {
@@ -91,7 +94,6 @@ public sealed interface Causes {
      * </pre></blockquote>
      *
      * @param template the message template prepared for {@link MessageFormat}
-     *
      * @return created mapping function
      */
     static <T> Fn1<Cause, T> forValue(String template) {
@@ -103,7 +105,7 @@ public sealed interface Causes {
             if (cause instanceof CompositeCause composite) {
                 return composite.append(cause(text));
             }
-            return composite().append(cause(text, cause));
+            return composite().append(cause(text, option(cause)));
         }
 
         CompositeCause append(Cause cause);
