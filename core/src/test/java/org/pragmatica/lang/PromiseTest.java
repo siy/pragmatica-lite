@@ -73,6 +73,25 @@ public class PromiseTest {
     }
 
     @Test
+    void multipleAsyncResolutionsAreIgnored() throws InterruptedException {
+        var successCounter = new AtomicInteger(0);
+        var latch = new CountDownLatch(1);
+        var promise = Promise.<Integer>promise().onSuccess(_ -> {
+                                 if (successCounter.getAndIncrement() > 0) {
+                                     fail("Promise must be resolved only once");
+                                 }
+                                 latch.countDown();
+                             })
+                             .onFailure(_ -> fail("Promise must be resolved successfully"));
+
+        for (int i = 0; i < 1000; i++) {
+            promise.succeedAsync(() -> 123);
+        }
+
+        assertTrue(latch.await(5, TimeUnit.SECONDS), "Success handler was not invoked in time");
+    }
+
+    @Test
     void resolvedPromiseCanBeCreated() {
         var promise = Promise.resolved(Result.success(1));
 
@@ -289,14 +308,14 @@ public class PromiseTest {
         var promise = Promise.<Integer>promise();
 
         var lastPromise = promise.onResult(newValue -> {
-                   ref1.set(newValue);
-                   latch.countDown();
-               })
-               .onResultRun(() -> {
-                   ref2.set(true);
-                   latch.countDown();
-               })
-               .withResult(_ -> latch.countDown());
+                                     ref1.set(newValue);
+                                     latch.countDown();
+                                 })
+                                 .onResultRun(() -> {
+                                     ref2.set(true);
+                                     latch.countDown();
+                                 })
+                                 .withResult(_ -> latch.countDown());
 
         assertNull(ref1.get());
         assertFalse(ref2.get());
@@ -318,15 +337,15 @@ public class PromiseTest {
         var promise = Promise.<Integer>promise();
 
         promise
-            .onResult(newValue -> {
-                ref1.set(newValue);
-                latch.countDown();
-            })
-            .onResultRun(() -> {
-                ref2.set(true);
-                latch.countDown();
-            })
-            .withResult(_ -> latch.countDown());
+                .onResult(newValue -> {
+                    ref1.set(newValue);
+                    latch.countDown();
+                })
+                .onResultRun(() -> {
+                    ref2.set(true);
+                    latch.countDown();
+                })
+                .withResult(_ -> latch.countDown());
 
         assertNull(ref1.get());
         assertFalse(ref2.get());
@@ -401,15 +420,15 @@ public class PromiseTest {
         var promise = Promise.<Integer>promise();
 
         promise
-            .onFailure(newValue -> {
-                ref1.set(newValue);
-                latch.countDown();
-            })
-            .onFailureRun(() -> {
-                ref2.set(true);
-                latch.countDown();
-            })
-            .withFailure(_ -> latch.countDown());
+                .onFailure(newValue -> {
+                    ref1.set(newValue);
+                    latch.countDown();
+                })
+                .onFailureRun(() -> {
+                    ref2.set(true);
+                    latch.countDown();
+                })
+                .withFailure(_ -> latch.countDown());
 
         assertNull(ref1.get());
         assertFalse(ref2.get());
@@ -497,8 +516,10 @@ public class PromiseTest {
         promise.await();
 
         //For informational purposes
-        System.out.printf("From start of promise creation to start of async execution: %.2fms\n", (ref2.get() - ref1.get()) / 1e6);
-        System.out.printf("From start of async execution to start of execution of attached action: %.2fms\n", (ref3.get() - ref2.get()) / 1e6);
+        System.out.printf("From start of promise creation to start of async execution: %.2fms\n",
+                          (ref2.get() - ref1.get()) / 1e6);
+        System.out.printf("From start of async execution to start of execution of attached action: %.2fms\n",
+                          (ref3.get() - ref2.get()) / 1e6);
         System.out.printf("Total execution time: %2fms\n", (ref3.get() - ref1.get()) / 1e6);
 
         // Expect that timeout should be between requested and twice as requested
@@ -517,21 +538,21 @@ public class PromiseTest {
         var replacementPromise = Promise.<Long>promise();
 
         promise
-            .onSuccess(integerPromise::succeed)
-            .map(Objects::toString)
-            .onSuccess(stringPromise::succeed)
-            .map(Long::parseLong)
-            .onSuccess(longPromise::succeed)
-            .onSuccessRun(() -> {
-                try {
-                    Thread.sleep(50);
-                    counterPromise.succeed(1);
-                } catch (InterruptedException e) {
-                    //ignore
-                }
-            })
-            .map(() -> 123L)
-            .onSuccess(replacementPromise::succeed);
+                .onSuccess(integerPromise::succeed)
+                .map(Objects::toString)
+                .onSuccess(stringPromise::succeed)
+                .map(Long::parseLong)
+                .onSuccess(longPromise::succeed)
+                .onSuccessRun(() -> {
+                    try {
+                        Thread.sleep(50);
+                        counterPromise.succeed(1);
+                    } catch (InterruptedException e) {
+                        //ignore
+                    }
+                })
+                .map(() -> 123L)
+                .onSuccess(replacementPromise::succeed);
 
         assertFalse(promise.isResolved());
         assertFalse(integerPromise.isResolved());
@@ -617,7 +638,7 @@ public class PromiseTest {
         var promise4 = Promise.<Integer>promise();
 
         var allPromise = Promise.all(
-            promise1, promise2, promise3, promise4).id();
+                promise1, promise2, promise3, promise4).id();
 
         assertFalse(allPromise.isResolved());
 
@@ -640,7 +661,7 @@ public class PromiseTest {
         var promise5 = Promise.<Integer>promise();
 
         var allPromise = Promise.all(
-            promise1, promise2, promise3, promise4, promise5).id();
+                promise1, promise2, promise3, promise4, promise5).id();
 
         assertFalse(allPromise.isResolved());
 
@@ -665,7 +686,7 @@ public class PromiseTest {
         var promise6 = Promise.<Integer>promise();
 
         var allPromise = Promise.all(
-            promise1, promise2, promise3, promise4, promise5, promise6).id();
+                promise1, promise2, promise3, promise4, promise5, promise6).id();
 
         assertFalse(allPromise.isResolved());
 
@@ -692,7 +713,7 @@ public class PromiseTest {
         var promise7 = Promise.<Integer>promise();
 
         var allPromise = Promise.all(
-            promise1, promise2, promise3, promise4, promise5, promise6, promise7).id();
+                promise1, promise2, promise3, promise4, promise5, promise6, promise7).id();
 
         assertFalse(allPromise.isResolved());
 
@@ -721,8 +742,8 @@ public class PromiseTest {
         var promise8 = Promise.<Integer>promise();
 
         var allPromise = Promise.all(
-            promise1, promise2, promise3, promise4, promise5,
-            promise6, promise7, promise8).id();
+                promise1, promise2, promise3, promise4, promise5,
+                promise6, promise7, promise8).id();
 
         assertFalse(allPromise.isResolved());
 
@@ -753,8 +774,8 @@ public class PromiseTest {
         var promise9 = Promise.<Integer>promise();
 
         var allPromise = Promise.all(
-            promise1, promise2, promise3, promise4, promise5,
-            promise6, promise7, promise8, promise9).id();
+                promise1, promise2, promise3, promise4, promise5,
+                promise6, promise7, promise8, promise9).id();
 
         assertFalse(allPromise.isResolved());
 
