@@ -2,17 +2,24 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>pragmatica-lite</artifactId>
         <groupId>org.pragmatica-lite</groupId>
+        <artifactId>pragmatica-lite</artifactId>
         <version>0.6.3</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>core</artifactId>
-    <packaging>jar</packaging>
+    <artifactId>examples</artifactId>
 
     <dependencies>
+        <!-- Internal -->
+        <dependency>
+            <groupId>org.pragmatica-lite</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- External -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
