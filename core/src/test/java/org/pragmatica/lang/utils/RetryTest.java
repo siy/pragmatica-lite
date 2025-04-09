@@ -3,7 +3,7 @@ package org.pragmatica.lang.utils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.lang.Promise;
-import org.pragmatica.lang.io.Timeout;
+import org.pragmatica.lang.io.TimeSpan;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -12,15 +12,15 @@ import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.pragmatica.lang.Promise.success;
-import static org.pragmatica.lang.io.Timeout.timeout;
+import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 import static org.pragmatica.lang.utils.Causes.cause;
 import static org.pragmatica.lang.utils.Retry.BackoffStrategy.*;
 import static org.pragmatica.lang.utils.Retry.create;
 
 class RetryTest {
-    private static final Timeout SHORT_DURATION = timeout(10).millis();
-    private static final Timeout MEDIUM_DURATION = timeout(50).millis();
-    private static final Timeout LONG_DURATION = timeout(100).millis();
+    private static final TimeSpan SHORT = timeSpan(10).millis();
+    private static final TimeSpan MEDIUM = timeSpan(50).millis();
+    private static final TimeSpan LONG = timeSpan(100).millis();
 
     @Test
     void shouldRetryAndEventuallySucceed() {
@@ -35,7 +35,7 @@ class RetryTest {
             }
         };
 
-        create(5, fixed(SHORT_DURATION))
+        create(5, fixed(SHORT))
                 .execute(operation)
                 .await()
                 .onFailureRun(Assertions::fail)
@@ -50,7 +50,7 @@ class RetryTest {
 
         Supplier<Promise<String>> operation = () -> cause("Simulated failure " + attempts.incrementAndGet()).promise();
 
-        create(3, fixed(SHORT_DURATION))
+        create(3, fixed(SHORT))
                 .execute(operation)
                 .await()
                 .onSuccessRun(Assertions::fail)
@@ -69,7 +69,7 @@ class RetryTest {
             return success("Immediate success");
         };
 
-        create(5, fixed(SHORT_DURATION))
+        create(5, fixed(SHORT))
                 .execute(operation)
                 .await()
                 .onFailureRun(Assertions::fail)
@@ -102,7 +102,7 @@ class RetryTest {
 
         var fixedDuration = 100L;
 
-        create(5, fixed(timeout(fixedDuration).millis()))
+        create(5, fixed(timeSpan(fixedDuration).millis()))
                 .execute(operation)
                 .await();
 
@@ -145,8 +145,8 @@ class RetryTest {
         var factor = 2.0;
 
         create(5,
-               exponential(timeout(initialDelay).millis(),
-                           timeout(1).seconds(),
+               exponential(timeSpan(initialDelay).millis(),
+                           timeSpan(1).seconds(),
                            factor,
                            false))
 
@@ -197,9 +197,9 @@ class RetryTest {
         var increment = 50L;
 
         create(5,
-               linear(timeout(initialDelay).millis(),
-                      timeout(increment).millis(),
-                      timeout(1).seconds()))
+               linear(timeSpan(initialDelay).millis(),
+                      timeSpan(increment).millis(),
+                      timeSpan(1).seconds()))
                 .execute(operation)
                 .await();
 
@@ -241,8 +241,8 @@ class RetryTest {
         var maxDelay = 100L;
 
         create(5,
-               exponential(timeout(initialDelay).millis(),
-                           timeout(maxDelay).millis(),
+               exponential(timeSpan(initialDelay).millis(),
+                           timeSpan(maxDelay).millis(),
                            10.0,
                            false))
                 .execute(operation)
@@ -258,7 +258,7 @@ class RetryTest {
 
         Supplier<Promise<String>> operation = () -> {
             var attempt = attempts.incrementAndGet();
-            return Promise.promise(timeout(50).millis(),
+            return Promise.promise(timeSpan(50).millis(),
                                    promise -> {
                                        if (attempt < 3) {
                                            promise.fail(cause("Simulated failure " + attempt));
@@ -269,7 +269,7 @@ class RetryTest {
 
         };
 
-        create(5, fixed(SHORT_DURATION))
+        create(5, fixed(SHORT))
                 .execute(operation)
                 .await()
                 .onFailureRun(Assertions::fail)
@@ -281,8 +281,8 @@ class RetryTest {
     @Test
     void exponentialBackoffWithJitterShouldHaveVariableDelays() {
         var strategy = exponential(
-                MEDIUM_DURATION,
-                LONG_DURATION,
+                MEDIUM,
+                LONG,
                 2.0,
                 true);
 
@@ -308,15 +308,15 @@ class RetryTest {
 
     @Test
     void backoffStrategyShouldCalculateCorrectDelays() {
-        var fixedStrategy = fixed(MEDIUM_DURATION);
+        var fixedStrategy = fixed(MEDIUM);
 
-        assertEquals(MEDIUM_DURATION, fixedStrategy.nextTimeout(1));
-        assertEquals(MEDIUM_DURATION, fixedStrategy.nextTimeout(2));
-        assertEquals(MEDIUM_DURATION, fixedStrategy.nextTimeout(10));
+        assertEquals(MEDIUM, fixedStrategy.nextTimeout(1));
+        assertEquals(MEDIUM, fixedStrategy.nextTimeout(2));
+        assertEquals(MEDIUM, fixedStrategy.nextTimeout(10));
 
-        var initialDelay = SHORT_DURATION;
-        var increment = SHORT_DURATION;
-        var maxDelay = LONG_DURATION;
+        var initialDelay = SHORT;
+        var increment = SHORT;
+        var maxDelay = LONG;
 
         var linearStrategy = linear(
                 initialDelay,
@@ -324,9 +324,9 @@ class RetryTest {
                 maxDelay);
 
         assertEquals(initialDelay, linearStrategy.nextTimeout(1));
-        assertEquals(timeout(initialDelay.nanoseconds() + increment.nanoseconds()).nanos(),
+        assertEquals(timeSpan(initialDelay.nanos() + increment.nanos()).nanos(),
                      linearStrategy.nextTimeout(2));
-        assertEquals(timeout(initialDelay.nanoseconds() + 2 * increment.nanoseconds()).nanos(),
+        assertEquals(timeSpan(initialDelay.nanos() + 2 * increment.nanos()).nanos(),
                      linearStrategy.nextTimeout(3));
 
         var delayForHighAttempt = linearStrategy.nextTimeout(15);
@@ -335,19 +335,19 @@ class RetryTest {
                    "Expected delay to be capped at " + maxDelay + " but was " + delayForHighAttempt);
 
         var exponentialStrategy = exponential(
-                SHORT_DURATION,
-                LONG_DURATION,
+                SHORT,
+                LONG,
                 2.0,
                 false);
 
-        assertEquals(SHORT_DURATION, exponentialStrategy.nextTimeout(1));
-        assertEquals(timeout(SHORT_DURATION.nanoseconds() * 2).nanos(), exponentialStrategy.nextTimeout(2));
-        assertEquals(timeout(SHORT_DURATION.nanoseconds() * 4).nanos(), exponentialStrategy.nextTimeout(3));
+        assertEquals(SHORT, exponentialStrategy.nextTimeout(1));
+        assertEquals(timeSpan(SHORT.nanos() * 2).nanos(), exponentialStrategy.nextTimeout(2));
+        assertEquals(timeSpan(SHORT.nanos() * 4).nanos(), exponentialStrategy.nextTimeout(3));
 
         var expDelayForHighAttempt = exponentialStrategy.nextTimeout(20);
 
-        assertTrue(expDelayForHighAttempt.compareTo(LONG_DURATION) <= 0,
-                   "Expected delay to be capped at " + LONG_DURATION + " but was " + expDelayForHighAttempt);
+        assertTrue(expDelayForHighAttempt.compareTo(LONG) <= 0,
+                   "Expected delay to be capped at " + LONG + " but was " + expDelayForHighAttempt);
     }
 
     @Test
@@ -359,7 +359,7 @@ class RetryTest {
             attemptCounts[i] = new AtomicInteger(0);
         }
 
-        Retry retry = create(3, fixed(SHORT_DURATION));
+        Retry retry = create(3, fixed(SHORT));
 
         var promises = IntStream.range(0, operationCount)
                                 .mapToObj(index -> retry.execute(() -> {

@@ -20,7 +20,6 @@ package org.pragmatica.lang;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.lang.io.CoreError;
-import org.pragmatica.lang.io.Timeout;
 import org.pragmatica.lang.utils.Causes;
 
 import java.util.Objects;
@@ -33,6 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.pragmatica.lang.Unit.unit;
+import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 
 public class PromiseTest {
     private static final Cause FAULT_CAUSE = new CoreError.Fault("Test fault");
@@ -251,7 +251,7 @@ public class PromiseTest {
 
     @Test
     void promiseCanBeUsedAfterTimeout() {
-        var promise = Promise.promise(Timeout.timeout(100).millis(), p -> p.succeed(1));
+        var promise = Promise.promise(timeSpan(100).millis(), p -> p.succeed(1));
 
         assertFalse(promise.isResolved());
 
@@ -292,7 +292,7 @@ public class PromiseTest {
         assertNull(ref1.get());
         assertFalse(ref2.get());
 
-        promise.await(Timeout.timeout(10).millis())
+        promise.await(timeSpan(10).millis())
                .onFailure(this::assertIsTimeout)
                .onSuccess(_ -> fail("Timeout is expected"));
 
@@ -507,7 +507,7 @@ public class PromiseTest {
         var ref3 = new AtomicLong();
 
         var promise = Promise.<Integer>promise()
-                             .async(Timeout.timeout(10).millis(), p -> {
+                             .async(timeSpan(10).millis(), p -> {
                                  ref2.set(System.nanoTime());
                                  p.resolve(Result.success(1))
                                   .onResultRun(() -> ref3.set(System.nanoTime()));
@@ -523,8 +523,8 @@ public class PromiseTest {
         System.out.printf("Total execution time: %2fms\n", (ref3.get() - ref1.get()) / 1e6);
 
         // Expect that timeout should be between requested and twice as requested
-        assertTrue((ref2.get() - ref1.get()) >= Timeout.timeout(10).millis().nanoseconds());
-        assertTrue((ref2.get() - ref1.get()) < Timeout.timeout(20).millis().nanoseconds());
+        assertTrue((ref2.get() - ref1.get()) >= timeSpan(10).millis().nanos());
+        assertTrue((ref2.get() - ref1.get()) < timeSpan(20).millis().nanos());
     }
 
     @Test

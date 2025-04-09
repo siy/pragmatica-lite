@@ -2,16 +2,13 @@ package org.pragmatica.lang.utils;
 
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
-import org.pragmatica.lang.io.Timeout;
+import org.pragmatica.lang.io.TimeSpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import static org.pragmatica.lang.io.Timeout.timeout;
+import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 
 /// A utility class implementing the Retry pattern using Promise for handling asynchronous operations.
 /// This implementation uses a staged fluent builder pattern where all parameters are mandatory.
@@ -24,6 +21,8 @@ import static org.pragmatica.lang.io.Timeout.timeout;
 ///      .execute(operation)
 ///}
 ///```
+/// The implementation is stateless and thread-safe, so single instance could be used to run several
+/// requests at once.
 public interface Retry {
     /**
      * Executes an asynchronous operation with retry logic.
@@ -37,9 +36,8 @@ public interface Retry {
     /**
      * Create Retry with specified maximal number of attempts and delay calculation strategy.
      *
-     * @param maxAttempts   maximal number of retries
+     * @param maxAttempts     maximal number of retries
      * @param backoffStrategy the delay calculation strategy to use
-     *
      * @return created instance.
      */
     static Retry create(int maxAttempts, BackoffStrategy backoffStrategy) {
@@ -68,18 +66,13 @@ public interface Retry {
                         log.warn("Operation failed (attempt {}/{}), retrying after {}: {}",
                                  attempt, maxAttempts, delay, failure.cause().message());
 
-                        SCHEDULER.schedule(() -> executeWithLoop(operation,
-                                                                 attempt + 1,
-                                                                 output),
-                                           delay.milliseconds(),
-                                           TimeUnit.MILLISECONDS);
+                        SharedScheduler.schedule(() -> executeWithLoop(operation, attempt + 1, output), delay);
                         yield output;
                     }
                 };
             }
 
             private static final Logger log = LoggerFactory.getLogger(Retry.class);
-            private static final ScheduledExecutorService SCHEDULER = new ScheduledThreadPoolExecutor(1);
         }
 
         return new retry(maxAttempts, backoffStrategy);
@@ -92,7 +85,7 @@ public interface Retry {
          * @param attempt the current attempt number (1-based)
          * @return next attempt delay
          */
-        Timeout nextTimeout(int attempt);
+        TimeSpan nextTimeout(int attempt);
 
         /**
          * Creates a fixed backoff strategy that always returns the same delay
@@ -100,10 +93,10 @@ public interface Retry {
          * @param delay the fixed delay between retry attempts
          * @return a fixed backoff strategy
          */
-        static BackoffStrategy fixed(Timeout delay) {
-            record fixedBackoffStrategy(Timeout delay) implements BackoffStrategy {
+        static BackoffStrategy fixed(TimeSpan delay) {
+            record fixedBackoffStrategy(TimeSpan delay) implements BackoffStrategy {
                 @Override
-                public Timeout nextTimeout(int attempt) {
+                public TimeSpan nextTimeout(int attempt) {
                     return delay;
                 }
             }
@@ -120,15 +113,15 @@ public interface Retry {
          * @return an exponential backoff strategy
          */
         static BackoffStrategy exponential(
-                Timeout initialDelay,
-                Timeout maxDelay,
+                TimeSpan initialDelay,
+                TimeSpan maxDelay,
                 double factor,
                 boolean withJitter) {
 
-            record exponentialBackoffStrategy(Timeout initialDelay, Timeout maxDelay, double factor,
+            record exponentialBackoffStrategy(TimeSpan initialDelay, TimeSpan maxDelay, double factor,
                                               boolean withJitter) implements BackoffStrategy {
                 @Override
-                public Timeout nextTimeout(int attempt) {
+                public TimeSpan nextTimeout(int attempt) {
                     var multiplier = Math.pow(factor, attempt - 1);
 
                     if (withJitter) {
@@ -136,9 +129,9 @@ public interface Retry {
                         multiplier *= 0.9 + Math.random() * 0.2;
                     }
 
-                    long delay = (long) (initialDelay.nanoseconds() * multiplier);
+                    long delay = (long) (initialDelay.nanos() * multiplier);
 
-                    return timeout(Math.min(delay, maxDelay.nanoseconds())).nanos();
+                    return timeSpan(Math.min(delay, maxDelay.nanos())).nanos();
                 }
             }
             return new exponentialBackoffStrategy(initialDelay, maxDelay, factor, withJitter);
@@ -152,13 +145,13 @@ public interface Retry {
          * @param maxDelay     the maximum delay
          * @return a linear backoff strategy
          */
-        static BackoffStrategy linear(Timeout initialDelay, Timeout increment, Timeout maxDelay) {
-            record linearBackoffStrategy(Timeout initialDelay, Timeout increment, Timeout maxDelay) implements
+        static BackoffStrategy linear(TimeSpan initialDelay, TimeSpan increment, TimeSpan maxDelay) {
+            record linearBackoffStrategy(TimeSpan initialDelay, TimeSpan increment, TimeSpan maxDelay) implements
                     BackoffStrategy {
                 @Override
-                public Timeout nextTimeout(int attempt) {
-                    long delay = initialDelay.nanoseconds() + (increment.nanoseconds() * (attempt - 1));
-                    return timeout(Math.min(delay, maxDelay.nanoseconds())).nanos();
+                public TimeSpan nextTimeout(int attempt) {
+                    long delay = initialDelay.nanos() + (increment.nanos() * (attempt - 1));
+                    return timeSpan(Math.min(delay, maxDelay.nanos())).nanos();
                 }
             }
             return new linearBackoffStrategy(initialDelay, increment, maxDelay);

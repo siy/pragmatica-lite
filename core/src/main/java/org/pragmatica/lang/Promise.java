@@ -20,7 +20,7 @@ package org.pragmatica.lang;
 import org.pragmatica.lang.Functions.*;
 import org.pragmatica.lang.Tuple.*;
 import org.pragmatica.lang.io.CoreError;
-import org.pragmatica.lang.io.Timeout;
+import org.pragmatica.lang.io.TimeSpan;
 import org.pragmatica.lang.utils.Causes;
 import org.pragmatica.lang.utils.ResultCollector;
 import org.slf4j.Logger;
@@ -428,7 +428,7 @@ public interface Promise<T> {
      *
      * @return Result of the promise resolution.
      */
-    Result<T> await(Timeout timeout);
+    Result<T> await(TimeSpan timeout);
 
     /**
      * This method is necessary to make {@link Result} and {@link Promise} API consistent.
@@ -452,15 +452,25 @@ public interface Promise<T> {
     }
 
     /**
+     * Executes the given supplier asynchronously and returns a promise that resolves when the supplier's result is obtained.
+     *
+     * @param supplier a supplier function that provides a result of type Result<T> to be resolved asynchronously
+     * @return a Promise of type T that resolves with the result of the supplier execution
+     */
+    default Promise<T> async(Supplier<Result<T>> supplier) {
+        return async(promise -> promise.resolve(supplier.get()));
+    }
+
+    /**
      * Run the provided consumer asynchronously and pass current instance as a parameter. The consumer is executed after the specified timeout.
      *
-     * @param timeout Timeout to wait before executing the consumer.
+     * @param delay Time to wait before executing the consumer.
      * @param action  Consumer to execute asynchronously.
      *
      * @return Current promise instance.
      */
-    default Promise<T> async(Timeout timeout, Consumer<Promise<T>> action) {
-        AsyncExecutor.INSTANCE.runAsync(timeout, () -> action.accept(this));
+    default Promise<T> async(TimeSpan delay, Consumer<Promise<T>> action) {
+        AsyncExecutor.INSTANCE.runAsync(delay, () -> action.accept(this));
         return this;
     }
 
@@ -555,11 +565,12 @@ public interface Promise<T> {
      * Create new unresolved promise instance and run the provided consumer asynchronously with the newly created instance after specified timeout.
      *
      * @param consumer Consumer to execute asynchronously with the created instance.
+     * @param delay delay before execution starts
      *
      * @return Created instance.
      */
-    static <T> Promise<T> promise(Timeout timeout, Consumer<Promise<T>> consumer) {
-        return Promise.<T>promise().async(timeout, consumer);
+    static <T> Promise<T> promise(TimeSpan delay, Consumer<Promise<T>> consumer) {
+        return Promise.<T>promise().async(delay, consumer);
     }
 
     /**
@@ -1140,10 +1151,10 @@ enum AsyncExecutor {
         executor.submit(runnable);
     }
 
-    void runAsync(Timeout timeout, Runnable runnable) {
+    void runAsync(TimeSpan delay, Runnable runnable) {
         runAsync(() -> {
             try {
-                Thread.sleep(timeout.duration());
+                Thread.sleep(delay.duration());
             } catch (InterruptedException e) {
                 // ignore
             }
@@ -1228,7 +1239,7 @@ final class PromiseImpl<T> implements Promise<T> {
      * @return If instance is resolved while waiting, then the result of resolution is returned. Otherwise, Timeout error is returned.
      */
     @Override
-    public Result<T> await(Timeout timeout) {
+    public Result<T> await(TimeSpan timeout) {
         if (result != null) {
             return result;
         }
@@ -1241,12 +1252,12 @@ final class PromiseImpl<T> implements Promise<T> {
             log.trace("Thread {} ({}) is waiting for resolution of Promise {} at {}:{} for {}ns",
                       thread.threadId(), thread.getName(), this,
                       stackTraceElement.getFileName(), stackTraceElement.getLineNumber(),
-                      timeout.nanoseconds());
+                      timeout.nanos());
         }
 
         push(new CompletionJoin<>(thread));
 
-        var deadline = System.nanoTime() + timeout.nanoseconds();
+        var deadline = System.nanoTime() + timeout.nanos();
 
         while (result == null && System.nanoTime() < deadline) {
             LockSupport.parkNanos(deadline - System.nanoTime());
