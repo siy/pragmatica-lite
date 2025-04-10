@@ -151,7 +151,7 @@ Result<SomeType5> method(SomeType1 inputParameter) {
 ```
 The `trace()` method can be placed anywhere in the chain of transformations and as many times as necessary. It is triggered only if error passes through it, otherwise it has no effect and does not cause any overhead.
 
-### Promise&lt;§T>
+### Promise&lt;T>
 The `Promise<T>` monad represents a computation that may fail and the result of computation is eventually available. The `Promise<T>` is very similar to `Result<T>` and underlying mental model is designed to be very similar too: all `map()` and `flatMap()` transformations are applied in order they are written in code. This makes code easy to reason about despite the asynchronous nature of computations. Nevertheless, there are cases, when strict sequential processing is not necessary. For this purpose `Promise<T>` contains a set of methods, which are designed to perform actions in parallel with main processing pipeline. 
 
 Basic usage looks like shown below. All actions are performed sequentially as they are written in code:
