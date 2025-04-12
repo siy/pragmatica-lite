@@ -20,7 +20,6 @@ package org.pragmatica.lang.utils;
 import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Option;
-import org.pragmatica.lang.Result;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -33,16 +32,12 @@ import java.util.stream.Stream;
 import static org.pragmatica.lang.Option.none;
 import static org.pragmatica.lang.Option.option;
 
-/**
- * Frequently used variants of {@link Cause}.
- */
+/// Frequently used variants of [Cause].
 @SuppressWarnings("unused")
 public sealed interface Causes {
     record unused() implements Causes {}
 
-    /**
-     * Simplest possible variant of {@link Cause} which contains only message describing the cause
-     */
+    /// Simplest possible variant of [Cause] which contains only message describing the cause
     interface SimpleCause extends Cause {
         default String completeMessage() {
             var builder = new StringBuilder("Cause: ").append(message());
@@ -53,12 +48,10 @@ public sealed interface Causes {
         }
     }
 
-    /**
-     * Construct a simple cause with a given message.
-     *
-     * @param message message describing the cause
-     * @return created instance
-     */
+    /// Construct a simple cause with a given message.
+    ///
+    /// @param message message describing the cause
+    /// @return created instance
     static Cause cause(String message) {
         return cause(message, none());
     }
@@ -74,12 +67,10 @@ public sealed interface Causes {
         return new simpleCause(message, source);
     }
 
-    /**
-     * Construct a simple cause from provided {@link Throwable}.
-     *
-     * @param throwable the instance of {@link Throwable} to extract stack trace and message from
-     * @return created instance
-     */
+    /// Construct a simple cause from provided [Throwable].
+    ///
+    /// @param throwable the instance of [Throwable] to extract stack trace and message from
+    /// @return created instance
     static Cause fromThrowable(Throwable throwable) {
         var sw = new StringWriter();
         throwable.printStackTrace(new PrintWriter(sw));
@@ -87,16 +78,14 @@ public sealed interface Causes {
         return cause(sw.toString());
     }
 
-    /**
-     * Create a mapper which will map a value into a formatted message. Main use case for this function - creation of mappers for
-     * {@link Result#filter(Fn1, Predicate)}:
-     * <blockquote><pre>
-     * filter(Causes.forValue("Value {0} is below threshold"), value -> value > 321)
-     * </pre></blockquote>
-     *
-     * @param template the message template prepared for {@link MessageFormat}
-     * @return created mapping function
-     */
+    /// Create a mapper which will map a value into a formatted message. Main use case for this function - creation of mappers for
+    /// [#filter(Fn1,Predicate)]:
+    /// <blockquote><pre>
+    /// filter(Causes.forValue("Value {0} is below threshold"), value -> value > 321)
+    /// </pre></blockquote>
+    ///
+    /// @param template the message template prepared for [MessageFormat]
+    /// @return created mapping function
     static <T> Fn1<Cause, T> forValue(String template) {
         return (T input) -> cause(String.format(template, input));
     }

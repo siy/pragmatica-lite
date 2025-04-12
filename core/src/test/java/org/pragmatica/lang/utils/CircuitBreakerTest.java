@@ -218,12 +218,12 @@ class CircuitBreakerTest {
         final int threads = 10;
 
         // Create a special circuit breaker with real time source for this test
-        var breaker = CircuitBreaker.builder()
-                                    .failureThreshold(3)
-                                    .resetTimeout(timeSpan(100).millis())
-                                    .testAttempts(2)
-                                    .shouldTrip(cause -> cause == TEST_ERROR)
-                                    .withDefaultTimeSource();
+var breaker = CircuitBreaker.builder()
+                            .failureThreshold(3)
+                            .resetTimeout(timeSpan(100).millis())
+                            .testAttempts(2)
+                            .shouldTrip(cause -> cause == TEST_ERROR)
+                            .withDefaultTimeSource();
 
         Fn2<Promise<String>, Integer, Promise<String>> halfFail = (index, promise) ->
                 (index < 5)

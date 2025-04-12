@@ -24,43 +24,38 @@ import java.util.concurrent.TimeUnit;
 
 import static org.pragmatica.lang.Tuple.tuple;
 
-/**
- * Representation of time span.
- */
+/// Representation of time span.
 public sealed interface TimeSpan extends Comparable<TimeSpan> {
-    /**
-     * Time span value represented as number of nanoseconds.
-     *
-     * @return time span in nanoseconds
-     */
+    /// Time span value represented as number of nanoseconds.
+    ///
+    /// @return time span in nanoseconds
     long nanos();
 
-    /**
-     * Time span value represented as number of microseconds.
-     *
-     * @return time span in microseconds
-     */
+    /// Time span value represented as number of microseconds.
+    ///
+    /// @return time span in microseconds
     default long micros() {
         return TimeUnit.NANOSECONDS.toMicros(nanos());
     }
 
-    /**
-     * Time span value represented as number of milliseconds.
-     *
-     * @return time span in milliseconds
-     */
+    /// Time span value represented as number of milliseconds.
+    ///
+    /// @return time span in milliseconds
     default long millis() {
         return TimeUnit.NANOSECONDS.toMillis(nanos());
     }
 
+    /// Create time span as a sum of current time span and provided argument.
     default TimeSpan plus(TimeSpan other) {
         return new TimeSpanImpl(nanos() + other.nanos());
     }
 
+    /// Create time span as a sum of current time span and provided argument.
     default TimeSpan plus(long value) {
         return plus(value, TimeUnit.NANOSECONDS);
     }
 
+    /// Create time span as a sum of current time span and provided argument.
     default TimeSpan plus(long value, TimeUnit unit) {
         return new TimeSpanImpl(nanos() + unit.toNanos(value));
     }
@@ -68,31 +63,23 @@ public sealed interface TimeSpan extends Comparable<TimeSpan> {
     long NANOS_IN_SECOND = TimeUnit.SECONDS.toNanos(1);
     long MILLIS_IN_SECOND = TimeUnit.MILLISECONDS.toNanos(1);
 
-    /**
-     * Time span value represented as number of whole seconds and remaining nanoseconds. This representation is compatible with many use cases, for
-     * example with {@link Duration} (see {@link #duration()}).
-     *
-     * @return time span represented as tuple containing number of seconds and remaining nanoseconds
-     */
+    /// Time span value represented as number of whole seconds and remaining nanoseconds. This representation is compatible with many use cases, for
+    /// example with [Duration] (see [#duration()]).
+    ///
+    /// @return time span represented as tuple containing number of seconds and remaining nanoseconds
     default Tuple2<Long, Integer> secondsAndNanos() {
         return tuple(nanos() / NANOS_IN_SECOND, (int) (nanos() % NANOS_IN_SECOND));
     }
 
-    /**
-     * Time span value represented as number of whole milliseconds and remaining nanoseconds. This representation is compatible with many use cases, for
-     * example with {@link Thread#sleep(long, int).
-     *
-     * @return time span represented as tuple containing number of milliseconds and remaining nanoseconds
-     */
+    /// Time span value represented as number of whole milliseconds and remaining nanoseconds. This representation is compatible with many use cases, for
+    /// example with [span represented as tuple containing number of milliseconds and remaining nanoseconds][#sleep(long,int).time]
     default Tuple2<Long, Integer> millisAndNanos() {
         return tuple(nanos() / MILLIS_IN_SECOND, (int) (nanos() % MILLIS_IN_SECOND));
     }
 
-    /**
-     * Time span value represented as {@link Duration}.
-     *
-     * @return time span as {@link Duration}
-     */
+    /// Time span value represented as [Duration].
+    ///
+    /// @return time span as [Duration]
     default Duration duration() {
         return secondsAndNanos().map(Duration::ofSeconds);
     }
@@ -106,13 +93,11 @@ public sealed interface TimeSpan extends Comparable<TimeSpan> {
         return TimeSpan.timeSpan(ttl.toMillis()).millis();
     }
 
-    /**
-     * Create instance of time span builder.
-     *
-     * @param value initial value passed to builder.
-     *
-     * @return builder instance
-     */
+    /// Create instance of time span builder.
+    ///
+    /// @param value initial value passed to builder.
+    ///
+    /// @return builder instance
     static TimeSpanBuilder timeSpan(long value) {
         return () -> value;
     }
@@ -124,71 +109,55 @@ public sealed interface TimeSpan extends Comparable<TimeSpan> {
         }
     }
 
-    /**
-     * Fluent interval conversion builder
-     */
+    /// Fluent interval conversion builder
     interface TimeSpanBuilder {
         long value();
 
-        /**
-         * Create {@link TimeSpan} instance by interpreting value as nanoseconds.
-         *
-         * @return Created instance
-         */
+        /// Create [TimeSpan] instance by interpreting value as nanoseconds.
+        ///
+        /// @return Created instance
         default TimeSpan nanos() {
             return new TimeSpanImpl(value());
         }
 
-        /**
-         * Create {@link TimeSpan} instance by interpreting value as microseconds.
-         *
-         * @return Created instance
-         */
+        /// Create [TimeSpan] instance by interpreting value as microseconds.
+        ///
+        /// @return Created instance
         default TimeSpan micros() {
             return new TimeSpanImpl(TimeUnit.MICROSECONDS.toNanos(value()));
         }
 
-        /**
-         * Create {@link TimeSpan} instance by interpreting value as milliseconds.
-         *
-         * @return Created instance
-         */
+        /// Create [TimeSpan] instance by interpreting value as milliseconds.
+        ///
+        /// @return Created instance
         default TimeSpan millis() {
             return new TimeSpanImpl(TimeUnit.MILLISECONDS.toNanos(value()));
         }
 
-        /**
-         * Create {@link TimeSpan} instance by interpreting value as seconds.
-         *
-         * @return Created instance
-         */
+        /// Create [TimeSpan] instance by interpreting value as seconds.
+        ///
+        /// @return Created instance
         default TimeSpan seconds() {
             return new TimeSpanImpl(TimeUnit.SECONDS.toNanos(value()));
         }
 
-        /**
-         * Create {@link TimeSpan} instance by interpreting value as minutes.
-         *
-         * @return Created instance
-         */
+        /// Create [TimeSpan] instance by interpreting value as minutes.
+        ///
+        /// @return Created instance
         default TimeSpan minutes() {
             return new TimeSpanImpl(TimeUnit.MINUTES.toNanos(value()));
         }
 
-        /**
-         * Create {@link TimeSpan} instance by interpreting value as hours.
-         *
-         * @return Created instance
-         */
+        /// Create [TimeSpan] instance by interpreting value as hours.
+        ///
+        /// @return Created instance
         default TimeSpan hours() {
             return new TimeSpanImpl(TimeUnit.HOURS.toNanos(value()));
         }
 
-        /**
-         * Create {@link TimeSpan} instance by interpreting value as days.
-         *
-         * @return Created instance
-         */
+        /// Create [TimeSpan] instance by interpreting value as days.
+        ///
+        /// @return Created instance
         default TimeSpan days() {
             return new TimeSpanImpl(TimeUnit.DAYS.toNanos(value()));
         }

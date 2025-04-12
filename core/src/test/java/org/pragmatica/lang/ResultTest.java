@@ -241,13 +241,13 @@ class ResultTest {
 
     @Test
     void resultCanBeConvertedToOption() {
-        Result.success(123).toOption()
+        Result.success(123).option()
               .onPresent(value -> assertEquals(123, value))
               .onEmpty(Assertions::fail);
 
         var flag1 = new AtomicBoolean(false);
 
-        Result.<Integer>failure(Causes.cause("123")).toOption()
+        Result.<Integer>failure(Causes.cause("123")).option()
               .onPresent(_ -> fail("Should not happen"))
               .onEmpty(() -> flag1.set(true));
 
@@ -299,12 +299,6 @@ class ResultTest {
                   throw new IllegalStateException();
               })
               .onSuccess(_ -> fail("Expecting failure"));
-    }
-
-    @Test
-    void resultCanBeConvertedToOptional() {
-        assertTrue(Result.success(321).toOptional().isPresent());
-        assertFalse(Result.failure(Causes.cause("Some error")).toOptional().isPresent());
     }
 
     @Test
@@ -434,14 +428,12 @@ class ResultTest {
 
     @Test
     void resultCanBeConvertedToPromise() {
-        Result.success(321)
-              .toPromise()
+        Promise.resolved(Result.success(321))
               .await()
               .onSuccess(value -> assertEquals(321, value))
               .onFailureRun(Assertions::fail);
 
-        Result.failure(Causes.cause("Some error"))
-              .toPromise()
+        Promise.resolved(Result.failure(Causes.cause("Some error")))
               .await()
               .onFailure(cause -> assertEquals(Causes.cause("Some error"), cause))
               .onSuccessRun(Assertions::fail);

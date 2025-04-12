@@ -35,11 +35,13 @@ class RetryTest {
             }
         };
 
-        create(5, fixed(SHORT))
-                .execute(operation)
-                .await()
-                .onFailureRun(Assertions::fail)
-                .onSuccess(value -> assertEquals("Success on attempt 3", value));
+        var retry = create().attempts(5)
+                            .strategy(fixed().interval(SHORT));
+
+        retry.execute(operation)
+             .await()
+             .onFailureRun(Assertions::fail)
+             .onSuccess(value -> assertEquals("Success on attempt 3", value));
 
         assertEquals(3, attempts.get());
     }
@@ -50,11 +52,13 @@ class RetryTest {
 
         Supplier<Promise<String>> operation = () -> cause("Simulated failure " + attempts.incrementAndGet()).promise();
 
-        create(3, fixed(SHORT))
-                .execute(operation)
-                .await()
-                .onSuccessRun(Assertions::fail)
-                .onFailure(cause -> assertTrue(cause.message().contains("Simulated failure 3")));
+        var retry = create().attempts(3)
+                            .strategy(fixed().interval(SHORT));
+
+        retry.execute(operation)
+             .await()
+             .onSuccessRun(Assertions::fail)
+             .onFailure(cause -> assertTrue(cause.message().contains("Simulated failure 3")));
 
         assertEquals(3, attempts.get());
     }
@@ -69,11 +73,13 @@ class RetryTest {
             return success("Immediate success");
         };
 
-        create(5, fixed(SHORT))
-                .execute(operation)
-                .await()
-                .onFailureRun(Assertions::fail)
-                .onSuccess(value -> assertEquals("Immediate success", value));
+        var retry = create().attempts(5)
+                            .strategy(fixed().interval(SHORT));
+
+        retry.execute(operation)
+             .await()
+             .onFailureRun(Assertions::fail)
+             .onSuccess(value -> assertEquals("Immediate success", value));
 
         assertEquals(1, attempts.get());
     }
@@ -102,9 +108,11 @@ class RetryTest {
 
         var fixedDuration = 100L;
 
-        create(5, fixed(timeSpan(fixedDuration).millis()))
-                .execute(operation)
-                .await();
+        var retry = create().attempts(5)
+                            .strategy(fixed().interval(timeSpan(fixedDuration).millis()));
+
+        retry.execute(operation)
+             .await();
 
         var interval = intervalBetweenAttempts.get();
 
@@ -144,14 +152,14 @@ class RetryTest {
         var initialDelay = 50L;
         var factor = 2.0;
 
-        create(5,
-               exponential(timeSpan(initialDelay).millis(),
-                           timeSpan(1).seconds(),
-                           factor,
-                           false))
+        var retry = create().attempts(5)
+                            .strategy(exponential().initialDelay(timeSpan(initialDelay).millis())
+                                                   .maxDelay(timeSpan(1).seconds())
+                                                   .factor(factor)
+                                                   .withoutJitter());
 
-                .execute(operation)
-                .await();
+        retry.execute(operation)
+             .await();
 
         // Assert that the second interval is approximately twice the first
         var first = firstInterval.get();
@@ -196,12 +204,12 @@ class RetryTest {
         var initialDelay = 50L;
         var increment = 50L;
 
-        create(5,
-               linear(timeSpan(initialDelay).millis(),
-                      timeSpan(increment).millis(),
-                      timeSpan(1).seconds()))
-                .execute(operation)
-                .await();
+        var retry = create().attempts(5)
+                            .strategy(linear().initialDelay(timeSpan(initialDelay).millis())
+                                              .increment(timeSpan(increment).millis())
+                                              .maxDelay(timeSpan(1).seconds()));
+        retry.execute(operation)
+             .await();
 
         var first = firstInterval.get();
         var second = secondInterval.get();
@@ -240,13 +248,14 @@ class RetryTest {
         var initialDelay = 10L;
         var maxDelay = 100L;
 
-        create(5,
-               exponential(timeSpan(initialDelay).millis(),
-                           timeSpan(maxDelay).millis(),
-                           10.0,
-                           false))
-                .execute(operation)
-                .await();
+        var retry = create().attempts(5)
+                            .strategy(exponential()
+                                              .initialDelay(timeSpan(initialDelay).millis())
+                                              .maxDelay(timeSpan(maxDelay).millis())
+                                              .factor(10.0)
+                                              .withoutJitter());
+        retry.execute(operation)
+             .await();
 
         assertTrue(maxInterval.get() <= maxDelay * 1.2,
                    "Expected max interval to be no more than " + maxDelay + "ms but was " + maxInterval.get() + "ms");
@@ -269,22 +278,22 @@ class RetryTest {
 
         };
 
-        create(5, fixed(SHORT))
-                .execute(operation)
-                .await()
-                .onFailureRun(Assertions::fail)
-                .onSuccess(value -> assertEquals("Success on attempt 3", value));
+        var retry = create().attempts(5)
+                            .strategy(fixed().interval(SHORT));
+        retry.execute(operation)
+             .await()
+             .onFailureRun(Assertions::fail)
+             .onSuccess(value -> assertEquals("Success on attempt 3", value));
 
         assertEquals(3, attempts.get());
     }
 
     @Test
     void exponentialBackoffWithJitterShouldHaveVariableDelays() {
-        var strategy = exponential(
-                MEDIUM,
-                LONG,
-                2.0,
-                true);
+        var strategy = exponential().initialDelay(MEDIUM)
+                                    .maxDelay(LONG)
+                                    .factor(2.0)
+                                    .withJitter();
 
         // Then - With jitter, two calls with the same attempt should usually produce different delays
         // Note: There's a small chance they could be the same by coincidence
@@ -308,7 +317,7 @@ class RetryTest {
 
     @Test
     void backoffStrategyShouldCalculateCorrectDelays() {
-        var fixedStrategy = fixed(MEDIUM);
+        var fixedStrategy = fixed().interval(MEDIUM);
 
         assertEquals(MEDIUM, fixedStrategy.nextTimeout(1));
         assertEquals(MEDIUM, fixedStrategy.nextTimeout(2));
@@ -318,10 +327,9 @@ class RetryTest {
         var increment = SHORT;
         var maxDelay = LONG;
 
-        var linearStrategy = linear(
-                initialDelay,
-                increment,
-                maxDelay);
+        var linearStrategy = linear().initialDelay(initialDelay)
+                                     .increment(increment)
+                                     .maxDelay(maxDelay);
 
         assertEquals(initialDelay, linearStrategy.nextTimeout(1));
         assertEquals(timeSpan(initialDelay.nanos() + increment.nanos()).nanos(),
@@ -334,11 +342,10 @@ class RetryTest {
         assertTrue(delayForHighAttempt.compareTo(maxDelay) <= 0,
                    "Expected delay to be capped at " + maxDelay + " but was " + delayForHighAttempt);
 
-        var exponentialStrategy = exponential(
-                SHORT,
-                LONG,
-                2.0,
-                false);
+        var exponentialStrategy = exponential().initialDelay(SHORT)
+                                               .maxDelay(LONG)
+                                               .factor(2.0)
+                                               .withoutJitter();
 
         assertEquals(SHORT, exponentialStrategy.nextTimeout(1));
         assertEquals(timeSpan(SHORT.nanos() * 2).nanos(), exponentialStrategy.nextTimeout(2));
@@ -359,7 +366,8 @@ class RetryTest {
             attemptCounts[i] = new AtomicInteger(0);
         }
 
-        Retry retry = create(3, fixed(SHORT));
+        var retry = create().attempts(3)
+                            .strategy(fixed().interval(SHORT));
 
         var promises = IntStream.range(0, operationCount)
                                 .mapToObj(index -> retry.execute(() -> {

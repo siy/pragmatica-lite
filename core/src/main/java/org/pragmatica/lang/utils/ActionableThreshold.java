@@ -17,39 +17,33 @@
 
 package org.pragmatica.lang.utils;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-/**
- * Helper class used to track number of events and trigger action once threshold is reached. The action is triggered only once, when number of events
- * exactly matches configured threshold.
- */
+/// Helper class used to track number of events and trigger action once threshold is reached. The action is triggered only once, when number of events
+/// exactly matches configured threshold. It is a non-blocking version of [CountDownLatch] which executes provided action
+/// when counter reaches zero instead of waiting.
 public record ActionableThreshold(AtomicInteger counter, Runnable action) {
-    /**
-     * Create an instance configured for threshold and action.
-     *
-     * @param count  Number of events to register
-     * @param action Action to perform
-     *
-     * @return Created instance
-     */
+    /// Create an instance configured for threshold and action.
+    ///
+    /// @param count  Number of events to register
+    /// @param action Action to perform
+    ///
+    /// @return Created instance
     public static ActionableThreshold threshold(int count, Runnable action) {
         return new ActionableThreshold(new AtomicInteger(count), action);
     }
 
-    /**
-     * Perform operation on current instance.
-     *
-     * @return Current instance
-     */
+    /// Perform operation on current instance.
+    ///
+    /// @return Current instance
     public ActionableThreshold apply(Consumer<ActionableThreshold> setup) {
         setup.accept(this);
         return this;
     }
 
-    /**
-     * Register event and perform action if threshold is reached. Once threshold is reached no further events will trigger action execution.
-     */
+    /// Register event and perform action if threshold is reached. Once threshold is reached no further events will trigger action execution.
     public void registerEvent() {
         if (counter.get() <= 0) {
             return;

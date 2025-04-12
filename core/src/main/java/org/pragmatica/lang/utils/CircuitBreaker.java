@@ -1,3 +1,20 @@
+/*
+ *  Copyright (c) 2025 Sergiy Yevtushenko.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package org.pragmatica.lang.utils;
 
 import org.pragmatica.lang.Cause;
@@ -19,34 +36,27 @@ import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 /// service protected by the CircuitBreaker. Each service must have its own instance of
 /// CircuitBreaker though.
 public interface CircuitBreaker {
-    /**
-     * Execute an operation through the circuit breaker.
-     *
-     * @param operation The promise-returning operation to execute
-     * @param <T>       The return type of the operation
-     * @return A promise containing the result or a circuit-open failure
-     */
+    /// Execute an operation through the circuit breaker.
+    ///
+    /// @param operation The promise-returning operation to execute
+    /// @param <T>       The return type of the operation
+    ///
+    /// @return A promise containing the result or a circuit-open failure
     <T> Promise<T> execute(Supplier<Promise<T>> operation);
 
-    /**
-     * Gets the current state of the circuit breaker.
-     *
-     * @return The current state
-     */
+    /// Gets the current state of the circuit breaker.
+    ///
+    /// @return The current state
     State state();
 
-    /**
-     * Gets the number of failures since last reset.
-     *
-     * @return The failure count
-     */
+    /// Gets the number of failures since last reset.
+    ///
+    /// @return The failure count
     long failureCount();
 
-    /**
-     * Gets the interval since last state change.
-     *
-     * @return The last state change timestamp
-     */
+    /// Gets the interval since last state change.
+    ///
+    /// @return The last state change timestamp
     TimeSpan timeSinceLastStateChange();
 
     enum State {
@@ -144,17 +154,10 @@ public interface CircuitBreaker {
                     lastStateChangeTimestamp.set(timeSource().nanoTime());
                     log.info("Circuit breaker stateRef changed from {} to {}", oldState, newState);
 
-                    if (newState == State.OPEN) {
-                        // Schedule automatic reset to half-open after timeout
-                        scheduleReset();
-                    }
-
-                    if (newState == State.HALF_OPEN) {
-                        testSuccessCount.set(0);
-                    }
-
-                    if (newState == State.CLOSED) {
-                        failureCountRef.set(0);
+                    switch (newState) {
+                        case OPEN -> scheduleReset();
+                        case HALF_OPEN -> testSuccessCount.set(0);
+                        case CLOSED -> failureCountRef.set(0);
                     }
                 }
             }
@@ -195,11 +198,9 @@ public interface CircuitBreaker {
         }
     }
 
-    /**
-     * Creates a builder for configuring a new CircuitBreaker.
-     *
-     * @return A new builder
-     */
+    /// Creates a builder for configuring a new CircuitBreaker.
+    ///
+    /// @return A new builder
     static StageFailureThreshold builder() {
         return failureThreshold ->
                 resetTimeout ->

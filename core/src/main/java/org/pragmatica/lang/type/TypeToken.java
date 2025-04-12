@@ -6,18 +6,16 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 
-/**
- * Simple implementation of type token which allows to capture full generic type. <br /> In order to use this class, one should create anonymous
- * instance of it with required type:
- * <pre> {@code
- *  new TypeToken<Map<Key, List<Values>>() {}
- * }</pre>
- * <p>
- * Then this instance can be used to retrieve complete generic type of the created instance. Note that this implementation is rudimentary and does not
- * provide any extras, but it's good fit to purposes of capturing parameter type.
- * <p>
- * See <a href="http://gafter.blogspot.com/2006/12/super-type-tokens.html">this article</a> for more details.
- */
+/// Simple implementation of type token which allows to capture full generic type.
+/// In order to use this class, one should create anonymous
+/// instance of it with required type:
+/// <pre>
+/// `new TypeToken<Map<Key, List<Values>>(){}`</pre>
+///
+/// Then this instance can be used to retrieve complete generic type of the created instance. Note that this implementation is rudimentary and does not
+/// provide any extras, but it's good fit to purposes of capturing parameter type.
+///
+/// See <a href="http://gafter.blogspot.com/2006/12/super-type-tokens.html">this article</a> for more details.
 public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
     private final Type token;
 
@@ -46,21 +44,18 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
         return rawClass(token);
     }
 
-    /**
-     * Return type arguments starting from the most outer one. Each index points to elements at given level of nesting.
-     * For example, for {@code Map<Key, List<Value>>}: <br />
-     * {@code typeArgument()} returns {@code Map.class} <br />
-     * {@code typeArgument(0)} returns {@code Key.class} <br />
-     * {@code typeArgument(1)} returns {@code List.class} <br />
-     * {@code typeArgument(1, 0)} returns {@code Value.class} <br />
-     *
-     * I.e. First argument points to the type arguments of the outer type. Second - to the type arguments of the type
-     * argument of outer type selected by first argument. And so on.
-     *
-     * @param indexes Indexes of type arguments
-     *
-     * @return type argument at the specified chain of indexes or empty option some index points to the non-existent type argument
-     */
+    /// Return type arguments starting from the most outer one. Each index points to elements at given level of nesting.
+    /// For example, for `Map<Key, List<Value>>`:
+    /// `typeArgument()` returns `Map.class`
+    /// `typeArgument(0)` returns `Key.class`
+    /// `typeArgument(1)` returns `List.class`
+    /// `typeArgument(1, 0)` returns `Value.class`
+    /// I.e. First argument points to the type arguments of the outer type. Second - to the type arguments of the type
+    /// argument of outer type selected by first argument. And so on.
+    ///
+    /// @param indexes Indexes of type arguments
+    ///
+    /// @return type argument at the specified chain of indexes or empty option some index points to the non-existent type argument
     public Option<Class<?>> typeArgument(int ... indexes) {
         if (indexes.length == 0) {
             return Option.option(rawClass(token));

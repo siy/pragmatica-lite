@@ -1,3 +1,20 @@
+/*
+ *  Copyright (c) 2025 Sergiy Yevtushenko.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package org.pragmatica.lang.utils;
 
 import org.pragmatica.lang.Promise;
@@ -24,23 +41,16 @@ import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 /// The implementation is stateless and thread-safe, so single instance could be used to run several
 /// requests at once.
 public interface Retry {
-    /**
-     * Executes an asynchronous operation with retry logic.
-     *
-     * @param operation The async operation to retry
-     * @param <T>       The type of result returned by the operation
-     * @return A Promise containing the result of the successful operation
-     */
+    /// Executes an asynchronous operation with retry logic.
+    ///
+    /// @param operation The async operation to retry
+    /// @param <T>       The type of result returned by the operation
+    ///
+    /// @return A Promise containing the result of the successful operation
     <T> Promise<T> execute(Supplier<Promise<T>> operation);
 
-    /**
-     * Create Retry with specified maximal number of attempts and delay calculation strategy.
-     *
-     * @param maxAttempts     maximal number of retries
-     * @param backoffStrategy the delay calculation strategy to use
-     * @return created instance.
-     */
-    static Retry create(int maxAttempts, BackoffStrategy backoffStrategy) {
+    /// Create Retry with specified maximal number of attempts and delay calculation strategy.
+    static RetryStageMaxAttempts create() {
         record retry(int maxAttempts, BackoffStrategy backoffStrategy) implements Retry {
             @Override
             public <T> Promise<T> execute(Supplier<Promise<T>> operation) {
@@ -75,49 +85,41 @@ public interface Retry {
             private static final Logger log = LoggerFactory.getLogger(Retry.class);
         }
 
-        return new retry(maxAttempts, backoffStrategy);
+        return maxAttempts -> backoffStrategy -> new retry(maxAttempts, backoffStrategy);
+    }
+
+    interface RetryStageMaxAttempts {
+        RetryStageBackoffStrategy attempts(int maxAttempts);
+    }
+    interface RetryStageBackoffStrategy {
+        Retry strategy(BackoffStrategy backoffStrategy);
     }
 
     interface BackoffStrategy {
-        /**
-         * Calculate the delay for a given retry attempt
-         *
-         * @param attempt the current attempt number (1-based)
-         * @return next attempt delay
-         */
+        /// Calculate the delay for a given retry attempt
+        ///
+        /// @param attempt the current attempt number (1-based)
+        ///
+        /// @return next attempt delay
         TimeSpan nextTimeout(int attempt);
 
-        /**
-         * Creates a fixed backoff strategy that always returns the same delay
-         *
-         * @param delay the fixed delay between retry attempts
-         * @return a fixed backoff strategy
-         */
-        static BackoffStrategy fixed(TimeSpan delay) {
-            record fixedBackoffStrategy(TimeSpan delay) implements BackoffStrategy {
+        /// Creates a fixed backoff strategy that always returns the same delay
+        static FixedStage fixed() {
+            record fixedBackoffStrategy(TimeSpan interval) implements BackoffStrategy {
                 @Override
                 public TimeSpan nextTimeout(int attempt) {
-                    return delay;
+                    return interval;
                 }
             }
-            return new fixedBackoffStrategy(delay);
+            return fixedBackoffStrategy::new;
         }
 
-        /**
-         * Creates an exponential backoff strategy with configurable parameters
-         *
-         * @param initialDelay the initial delay
-         * @param maxDelay     the maximum delay
-         * @param factor       the multiplier for each successive delay
-         * @param withJitter   whether to add random jitter
-         * @return an exponential backoff strategy
-         */
-        static BackoffStrategy exponential(
-                TimeSpan initialDelay,
-                TimeSpan maxDelay,
-                double factor,
-                boolean withJitter) {
+        interface FixedStage {
+            BackoffStrategy interval(TimeSpan interval);
+        }
 
+        /// Creates an exponential backoff strategy with configurable parameters
+        static ExponentialStageInitialDelay exponential() {
             record exponentialBackoffStrategy(TimeSpan initialDelay, TimeSpan maxDelay, double factor,
                                               boolean withJitter) implements BackoffStrategy {
                 @Override
@@ -134,18 +136,36 @@ public interface Retry {
                     return timeSpan(Math.min(delay, maxDelay.nanos())).nanos();
                 }
             }
-            return new exponentialBackoffStrategy(initialDelay, maxDelay, factor, withJitter);
+            return initialDelay -> maxDelay -> factor -> withJitter ->
+                    new exponentialBackoffStrategy(initialDelay, maxDelay, factor, withJitter);
         }
 
-        /**
-         * Creates a linear backoff strategy with configurable parameters
-         *
-         * @param initialDelay the initial delay
-         * @param increment    the increment to add for each retry
-         * @param maxDelay     the maximum delay
-         * @return a linear backoff strategy
-         */
-        static BackoffStrategy linear(TimeSpan initialDelay, TimeSpan increment, TimeSpan maxDelay) {
+        interface ExponentialStageInitialDelay {
+            ExponentialStageMaxDelay initialDelay(TimeSpan initialDelay);
+        }
+
+        interface ExponentialStageMaxDelay {
+            ExponentialStageFactor maxDelay(TimeSpan maxDelay);
+        }
+
+        interface ExponentialStageFactor {
+            ExponentialStageWithJitter factor(double factor);
+        }
+
+        interface ExponentialStageWithJitter {
+            BackoffStrategy jitter(boolean withJitter);
+
+            default BackoffStrategy withJitter() {
+                return jitter(true);
+            }
+
+            default BackoffStrategy withoutJitter() {
+                return jitter(false);
+            }
+        }
+
+        /// Creates a linear backoff strategy with configurable parameters
+        static LinearStageInitialDelay linear() {
             record linearBackoffStrategy(TimeSpan initialDelay, TimeSpan increment, TimeSpan maxDelay) implements
                     BackoffStrategy {
                 @Override
@@ -154,7 +174,21 @@ public interface Retry {
                     return timeSpan(Math.min(delay, maxDelay.nanos())).nanos();
                 }
             }
-            return new linearBackoffStrategy(initialDelay, increment, maxDelay);
+            return initialDelay -> increment -> maxDelay ->
+                    new linearBackoffStrategy(initialDelay, increment, maxDelay);
+        }
+
+        // Linear
+        interface LinearStageInitialDelay {
+            LinearStageIncrement initialDelay(TimeSpan initialDelay);
+        }
+
+        interface LinearStageIncrement {
+            LinearStageMaxDelay increment(TimeSpan increment);
+        }
+
+        interface LinearStageMaxDelay {
+            BackoffStrategy maxDelay(TimeSpan maxDelay);
         }
     }
 }

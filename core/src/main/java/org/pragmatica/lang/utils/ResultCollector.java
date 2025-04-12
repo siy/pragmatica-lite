@@ -20,43 +20,35 @@ package org.pragmatica.lang.utils;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-/**
- * Helper class used to track number of events along with results and trigger action once threshold is reached. The action is triggered only once,
- * when number of events exactly matches configured threshold. All collected results are passed to action.
- * <p>
- * Note that this is fairly low level class and for performance reasons it omits most checks. In particular, it's the caller responsibility that each
- * expected event assign its own result (i.e. uses correct index value).
- */
+/// Helper class used to track number of events along with results and trigger action once threshold is reached. The action is triggered only once,
+/// when number of events exactly matches configured threshold. All collected results are passed to action.
+///
+/// Note that this is fairly low level class and for performance reasons it omits most checks. In particular, it's the caller responsibility that each
+/// expected event assign its own result (i.e. uses correct index value).
 @SuppressWarnings("unused")
 public record ResultCollector(Object[] results, AtomicInteger counter, Consumer<Object[]> action) {
-    /**
-     * Create an instance configured for threshold and action.
-     *
-     * @param count  Number of events to register
-     * @param action Action to perform
-     *
-     * @return Created instance
-     */
+    /// Create an instance configured for threshold and action.
+    ///
+    /// @param count  Number of events to register
+    /// @param action Action to perform
+    ///
+    /// @return Created instance
     public static ResultCollector resultCollector(int count, Consumer<Object[]> action) {
         assert count >= 0;
         return new ResultCollector(new Object[count], new AtomicInteger(count), action);
     }
 
-    /**
-     * Perform operation on current instance.
-     *
-     * @param setup action to perform.
-     *
-     * @return Current instance
-     */
+    /// Perform operation on current instance.
+    ///
+    /// @param setup action to perform.
+    ///
+    /// @return Current instance
     public ResultCollector apply(Consumer<ResultCollector> setup) {
         setup.accept(this);
         return this;
     }
 
-    /**
-     * Register event and perform action if threshold is reached. Once threshold is reached no further events will trigger action execution.
-     */
+    /// Register event and perform action if threshold is reached. Once threshold is reached no further events will trigger action execution.
     public void registerEvent(int index, Object value) {
         if (counter.get() <= 0) {
             return;

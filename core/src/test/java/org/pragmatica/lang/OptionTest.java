@@ -308,7 +308,8 @@ class OptionTest {
 
     @Test
     void presentOptionCanBeConvertedToSuccessPromise() {
-        Option.present(1).toPromise(Causes.cause("Not expected"))
+        Option<Integer> integerOption = Option.present(1);
+        integerOption.<Promise<Integer>>fold(Causes.cause("Not expected")::promise, Promise::success)
               .await() // Not strictly necessary, as Promise is created resolved.
               .onSuccess(value -> assertEquals(1, value))
               .onFailureRun(Assertions::fail);
@@ -316,7 +317,7 @@ class OptionTest {
 
     @Test
     void emptyOptionCanBeConvertedToSuppliedPromise() {
-        Option.empty().toPromise(() -> Promise.success(123))
+        Option.empty().<Promise<Object>>fold(() -> Promise.success(123), Promise::success)
               .await() // Not strictly necessary, as Promise is created resolved.
               .onFailureRun(Assertions::fail)
               .onSuccess(value -> assertEquals(123, value));
@@ -324,7 +325,8 @@ class OptionTest {
 
     @Test
     void presentOptionCanBeConvertedWithoutSupplyingPromise() {
-        Option.present(1).toPromise(() -> Promise.success(321))
+        Option<Integer> integerOption = Option.present(1);
+        integerOption.fold(() -> Promise.success(321), Promise::success)
               .await() // Not strictly necessary, as Promise is created resolved.
               .onSuccess(value -> assertEquals(1, value))
               .onFailureRun(Assertions::fail);
@@ -332,7 +334,8 @@ class OptionTest {
 
     @Test
     void emptyOptionCanBeConvertedToFailurePromise() {
-        Option.empty().toPromise(Causes.cause("Expected"))
+        Cause cause1 = Causes.cause("Expected");
+        Option.empty().fold(cause1::promise, Promise::success)
               .await() // Not strictly necessary, as Promise is created resolved.
               .onSuccess(_ -> fail("Should not be a success"))
               .onFailure(cause -> assertEquals("Expected", cause.message()));
