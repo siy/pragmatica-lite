@@ -2,7 +2,6 @@ package org.pragmatica.examples.promise;
 
 import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Promise;
-import org.pragmatica.lang.io.TimeSpan;
 import org.pragmatica.lang.utils.Causes;
 import org.pragmatica.lang.utils.Retry;
 
@@ -11,8 +10,8 @@ import java.util.Currency;
 import java.util.List;
 
 import static org.pragmatica.lang.io.TimeSpan.timeSpan;
-import static org.pragmatica.lang.utils.Retry.BackoffStrategy.*;
-import static org.pragmatica.lang.utils.Retry.create;
+import static org.pragmatica.lang.utils.Retry.BackoffStrategy.fixed;
+import static org.pragmatica.lang.utils.Retry.BackoffStrategy.linear;
 
 class SequentialPromiseOperationExample {
     private final UserRepository userRepository = _ -> Causes.cause("User not found").promise();
