@@ -1,61 +1,61 @@
 # Asynchronous Processing in Java with Promises
 
-Traditionally asynchronous processing is considered complex and error prone. There are several approaches to address this issue:
+Traditionally asynchronous processing is considered complex and error-prone. There are several approaches to address this issue:
 
 - The async/await language constructs focusing on making asynchronous code look like synchronous code. Unfortunately, this approach
-never achieves the goal, code remains complex and error prone. Errors like accidental invocation of synchronous method within asynchronous context are hard to spot while 
-they easily can effectively kill scalability.
+  never achieves the goal, code remains complex and error-prone. Errors like accidental invocation of synchronous method within asynchronous context are difficult to spot while
+  they easily can effectively kill scalability.
 - Classic threading in various forms and shapes. Java with Executors or Virtual Threads, Go with goroutines, etc. The core idea remains the same:
-expose all internals and let users handle all this. Tools like Structured Concurrency make it somewhat bearable, but
-the approach remains complex to use and prone to various kinds of hard to nail down and fix errors like deadlocks and alike.
+  expose all internals and let users handle all this. Tools like Structured Concurrency make it somewhat bearable, but
+  the approach remains complex to use and prone to various kinds of difficult to nail down and fix errors like deadlocks and alike.
 - Third approach is to build composable processing pipelines with Reactive Streams. Unfortunately, design decisions
-(namely pull model and artificial "everything is a stream" mental model) resulted in convoluted API and several technical details leaking 
-into user code (schedulers, subscribing, back pressure, etc.). This made Reactive Streams famous for being hard to master and reason about,
-especially for non-trivial processing scenarios.
-- Fourth approach is Promises with functional style API. Unlike mentioned above approaches, API remains straightforward and code easy to read 
-and reason about. There are other advantages as well: very few technical details leaking into the user code and simple mental model. 
-Unlike Reactive Streams, Promises use push processing model.
+  (namely pull model and artificial "everything is a stream" mental model) resulted in convoluted API and several technical details leaking
+  into user code (schedulers, subscribing, back pressure, etc.). This made Reactive Streams famous for being difficult to master and reason about,
+  especially for non-trivial processing scenarios.
+- Fourth approach is Promises with functional style API. Unlike mentioned above approaches, API remains straightforward and code easy to read
+  and reason about. There are other advantages as well: very few technical details leaking into the user code and simple mental model.
+  Unlike Reactive Streams, Promises use push processing model.
 
 > Push vs Pull Processing Model
 > These models define how processing pipeline receives messages for processing. In push model events are
 > pushed into pipeline and pipeline eventually produces a result. In contrast, in pull model pipeline retrieves
-> events from the external source using built-in scheduling mechanisms. As a consequence, pull model requires 
+> events from the external source using built-in scheduling mechanisms. As a consequence, pull model requires
 > backpressure to balance external source of events and productivity of the pipeline.
 
 ## The Promise Monad
 
-So, what is `Promise<T>` in general? 
+So, what is `Promise<T>` in general?
 > The `Promise<T>` is a representation of the computation, which eventually may succeed or fail. The
 > promise has two main states - pending and resolved and, once resolved, two outcomes - success or failure.
-> `Promise<T>` is one of three core [monads](https://dev.to/siy/beautiful-world-of-mondas-2cd6) which are used 
+> `Promise<T>` is one of three core [monads](https://dev.to/siy/beautiful-world-of-mondas-2cd6) which are used
 > to represent [special states](https://dev.to/siy/leveraging-java-type-system-to-represent-special-states-688).
-> 
-> The resolution may happen only once and is thread safe - many threads may try to resolve `Promise<T>`, 
+>
+> The resolution may happen only once and is thread safe - many threads may try to resolve `Promise<T>`,
 > but only one value will be accepted. Application of the transformations provided via `map()` and `flatMap()` methods
-> (as well as few others, see below for more details) is postponed until the `Promise<T>` instance is resolved. 
+> (as well as few others, see below for more details) is postponed until the `Promise<T>` instance is resolved.
 > From this point of view, resolution serves as a synchronization point.
 
-As mentioned above, `Promise<T>` API has two main transformation methods, `map()` and `flatMap()`. The `map()` transforms value if `Promise<T>` 
-is resolved to `success`. The `map()` does not change the outcome, `success` remains `success`, `failure` remains `failure`. 
-The `flatMap()` may change the outcome if transformation function passed to `flatMap()` return `failure`. Just like `Optional<T>`, 
-transformations are applied to `Promise<T>` in the order they are written in the code. This mental model is easy to understand 
-and adopt, resulting in good ergonomics.  
+As mentioned above, `Promise<T>` API has two main transformation methods, `map()` and `flatMap()`. The `map()` transforms value if `Promise<T>`
+is resolved to `success`. The `map()` does not change the outcome, `success` remains `success`, `failure` remains `failure`.
+The `flatMap()` may change the outcome if transformation function passed to `flatMap()` return `failure`. Just like `Optional<T>`,
+transformations are applied to `Promise<T>` in the order they are written in the code. This mental model is easy to understand
+and adopt, resulting in good ergonomics.
 
 Besides transformations, there are methods to attach `side effects`, i.e. actions which are submitted to execution either, at the moment of
 `Promise<T>` resolution or (if `Promise<T>` is already resolved) immediately. The execution of each side effect happens
 asynchronously and independently of the other side effects or transformations. The core `side effect` method is `onResult()`,
 which asynchronously executes provided `Consumer<Result<T>>` instance once `Promise<T>` is resolved. Since dealing with whole `Result<T>`
 is often inconvenient and verbose, there are other helper methods: `onSuccess()`, `onFailure()`, `onResultRun()`, `onSuccessRun()` and `onFailureRun()`
-which cover various use cases. 
+which cover various use cases.
 
-The resolution of `Promise<T>` can be awaited. This almost never necessary in the production code, but extremely useful 
-for testing. 
+The resolution of `Promise<T>` can be awaited. This rarely necessary in the production code, but extremely useful
+for testing.
 
 So, let's take a look how functional style Promises API looks like.
 
 > Important Coding Style Notice
-> It is highly recommended to use Single Level of Abstraction principle, while writing 
-> code which uses `Promise<T>` and functional style code in general. Consistent application of this 
+> It is highly recommended to use Single Level of Abstraction principle, while writing
+> code which uses `Promise<T>` and functional style code in general. Consistent application of this
 > principle keeps code easy to write and reason about. Use of complex lambdas quickly results in tangled,
 > hard to read and maintain code.
 
@@ -100,8 +100,8 @@ var fromOption3 = Option.option("Some other value").async(() -> Promise.promise(
 var fromResult1 = Result.success("Some value").async();
  
 ```
-All such conversions produce already resolved Promise instance except last conversion from Option. 
-It will produce resolved `Promise<T>` instance for present Option, but the state of the `Promise<T>` created by
+All such conversions produce already resolved Promise instance except the last conversion from `Option<T>`.
+It will produce resolved `Promise<T>` instance for present `Option<T>`, but the state of the `Promise<T>` created by
 provided supplier depends on particular supplier implementation.
 
 Transform `Promise<T>` into `Result<T>` (see note above about waiting `Promise<T>` for resolution):
@@ -271,14 +271,14 @@ Promise<UserProfile> fetchUserProfile(UserId userId) {
 
 Note that the function passed as a parameter to `map()` or `flatMap()` methods of predicate output is invoked only if all
 operations were successful. Any errors are automatically propagated, and the processing pipeline is short-circuited.
-Function parameters have the same order and type as `Promise<T>` instances passed to the `all()` predicate, making its use
-straightforward.  
+Function parameters have the same order and type as `Promise<T>` instances passed to the `all()` predicate, making using it
+straightforward.
 
 ### The any() Predicate (Rat Race)
 
 This predicate covers the case, when only one result is necessary from the launched several ones. Typical scenario -
 get some information from different providers. The source is not relevant, so anyone who first provides a successful
-result wins the race. Notice that all sources produce result of the same type:
+result wins the race. Notice that all sources produce a result of the same type:
 ```java
 // Example data record
 record WeatherInfo(String city, String temperature) {}
@@ -296,7 +296,7 @@ Promise<WeatherInfo> fetchWeatherInfo(String city) {
 }
 ```
 
-Just like `all()` predicate, `any()` handles errors transparently, returning failure only if all operations failed.
+Just like the `all()` predicate, `any()` handles errors transparently, returning failure only if all operations failed.
 
 ### The allOf() Predicate (Single Type Join)
 
@@ -338,14 +338,14 @@ to perform other operation to obtain the replacement result:
 promise.orElse(performAnotherOperation());
 promise.orElse(() -> performAnotherOperation());
 ```
-Two forms of `orElse()` method are similar except second one will invoke the method only if `Promise<T>` failed.
+Two forms of `orElse()` method are similar, except the second one will invoke the method only if `Promise<T>` failed.
 
 ### Retry and Circuit Breaker
 
 The `Promise<T>` is accompanied by two utility classes, which implement frequently observed scenarios: retrying operations and preventing
 cascade failures.
 
-`Retry` performs operation as many times as necessary to get a result (or fail, if all attempts failed):
+`Retry` performs the operation as many times as necessary to get a result (or fail, if all attempts failed):
 ```java
 // Example data records
 record Amount(BigDecimal value) {}
@@ -400,13 +400,13 @@ return circuitBreaker.execute(() -> service.processOrder(order));
 ```
 
 Note that both utility classes are thread safe. There is a difference, though: `Retry` is entirely stateless, so one can
-create one or few differently configured instances and use them safely through the code for different endpoints. 
-The `CircuitBreaker` is stateful, so, while several threads could call an external endpoint protected by the same `CircuitBreaker`, 
+create one or few differently configured instances and use them safely through the code for different endpoints.
+The `CircuitBreaker` is stateful, so, while several threads could call an external endpoint protected by the same `CircuitBreaker`,
 each external endpoint must have a dedicated `CircuitBreaker` instance.
 
 ## Pragmatica Lite Core Library
-The **Pragmatica Lite Core Library** contains implementation of all three core monads as well as several utility classes.
-In order to use it in Maven project, one need to include following repository description:
+The **Pragmatica Lite Core Library** contains implementation of all three core monads, as well as several utility classes.
+To use it in a Maven project, one needs to include the following repository description:
 ```xml
     <repositories>
         <repository>
@@ -421,7 +421,7 @@ In order to use it in Maven project, one need to include following repository de
         </repository>
     </repositories>
 ```
-And then add following dependency (most recent version at the time of writing):
+And then add the following dependency (most recent version at the time of writing):
 
 ```xml
     <dependency>
@@ -431,7 +431,7 @@ And then add following dependency (most recent version at the time of writing):
     </dependency>
 ```
 
-# Conclusion
+## Conclusion
 
 Functional style `Promise<T>` is a powerful yet easy to use tool. Code written with `Promise<T>` is easy to reason about
 and understand, although keeping code at a single level of abstraction is highly recommended, to preserve clarity.
