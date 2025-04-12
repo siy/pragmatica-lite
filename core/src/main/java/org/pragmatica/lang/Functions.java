@@ -16,22 +16,16 @@
 
 package org.pragmatica.lang;
 
-/**
- * Collection of basic functions for various use cases.
- */
+/// Collection of basic functions for various use cases.
 @SuppressWarnings("unused")
 public interface Functions {
-    /**
-     * Function with no parameters (supplier). Provided for consistency.
-     */
+    /// Function with no parameters (supplier). Provided for consistency.
     @FunctionalInterface
     interface Fn0<R> {
         R apply();
     }
 
-    /**
-     * Function with one parameter.
-     */
+    /// Function with one parameter.
     @FunctionalInterface
     interface Fn1<R, T1> {
         R apply(T1 param1);
@@ -49,73 +43,55 @@ public interface Functions {
         }
     }
 
-    /**
-     * Function with two parameters.
-     */
+    /// Function with two parameters.
     @FunctionalInterface
     interface Fn2<R, T1, T2> {
         R apply(T1 param1, T2 param2);
     }
 
-    /**
-     * Function with three parameters.
-     */
+    /// Function with three parameters.
     @FunctionalInterface
     interface Fn3<R, T1, T2, T3> {
         R apply(T1 param1, T2 param2, T3 param3);
     }
 
-    /**
-     * Function with four parameters.
-     */
+    /// Function with four parameters.
     @FunctionalInterface
     interface Fn4<R, T1, T2, T3, T4> {
         R apply(T1 param1, T2 param2, T3 param3, T4 param4);
     }
 
-    /**
-     * Function with five parameters.
-     */
+    /// Function with five parameters.
     @FunctionalInterface
     interface Fn5<R, T1, T2, T3, T4, T5> {
         R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5);
     }
 
-    /**
-     * Function with six parameters.
-     */
+    /// Function with six parameters.
     @FunctionalInterface
     interface Fn6<R, T1, T2, T3, T4, T5, T6> {
         R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6);
     }
 
-    /**
-     * Function with seven parameters.
-     */
+    /// Function with seven parameters.
     @FunctionalInterface
     interface Fn7<R, T1, T2, T3, T4, T5, T6, T7> {
         R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7);
     }
 
-    /**
-     * Function with eight parameters.
-     */
+    /// Function with eight parameters.
     @FunctionalInterface
     interface Fn8<R, T1, T2, T3, T4, T5, T6, T7, T8> {
         R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8);
     }
 
-    /**
-     * Function with nine parameters.
-     */
+    /// Function with nine parameters.
     @FunctionalInterface
     interface Fn9<R, T1, T2, T3, T4, T5, T6, T7, T8, T9> {
         R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9);
     }
 
-    /**
-     * Universal identity function.
-     */
+    /// Universal identity function.
     static <T> T id(T value) {
         return value;
     }
@@ -125,9 +101,7 @@ public interface Functions {
         void run() throws Throwable;
     }
 
-    /**
-     * Supplier which can throw an exception.
-     */
+    /// Supplier which can throw an exception.
     @FunctionalInterface
     interface ThrowingFn0<T> {
         T apply() throws Throwable;
@@ -178,18 +152,14 @@ public interface Functions {
         R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9) throws Throwable;
     }
 
-    /**
-     * Function with variable argument list.
-     */
+    /// Function with variable argument list.
     @FunctionalInterface
     interface FnX<R> {
         R apply(Object... values);
     }
 
-    /**
-     * Universal consumers of values which do nothing with input values. Useful for cases when API requires function, but there is no need to do
-     * anything with the received values.
-     */
+    /// Universal consumers of values which do nothing with input values. Useful for cases when API requires function, but there is no need to do
+    /// anything with the received values.
     static <T1> void unitFn() {
     }
 

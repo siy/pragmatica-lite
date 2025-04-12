@@ -20,59 +20,45 @@ import org.pragmatica.lang.Functions.Fn1;
 
 import java.util.stream.Stream;
 
-/**
- * Basic interface for failure cause types.
- */
+/// Basic interface for failure cause types.
 public interface Cause {
-    /**
-     * Message associated with the failure.
-     */
+    /// Message associated with the failure.
     String message();
 
-    /**
-     * The original cause (if any) of the error.
-     */
+    /// The original cause (if any) of the error.
     default Option<Cause> source() {
         return Option.empty();
     }
 
-    /**
-     * Represent cause as a failure {@link Result} instance.
-     *
-     * @return cause converted into {@link Result} with necessary type.
-     */
+    /// Represent cause as a failure [Result] instance.
+    ///
+    /// @return cause converted into [Result] with necessary type.
     default <T> Result<T> result() {
         return Result.failure(this);
     }
 
-    /**
-     * Represent cause as a failure {@link Result} instance.
-     *
-     * @return cause converted into {@link Result} with necessary type.
-     */
+    /// Represent cause as a failure [Promise] instance.
+    ///
+    /// @return cause converted into [Promise] with necessary type.
     default <T> Promise<T> promise() {
         return Promise.failure(this);
     }
 
-    /**
-     * Iterate over the cause chain, starting from this cause.
-     *
-     * @param action action to be applied to each cause in the chain.
-     *
-     * @return result of the last action.
-     */
+    /// Iterate over the cause chain, starting from this cause.
+    ///
+    /// @param action action to be applied to each cause in the chain.
+    ///
+    /// @return result of the last action.
     default <T> T iterate(Fn1<T, Cause> action) {
         var value = action.apply(this);
 
         return source().fold(() -> value, src -> src.iterate(action));
     }
 
-    /**
-     * Stream of causes starting from this cause. Fir single cause it will be a stream of one element. For composite cause, it will be a stream of all
-     * causes stored in this cause.
-     *
-     * @return stream of causes.
-     */
+    /// Stream of causes starting from this cause. Fir single cause it will be a stream of one element. For composite cause, it will be a stream of all
+    /// causes stored in this cause.
+    ///
+    /// @return stream of causes.
     default Stream<Cause> stream() {
         return Stream.of(this);
     }
