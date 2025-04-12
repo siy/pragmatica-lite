@@ -89,8 +89,8 @@ public sealed interface TimeSpan extends Comparable<TimeSpan> {
         return Long.compare(nanos(), o.nanos());
     }
 
-    static TimeSpan fromDuration(Duration ttl) {
-        return TimeSpan.timeSpan(ttl.toMillis()).millis();
+    static TimeSpan fromDuration(Duration duration) {
+        return TimeSpan.timeSpan(duration.toNanos()).nanos();
     }
 
     /// Create instance of time span builder.
