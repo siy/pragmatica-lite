@@ -17,19 +17,32 @@ caller. This fact emphasises importance of the convenient error propagation mech
 
 Another important consideration is the visibility of the possibility of error in the code. i.e. context preservation.
 If possibility of the error is clearly visible in the code, this significantly improves
-code maintainability and reduces mental overhead. 
+code maintainability and reduces mental overhead.
 
 With the above considerations in mind, let's review widely used approaches to error
 propagation and handling:
 
 1. **Return special value**. This approach has limited applicability since such a special
-value not always exists and there is no way to propagate information about the nature of the error. The context is not preserved
+value not always exists and often there is no way to propagate information about the nature of the error. The context is not preserved
 and propagation must be performed manually.
 Modification of this approach: return error code directly, return operation result using pointers.   
 This allowed to pass limited information about the error, but propagation remains manual and possibility of error
 relies on convention about the API design rather than explicit visibility.
 
 2. **Return tuple containing error and operation result**. This approach enables propagation
-of the information about the error, but propagation is still performed manually.
+of the information about the error, but propagation is still performed manually. In contrast to previous approach
+the possibility of the error is clearly visible in the code.
 
-3. **Throw exception**. This approach provides automatic error propagation.  
+3. **Throw exception**. This approach provides automatic error propagation, although with unchecked exceptions
+possibility of the error is not visible. Checked exceptions address this issue, but they either cause coupling
+or require boilerplate for wrapping exceptions as exception bubbles up. 
+
+4. **Functional style error handling**. This approach makes possibility of the error clearly visible in the code
+and performs automatic propagation (or, rather, short-circuiting) of the error.
+
+> **Important observation**: the call which may fail, has only two mutually exclusive outcomes - this is either, calculated
+> value or error. If there is an error, then there calculated value is not available and vice versa.
+
+The observation above gives the key to the efficient implementation of the error propagation and handling: the computation outcome
+should be represented as a sum type (also known as tagged unions, variants, variant records, choice types, discriminated unions, disjoint unions, or coproducts).
+Java uses sealed interfaces and classes to represent such types. 
