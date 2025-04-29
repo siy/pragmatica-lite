@@ -24,7 +24,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /// Common scheduler for use by [Retry] and [CircuitBreaker]
-final class SharedScheduler {
+public final class SharedScheduler {
     private SharedScheduler() {
     }
 
@@ -32,5 +32,9 @@ final class SharedScheduler {
 
     public static void schedule(Runnable runnable, TimeSpan interval) {
         SCHEDULER.schedule(runnable, interval.millis(), TimeUnit.MILLISECONDS);
+    }
+
+    public static void scheduleAtFixedRate(Runnable runnable, TimeSpan interval) {
+        SCHEDULER.scheduleAtFixedRate(runnable, interval.millis(), interval.millis(), TimeUnit.MILLISECONDS);
     }
 }
