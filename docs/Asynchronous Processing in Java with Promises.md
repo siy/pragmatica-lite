@@ -427,7 +427,7 @@ And then add the following dependency (most recent version at the time of writin
     <dependency>
         <groupId>org.pragmatica-lite</groupId>
         <artifactId>core</artifactId>
-        <version>0.6.5</version>
+        <version>0.6.6</version>
     </dependency>
 ```
 
