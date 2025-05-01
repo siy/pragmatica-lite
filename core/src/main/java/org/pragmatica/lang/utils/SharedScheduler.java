@@ -30,10 +30,12 @@ public final class SharedScheduler {
 
     private static final ScheduledExecutorService SCHEDULER = new ScheduledThreadPoolExecutor(2);
 
+    /// Schedule one-time invocation
     public static void schedule(Runnable runnable, TimeSpan interval) {
         SCHEDULER.schedule(runnable, interval.millis(), TimeUnit.MILLISECONDS);
     }
 
+    /// Schedule periodic invocation
     public static void scheduleAtFixedRate(Runnable runnable, TimeSpan interval) {
         SCHEDULER.scheduleAtFixedRate(runnable, interval.millis(), interval.millis(), TimeUnit.MILLISECONDS);
     }
