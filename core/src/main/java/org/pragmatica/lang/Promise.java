@@ -581,9 +581,8 @@ public interface Promise<T> {
     /// Instance of the [Promise] resolved into success with [Unit].
     ///
     /// @return The singleton instance of the [Promise] resolved into success with [Unit].
-    @SuppressWarnings("unchecked")
-    static <U> Promise<U> unitPromise() {
-        return (Promise<U>) UNIT;
+    static Promise<Unit> unitPromise() {
+        return UNIT;
     }
 
     /// Return promise which will be resolved once any of the promises provided as a parameters will be resolved with success. If none of the promises
@@ -884,7 +883,7 @@ public interface Promise<T> {
                                  promise9);
     }
 
-    Promise<?> UNIT = Promise.resolved(unitResult());
+    Promise<Unit> UNIT = Promise.resolved(unitResult());
 
     Result<?> OTHER_SUCCEEDED = new CoreError.Cancelled("Cancelled because other Promise instance succeeded").result();
 

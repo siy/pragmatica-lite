@@ -89,11 +89,16 @@ public sealed interface TimeSpan extends Comparable<TimeSpan> {
         return Long.compare(nanos(), o.nanos());
     }
 
+    default TimeSpan randomize(double scale) {
+        var random = (long) ((Math.random() - 0.5) * 2.0 * scale * nanos());
+        return TimeSpan.timeSpan(random  + nanos()).nanos();
+    }
+
     static TimeSpan fromDuration(Duration duration) {
         return TimeSpan.timeSpan(duration.toNanos()).nanos();
     }
 
-    /// Create instance of time span builder.
+    /// Create an instance of time span builder.
     ///
     /// @param value initial value passed to builder.
     ///
