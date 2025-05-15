@@ -6,7 +6,13 @@ import io.netty.buffer.Unpooled;
 /// Basic deserialization interface
 public interface Deserializer {
     default <T> T decode(byte[] bytes) {
-        return read(Unpooled.wrappedBuffer(bytes));
+        var byteBuf = Unpooled.wrappedBuffer(bytes);
+
+        try {
+            return read(byteBuf);
+        } finally {
+            byteBuf.release();
+        }
     }
 
     <T> T read(ByteBuf byteBuf);
