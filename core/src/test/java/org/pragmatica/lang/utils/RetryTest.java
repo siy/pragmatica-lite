@@ -290,8 +290,8 @@ class RetryTest {
 
     @Test
     void exponentialBackoffWithJitterShouldHaveVariableDelays() {
-        var strategy = exponential().initialDelay(MEDIUM)
-                                    .maxDelay(LONG)
+        var strategy = exponential().initialDelay(LONG)
+                                    .maxDelay(LONG.plus(LONG))
                                     .factor(2.0)
                                     .withJitter();
 
