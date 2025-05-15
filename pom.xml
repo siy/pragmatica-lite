@@ -8,6 +8,9 @@
     <modules>
         <module>core</module>
         <module>examples</module>
+        <module>cluster</module>
+        <module>common</module>
+        <module>net-core</module>
     </modules>
 
     <packaging>pom</packaging>
@@ -46,8 +49,14 @@
         <github.global.server>github</github.global.server>
 
         <!-- Dependencies -->
+        <netty.version>4.2.0.Final</netty.version>
         <slf4j.version>2.0.12</slf4j.version>
         <junit.version>5.11.4</junit.version>
+        <assertj-core.version>3.26.3</assertj-core.version>
+        <mockito.version>5.14.2</mockito.version>
+        <pragmatica.version>0.6.7</pragmatica.version>
+        <awaitility.version>4.2.1</awaitility.version>
+        <tinylog.version>2.7.0</tinylog.version>
     </properties>
 
     <distributionManagement>
@@ -62,15 +71,93 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>org.pragmatica-lite</groupId>
+                <artifactId>core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.pragmatica-lite</groupId>
+                <artifactId>net-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.pragmatica-lite</groupId>
+                <artifactId>cluster</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.pragmatica-lite</groupId>
+                <artifactId>common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- Logging -->
+            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.tinylog</groupId>
+                <artifactId>slf4j-tinylog</artifactId>
+                <version>${tinylog.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.tinylog</groupId>
+                <artifactId>tinylog-impl</artifactId>
+                <version>${tinylog.version}</version>
+            </dependency>
+
+            <!-- Testing -->
+            <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
                 <version>${junit.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj-core.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-junit-jupiter</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.awaitility</groupId>
+                <artifactId>awaitility</artifactId>
+                <version>${awaitility.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- Netty dependencies -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-all</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <!-- Serialization -->
+            <dependency>
+                <groupId>com.esotericsoftware</groupId>
+                <artifactId>kryo</artifactId>
+                <version>5.6.2</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.fury</groupId>
+                <artifactId>fury-core</artifactId>
+                <version>0.10.2</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
