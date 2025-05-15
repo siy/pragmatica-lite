@@ -4,7 +4,7 @@
 
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>pragmatica-lite</artifactId>
-    <version>0.6.7</version>
+    <version>0.7.0</version>
     <modules>
         <module>core</module>
         <module>examples</module>
@@ -54,7 +54,6 @@
         <junit.version>5.11.4</junit.version>
         <assertj-core.version>3.26.3</assertj-core.version>
         <mockito.version>5.14.2</mockito.version>
-        <pragmatica.version>0.6.7</pragmatica.version>
         <awaitility.version>4.2.1</awaitility.version>
         <tinylog.version>2.7.0</tinylog.version>
     </properties>
