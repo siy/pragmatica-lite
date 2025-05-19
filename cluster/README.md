@@ -70,9 +70,7 @@ Below provided sequence diagrams for the most important parts of the algorithm.
 
 #### Rabia Protocol Message Processing 
 
-<div hidden>
-
-```
+<details>
 @startuml protocolEngine
 
 
@@ -95,17 +93,14 @@ end
 ConsensusEngine-->>Client: Promise completes with List<R>
 
 @enduml
-
-```
-</div>
+</details>
 
 ![](protocolEngine.svg)
 
 #### State Persistence During Disconnection/Reconnection
 
-<div hidden>
+<details>
 
-```
 @startuml statePersistence
 
 participant ConsensusEngine
@@ -120,9 +115,7 @@ ConsensusEngine->>ConsensusEngine: Restore state, resume operation
 
 @enduml
 
-```
-
-</div>
+</details>
 
 ![](statePersistence.svg)
 
