@@ -186,6 +186,11 @@ public class NettyClusterNetwork implements ClusterNetwork {
             log.error("Attempt to connect {} while node is not running", connectNode.node());
             return;
         }
+
+        if (connectNode.node().equals(self.id())) {
+            return;
+        }
+
         topologyManager.get(connectNode.node())
                        .onPresent(this::connectPeer)
                        .onEmpty(() -> log.error("Unknown {}", connectNode.node()));
