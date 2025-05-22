@@ -45,17 +45,17 @@ public sealed interface TimeSpan extends Comparable<TimeSpan> {
         return TimeUnit.NANOSECONDS.toMillis(nanos());
     }
 
-    /// Create time span as a sum of current time span and provided argument.
+    /// Create a time span as a sum of current time span and provided argument.
     default TimeSpan plus(TimeSpan other) {
         return new TimeSpanImpl(nanos() + other.nanos());
     }
 
-    /// Create time span as a sum of current time span and provided argument.
+    /// Create a time span as a sum of current time span and provided argument.
     default TimeSpan plus(long value) {
         return plus(value, TimeUnit.NANOSECONDS);
     }
 
-    /// Create time span as a sum of current time span and provided argument.
+    /// Create a time span as a sum of current time span and provided argument.
     default TimeSpan plus(long value, TimeUnit unit) {
         return new TimeSpanImpl(nanos() + unit.toNanos(value));
     }
@@ -64,7 +64,7 @@ public sealed interface TimeSpan extends Comparable<TimeSpan> {
     long MILLIS_IN_SECOND = TimeUnit.MILLISECONDS.toNanos(1);
 
     /// Time span value represented as number of whole seconds and remaining nanoseconds. This representation is compatible with many use cases, for
-    /// example with [Duration] (see [#duration()]).
+    /// example, with [Duration] (see [#duration()]).
     ///
     /// @return time span represented as tuple containing number of seconds and remaining nanoseconds
     default Tuple2<Long, Integer> secondsAndNanos() {
@@ -72,7 +72,7 @@ public sealed interface TimeSpan extends Comparable<TimeSpan> {
     }
 
     /// Time span value represented as number of whole milliseconds and remaining nanoseconds. This representation is compatible with many use cases, for
-    /// example with [span represented as tuple containing number of milliseconds and remaining nanoseconds][#sleep(long,int).time]
+    /// example, with [span represented as a tuple containing the number of milliseconds and remaining nanoseconds][#sleep(long,int).time]
     default Tuple2<Long, Integer> millisAndNanos() {
         return tuple(nanos() / MILLIS_IN_SECOND, (int) (nanos() % MILLIS_IN_SECOND));
     }

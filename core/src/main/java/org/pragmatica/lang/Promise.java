@@ -41,7 +41,7 @@ import static org.pragmatica.lang.Result.unitResult;
 import static org.pragmatica.lang.utils.ActionableThreshold.threshold;
 import static org.pragmatica.lang.utils.ResultCollector.resultCollector;
 
-/// This is a simple implementation of Promise monad. Promise is a one of the three `Core Monads` (along with [Option] and [Result])
+/// This is a simple implementation of Promise monad. Promise is one of the three `Core Monads` (along with [Option] and [Result])
 /// which are used to represent special variable states. Promise is a representation of the `eventually available value`.
 ///
 /// This implementation serves three purposes:
@@ -50,26 +50,26 @@ import static org.pragmatica.lang.utils.ResultCollector.resultCollector;
 ///   - - A basic building block of asynchronous processing.
 ///   - - Resolution event "broker", which implements "exactly once" delivery semantics.
 ///
-/// Last two purposes are closely related - they both react on resolution event. But the semantics and requirements to the
-/// event handling behavior is quite different.
+/// The last two purposes are closely related - they both react on resolution event.
+/// But the semantics and requirements to the event handling behavior are quite different.
 ///
 /// Promise-based asynchronous processing mental model built around representing processing
-/// as sequence of transformations which are applied to the same value. Each transformation is applied to input values exactly once, executed
-/// with exactly one thread, in the order in which transformations are applied in the code. This mental model is easy to write and reason about
+/// as the sequence of transformations which are applied to the same value. Each transformation is applied to input values exactly once, executed
+/// with exactly one thread, in the order in which transformations are applied in the code. This mental model is straightforward to write and reason about
 /// and has very low "asynchronous" mental overhead. Since each promise in the chain "depends" on the previous one, actions (transformations)
 /// attached to the promise are called "dependent actions".
 ///
-/// Resolution event broker has no such limitations. It starts actions as asynchronous tasks but does not wait for their completions. Obviously,
-/// such actions are called "independent actions". They are harder to reason about because their execution may take arbitrary
+/// Resolution event broker has no such limitations. It starts actions as asynchronous tasks but does not wait for their completion.
+/// Such actions are called "independent actions". They are harder to reason about because their execution may take an arbitrary
 /// amount of time.
 /* Implementation notes: this version of the implementation is heavily inspired by the implementation of
-the CompletableFuture. There are several differences though:
+the CompletableFuture. There are several differences, though:
 - Method naming consistent with widely used Optional and Streams.
 - More orthogonal API. No duplicates with "Async" suffix, for example. Instead, provided "async" method, which accepts promise consumer lambda.
-- No methods which do a complex combination of futures. Instead, provided type-safe "all" and "any" predicates for up to 9 promises.
+- No methods that do a complex combination of futures. Instead, provided type-safe "all" and "any" predicates for up to 9 promises.
 This makes synchronization points in code more explicit, easier to write and reason about.
-- No exceptions, no nulls. This makes implementation exceptionally simple comparing to the CompletableFuture.
-- Interface-heavy implementation, with only minimal number of methods to implement.
+- No exceptions, no nulls. This makes implementation exceptionally simple compared to the CompletableFuture.
+- Interface-heavy implementation, with only a minimal number of methods to implement.
   Only two base methods are used to implement all dependent and independent action methods. All remaining transformations
   and event handling methods are implemented in terms of these two methods.
  */
@@ -93,7 +93,7 @@ public interface Promise<T> {
         return onResult(action);
     }
 
-    /// Transform the success value of the promise once promise is resolved.
+    /// Transform the success value of the promise once the promise is resolved.
     ///
     /// This method is a dependent action and executed in the order in which transformations are written in the code.
     ///
@@ -104,7 +104,7 @@ public interface Promise<T> {
         return replaceResult(result -> result.map(transformation));
     }
 
-    /// Replace the value of the promise with the provided value once promise is resolved into success result.
+    /// Replace the value of the promise with the provided value once the promise is resolved into a success result.
     ///
     /// This method is a dependent action and executed in the order in which transformations are written in the code.
     ///
@@ -115,7 +115,7 @@ public interface Promise<T> {
         return map(_ -> supplier.get());
     }
 
-    /// Transform the success value of the promise once promise is resolved. The transformation function returns a new promise.
+    /// Transform the success value of the promise once the promise is resolved. The transformation function returns a new promise.
     ///
     /// This method is a dependent action and executed in the order in which transformations are written in the code.
     ///
@@ -126,7 +126,7 @@ public interface Promise<T> {
         return fold(result -> result.fold(Promise::<U>failure, transformation));
     }
 
-    /// Replace the success value of the promise once promise is resolved with the promise obtained from the provided supplier.
+    /// Replace the success value of the promise once the promise is resolved with the promise obtained from the provided supplier.
     ///
     /// This method is a dependent action and executed in the order in which transformations are written in the code.
     ///
@@ -137,7 +137,7 @@ public interface Promise<T> {
         return flatMap(_ -> supplier.get());
     }
 
-    /// Transform the failure value of the promise once promise is resolved.
+    /// Transform the failure value of the promise once the promise is resolved.
     ///
     /// This method is a dependent action and executed in the order in which transformations are written in the code.
     ///
@@ -148,7 +148,7 @@ public interface Promise<T> {
         return replaceResult(result -> result.mapError(transformation));
     }
 
-    /// Add tracing information to the failure value of the promise once promise is resolved.
+    /// Add tracing information to the failure value of the promise once the promise is resolved.
     ///
     /// This method is a dependent action and executed in the order in which transformations are written in the code.
     ///
@@ -167,7 +167,7 @@ public interface Promise<T> {
         return replaceResult(result -> result.recover(mapper));
     }
 
-    /// Transform the result of the promise once promise is resolved.
+    /// Transform the result of the promise once the promise is resolved.
     ///
     /// This method is a dependent action and executed in the order in which transformations are written in the code.
     ///
@@ -178,7 +178,7 @@ public interface Promise<T> {
         return replaceResult(result -> result.flatMap(transformation));
     }
 
-    /// Replace the result of the promise with the transformed result once promise is resolved.
+    /// Replace the result of the promise with the transformed result once the promise is resolved.
     ///
     /// This method is a dependent action and executed in the order in which transformations are written in the code.
     ///
@@ -189,11 +189,11 @@ public interface Promise<T> {
         return fold(result -> Promise.resolved(transformation.apply(result)));
     }
 
-    /// Run an asynchronous action once promise is resolved.
+    /// Run an asynchronous action once the promise is resolved.
     ///
     /// This method is an independent action and executed asynchronously.
     ///
-    /// @param action Action to be executed once promise is resolved.
+    /// @param action Action to be executed once a promise is resolved.
     ///
     /// @return Current promise instance.
     default Promise<T> onResultRun(Runnable action) {
@@ -204,9 +204,9 @@ public interface Promise<T> {
         return onResult(_ -> action.run());
     }
 
-    /// Run an action once promise is resolved. The action is executed in the order in which transformations
+    /// Run an action once the promise is resolved. The action is executed in the order in which transformations
     ///
-    /// @param consumer Action to be executed once promise is resolved.
+    /// @param consumer Action to be executed once the promise is resolved.
     ///
     /// @return New promise instance.
     default Promise<T> withResult(Consumer<Result<T>> consumer) {
@@ -216,9 +216,9 @@ public interface Promise<T> {
         });
     }
 
-    /// Run an action once promise is resolved with success. The action is executed asynchronously.
+    /// Run an action once the promise is resolved with success. The action is executed asynchronously.
     ///
-    /// @param action Action to be executed once promise is resolved with success.
+    /// @param action Action to be executed once the promise is resolved with success.
     ///
     /// @return Current promise instance.
     default Promise<T> onSuccess(Consumer<T> action) {
@@ -229,9 +229,9 @@ public interface Promise<T> {
         return onSuccess(action);
     }
 
-    /// Run an action once promise is resolved with success. The action is executed asynchronously.
+    /// Run an action once the promise is resolved with success. The action is executed asynchronously.
     ///
-    /// @param action Action to be executed once promise is resolved with success.
+    /// @param action Action to be executed once the promise is resolved with success.
     ///
     /// @return Current promise instance.
     default Promise<T> onSuccessRun(Runnable action) {
@@ -242,18 +242,18 @@ public interface Promise<T> {
         return onSuccessRun(action);
     }
 
-    /// Run an action once promise is resolved with success. The action is executed in the order in which transformations are written in the code.
+    /// Run an action once the promise is resolved with success. The action is executed in the order in which transformations are written in the code.
     ///
-    /// @param consumer Action to be executed once promise is resolved with success.
+    /// @param consumer Action to be executed once the promise is resolved with success.
     ///
     /// @return New promise instance.
     default Promise<T> withSuccess(Consumer<T> consumer) {
         return fold(result -> Promise.resolved(result.onSuccess(consumer)));
     }
 
-    /// Run an action once promise is resolved with success. The action is executed asynchronously.
+    /// Run an action once the promise is resolved with success. The action is executed asynchronously.
     ///
-    /// @param action Action to be executed once promise is resolved with success.
+    /// @param action Action to be executed once the promise is resolved with success.
     ///
     /// @return Current promise instance.
     default Promise<T> onFailure(Consumer<Cause> action) {
@@ -264,7 +264,7 @@ public interface Promise<T> {
         return onFailure(action);
     }
 
-    /// Run an action once promise is resolved with success. The action is executed asynchronously.
+    /// Run an action once the promise is resolved with success. The action is executed asynchronously.
     ///
     /// @param action Action to be executed
     default Promise<T> onFailureRun(Runnable action) {
@@ -275,9 +275,9 @@ public interface Promise<T> {
         return onFailureRun(action);
     }
 
-    /// Run an action once promise is resolved with failure. The action is executed in the order in which transformations are written in the code.
+    /// Run an action once the promise is resolved with failure. The action is executed in the order in which transformations are written in the code.
     ///
-    /// @param consumer Action to be executed once promise is resolved with failure.
+    /// @param consumer Action to be executed once the promise is resolved with failure.
     ///
     /// @return New promise instance.
     default Promise<T> withFailure(Consumer<Cause> consumer) {
@@ -286,16 +286,16 @@ public interface Promise<T> {
 
     /// Replace current instance with provided promise if current instance is resolved with failure.
     ///
-    /// @param promise Promise to replace current instance with.
+    /// @param promise Promise to replace the current instance with.
     ///
     /// @return New promise instance.
     default Promise<T> orElse(Promise<T> promise) {
         return fold(result -> result.fold(_ -> promise, _ -> this));
     }
 
-    /// Replace current instance with the promise obtained from provided supplier if current instance is resolved with failure.
+    /// Replace the current instance with the promise obtained from provided supplier if current instance is resolved with failure.
     ///
-    /// @param supplier Supplier of the promise to replace current instance with.
+    /// @param supplier Supplier of the promise to replace the current instance with.
     ///
     /// @return New promise instance.
     default Promise<T> orElse(Supplier<Promise<T>> supplier) {
@@ -377,7 +377,7 @@ public interface Promise<T> {
         return this;
     }
 
-    /// Run the provided consumer asynchronously and pass current instance as a parameter.
+    /// Run the provided consumer asynchronously and pass the current instance as a parameter.
     ///
     /// @param consumer Consumer to execute asynchronously.
     ///
@@ -396,7 +396,7 @@ public interface Promise<T> {
         return async(promise -> promise.resolve(supplier.get()));
     }
 
-    /// Run the provided consumer asynchronously and pass current instance as a parameter. The consumer is executed after the specified timeout.
+    /// Run the provided consumer asynchronously and pass the current instance as a parameter. The consumer is executed after the specified timeout.
     ///
     /// @param delay  Time to wait before executing the consumer.
     /// @param action Consumer to execute asynchronously.
@@ -407,7 +407,7 @@ public interface Promise<T> {
         return this;
     }
 
-    /// Transform the promise into a promise resolved to [Unit]. This is useful when promise is used in an "event broker" and actual value does
+    /// Transform the promise into a promise resolved to [Unit]. This is useful when the promise is used in an "event broker" and the actual value does
     /// not matter.
     ///
     /// This method is a dependent action and executed in the order in which transformations are written in the code.
@@ -417,14 +417,14 @@ public interface Promise<T> {
         return map(Unit::toUnit);
     }
 
-    /// Create new unresolved promise instance.
+    /// Create a new unresolved promise instance.
     ///
     /// @return New promise instance.
     static <T> Promise<T> promise() {
         return new PromiseImpl<>(null);
     }
 
-    /// Create new resolved promise instance resolved with the provided value.
+    /// Create a new resolved promise instance resolved with the provided value.
     ///
     /// @param value Value to resolve the promise with.
     ///
@@ -433,7 +433,7 @@ public interface Promise<T> {
         return new PromiseImpl<>(value);
     }
 
-    /// Create new resolved promise instance resolved into success with the provided value.
+    /// Create a new resolved promise instance resolved into success with the provided value.
     ///
     /// @param value Value to resolve the promise with.
     ///
@@ -442,7 +442,7 @@ public interface Promise<T> {
         return new PromiseImpl<>(Result.success(value));
     }
 
-    /// Create new resolved promise instance resolved into success with the provided value.
+    /// Create a new resolved promise instance resolved into success with the provided value.
     ///
     /// @param value Value to resolve the promise with.
     ///
@@ -451,7 +451,7 @@ public interface Promise<T> {
         return success(value);
     }
 
-    /// Create new resolved promise instance resolved into failure with the provided cause.
+    /// Create a new resolved promise instance resolved into failure with the provided cause.
     ///
     /// @param cause Cause to resolve the promise with.
     ///
@@ -460,7 +460,7 @@ public interface Promise<T> {
         return new PromiseImpl<>(Result.failure(cause));
     }
 
-    /// Create new resolved promise instance resolved into failure with the provided cause.
+    /// Create a new resolved promise instance resolved into failure with the provided cause.
     ///
     /// @param cause Cause to resolve the promise with.
     ///
@@ -469,7 +469,7 @@ public interface Promise<T> {
         return failure(cause);
     }
 
-    /// Create new unresolved promise instance and run the provided consumer asynchronously with the newly created instance.
+    /// Create a new unresolved promise instance and run the provided consumer asynchronously with the newly created instance.
     ///
     /// @param consumer Consumer to execute asynchronously with the created instance.
     ///
@@ -487,7 +487,7 @@ public interface Promise<T> {
         return promise(promise -> promise.resolve(supplier.get()));
     }
 
-    /// Create new unresolved promise instance and run the provided consumer asynchronously with the newly created instance after specified timeout.
+    /// Create a new unresolved promise instance and run the provided consumer asynchronously with the newly created instance after the specified timeout.
     ///
     /// @param delay    delay before execution starts
     /// @param consumer Consumer to execute asynchronously with the created instance.
@@ -497,8 +497,8 @@ public interface Promise<T> {
         return Promise.<T>promise().async(delay, consumer);
     }
 
-    /// Create new unresolved promise instance and run the provided supplier asynchronously.
-    /// Result returned by supplier is then used to resolve the promise.
+    /// Create a new unresolved promise instance and run the provided supplier asynchronously.
+    /// Result returned by the supplier is then used to resolve the promise.
     ///
     /// @param delay    delay before execution starts
     /// @param supplier Supplier to execute asynchronously
@@ -508,55 +508,55 @@ public interface Promise<T> {
         return promise(delay, promise -> promise.resolve(supplier.get()));
     }
 
-    /// Asynchronously run provided lambda and eventually resolve returned [Promise] with the value returned by lambda if call succeeds or with
+    /// Asynchronously run the provided lambda and eventually resolve returned [Promise] with the value returned by lambda if the call succeeds or with
     /// the failure if call throws exception.
     ///
     /// @param exceptionMapper the function which will transform exception into instance of [Cause]
     /// @param supplier        the call to wrap
     ///
-    /// @return the [Promise] instance which eventually will be resolved with the result of execution of the provided lambda
+    /// @return the [Promise] instance, which eventually will be resolved with the output of the provided lambda
     static <U> Promise<U> lift(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn0<U> supplier) {
         return Promise.promise(() -> Result.lift(exceptionMapper, supplier));
     }
 
-    /// Asynchronously run provided lambda and eventually resolve returned [Promise] with the [Unit] if call succeeds or with the failure
+    /// Asynchronously run the provided lambda and eventually resolve returned [Promise] with the [Unit] if the call succeeds or with the failure
     /// if call throws exception.
     ///
     /// @param exceptionMapper the function which will transform exception into instance of [Cause]
     /// @param runnable        the call to wrap
     ///
-    /// @return the [Promise] instance which eventually will be resolved with the [Unit] or with the failure with provided cause.
+    /// @return the [Promise] instance which eventually will be resolved with the [Unit] or with the failure with the provided cause.
     static Promise<Unit> lift(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingRunnable runnable) {
         return Promise.promise(() -> Result.lift(exceptionMapper, runnable));
     }
 
-    /// Asynchronously run provided lambda and eventually resolve returned [Promise] with the [Unit] if call succeeds or with the failure
+    /// Asynchronously run the provided lambda and eventually resolve returned [Promise] with the [Unit] if the call succeeds or with the failure
     /// if call throws exception.
     ///
-    /// @param cause    the cause which will be used to create failure result
+    /// @param cause    the cause, which will be used to create a failure result
     /// @param supplier the call to wrap
     ///
-    /// @return the [Promise] instance which eventually will be resolved with the result of execution of the provided lambda
+    /// @return the [Promise] instance, which eventually will be resolved with the output of the provided lambda
     static <U> Promise<U> lift(Cause cause, ThrowingFn0<U> supplier) {
         return Promise.promise(() -> Result.lift(cause, supplier));
     }
 
-    /// Asynchronously run provided lambda and eventually resolve returned [Promise] with the [Unit] if call succeeds or with the failure
+    /// Asynchronously run the provided lambda and eventually resolve returned [Promise] with the [Unit] if the call succeeds or with the failure
     /// if call throws exception.
     ///
-    /// @param cause    the cause which will be used to create failure result
+    /// @param cause    the cause, which will be used to create a failure result
     /// @param runnable the call to wrap
     ///
-    /// @return the [Promise] instance which eventually will be resolved with the [Unit] or with the failure with provided cause.
+    /// @return the [Promise] instance which eventually will be resolved with the [Unit] or with the failure with the provided cause.
     static Promise<Unit> lift(Cause cause, ThrowingRunnable runnable) {
         return Promise.promise(() -> Result.lift(cause, runnable));
     }
 
-    /// Asynchronously run provided lambda and eventually resolve returned [Promise] with the [Unit] if call succeeds or with the failure
+    /// Asynchronously run the provided lambda and eventually resolve returned [Promise] with the [Unit] if the call succeeds or with the failure
     ///
     /// @param action the action to run
     ///
-    /// @return the [Promise] instance which eventually will be resolved with the [Unit] or with the failure with provided cause.
+    /// @return the [Promise] instance which eventually will be resolved with the [Unit] or with the failure with the provided cause.
     static Promise<Unit> async(Runnable action) {
         return Promise.lift(CoreError::exception, action::run);
     }
@@ -585,8 +585,8 @@ public interface Promise<T> {
         return UNIT;
     }
 
-    /// Return promise which will be resolved once any of the promises provided as a parameters will be resolved with success. If none of the promises
-    /// will be resolved with success, then created instance will be resolved with provided `failureResult`.
+    /// Return promise which will be resolved once any of the promises provided as parameters are resolved with success. If none of the promises
+    /// are resolved with success, then the created instance will be resolved with the provided `failureResult`.
     ///
     /// @param failureResult Result in case if no instances were resolved with success
     /// @param promises      Input promises
@@ -602,8 +602,8 @@ public interface Promise<T> {
                                                                     .onResultRun(at::registerEvent)))));
     }
 
-    /// Return promise which will be resolved once any of the promises provided as a parameters will be resolved with success. If none of the promises
-    /// will be resolved with success, then created instance will be resolved with provided `failureResult`.
+    /// Return promise which will be resolved once any of the promises provided as parameters are resolved with success. If none of the promises
+    /// are resolved with success, then the created instance will be resolved with the provided `failureResult`.
     ///
     /// @param failureResult Result in case if no instances were resolved with success
     /// @param promises      Input promises
@@ -618,8 +618,8 @@ public interface Promise<T> {
                                                                     .onResultRun(at::registerEvent)))));
     }
 
-    /// Return promise which will be resolved once any of the promises provided as a parameters will be resolved with success. If none of the promises
-    /// will be resolved with success, then created instance will be resolved with [CoreError.Cancelled].
+    /// Return promise which will be resolved once any of the promises provided as parameters are resolved with success. If none of the promises
+    /// are resolved with success, then the created instance will be resolved with [CoreError.Cancelled].
     ///
     /// @param promises Input promises
     ///
@@ -630,8 +630,8 @@ public interface Promise<T> {
         return any((Result<T>) OTHER_SUCCEEDED, promises);
     }
 
-    /// Return promise which will be resolved once any of the promises provided as a parameters will be resolved with success. If none of the promises
-    /// will be resolved with success, then created instance will be resolved with [CoreError.Cancelled].
+    /// Return promise which will be resolved once any of the promises provided as parameters are resolved with success. If none of the promises
+    /// are resolved with success, then the created instance will be resolved with [CoreError.Cancelled].
     ///
     /// @param promises Input promises
     ///
@@ -656,11 +656,11 @@ public interface Promise<T> {
         failAll(PROMISE_CANCELLED, promises);
     }
 
-    /// Return a promise which will be resolved with the list of results of execution of all passed promises.
+    /// Return a promise which will be resolved with the list containing results from all passed promises.
     ///
     /// @param promises Collection of promises to be resolved.
     ///
-    /// @return Promise instance, which will be resolved with the list of results of resolved promises.
+    /// @return Promise instance, which will be resolved with the list of results from resolved promises.
     @SuppressWarnings("unchecked")
     static <T> Promise<List<Result<T>>> allOf(Collection<Promise<T>> promises) {
         if (promises.isEmpty()) {
@@ -677,10 +677,10 @@ public interface Promise<T> {
         return promise.map(list -> (List<Result<T>>) list);
     }
 
-    /// Return a promise which will be resolved when all promises passed as a parameter will be resolved. If any of the provided promises will be
-    /// resolved with error, then resulting promise will be also resolved with error.
+    /// Return a promise which will be resolved when all promises passed as a parameter are resolved. If any of the provided promises are
+    /// resolved with error, then the resulting promise will be also resolved with error.
     ///
-    /// The function for single input promise is provided for completeness.
+    /// The function for a single input promise is provided for completeness.
     ///
     /// @param promise1 Input promise
     ///
@@ -692,8 +692,8 @@ public interface Promise<T> {
                              .mapError(causes::append);
     }
 
-    /// Return a promise which will be resolved when all promises passed as a parameter will be resolved. If any of the provided promises will be
-    /// resolved with error, then resulting promise will be also resolved with error.
+    /// Return a promise which will be resolved when all promises passed as a parameter are resolved. If any of the provided promises are
+    /// resolved with error, then the resulting promise will be also resolved with error.
     ///
     /// @param promise1 Input promise
     /// @param promise2 Input promise
@@ -706,8 +706,8 @@ public interface Promise<T> {
                                  promise2);
     }
 
-    /// Return a promise which will be resolved when all promises passed as a parameter will be resolved. If any of the provided promises will be
-    /// resolved with error, then resulting promise will be also resolved with error.
+    /// Return a promise which will be resolved when all promises passed as a parameter are resolved. If any of the provided promises are
+    /// resolved with error, then the resulting promise will be also resolved with error.
     ///
     /// @param promise1 Input promise
     /// @param promise2 Input promise
@@ -724,8 +724,8 @@ public interface Promise<T> {
                                  promise1, promise2, promise3);
     }
 
-    /// Return a promise which will be resolved when all promises passed as a parameter will be resolved. If any of the provided promises will be
-    /// resolved with error, then resulting promise will be also resolved with error.
+    /// Return a promise which will be resolved when all promises passed as a parameter are resolved. If any of the provided promises are
+    /// resolved with error, then the resulting promise will be also resolved with error.
     ///
     /// @param promise1 Input promise
     /// @param promise2 Input promise
@@ -743,8 +743,8 @@ public interface Promise<T> {
                                  promise1, promise2, promise3, promise4);
     }
 
-    /// Return a promise which will be resolved when all promises passed as a parameter will be resolved. If any of the provided promises will be
-    /// resolved with error, then resulting promise will be also resolved with error.
+    /// Return a promise which will be resolved when all promises passed as a parameter are resolved. If any of the provided promises are
+    /// resolved with error, then the resulting promise will be also resolved with error.
     ///
     /// @param promise1 Input promise
     /// @param promise2 Input promise
@@ -767,8 +767,8 @@ public interface Promise<T> {
                                  promise1, promise2, promise3, promise4, promise5);
     }
 
-    /// Return a promise which will be resolved when all promises passed as a parameter will be resolved. If any of the provided promises will be
-    /// resolved with error, then resulting promise will be also resolved with error.
+    /// Return a promise which will be resolved when all promises passed as a parameter are resolved. If any of the provided promises are
+    /// resolved with error, then the resulting promise will be also resolved with error.
     ///
     /// @param promise1 Input promise
     /// @param promise2 Input promise
@@ -789,8 +789,8 @@ public interface Promise<T> {
                                  promise1, promise2, promise3, promise4, promise5, promise6);
     }
 
-    /// Return a promise which will be resolved when all promises passed as a parameter will be resolved. If any of the provided promises will be
-    /// resolved with error, then resulting promise will be also resolved with error.
+    /// Return a promise which will be resolved when all promises passed as a parameter are resolved. If any of the provided promises are
+    /// resolved with error, then the resulting promise will be also resolved with error.
     ///
     /// @param promise1 Input promise
     /// @param promise2 Input promise
@@ -812,8 +812,8 @@ public interface Promise<T> {
                                  promise1, promise2, promise3, promise4, promise5, promise6, promise7);
     }
 
-    /// Return a promise which will be resolved when all promises passed as a parameter will be resolved. If any of the provided promises will be
-    /// resolved with error, then resulting promise will be also resolved with error.
+    /// Return a promise which will be resolved when all promises passed as a parameter are resolved. If any of the provided promises are
+    /// resolved with error, then the resulting promise will be also resolved with error.
     ///
     /// @param promise1 Input promise
     /// @param promise2 Input promise
@@ -836,8 +836,8 @@ public interface Promise<T> {
                                  promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8);
     }
 
-    /// Return a promise which will be resolved when all promises passed as a parameter will be resolved. If any of the provided promises will be
-    /// resolved with error, then resulting promise will be also resolved with error.
+    /// Return a promise which will be resolved when all promises passed as a parameter are resolved. If any of the provided promises are
+    /// resolved with error, then the resulting promise will be also resolved with error.
     ///
     /// @param promise1 Input promise
     /// @param promise2 Input promise
@@ -1127,11 +1127,11 @@ final class PromiseImpl<T> implements Promise<T> {
         return result;
     }
 
-    /// Await for resolution of current instance with specified timeout. Note that if timeout is expired, then current instance remains unresolved.
+    /// Await for resolution of current instance with specified timeout. Note that if timeout is expired, then the current instance remains unresolved.
     ///
     /// @param timeout Timeout to wait for resolution
     ///
-    /// @return If instance is resolved while waiting, then the result of resolution is returned. Otherwise, Timeout error is returned.
+    /// @return If the instance is resolved while waiting, then the result of resolution is returned. Otherwise, the Timeout error is returned.
     @Override
     public Result<T> await(TimeSpan timeout) {
         if (result != null) {
@@ -1193,7 +1193,7 @@ final class PromiseImpl<T> implements Promise<T> {
         Completion current = head;
         Completion tmp;
 
-        // Split and reverse list in one pass
+        // Split and reverse the list in one pass
         while (current != null) {
             tmp = current.next;
 
@@ -1261,10 +1261,10 @@ final class PromiseImpl<T> implements Promise<T> {
         Completion<T> prevStack;
         do {
             if (result != null) {
-                // In rare circumstances, when one thread resolves instance while other tries to
-                // add new independent completion, we resolve completion here. There might be chances, that this might
+                // In rare circumstances, when one thread resolves the instance while other tries to
+                // add new independent completion, we resolve completion here. There might be chances that this might
                 // lead to race condition if actions done by completions attached to this Promise have shared data.
-                // Otherwise, dependency chain is still maintained properly even with this invocation.
+                // Otherwise, the dependency chain is still maintained properly even with this invocation.
                 completion.complete(result);
                 return;
             }
@@ -1343,7 +1343,7 @@ final class PromiseImpl<T> implements Promise<T> {
             throw new ExceptionInInitializerError(e);
         }
 
-        // Reduce the risk of rare disastrous classloading in first call to
+        // Reduce the risk of rare disastrous classloading in the first call to
         // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773
         @SuppressWarnings("unused")
         Class<?> ensureLoaded = LockSupport.class;

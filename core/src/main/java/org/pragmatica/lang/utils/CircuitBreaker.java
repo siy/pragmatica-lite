@@ -32,7 +32,7 @@ import java.util.function.Supplier;
 import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 
 /// A circuit breaker implementation to prevent cascading failures.
-/// Implementation is thread safe and several threads can simultaneously access
+/// Implementation is thread safe, and several threads can simultaneously access
 /// service protected by the CircuitBreaker. Each service must have its own instance of
 /// CircuitBreaker though.
 public interface CircuitBreaker {
@@ -54,7 +54,7 @@ public interface CircuitBreaker {
     /// @return The failure count
     long failureCount();
 
-    /// Gets the interval since last state change.
+    /// Gets the interval since the last state change.
     ///
     /// @return The last state change timestamp
     TimeSpan timeSinceLastStateChange();

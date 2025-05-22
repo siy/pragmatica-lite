@@ -21,9 +21,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-/// Helper class used to track number of events and trigger action once threshold is reached. The action is triggered only once, when number of events
-/// exactly matches configured threshold. It is a non-blocking version of [CountDownLatch] which executes provided action
-/// when counter reaches zero instead of waiting.
+/// Helper class used to track the number of events and trigger action once the threshold is reached. The action is triggered only once when the number of events
+/// exactly matches the configured threshold. It is a non-blocking version of [CountDownLatch] which executes the provided action
+/// when the counter reaches zero instead of waiting.
 public record ActionableThreshold(AtomicInteger counter, Runnable action) {
     /// Create an instance configured for threshold and action.
     ///
@@ -43,7 +43,7 @@ public record ActionableThreshold(AtomicInteger counter, Runnable action) {
         return this;
     }
 
-    /// Register event and perform action if threshold is reached. Once threshold is reached no further events will trigger action execution.
+    /// Register event and perform action if the threshold is reached. Once the threshold is reached, no further events will trigger action execution.
     public void registerEvent() {
         if (counter.get() <= 0) {
             return;

@@ -32,14 +32,14 @@ public interface Cause {
 
     /// Represent cause as a failure [Result] instance.
     ///
-    /// @return cause converted into [Result] with necessary type.
+    /// @return cause converted into [Result] with the necessary type.
     default <T> Result<T> result() {
         return Result.failure(this);
     }
 
     /// Represent cause as a failure [Promise] instance.
     ///
-    /// @return cause converted into [Promise] with necessary type.
+    /// @return cause converted into [Promise] with the necessary type.
     default <T> Promise<T> promise() {
         return Promise.failure(this);
     }
@@ -55,7 +55,7 @@ public interface Cause {
         return source().fold(() -> value, src -> src.iterate(action));
     }
 
-    /// Stream of causes starting from this cause. Fir single cause it will be a stream of one element. For composite cause, it will be a stream of all
+    /// Stream of causes starting from this cause. For the single cause it will be a stream of one element. For composite cause, it will be a stream of all
     /// causes stored in this cause.
     ///
     /// @return stream of causes.

@@ -39,8 +39,8 @@ import static org.pragmatica.lang.Unit.unit;
 /// @param <T> Type of value in case of success.
 @SuppressWarnings("unused")
 public sealed interface Result<T> permits Success, Failure {
-    /// Transform operation result value into value of other type and wrap new value into [Result]. Transformation takes place if current
-    /// instance (this) contains successful result, otherwise current instance remains unchanged and transformation function is not invoked.
+    /// Transform the operation result value into a value of another type and wrap the new value into [Result]. Transformation takes place if the current
+    /// instance (this) contains a successful result, otherwise the current instance remains unchanged and the transformation function is not invoked.
     ///
     /// @param mapper Function to transform successful value
     ///
@@ -50,7 +50,7 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(_ -> (Result<U>) this, r -> success(mapper.apply(r)));
     }
 
-    /// Replace successful result with the value obtained from provided supplier.
+    /// Replace a successful result with the value obtained from the provided supplier.
     ///
     /// @param supplier Source of the replacement value
     ///
@@ -59,8 +59,8 @@ public sealed interface Result<T> permits Success, Failure {
         return map(_ -> supplier.get());
     }
 
-    /// Transform operation result into another operation result. In case if current instance (this) is an error, transformation function is not
-    /// invoked and value remains the same.
+    /// Transform an operation result into another operation result. In case if the current instance (this) is an error, the transformation function is not
+    /// invoked and the value remains the same.
     ///
     /// @param mapper Function to apply to result
     ///
@@ -70,8 +70,8 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(_ -> (Result<U>) this, mapper);
     }
 
-    /// Replace current instance with the instance returned by provided [Supplier]. The replacement happens only if current instance contains
-    /// successful result, otherwise current instance remains unchanged.
+    /// Replace the current instance with the instance returned by provided [Supplier]. The replacement happens only if the current instance contains
+    /// a successful result, otherwise the current instance remains unchanged.
     ///
     /// @param mapper Source of the replacement result.
     ///
@@ -81,7 +81,7 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(_ -> (Result<U>) this, _ -> mapper.get());
     }
 
-    /// Transform cause of the failure.
+    /// Transform the cause of the failure.
     ///
     /// @param mapper Function to transform failure cause
     ///
@@ -108,7 +108,7 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(cause -> success(mapper.apply(cause)), _ -> this);
     }
 
-    /// Apply consumers to result value. Note that depending on the result (success or failure) only one consumer will be applied at a time.
+    /// Apply consumers to result value. Note that depending on the result, success or failure, only one consumer will be applied at a time.
     ///
     /// @param failureConsumer Consumer for failure result
     /// @param successConsumer Consumer for success result
@@ -172,8 +172,8 @@ public sealed interface Result<T> permits Success, Failure {
         return this;
     }
 
-    /// Convert instance into [Option] of the same value type. Successful instance is converted into present [Option] and failure - into
-    /// empty [Option]. Note that during such a conversion error information is get lost.
+    /// Convert an instance into [Option] of the same value type. Successful instance is converted into present [Option] and failure - into
+    /// empty [Option]. Note that during such a conversion error information is getting lost.
     ///
     /// @return [Option] instance which is present in case of success and missing in case of failure.
     default Option<T> option() {
@@ -187,23 +187,24 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(Functions::toFalse, Functions::toTrue);
     }
 
-    /// Check if instance is failure.
+    /// Check if an instance is failure.
     ///
     /// @return `true` if instance is failure and `false` otherwise
     default boolean isFailure() {
         return fold(Functions::toTrue, Functions::toFalse);
     }
 
-    /// Stream current instance. For failure instance empty stream is created. For success instance the stream with single element is returned. The
-    /// element is the value stored in current instance.
+    /// Stream current instance. For failure instance, an empty stream is created. For success instance,
+    /// the stream with a single element is returned. The element is the value stored in
+    /// the current instance.
     ///
     /// @return created stream
     default Stream<T> stream() {
         return fold(_ -> Stream.empty(), Stream::of);
     }
 
-    /// Filter instance against provided predicate. If predicate returns `true` then instance remains unchanged. If predicate returns
-    /// `false`, then failure instance in created using given [Cause].
+    /// Filter instance against provided predicate. If the predicate returns `true`, then the instance remains unchanged. If the predicate returns
+    /// `false`, then a failure instance is created using given [Cause].
     ///
     /// @param cause     failure to use in case if predicate returns `false`
     /// @param predicate predicate to invoke
@@ -213,10 +214,10 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(_ -> this, v -> predicate.test(v) ? this : failure(cause));
     }
 
-    /// Filter instance against provided predicate. If predicate returns `true` then instance remains unchanged. If predicate returns
-    /// `false`, then failure instance in created using [Cause] created by provided function.
+    /// Filter instance against provided predicate. If the predicate returns `true`, then the instance remains unchanged. If the predicate returns
+    /// `false`, then a failure instance is created using [Cause] created by the provided function.
     ///
-    /// @param causeMapper function which transforms the tested value into instance of [Cause] if predicate returns `false`
+    /// @param causeMapper function which transforms the tested value into an instance of [Cause] if predicate returns `false`
     /// @param predicate   predicate to invoke
     ///
     /// @return current instance if predicate returns `true` or [Failure] instance if predicate returns `false`
@@ -224,20 +225,20 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(_ -> this, v -> predicate.test(v) ? this : failure(causeMapper.apply(v)));
     }
 
-    /// Return value store in the current instance (if this instance represents successful result) or provided replacement value.
+    /// Return value store in the current instance (if this instance represents a successful result) or provided replacement value.
     ///
     /// @param replacement replacement value returned if current instance represents failure.
     ///
-    /// @return value stored in current instance (in case of success) or replacement value.
+    /// @return value stored in the current instance (in case of success) or replacement value.
     default T or(T replacement) {
         return fold(_ -> replacement, Functions::id);
     }
 
-    /// Return value store in the current instance (if this instance represents successful result) or value returned by provided supplier.
+    /// Return value store in the current instance (if this instance represents a successful result) or value returned by the provided supplier.
     ///
     /// @param supplier source of replacement value returned if current instance represents failure.
     ///
-    /// @return value stored in current instance (in case of success) or replacement value.
+    /// @return value stored in the current instance (in case of success) or replacement value.
     default T or(Supplier<T> supplier) {
         return fold(_ -> supplier.get(), Functions::id);
     }
@@ -251,7 +252,7 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(_ -> replacement, _ -> this);
     }
 
-    /// Return current instance if this instance represents successful result or instance returned by provided supplier if current instance represents
+    /// Return the current instance if this instance represents a successful result or instance returned by provided supplier if current instance represents
     /// a failure.
     ///
     /// @param supplier source of replacement instance returned if current instance represents failure.
@@ -270,11 +271,11 @@ public sealed interface Result<T> permits Success, Failure {
         return onResult(_ -> runnable.run());
     }
 
-    /// This method allows "unwrapping" the value stored inside the Result instance. If value is missing then [IllegalStateException] is thrown.
+    /// This method allows "unwrapping" the value stored inside the Result instance. If a value is missing, then [IllegalStateException] is thrown.
     ///
     /// WARNING!!!
-    /// This method should be avoided in the production code. It's main intended use case - simplification of the tests. For this reason
-    /// method is marked as [Deprecated]. This generates warning at compile time.
+    /// This method should be avoided in the production code. Its main intended use case - simplification of the tests. For this reason
+    ///  the method is marked as [Deprecated]. This generates a warning at compile time.
     ///
     /// @return value stored inside present instance.
     @SuppressWarnings("DeprecatedIsStillUsed")
@@ -283,19 +284,19 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(v -> {throw new IllegalStateException("Unwrap error: " + v.message());}, Functions::id);
     }
 
-    /// Handle both possible states (success/failure) and produce single value from it.
+    /// Handle both possible states (success/failure) and produce a single value from it.
     ///
     /// @param failureMapper function to transform failure into value
     /// @param successMapper function to transform success into value
     ///
-    /// @return result of application of one of the mappers.
+    /// @return the result transformed by the one of the mappers.
     <U> U fold(Fn1<? extends U, ? super Cause> failureMapper, Fn1<? extends U, ? super T> successMapper);
 
     default Result<Unit> mapToUnit() {
         return map(Unit::toUnit);
     }
 
-    /// Convert current instance into [Promise] instance resolved with current instance.
+    /// Convert the current instance into [Promise] instance resolved with the current instance.
     ///
     /// @return created promise
     default Promise<T> async() {
@@ -304,14 +305,14 @@ public sealed interface Result<T> permits Success, Failure {
 
     Result<Unit> UNIT_RESULT = success(unit());
 
-    /// A constant instance of successful instance holding [Unit] value.
+    /// A constant instance of a successful instance holding [Unit] value.
     ///
-    /// @return instance of successful result with [Unit] value
+    /// @return instance of a successful result with [Unit] value
     static Result<Unit> unitResult() {
         return UNIT_RESULT;
     }
 
-    /// Create an instance of successful operation result.
+    /// Create an instance of a successful operation result.
     ///
     /// @param value Operation result
     ///
@@ -336,7 +337,7 @@ public sealed interface Result<T> permits Success, Failure {
         }
     }
 
-    /// Create an instance of failure result.
+    /// Create an instance of a failure result.
     ///
     /// @param value Operation error value
     ///
@@ -361,12 +362,12 @@ public sealed interface Result<T> permits Success, Failure {
         }
     }
 
-    /// Wrap value returned by provided lambda into success [Result] if call succeeds or into failure [Result] if call throws exception.
+    /// Wrap value returned by provided lambda into success [Result] if the call succeeds or into failure [Result] if call throws exception.
     ///
     /// @param exceptionMapper the function which will transform exception into instance of [Cause]
     /// @param supplier        the call to wrap
     ///
-    /// @return result of execution of the provided lambda wrapped into [Result]
+    /// @return result transformed by the provided lambda and wrapped into [Result]
     static <U> Result<U> lift(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn0<U> supplier) {
         try {
             return success(supplier.apply());
@@ -375,7 +376,7 @@ public sealed interface Result<T> permits Success, Failure {
         }
     }
 
-    /// Wrap call to provided lambda into success [Result] if call succeeds or into failure [Result] if call throws exception.
+    /// Wrap the call to the provided lambda into success [Result] if the call succeeds or into failure [Result] if call throws exception.
     ///
     /// @param exceptionMapper the function which will transform exception into instance of [Cause]
     /// @param runnable        the call to wrap
@@ -390,17 +391,17 @@ public sealed interface Result<T> permits Success, Failure {
         }
     }
 
-    /// Similar to [#lift(Fn1,ThrowingFn0)] but with fixed [Cause] instance.
+    /// Similar to [#lift(Fn1,ThrowingFn0)] but with a fixed [Cause] instance.
     ///
     /// @param cause    the cause to use in case of failure
     /// @param supplier the call to wrap
     ///
-    /// @return result of execution of the provided lambda wrapped into [Result]
+    /// @return result transformed by the provided lambda and wrapped into [Result]
     static <U> Result<U> lift(Cause cause, ThrowingFn0<U> supplier) {
         return lift(_ -> cause, supplier);
     }
 
-    /// Similar to [#lift(Fn1,ThrowingRunnable)] but with fixed [Cause] instance.
+    /// Similar to [#lift(Fn1,ThrowingRunnable)] but with a fixed [Cause] instance.
     ///
     /// @param cause    the cause to use in case of failure
     /// @param runnable the call to wrap
@@ -410,7 +411,7 @@ public sealed interface Result<T> permits Success, Failure {
         return lift(_ -> cause, runnable);
     }
 
-    /// Find and return first success instance among provided.
+    /// Find and return the first success instance among provided.
     ///
     /// @param first   first input result
     /// @param results remaining input results
@@ -431,7 +432,7 @@ public sealed interface Result<T> permits Success, Failure {
         return first;
     }
 
-    /// Lazy version of the [#any(Result,Result[])].
+    /// Lazy version of the [#any(Result, Result\[\])].
     ///
     /// @param first     first instance to check
     /// @param suppliers suppliers which provide remaining instances for check
@@ -454,11 +455,11 @@ public sealed interface Result<T> permits Success, Failure {
         return first;
     }
 
-    /// Transform stream of [Result] instances into [Result] with list of values.
+    /// Transform the stream of [Result] instances into [Result] with the list of values.
     ///
     /// @param results input stream of [Result] instances
     ///
-    /// @return success instance if all [Result] instances in list are successes or failure instance with any instances in list is a failure
+    /// @return success instance if all [Result] instances in the list are successes or failure instance if any instance in this list is a failure
     static <T> Result<List<T>> allOf(Stream<Result<T>> results) {
         var causes = Causes.composite();
         var values = new ArrayList<T>();
@@ -468,21 +469,21 @@ public sealed interface Result<T> permits Success, Failure {
         return causes.isEmpty() ? success(values) : failure(causes);
     }
 
-    /// Transform provided [Result] instances into [Result] with list of values.
+    /// Transform provided [Result] instances into [Result] with the list of values.
     ///
     /// @param results input stream of [Result] instances
     ///
-    /// @return success instance if all [Result] instances in list are successes or failure instance with any instances in list is a failure
+    /// @return success instance if all [Result] instances in this list are successes or failure instance if any instance in this list is a failure
     @SafeVarargs
     static <T> Result<List<T>> allOf(Result<T>... results) {
         return allOf(List.of(results));
     }
 
-    /// Transform list of [Result] instances into [Result] with list of values.
+    /// Transform the list of [Result] instances into [Result] with the list of values.
     ///
     /// @param results input list of [Result] instances
     ///
-    /// @return success instance if all [Result] instances in list are successes or failure instance with any instances in list is a failure
+    /// @return success instance if all [Result] instances in the list are successes or failure instance if any instance in this list is a failure
     static <T> Result<List<T>> allOf(List<Result<T>> results) {
         var causes = Causes.composite();
         var values = new ArrayList<T>();
@@ -495,8 +496,9 @@ public sealed interface Result<T> permits Success, Failure {
         return causes.isEmpty() ? success(values) : failure(causes);
     }
 
-    /// Transform provided results into single result containing tuple of values. The result is failure if any input result is failure. Otherwise,
-    /// returned instance contains tuple with values from input results.
+    /// Transform provided results into a single result containing the tuple of values.
+    /// The result is failure if any input result is failure. Otherwise,
+    /// the returned instance contains a tuple with values from input results.
     ///
     /// @return [Mapper1] prepared for further transformation.
     static <T1> Mapper1<T1> all(Result<T1> value) {
@@ -506,8 +508,8 @@ public sealed interface Result<T> permits Success, Failure {
                           .mapError(causes::append);
     }
 
-    /// Transform provided results into single result containing tuple of values. The result is failure if any input result is failure. Otherwise,
-    /// returned instance contains tuple with values from input results.
+    /// Transform provided results into the single result containing a tuple of values. The result is failure if any input result is failure. Otherwise,
+    /// the returned instance contains a tuple with values from input results.
     ///
     /// @return [Mapper2] prepared for further transformation.
     static <T1, T2> Mapper2<T1, T2> all(Result<T1> value1, Result<T2> value2) {
@@ -520,8 +522,8 @@ public sealed interface Result<T> permits Success, Failure {
                            .mapError(causes::append);
     }
 
-    /// Transform provided results into single result containing tuple of values. The result is failure if any input result is failure. Otherwise,
-    /// returned instance contains tuple with values from input results.
+    /// Transform provided results into the single result containing a tuple of values. The result is failure if any input result is failure. Otherwise,
+    /// the returned instance contains a tuple with values from input results.
     ///
     /// @return [Mapper3] prepared for further transformation.
     static <T1, T2, T3> Mapper3<T1, T2, T3> all(Result<T1> value1, Result<T2> value2, Result<T3> value3) {
@@ -536,8 +538,8 @@ public sealed interface Result<T> permits Success, Failure {
                            .mapError(causes::append);
     }
 
-    /// Transform provided results into single result containing tuple of values. The result is failure if any input result is failure. Otherwise,
-    /// returned instance contains tuple with values from input results.
+    /// Transform provided results into the single result containing a tuple of values. The result is failure if any input result is failure. Otherwise,
+    /// the returned instance contains a tuple with values from input results.
     ///
     /// @return [Mapper4] prepared for further transformation.
     static <T1, T2, T3, T4> Mapper4<T1, T2, T3, T4> all(
@@ -556,8 +558,8 @@ public sealed interface Result<T> permits Success, Failure {
                            .mapError(causes::append);
     }
 
-    /// Transform provided results into single result containing tuple of values. The result is failure if any input result is failure. Otherwise,
-    /// returned instance contains tuple with values from input results.
+    /// Transform provided results into the single result containing a tuple of values. The result is failure if any input result is failure. Otherwise,
+    /// the returned instance contains a tuple with values from input results.
     ///
     /// @return [Mapper5] prepared for further transformation.
     static <T1, T2, T3, T4, T5> Mapper5<T1, T2, T3, T4, T5> all(
@@ -578,8 +580,8 @@ public sealed interface Result<T> permits Success, Failure {
                            .mapError(causes::append);
     }
 
-    /// Transform provided results into single result containing tuple of values. The result is failure if any input result is failure. Otherwise,
-    /// returned instance contains tuple with values from input results.
+    /// Transform provided results into the single result containing a tuple of values. The result is failure if any input result is failure. Otherwise,
+    /// the returned instance contains a tuple with values from input results.
     ///
     /// @return [Mapper6] prepared for further transformation.
     static <T1, T2, T3, T4, T5, T6> Mapper6<T1, T2, T3, T4, T5, T6> all(
@@ -603,8 +605,8 @@ public sealed interface Result<T> permits Success, Failure {
                            .mapError(causes::append);
     }
 
-    /// Transform provided results into single result containing tuple of values. The result is failure if any input result is failure. Otherwise,
-    /// returned instance contains tuple with values from input results.
+    /// Transform provided results into the single result containing a tuple of values. The result is failure if any input result is failure. Otherwise,
+    /// the returned instance contains a tuple with values from input results.
     ///
     /// @return [Mapper7] prepared for further transformation.
     static <T1, T2, T3, T4, T5, T6, T7> Mapper7<T1, T2, T3, T4, T5, T6, T7> all(
@@ -631,8 +633,8 @@ public sealed interface Result<T> permits Success, Failure {
                            .mapError(causes::append);
     }
 
-    /// Transform provided results into single result containing tuple of values. The result is failure if any input result is failure. Otherwise,
-    /// returned instance contains tuple with values from input results.
+    /// Transform provided results into the single result containing a tuple of values. The result is failure if any input result is failure. Otherwise,
+    /// the returned instance contains a tuple with values from input results.
     ///
     /// @return [Mapper8] prepared for further transformation.
     static <T1, T2, T3, T4, T5, T6, T7, T8> Mapper8<T1, T2, T3, T4, T5, T6, T7, T8> all(
@@ -661,8 +663,8 @@ public sealed interface Result<T> permits Success, Failure {
                            .mapError(causes::append);
     }
 
-    /// Transform provided results into single result containing tuple of values. The result is failure if any input result is failure. Otherwise,
-    /// returned instance contains tuple with values from input results.
+    /// Transform provided results into the single result containing a tuple of values. The result is failure if any input result is failure. Otherwise,
+    /// the returned instance contains a tuple with values from input results.
     ///
     /// @return [Mapper9] prepared for further transformation.
     static <T1, T2, T3, T4, T5, T6, T7, T8, T9> Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> all(

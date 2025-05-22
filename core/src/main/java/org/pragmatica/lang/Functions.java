@@ -152,14 +152,14 @@ public interface Functions {
         R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9) throws Throwable;
     }
 
-    /// Function with variable argument list.
+    /// Function with the variable argument list.
     @FunctionalInterface
     interface FnX<R> {
         R apply(Object... values);
     }
 
-    /// Universal consumers of values which do nothing with input values. Useful for cases when API requires function, but there is no need to do
-    /// anything with the received values.
+    /// Universal consumers of values which do nothing with input values. Useful for cases when the API
+    /// requires a function, but there is no need to do anything with the received values.
     static <T1> void unitFn() {
     }
 

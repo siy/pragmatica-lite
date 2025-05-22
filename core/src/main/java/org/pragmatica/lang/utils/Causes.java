@@ -37,7 +37,7 @@ import static org.pragmatica.lang.Option.option;
 public sealed interface Causes {
     record unused() implements Causes {}
 
-    /// Simplest possible variant of [Cause] which contains only message describing the cause
+    /// Simplest possible variant of the [Cause] which contains only the message describing the cause
     interface SimpleCause extends Cause {
         default String completeMessage() {
             var builder = new StringBuilder("Cause: ").append(message());
