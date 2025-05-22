@@ -36,7 +36,6 @@ import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 ///                             10.0,
 ///                             false))
 ///      .execute(operation)
-///}
 ///```
 /// The implementation is stateless and thread-safe, so single instance could be used to run several
 /// requests at once.
@@ -91,6 +90,7 @@ public interface Retry {
     interface RetryStageMaxAttempts {
         RetryStageBackoffStrategy attempts(int maxAttempts);
     }
+
     interface RetryStageBackoffStrategy {
         Retry strategy(BackoffStrategy backoffStrategy);
     }
