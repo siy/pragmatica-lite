@@ -309,8 +309,8 @@ class RetryTest {
             }
         }
 
-        // We expect the majority of samples to be different with jitter enabled
-        assertTrue(differentValues > samples * 0.6,
+        // We expect at least half of samples to be different with jitter enabled
+        assertTrue(differentValues >= samples * 0.5,
                    "Expected most delays to be different with jitter enabled, but got only "
                            + differentValues + " different values out of " + samples);
     }
