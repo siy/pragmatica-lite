@@ -76,9 +76,19 @@ public class KVStore<K, V> implements StateMachine<KVCommand> {
     public Result<Unit> restoreSnapshot(byte[] snapshot) {
         return Result.lift(Causes::fromThrowable, () -> deserializer.decode(snapshot))
                      .map(map -> (Map<K, V>) map)
+                     .onSuccessRun(this::notifyRemoveAll)
                      .onSuccessRun(storage::clear)
                      .onSuccess(storage::putAll)
-                     .map(_ -> Unit.unit());
+                     .onSuccessRun(this::notifyPutAll)
+                     .mapToUnit();
+    }
+
+    private void notifyRemoveAll() {
+        storage.forEach((key, value) -> observer.accept(new ValueRemove<>(new Remove<>(key), Option.some(value))));
+    }
+
+    private void notifyPutAll() {
+        storage.forEach((key, value) -> observer.accept(new ValuePut<>(new Put<>(key, value), Option.none())));
     }
 
     @Override
