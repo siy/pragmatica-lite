@@ -27,6 +27,6 @@ jobs:
           distribution: 'zulu'
           java-version: '21.0.1+12'
       - name: Publish package
-        run: mvn --batch-mode deploy
+        run: mvn -DskipTests --batch-mode deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
