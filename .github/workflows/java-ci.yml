@@ -17,6 +17,7 @@ jobs:
         run: "MAVEN_OPTS=--enable-preview mvn --no-transfer-progress --batch-mode --update-snapshots package"
   publish:
     runs-on: ubuntu-latest
+    needs: build
     permissions:
       contents: read
       packages: write
