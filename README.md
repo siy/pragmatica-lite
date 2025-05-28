@@ -64,7 +64,7 @@ Then add a necessary dependency:
 <dependency>
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>[MODULE_NAME]</artifactId>
-    <version>0.7.3</version>
+    <version>0.7.4</version>
 </dependency>
 ```
 Where `[MODULE_NAME]` is one of the following:

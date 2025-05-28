@@ -4,7 +4,6 @@ import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
 
 import java.util.List;
-import java.util.function.Consumer;
 
 /// Generalized state machine which can be replicated across cluster.
 public interface StateMachine<T extends Command> {
@@ -31,12 +30,6 @@ public interface StateMachine<T extends Command> {
     ///
     /// @return A Result indicating success or failure of the restoration
     Result<Unit> restoreSnapshot(byte[] snapshot);
-
-    /// Register an observer to be notified of state changes in the state machine.
-    /// The observer will be called whenever the state machine's state is modified by a command.
-    ///
-    /// @param observer Internal state change observer
-    void observeStateChanges(Consumer<? super StateMachineNotification> observer);
 
     /// Reset state machine to its initial state
     void reset();

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.pragmatica.cluster.consensus.rabia.infrastructure.TestCluster;
 import org.pragmatica.cluster.net.NodeId;
 import org.pragmatica.cluster.state.kvstore.KVCommand;
+import org.pragmatica.cluster.state.kvstore.KVSoreNotification;
 import org.pragmatica.cluster.state.kvstore.KVStore;
 import org.pragmatica.lang.Promise;
 import org.slf4j.Logger;
@@ -146,12 +147,19 @@ public class NominalOperationTest {
 
         var counters = new ConcurrentHashMap<NodeId, CountDownLatch>();
 
-        cluster.stores()
-               .forEach((nodeId, store) ->
-                                store.observeStateChanges(
-                                        _ -> counters.computeIfAbsent(nodeId,
-                                                                      _ -> new CountDownLatch(REQUEST_COUNT))
-                                                     .countDown()));
+        cluster.routers()
+               .forEach((nodeId, router) ->
+                                router.addRoute(KVSoreNotification.ValuePut.class,
+                                                _ -> counters.computeIfAbsent(nodeId,
+                                                                              _ -> new CountDownLatch(REQUEST_COUNT))
+                                                             .countDown()));
+//
+//        cluster.stores()
+//               .forEach((nodeId, store) ->
+//                                store.observeStateChanges(
+//                                        _ -> counters.computeIfAbsent(nodeId,
+//                                                                      _ -> new CountDownLatch(REQUEST_COUNT))
+//                                                     .countDown()));
 
         // Create a random generator for inter-arrival times
         var random = new Random();

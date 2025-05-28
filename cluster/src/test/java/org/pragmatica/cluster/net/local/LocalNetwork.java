@@ -21,6 +21,8 @@ import java.util.stream.Stream;
 
 /// Local network implementation suitable for testing purposes
 public class LocalNetwork implements ClusterNetwork {
+
+
     public enum FaultType {
         MESSAGE_LOSS,
         MESSAGE_DELAY,
@@ -35,12 +37,12 @@ public class LocalNetwork implements ClusterNetwork {
     private final TopologyManager topologyManager;
     private final Map<NodeId, List<NodeId>> partitions = new ConcurrentHashMap<>();
     private final Executor executor = Executors.newFixedThreadPool(5);
-    private final MessageRouter router;
+    private final Map<NodeId, MessageRouter> routers;
     private FaultInjector faultInjector;
 
-    public LocalNetwork(TopologyManager topologyManager, MessageRouter router, FaultInjector faultInjector) {
+    public LocalNetwork(TopologyManager topologyManager, Map<NodeId, MessageRouter> routers, FaultInjector faultInjector) {
         this.topologyManager = topologyManager;
-        this.router = router;
+        this.routers = routers;
         this.faultInjector = faultInjector;
     }
 
@@ -71,7 +73,8 @@ public class LocalNetwork implements ClusterNetwork {
     public void disconnect(NodeId nodeId) {
         nodes.remove(nodeId);
         if (nodes.size() == topologyManager.quorumSize() - 1) {
-            router.route(QuorumStateNotification.DISAPPEARED);
+            routers.values()
+                   .forEach(router -> router.route(QuorumStateNotification.DISAPPEARED));
         }
     }
 
@@ -89,7 +92,8 @@ public class LocalNetwork implements ClusterNetwork {
         // Use processWithFaultInjection to wrap the listener
         nodes.put(nodeId, listener);
         if (nodes.size() == topologyManager.quorumSize()) {
-            router.route(QuorumStateNotification.ESTABLISHED);
+            routers.values()
+                   .forEach(router -> router.route(QuorumStateNotification.ESTABLISHED));
         }
     }
 

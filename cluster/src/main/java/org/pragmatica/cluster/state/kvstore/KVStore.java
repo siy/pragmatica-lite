@@ -1,34 +1,38 @@
 package org.pragmatica.cluster.state.kvstore;
 
-import org.pragmatica.net.serialization.Deserializer;
-import org.pragmatica.net.serialization.Serializer;
 import org.pragmatica.cluster.state.StateMachine;
-import org.pragmatica.cluster.state.StateMachineNotification;
 import org.pragmatica.cluster.state.kvstore.KVCommand.Get;
 import org.pragmatica.cluster.state.kvstore.KVCommand.Put;
 import org.pragmatica.cluster.state.kvstore.KVCommand.Remove;
-import org.pragmatica.cluster.state.kvstore.KVStateMachineNotification.ValueGet;
-import org.pragmatica.cluster.state.kvstore.KVStateMachineNotification.ValuePut;
-import org.pragmatica.cluster.state.kvstore.KVStateMachineNotification.ValueRemove;
+import org.pragmatica.cluster.state.kvstore.KVSoreNotification.ValueGet;
+import org.pragmatica.cluster.state.kvstore.KVSoreNotification.ValuePut;
+import org.pragmatica.cluster.state.kvstore.KVSoreNotification.ValueRemove;
+import org.pragmatica.cluster.state.kvstore.KVStoreLocalIO.Request.Find;
+import org.pragmatica.cluster.state.kvstore.KVStoreLocalIO.Response.FoundEntries;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.utils.Causes;
+import org.pragmatica.message.MessageRouter;
+import org.pragmatica.net.serialization.Deserializer;
+import org.pragmatica.net.serialization.Serializer;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 
-public class KVStore<K, V> implements StateMachine<KVCommand> {
+public final class KVStore<K extends CharSequence, V> implements StateMachine<KVCommand> {
     private final Map<K, V> storage = new ConcurrentHashMap<>();
     private final Serializer serializer;
     private final Deserializer deserializer;
-    private Consumer<? super StateMachineNotification> observer = _ -> {};
+    private final MessageRouter router;
 
-    public KVStore(Serializer serializer, Deserializer deserializer) {
+    public KVStore(MessageRouter router, Serializer serializer, Deserializer deserializer) {
+        this.router = router;
         this.serializer = serializer;
         this.deserializer = deserializer;
+
+        this.router.addRoute(Find.class, this::find);
     }
 
     @SuppressWarnings("unchecked")
@@ -44,7 +48,7 @@ public class KVStore<K, V> implements StateMachine<KVCommand> {
     private Option<V> handleGet(Get<K> get) {
         var value = Option.option(storage.get(get.key()));
 
-        observer.accept(new ValueGet<>(get, value));
+        router.route(new ValueGet<>(get, value));
 
         return value;
     }
@@ -52,7 +56,7 @@ public class KVStore<K, V> implements StateMachine<KVCommand> {
     private Option<V> handlePut(Put<K, V> put) {
         var oldValue = Option.option(storage.put(put.key(), put.value()));
 
-        observer.accept(new ValuePut<>(put, oldValue));
+        router.route(new ValuePut<>(put, oldValue));
 
         return oldValue;
     }
@@ -60,7 +64,7 @@ public class KVStore<K, V> implements StateMachine<KVCommand> {
     private Option<V> handleRemove(Remove<K> remove) {
         var oldValue = Option.option(storage.remove(remove.key()));
 
-        observer.accept(new ValueRemove<>(remove, oldValue));
+        router.route(new ValueRemove<>(remove, oldValue));
 
         return oldValue;
     }
@@ -84,24 +88,27 @@ public class KVStore<K, V> implements StateMachine<KVCommand> {
     }
 
     private void notifyRemoveAll() {
-        storage.forEach((key, value) -> observer.accept(new ValueRemove<>(new Remove<>(key), Option.some(value))));
+        storage.forEach((key, value) -> router.route(new ValueRemove<>(new Remove<>(key), Option.some(value))));
     }
 
     private void notifyPutAll() {
-        storage.forEach((key, value) -> observer.accept(new ValuePut<>(new Put<>(key, value), Option.none())));
-    }
-
-    @Override
-    public void observeStateChanges(Consumer<? super StateMachineNotification> observer) {
-        this.observer = observer;
+        storage.forEach((key, value) -> router.route(new ValuePut<>(new Put<>(key, value), Option.none())));
     }
 
     @Override
     public void reset() {
+        notifyRemoveAll();
         storage.clear();
     }
 
     public Map<K, V> snapshot() {
         return new HashMap<>(storage);
+    }
+
+    private void find(Find find) {
+        router.routeAsync(() -> new FoundEntries<>(storage.entrySet()
+                                                          .stream()
+                                                          .filter(find::matches)
+                                                          .toList()));
     }
 }

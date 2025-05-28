@@ -66,8 +66,6 @@ public interface RabiaNode<C extends Command> extends ClusterNode<C> {
         var consensus = new RabiaEngine<>(topologyManager, network, stateMachine,
                                           router, config.protocol());
 
-        stateMachine.observeStateChanges(router::route);
-
         return new rabiaNode<>(config, router, stateMachine, network, topologyManager, consensus, leaderManager);
     }
 }

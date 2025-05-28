@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.pragmatica.cluster.consensus.rabia.infrastructure.TestCluster;
 import org.pragmatica.cluster.net.NodeId;
 import org.pragmatica.cluster.state.kvstore.KVCommand;
+import org.pragmatica.cluster.state.kvstore.KVSoreNotification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -124,7 +125,7 @@ public class CrashStopFailuresTest {
         var crashLatch = new CountDownLatch(numCommands / 3);
 
         // Set an observer to crash the node after some commands
-        cluster.stores().get(nodeToFail).observeStateChanges(_ -> {
+        cluster.routers().get(nodeToFail).addRoute(KVSoreNotification.ValuePut.class, _ -> {
             int count = counter.incrementAndGet();
             if (count == numCommands / 3) {
                 log.info("Crashing node {} after {} commands", nodeToFail, count);

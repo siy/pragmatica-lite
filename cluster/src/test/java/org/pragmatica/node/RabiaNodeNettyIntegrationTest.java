@@ -67,7 +67,7 @@ class RabiaNodeNettyIntegrationTest {
             var router = MessageRouter.messageRouter();
 
             routers.add(router);
-            var store = new KVStore<String, String>(serializer, deserializer);
+            var store = new KVStore<String, String>(router, serializer, deserializer);
 
             stores.add(store);
 

@@ -1,6 +1,7 @@
 package org.pragmatica.message;
 
 import org.pragmatica.lang.Option;
+import org.pragmatica.lang.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,11 +10,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /// **NOTE**: This implementation assumes that the instance is configured and then used without
 /// changes.
 public interface MessageRouter {
     <T extends Message> void route(T message);
+
+    default <T extends Message> void routeAsync(Supplier<T> messageSupplier) {
+        Promise.async(() -> route(messageSupplier.get()));
+    }
 
     <T extends Message> MessageRouter addRoute(Class<T> messageType, Consumer<T> receiver);
 
