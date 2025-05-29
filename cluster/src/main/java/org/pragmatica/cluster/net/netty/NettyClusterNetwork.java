@@ -30,6 +30,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -55,6 +57,7 @@ public class NettyClusterNetwork implements ClusterNetwork {
     private final Supplier<List<ChannelHandler>> handlers;
     private final MessageRouter router;
     private final AtomicReference<Server> server = new AtomicReference<>();
+    private final Executor executor;
 
     enum ViewChangeOperation {
         ADD, REMOVE, SHUTDOWN
@@ -64,6 +67,9 @@ public class NettyClusterNetwork implements ClusterNetwork {
                                Serializer serializer,
                                Deserializer deserializer,
                                MessageRouter router) {
+
+        var processors = Runtime.getRuntime().availableProcessors();
+        this.executor = Executors.newFixedThreadPool(processors > 1 ? processors : 2);
         this.self = topologyManager.self();
         this.topologyManager = topologyManager;
         this.router = router;
@@ -255,14 +261,13 @@ public class NettyClusterNetwork implements ClusterNetwork {
             return;
         }
 
-//        log.info("Node {} sending message {} to {}", self.id(), message, peerId);
-
         channel.writeAndFlush(message);
     }
 
     @Override
     public <M extends ProtocolMessage> void broadcast(M message) {
-        peerLinks.forEach((peerId, channel) -> sendToChannel(peerId, message, channel));
+        peerLinks.forEach((peerId, channel) ->
+                                 executor.execute(() -> sendToChannel(peerId, message, channel)));
     }
 
     private void processViewChange(ViewChangeOperation operation, NodeId peerId) {

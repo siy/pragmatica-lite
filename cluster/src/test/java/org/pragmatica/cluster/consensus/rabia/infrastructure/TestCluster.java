@@ -7,7 +7,7 @@ import org.pragmatica.cluster.net.local.LocalNetwork;
 import org.pragmatica.cluster.net.local.LocalNetwork.FaultInjector;
 import org.pragmatica.cluster.node.rabia.CustomClasses;
 import org.pragmatica.cluster.state.kvstore.KVCommand;
-import org.pragmatica.cluster.state.kvstore.KVSoreNotification;
+import org.pragmatica.cluster.state.kvstore.KVStoreNotification;
 import org.pragmatica.cluster.state.kvstore.KVStore;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.message.MessageRouter;
@@ -92,7 +92,7 @@ public class TestCluster {
         routers.put(id, router);
 
         var stateChangePrinter = new StateChangePrinter(id);
-        router.addRoute(KVSoreNotification.ValuePut.class, stateChangePrinter::accept);
+        router.addRoute(KVStoreNotification.ValuePut.class, stateChangePrinter::accept);
     }
 
     public void awaitNode(NodeId nodeId) {
