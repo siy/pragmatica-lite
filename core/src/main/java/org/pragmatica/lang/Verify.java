@@ -109,7 +109,48 @@ public sealed interface Verify {
         static <T> boolean none(Option<T> option) {
             return option.isEmpty();
         }
+
+        /// Checks if a number is positive (greater than zero).
+        ///
+        /// @param <T>   the type of number being checked, must extend Number
+        /// @param value the value to check
+        ///
+        /// @return true if the value is positive, false otherwise
+        static <T extends Number> boolean positive(T value) {
+            return value.doubleValue() > 0;
+        }
+
+
+        /// Checks if a number is negative (less than zero).
+        ///
+        /// @param <T>   the type of number being checked, must extend Number
+        /// @param value the value to check
+        ///
+        /// @return true if the value is negative, false otherwise
+        static <T extends Number> boolean negative(T value) {
+            return value.doubleValue() < 0;
+        }
         
+        /// Checks if a number is non-negative (greater than or equal to zero).
+        ///
+        /// @param <T>   the type of number being checked, must extend Number
+        /// @param value the value to check
+        ///
+        /// @return true if the value is non-negative, false otherwise
+        static <T extends Number> boolean nonNegative(T value) {
+            return value.doubleValue() >= 0;
+        }
+
+        /// Checks if a number is non-positive (less than or equal to zero).
+        ///
+        /// @param <T>   the type of number being checked, must extend Number
+        /// @param value the value to check
+        ///
+        /// @return true if the value is non-positive, false otherwise
+        static <T extends Number> boolean nonPositive(T value) {
+            return value.doubleValue() <= 0;
+        }
+
         /// Checks if a value is greater than a boundary.
         ///
         /// @param <T> the type of values being compared, must extend Comparable

@@ -1,1 +1,0 @@
-./mvnw validate -DbumpMajor

@@ -181,6 +181,15 @@ class VerifyTest {
             assertTrue(Verify.Is.blank("\t\n"));
             assertFalse(Verify.Is.blank("test"));
         }
+
+        @Test
+        @DisplayName("blank should handle null and edge cases correctly")
+        void blankShouldHandleNullAndEdgeCases() {
+            assertTrue(Verify.Is.blank(""));
+            assertTrue(Verify.Is.blank(" \t\n\r"));
+            assertFalse(Verify.Is.blank("a"));
+            assertFalse(Verify.Is.blank(" a "));
+        }
         
         @Test
         @DisplayName("notBlank should return true for non-blank CharSequence")
@@ -217,6 +226,15 @@ class VerifyTest {
             assertTrue(Verify.Is.matches("abc", "[a-z]+"));
             assertFalse(Verify.Is.matches("abc123", "\\d+"));
             assertFalse(Verify.Is.matches("ABC", "[a-z]+"));
+        }
+
+        @Test
+        @DisplayName("matches should handle special regex patterns correctly")
+        void matchesShouldHandleSpecialRegexPatterns() {
+            // Test with complex regex patterns
+            assertTrue(Verify.Is.matches("abc123", "[a-z]+\\d+"));
+            assertTrue(Verify.Is.matches("john.doe@example.com", "^[\\w.-]+@[\\w.-]+\\.\\w+$"));
+            assertFalse(Verify.Is.matches("invalid@email", "^[\\w.-]+@[\\w.-]+\\.\\w+$"));
         }
         
         @Test
@@ -298,6 +316,65 @@ class VerifyTest {
             
             assertTrue(greaterThanFailResult.isFailure());
             assertTrue(betweenFailResult.isFailure());
+        }
+
+        @Test
+        @DisplayName("ensure with combined validations")
+        void ensureWithCombinedValidations() {
+            var validString = "Hello123";
+            
+            // Using multiple predicates in combination
+            var result = Verify.ensure(validString, value -> 
+                Verify.Is.notBlank(value) && 
+                Verify.Is.contains(value, "Hello") &&
+                Verify.Is.matches(value, ".*\\d+.*"));
+            
+            assertTrue(result.isSuccess());
+            
+            // Fail case
+            var invalidString = "Hello";
+            var failResult = Verify.ensure(invalidString, value -> 
+                Verify.Is.notBlank(value) && 
+                Verify.Is.contains(value, "Hello") &&
+                Verify.Is.matches(value, ".*\\d+.*"));
+            
+            assertTrue(failResult.isFailure());
+        }
+
+        @Test
+        @DisplayName("positive should return true for positive numbers")
+        void positiveShouldReturnTrueForPositiveNumbers() {
+            assertTrue(Verify.Is.positive(10));
+            assertTrue(Verify.Is.positive(0.1));
+            assertFalse(Verify.Is.positive(0));
+            assertFalse(Verify.Is.positive(-5));
+        }
+
+        @Test
+        @DisplayName("negative should return true for negative numbers")
+        void negativeShouldReturnTrueForNegativeNumbers() {
+            assertTrue(Verify.Is.negative(-10));
+            assertTrue(Verify.Is.negative(-0.1));
+            assertFalse(Verify.Is.negative(0));
+            assertFalse(Verify.Is.negative(5));
+        }
+
+        @Test
+        @DisplayName("nonNegative should return true for non-negative numbers")
+        void nonNegativeShouldReturnTrueForNonNegativeNumbers() {
+            assertTrue(Verify.Is.nonNegative(10));
+            assertTrue(Verify.Is.nonNegative(0));
+            assertFalse(Verify.Is.nonNegative(-0.1));
+            assertFalse(Verify.Is.nonNegative(-5));
+        }
+
+        @Test
+        @DisplayName("nonPositive should return true for non-positive numbers")
+        void nonPositiveShouldReturnTrueForNonPositiveNumbers() {
+            assertTrue(Verify.Is.nonPositive(-10));
+            assertTrue(Verify.Is.nonPositive(0));
+            assertFalse(Verify.Is.nonPositive(0.1));
+            assertFalse(Verify.Is.nonPositive(5));
         }
     }
 }
