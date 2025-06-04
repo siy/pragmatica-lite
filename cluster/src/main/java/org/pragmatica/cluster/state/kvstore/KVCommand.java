@@ -2,10 +2,12 @@ package org.pragmatica.cluster.state.kvstore;
 
 import org.pragmatica.cluster.state.Command;
 
-public sealed interface KVCommand extends Command {
-    record Put<K, V>(K key, V value) implements KVCommand {}
+public sealed interface KVCommand<K extends CharSequence> extends Command {
+    K key();
 
-    record Get<K>(K key) implements KVCommand {}
+    record Put<K extends CharSequence, V>(K key, V value) implements KVCommand<K> {}
 
-    record Remove<K>(K key) implements KVCommand {}
+    record Get<K extends CharSequence>(K key) implements KVCommand<K> {}
+
+    record Remove<K extends CharSequence>(K key) implements KVCommand<K> {}
 }
