@@ -429,14 +429,14 @@ class ResultTest {
     @Test
     void resultCanBeConvertedToPromise() {
         Promise.resolved(Result.success(321))
-              .await()
-              .onSuccess(value -> assertEquals(321, value))
-              .onFailureRun(Assertions::fail);
+               .await()
+               .onSuccess(value -> assertEquals(321, value))
+               .onFailureRun(Assertions::fail);
 
         Promise.resolved(Result.failure(Causes.cause("Some error")))
-              .await()
-              .onFailure(cause -> assertEquals(Causes.cause("Some error"), cause))
-              .onSuccessRun(Assertions::fail);
+               .await()
+               .onFailure(cause -> assertEquals(Causes.cause("Some error"), cause))
+               .onSuccessRun(Assertions::fail);
     }
 
     @Test

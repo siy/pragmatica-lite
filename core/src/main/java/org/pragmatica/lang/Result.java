@@ -93,11 +93,7 @@ public sealed interface Result<T> permits Success, Failure {
     /// Add tracing information to the failure cause.
     ///
     /// @return current instance (in case of success) or instance with tracing information (in case of failure)
-    default Result<T> trace() {
-        var text = Thread.currentThread().getStackTrace()[2].toString();
-
-        return mapError(cause -> Causes.CompositeCause.toComposite(text, cause));
-    }
+    Result<T> trace();
 
     /// Recover from failure by transforming failure cause into new value.
     ///
@@ -335,6 +331,11 @@ public sealed interface Result<T> permits Success, Failure {
         public String toString() {
             return "Success(" + value.toString() + ")";
         }
+
+        @Override
+        public Result<T> trace() {
+            return this;
+        }
     }
 
     /// Create an instance of a failure result.
@@ -351,6 +352,8 @@ public sealed interface Result<T> permits Success, Failure {
     }
 
     record Failure<T>(Cause cause) implements Result<T> {
+        private static final StackWalker WALKER = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+
         @Override
         public <U> U fold(Fn1<? extends U, ? super Cause> failureMapper, Fn1<? extends U, ? super T> successMapper) {
             return failureMapper.apply(cause);
@@ -359,6 +362,17 @@ public sealed interface Result<T> permits Success, Failure {
         @Override
         public String toString() {
             return "Failure(" + cause.toString() + ")";
+        }
+
+        @Override
+        public Result<T> trace() {
+            var text = WALKER.walk(frames ->
+                                           frames.skip(1)
+                                                 .findFirst()
+                                                 .map(StackWalker.StackFrame::toString)
+                                                 .orElse("<unknown>"));
+
+            return mapError(cause -> Causes.CompositeCause.toComposite(text, cause));
         }
     }
 
