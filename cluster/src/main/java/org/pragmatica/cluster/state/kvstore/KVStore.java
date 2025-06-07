@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class KVStore<K extends CharSequence, V> implements StateMachine<KVCommand> {
+public final class KVStore<K extends StructuredKey, V> implements StateMachine<KVCommand<K>> {
     private final Map<K, V> storage = new ConcurrentHashMap<>();
     private final Serializer serializer;
     private final Deserializer deserializer;
@@ -35,7 +35,7 @@ public final class KVStore<K extends CharSequence, V> implements StateMachine<KV
         this.router.addRoute(Find.class, this::find);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public Option<V> process(KVCommand command) {
         return switch (command) {

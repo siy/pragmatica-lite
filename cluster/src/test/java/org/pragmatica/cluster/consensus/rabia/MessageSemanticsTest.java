@@ -3,6 +3,7 @@ package org.pragmatica.cluster.consensus.rabia;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.cluster.consensus.rabia.infrastructure.TestCluster;
+import org.pragmatica.cluster.consensus.rabia.infrastructure.TestCluster.StringKey;
 import org.pragmatica.cluster.net.NodeId;
 import org.pragmatica.cluster.net.local.LocalNetwork;
 import org.pragmatica.cluster.state.kvstore.KVCommand;
@@ -18,6 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.pragmatica.cluster.consensus.rabia.infrastructure.TestCluster.StringKey.key;
 
 /**
  * Test Suite 2: Message Semantics
@@ -46,26 +48,26 @@ public class MessageSemanticsTest {
         log.info("Starting duplicate PROPOSE broadcasts test");
 
         // Enable message duplication in the network
-        LocalNetwork network = cluster.network();
+        var network = cluster.network();
         network.getFaultInjector().setFault(LocalNetwork.FaultType.MESSAGE_DUPLICATE, true);
 
         // Use the first node as the client
-        NodeId clientNode = cluster.getFirst();
+        var clientNode = cluster.getFirst();
 
         // Submit a batch of commands and verify they are processed correctly
-        List<KVCommand> commands = generatePutCommands(COMMAND_COUNT, "duplicate-");
+        var commands = generatePutCommands(COMMAND_COUNT, "duplicate-");
         submitCommands(clientNode, commands);
 
         // Verify all nodes have a consistent state with all commands
         await().atMost(TIMEOUT)
                .pollInterval(1, TimeUnit.SECONDS)
-               .until(() -> cluster.allNodesHaveValue("duplicate-" + (COMMAND_COUNT - 1), 
+               .until(() -> cluster.allNodesHaveValue(key("duplicate-" + (COMMAND_COUNT - 1)),
                                                       "value-" + (COMMAND_COUNT - 1)));
 
         // Verify all commands were executed exactly once
         for (int i = 0; i < COMMAND_COUNT; i++) {
-            String key = "duplicate-" + i;
-            String expectedValue = "value-" + i;
+            var key = key("duplicate-" + i);
+            var expectedValue = "value-" + i;
             assertTrue(cluster.allNodesHaveValue(key, expectedValue),
                       "All nodes should have key " + key + " with value " + expectedValue);
         }
@@ -83,7 +85,7 @@ public class MessageSemanticsTest {
         log.info("Starting out-of-order delivery test");
 
         // Choose a node to receive out-of-order messages
-        NodeId targetNode = cluster.ids().get(2);
+        var targetNode = cluster.ids().get(2);
         log.info("Node {} will receive out-of-order messages", targetNode);
 
         // We can't directly control message order in the test framework,
@@ -104,7 +106,7 @@ public class MessageSemanticsTest {
         // Verify all nodes eventually have the consistent state
         await().atMost(TIMEOUT)
                .pollInterval(1, TimeUnit.SECONDS)
-               .until(() -> cluster.allNodesHaveValue("order-" + (COMMAND_COUNT - 1), 
+               .until(() -> cluster.allNodesHaveValue(key("order-" + (COMMAND_COUNT - 1)),
                                                      "value-" + (COMMAND_COUNT - 1)));
 
         // Disable message delay
@@ -122,24 +124,24 @@ public class MessageSemanticsTest {
         log.info("Starting random message loss test");
 
         // Configure 10% message loss
-        LocalNetwork network = cluster.network();
+        var network = cluster.network();
         network.getFaultInjector().setFault(LocalNetwork.FaultType.MESSAGE_LOSS, true);
         network.getFaultInjector().setMessageLossRate(0.1);
 
         // Use the first node as the client
-        NodeId clientNode = cluster.getFirst();
+        var clientNode = cluster.getFirst();
 
         // Capture current time for latency measurement
         long startTime = System.currentTimeMillis();
 
         // Submit commands
-        List<KVCommand> commands = generatePutCommands(COMMAND_COUNT, "loss-");
+        var commands = generatePutCommands(COMMAND_COUNT, "loss-");
         submitCommands(clientNode, commands);
 
         // Verify all nodes eventually have the consistent state
         await().atMost(TIMEOUT)
                .pollInterval(1, TimeUnit.SECONDS)
-               .until(() -> cluster.allNodesHaveValue("loss-" + (COMMAND_COUNT - 1), 
+               .until(() -> cluster.allNodesHaveValue(key("loss-" + (COMMAND_COUNT - 1)),
                                                      "value-" + (COMMAND_COUNT - 1)));
 
         // Calculate throughput with message loss
@@ -159,7 +161,7 @@ public class MessageSemanticsTest {
 
         await().atMost(TIMEOUT)
                .pollInterval(1, TimeUnit.SECONDS)
-               .until(() -> cluster.allNodesHaveValue("noloss-" + (COMMAND_COUNT - 1), 
+               .until(() -> cluster.allNodesHaveValue(key("noloss-" + (COMMAND_COUNT - 1)),
                                                      "value-" + (COMMAND_COUNT - 1)));
 
         endTime = System.currentTimeMillis();
@@ -182,25 +184,25 @@ public class MessageSemanticsTest {
         log.info("Starting stale view numbers test");
 
         // First, establish a baseline state with some commands
-        NodeId clientNode = cluster.getFirst();
-        List<KVCommand> initialCommands = generatePutCommands(100, "initial-");
+        var clientNode = cluster.getFirst();
+        var initialCommands = generatePutCommands(100, "initial-");
         submitCommands(clientNode, initialCommands);
 
         await().atMost(TIMEOUT)
                .pollInterval(1, TimeUnit.SECONDS)
-               .until(() -> cluster.allNodesHaveValue("initial-99", "value-99"));
+               .until(() -> cluster.allNodesHaveValue(key("initial-99"), "value-99"));
 
         // Force a view change by temporarily disconnecting a node
-        NodeId disconnectNode = cluster.ids().get(1);
+        var disconnectNode = cluster.ids().get(1);
         cluster.disconnect(disconnectNode);
 
         // Submit more commands to advance to a new view
-        List<KVCommand> advanceCommands = generatePutCommands(100, "advance-");
+        var advanceCommands = generatePutCommands(100, "advance-");
         submitCommands(clientNode, advanceCommands);
 
         await().atMost(TIMEOUT)
                .pollInterval(1, TimeUnit.SECONDS)
-               .until(() -> cluster.allNodesHaveValue("advance-99", "value-99"));
+               .until(() -> cluster.allNodesHaveValue(key("advance-99"), "value-99"));
 
         // Reconnect the disconnected node, which will have a stale view
         // The actual reconnection is implementation-specific and might require
@@ -208,18 +210,18 @@ public class MessageSemanticsTest {
         // handles this correctly
 
         // Submit final commands to verify the system continues to function correctly
-        List<KVCommand> finalCommands = generatePutCommands(100, "final-");
+        var finalCommands = generatePutCommands(100, "final-");
         submitCommands(clientNode, finalCommands);
 
         await().atMost(TIMEOUT)
                .pollInterval(1, TimeUnit.SECONDS)
-               .until(() -> cluster.allNodesHaveValue("final-99", "value-99"));
+               .until(() -> cluster.allNodesHaveValue(key("final-99"), "value-99"));
 
         // Verify all commands were processed correctly
         for (int i = 0; i < 100; i++) {
-            String initialKey = "initial-" + i;
-            String advanceKey = "advance-" + i;
-            String finalKey = "final-" + i;
+            var initialKey = key("initial-" + i);
+            var advanceKey = key("advance-" + i);
+            var finalKey = key("final-" + i);
             
             assertTrue(cluster.allNodesHaveValue(initialKey, "value-" + i),
                       "All nodes should have initial key " + initialKey);
@@ -230,15 +232,16 @@ public class MessageSemanticsTest {
         }
     }
 
-    private List<KVCommand> generatePutCommands(int count, String keyPrefix) {
-        List<KVCommand> commands = new ArrayList<>(count);
+    private List<KVCommand<StringKey>> generatePutCommands(int count, String keyPrefix) {
+        var commands = new ArrayList<KVCommand<StringKey>>(count);
+
         for (int i = 0; i < count; i++) {
-            commands.add(new KVCommand.Put<>(keyPrefix + i, "value-" + i));
+            commands.add(new KVCommand.Put<>(key(keyPrefix + i), "value-" + i));
         }
         return commands;
     }
 
-    private void submitCommands(NodeId nodeId, List<KVCommand> commands) {
+    private void submitCommands(NodeId nodeId, List<KVCommand<StringKey>> commands) {
         var counter = new AtomicLong(0);
         var batchSize = 100;
         

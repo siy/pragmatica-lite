@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.pragmatica.cluster.consensus.rabia.infrastructure.TestCluster;
 import org.pragmatica.cluster.net.NodeId;
 import org.pragmatica.cluster.state.kvstore.KVCommand;
-import org.pragmatica.cluster.state.kvstore.KVStoreNotification;
 import org.pragmatica.cluster.state.kvstore.KVStore;
+import org.pragmatica.cluster.state.kvstore.KVStoreNotification;
 import org.pragmatica.lang.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +22,8 @@ import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.pragmatica.cluster.consensus.rabia.infrastructure.TestCluster.StringKey;
+import static org.pragmatica.cluster.consensus.rabia.infrastructure.TestCluster.StringKey.key;
 import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 
 /**
@@ -62,10 +64,10 @@ public class NominalOperationTest {
             var i = idx;
 
             int end = Math.min(i + batchSize, REQUEST_COUNT);
-            var batch = new ArrayList<KVCommand>();
+            var batch = new ArrayList<KVCommand<StringKey>>();
 
             for (int j = i; j < end; j++) {
-                batch.add(new KVCommand.Put<>("key-" + j, "value-" + j));
+                batch.add(new KVCommand.Put<>(key("key-" + j), "value-" + j));
             }
 
             // Measure latency for this batch
@@ -89,11 +91,11 @@ public class NominalOperationTest {
                 int checkpointIndex = end - 1;
                 await().atMost(Duration.ofSeconds(30))
                        .pollInterval(Duration.ofMillis(100))
-                       .until(() -> cluster.allNodesHaveValue("key-" + checkpointIndex, "value-" + checkpointIndex));
+                       .until(() -> cluster.allNodesHaveValue(key("key-" + checkpointIndex), "value-" + checkpointIndex));
 
                 // Verify all previous keys exist
                 for (int k = 0; k < end; k += 1000) {
-                    assertTrue(cluster.allNodesHaveValue("key-" + k, "value-" + k),
+                    assertTrue(cluster.allNodesHaveValue(key("key-" + k), "value-" + k),
                                "All nodes should have key-" + k);
                 }
             }
@@ -118,7 +120,7 @@ public class NominalOperationTest {
 
         // Verify all keys are present (no gaps)
         for (int i = 0; i < REQUEST_COUNT; i++) {
-            var key = "key-" + i;
+            var key = key("key-" + i);
             var expectedValue = "value-" + i;
 
             assertTrue(cluster.allNodesHaveValue(key, expectedValue),
@@ -160,14 +162,14 @@ public class NominalOperationTest {
         // Reset metrics if any
         long startTime = System.currentTimeMillis();
 
-        var valueMap = new ConcurrentHashMap<String, String>();
+        var valueMap = new ConcurrentHashMap<StringKey, String>();
         var promises = new ConcurrentLinkedQueue<Promise<List<Object>>>();
 
         for (int i = 0; i < CLIENT_COUNT; i++) {
             var targetNode = cluster.ids().get(random.nextInt(CLUSTER_SIZE));
 
             for (int j = 0; j < COMMANDS_PER_CLIENT; j++) {
-                var key = "client-" + i + "-key-" + j;
+                var key = key("client-" + i + "-key-" + j);
                 var value = "client-" + i + "-value-" + j;
 
                 valueMap.put(key, value);

@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.pragmatica.cluster.consensus.rabia.infrastructure.TestCluster.StringKey.key;
 import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 
 class RabiaIntegrationTest {
@@ -28,7 +29,7 @@ class RabiaIntegrationTest {
 
         c.engines()
          .get(c.getFirst())
-         .apply(List.of(new KVCommand.Put<>("k1", "v1")))
+         .apply(List.of(new KVCommand.Put<>(key("k1"), "v1")))
          .await(timeSpan(10).seconds())
          .onSuccess(_ -> log.info("Successfully applied command: (k1, v1)"))
          .onFailure(cause -> fail("Failed to apply command: (k1, v1): " + cause));
@@ -36,18 +37,18 @@ class RabiaIntegrationTest {
         // await all three having it
         Awaitility.await()
                   .atMost(10, TimeUnit.SECONDS)
-                  .until(() -> c.allNodesHaveValue("k1", "v1"));
+                  .until(() -> c.allNodesHaveValue(key("k1"), "v1"));
 
         // submit on node2
         c.engines().get(c.ids().get(1))
-         .apply(List.of(new KVCommand.Put<>("k2", "v2")))
+         .apply(List.of(new KVCommand.Put<>(key("k2"), "v2")))
          .await(timeSpan(10).seconds())
          .onSuccess(_ -> log.info("Successfully applied command: (k2, v2)"))
          .onFailure(cause -> fail("Failed to apply command: (k2, v2): " + cause));
 
         Awaitility.await()
                   .atMost(2, TimeUnit.SECONDS)
-                  .until(() -> c.allNodesHaveValue("k2", "v2"));
+                  .until(() -> c.allNodesHaveValue(key("k2"), "v2"));
     }
 
     @Test
@@ -56,31 +57,31 @@ class RabiaIntegrationTest {
 
         c.awaitStart();
 
-        c.submitAndWait(c.getFirst(), new KVCommand.Put<>("a", "1"));
+        c.submitAndWait(c.getFirst(), new KVCommand.Put<>(key("a"), "1"));
 
         Awaitility.await()
                   .atMost(10, TimeUnit.SECONDS)
-                  .until(() -> c.allNodesHaveValue("a", "1"));
+                  .until(() -> c.allNodesHaveValue(key("a"), "1"));
 
         // fail node1
         c.disconnect(c.getFirst());
 
         // still quorum on 4 nodes: put b->2
-        c.submitAndWait(c.ids().get(1), new KVCommand.Put<>("b", "2"));
+        c.submitAndWait(c.ids().get(1), new KVCommand.Put<>(key("b"), "2"));
 
         Awaitility.await()
                   .atMost(10, TimeUnit.SECONDS)
-                  .until(() -> c.allNodesHaveValue("b", "2"));
+                  .until(() -> c.allNodesHaveValue(key("b"), "2"));
 
         // fail node2
         c.disconnect(c.ids().get(1));
 
         // still quorum on 3 nodes: put c->3
-        c.submitAndWait(c.ids().get(2), new KVCommand.Put<>("c", "3"));
+        c.submitAndWait(c.ids().get(2), new KVCommand.Put<>(key("c"), "3"));
 
         Awaitility.await()
                   .atMost(10, TimeUnit.SECONDS)
-                  .until(() -> c.allNodesHaveValue("c", "3"));
+                  .until(() -> c.allNodesHaveValue(key("c"), "3"));
 
         // fail node3 → only 2 left, quorum=3 ⇒ no new entries
         c.disconnect(c.ids().get(2));
@@ -88,7 +89,7 @@ class RabiaIntegrationTest {
 
         c.engines()
          .get(c.ids().get(3))
-         .apply(List.of(new KVCommand.Put<>("d", "4")))
+         .apply(List.of(new KVCommand.Put<>(key("d"), "4")))
          .await(timeSpan(2).seconds())
          .onSuccess(_ -> fail("Should not be successful"))
          .onFailure(cause -> assertEquals(ConsensusErrors.nodeInactive(c.ids().get(3)), cause));
@@ -108,16 +109,16 @@ class RabiaIntegrationTest {
                   .atMost(10, TimeUnit.SECONDS)
                   .until(() -> {
                       var mem = c.stores().get(node6).snapshot();
-                      return "1".equals(mem.get("a"))
-                              && "2".equals(mem.get("b"))
-                              && "3".equals(mem.get("c"));
+                      return "1".equals(mem.get(key("a")))
+                              && "2".equals(mem.get(key("b")))
+                              && "3".equals(mem.get(key("c")));
                   });
 
         // now nodes 4,5,6 form a quorum of 3: put e->5
-        c.submitAndWait(node6, new KVCommand.Put<>("e", "5"));
+        c.submitAndWait(node6, new KVCommand.Put<>(key("e"), "5"));
 
         Awaitility.await()
                   .atMost(10, TimeUnit.SECONDS)
-                  .until(() -> c.allNodesHaveValue("e", "5"));
+                  .until(() -> c.allNodesHaveValue(key("e"), "5"));
     }
 }

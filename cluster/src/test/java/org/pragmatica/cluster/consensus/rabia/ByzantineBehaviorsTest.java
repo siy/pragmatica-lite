@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.pragmatica.cluster.consensus.rabia.infrastructure.TestCluster.StringKey.key;
 import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 
 /// Test Suite 4: Byzantine Behaviors
@@ -41,12 +42,12 @@ public class ByzantineBehaviorsTest {
         var firstNode = cluster.getFirst();
         var lastNode = cluster.ids().get(CLUSTER_SIZE - 1);
 
-        // Make initial request to verify cluster is working
-        cluster.submitAndWait(firstNode, new KVCommand.Put<>("key-honest", "value-honest"));
+        // Make initial request to verify that cluster is working
+        cluster.submitAndWait(firstNode, new KVCommand.Put<>(key("key-honest"), "value-honest"));
 
         // Verify all nodes have the initial value
         await().atMost(10, TimeUnit.SECONDS)
-               .until(() -> cluster.allNodesHaveValue("key-honest", "value-honest"));
+               .until(() -> cluster.allNodesHaveValue(key("key-honest"), "value-honest"));
 
         // Mark one node as Byzantine by disconnecting it
         var byzantineNode = cluster.ids().get(1);
@@ -54,15 +55,15 @@ public class ByzantineBehaviorsTest {
         log.info("Disconnected Byzantine node: {}", byzantineNode);
 
         // System should continue to function with the remaining nodes
-        cluster.submitAndWait(lastNode, new KVCommand.Put<>("key-after-byzantine", "value-after-byzantine"));
+        cluster.submitAndWait(lastNode, new KVCommand.Put<>(key("key-after-byzantine"), "value-after-byzantine"));
 
         // Verify honest nodes still achieve consensus
         await().atMost(Duration.ofSeconds(10))
-               .until(() -> cluster.allNodesHaveValue("key-after-byzantine", "value-after-byzantine"));
+               .until(() -> cluster.allNodesHaveValue(key("key-after-byzantine"), "value-after-byzantine"));
 
         // Make multiple concurrent requests to stress test the system
         for (int i = 0; i < 10; i++) {
-            var key = "concurrent-key-" + i;
+            var key = key("concurrent-key-" + i);
             var value = "concurrent-value-" + i;
 
             cluster.engines().get(firstNode)
@@ -74,7 +75,7 @@ public class ByzantineBehaviorsTest {
 
         // Verify all concurrent requests eventually propagate to all honest nodes
         for (int i = 0; i < 10; i++) {
-            var key = "concurrent-key-" + i;
+            var key = key("concurrent-key-" + i);
             var value = "concurrent-value-" + i;
 
             await().atMost(Duration.ofSeconds(10))
@@ -96,10 +97,10 @@ public class ByzantineBehaviorsTest {
 
         // Establish baseline operation
         var firstNode = cluster.getFirst();
-        cluster.submitAndWait(firstNode, new KVCommand.Put<>("initial-key", "initial-value"));
+        cluster.submitAndWait(firstNode, new KVCommand.Put<>(key("initial-key"), "initial-value"));
 
         await().atMost(10, TimeUnit.SECONDS)
-               .until(() -> cluster.allNodesHaveValue("initial-key", "initial-value"));
+               .until(() -> cluster.allNodesHaveValue(key("initial-key"), "initial-value"));
 
         // Disconnect a node to simulate it sending malformed signatures
         var maliciousNode = cluster.ids().get(2);
@@ -111,7 +112,7 @@ public class ByzantineBehaviorsTest {
 
         // Submit several commands to verify continued operation
         for (int i = 0; i < 5; i++) {
-            var key = "recovery-key-" + i;
+            var key = key("recovery-key-" + i);
             var value = "recovery-value-" + i;
 
             cluster.submitAndWait(cluster.ids().get(3), new KVCommand.Put<>(key, value));
@@ -138,10 +139,10 @@ public class ByzantineBehaviorsTest {
 
         // Establish baseline operation
         var secondNode = cluster.ids().get(1);
-        cluster.submitAndWait(secondNode, new KVCommand.Put<>("baseline-key", "baseline-value"));
+        cluster.submitAndWait(secondNode, new KVCommand.Put<>(key("baseline-key"), "baseline-value"));
 
         await().atMost(10, TimeUnit.SECONDS)
-               .until(() -> cluster.allNodesHaveValue("baseline-key", "baseline-value"));
+               .until(() -> cluster.allNodesHaveValue(key("baseline-key"), "baseline-value"));
 
         // Make a node silent (receive-only) by disconnecting its outbound connections
         // Note: In a real implementation, we would have more fine-grained control to make
@@ -159,7 +160,7 @@ public class ByzantineBehaviorsTest {
         // Submit commands to the remaining nodes
         for (int i = 0; i < remainingNodes.size(); i++) {
             var nodeId = remainingNodes.get(i);
-            var key = "silent-test-key-" + i;
+            var key = key("silent-test-key-" + i);
             var value = "silent-test-value-" + i;
 
             cluster.submitAndWait(nodeId, new KVCommand.Put<>(key, value));
@@ -176,7 +177,7 @@ public class ByzantineBehaviorsTest {
         // Submit a batch of concurrent requests to stress test
         var thirdNode = remainingNodes.getFirst();
         for (int i = 0; i < 20; i++) {
-            var key = "concurrent-silent-key-" + i;
+            var key = key("concurrent-silent-key-" + i);
             var value = "concurrent-silent-value-" + i;
 
             cluster.engines().get(thirdNode)
@@ -188,7 +189,7 @@ public class ByzantineBehaviorsTest {
 
         // Verify all concurrent operations eventually succeed on active nodes
         for (int i = 0; i < 20; i++) {
-            var key = "concurrent-silent-key-" + i;
+            var key = key("concurrent-silent-key-" + i);
             var value = "concurrent-silent-value-" + i;
 
             await().atMost(Duration.ofSeconds(15))

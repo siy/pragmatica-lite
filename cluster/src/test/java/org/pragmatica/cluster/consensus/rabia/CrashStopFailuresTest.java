@@ -3,6 +3,7 @@ package org.pragmatica.cluster.consensus.rabia;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.cluster.consensus.rabia.infrastructure.TestCluster;
+import org.pragmatica.cluster.consensus.rabia.infrastructure.TestCluster.StringKey;
 import org.pragmatica.cluster.net.NodeId;
 import org.pragmatica.cluster.state.kvstore.KVCommand;
 import org.pragmatica.cluster.state.kvstore.KVStoreNotification;
@@ -19,6 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.pragmatica.cluster.consensus.rabia.infrastructure.TestCluster.StringKey.key;
 import static org.pragmatica.cluster.net.NodeId.nodeId;
 import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 
@@ -49,14 +51,14 @@ public class CrashStopFailuresTest {
 
         // First, establish some baseline state
         NodeId clientNode = cluster.getFirst();
-        cluster.submitAndWait(clientNode, new KVCommand.Put<>("baseline", "value"));
+        cluster.submitAndWait(clientNode, new KVCommand.Put<>(key("baseline"), "value"));
 
         await().atMost(TIMEOUT)
-               .until(() -> cluster.allNodesHaveValue("baseline", "value"));
+               .until(() -> cluster.allNodesHaveValue(key("baseline"), "value"));
 
         // Keep track of the key we're going to test with
-        final String testKey = "proposer-crash-test";
-        final String testValue = "success-value";
+        var testKey = key("proposer-crash-test");
+        var testValue = "success-value";
 
         // Set up a command to execute
         var command = new KVCommand.Put<>(testKey, testValue);
@@ -114,10 +116,10 @@ public class CrashStopFailuresTest {
         // Track state digest before crash
         // Prepare several commands to execute
         int numCommands = 50;
-        var commands = new ArrayList<KVCommand>();
+        var commands = new ArrayList<KVCommand<StringKey>>();
 
         for (int i = 0; i < numCommands; i++) {
-            commands.add(new KVCommand.Put<>("pre-commit-key-" + i, "value-" + i));
+            commands.add(new KVCommand.Put<>(key("pre-commit-key-" + i), "value-" + i));
         }
 
         // Crash the replica during the sequence
@@ -145,7 +147,7 @@ public class CrashStopFailuresTest {
                    .onFailure(cause -> fail("Command failed: " + cause));
         }
 
-        // Wait for crash to happen
+        // Wait for the crash to happen
         try {
             var _ = crashLatch.await(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
@@ -166,7 +168,10 @@ public class CrashStopFailuresTest {
                                continue; // Skip the crashed node
                            }
 
-                           var value = cluster.stores().get(nodeId).snapshot().get("pre-commit-key-" + index);
+                           var value = cluster.stores()
+                                              .get(nodeId)
+                                              .snapshot()
+                                              .get(key("pre-commit-key-" + index));
                            if (!("value-" + index).equals(value)) {
                                allRemaining = false;
                                break;
@@ -190,7 +195,7 @@ public class CrashStopFailuresTest {
         cluster.awaitNode(recoveredNode);
 
         // Submit a new command to ensure state propagation
-        cluster.submitAndWait(proposerNode, new KVCommand.Put<>("recovery-sync", "completed"));
+        cluster.submitAndWait(proposerNode, new KVCommand.Put<>(key("recovery-sync"), "completed"));
 
         // Verify the recovered node has the full state
         await().atMost(TIMEOUT.multipliedBy(2))
@@ -199,13 +204,13 @@ public class CrashStopFailuresTest {
                    var recoveredState = cluster.stores().get(recoveredNode).snapshot();
 
                    // Check for our sync marker
-                   if (!"completed".equals(recoveredState.get("recovery-sync"))) {
+                   if (!"completed".equals(recoveredState.get(key("recovery-sync")))) {
                        return false;
                    }
 
                    // Check all keys from the commands we executed
                    for (int i = 0; i < numCommands; i++) {
-                       var key = "pre-commit-key-" + i;
+                       var key = key("pre-commit-key-" + i);
                        var expectedValue = "value-" + i;
 
                        if (!expectedValue.equals(recoveredState.get(key))) {
@@ -227,16 +232,16 @@ public class CrashStopFailuresTest {
     void crashOfFReplicasSimultaneously() {
         log.info("Starting crash of f replicas simultaneously test");
 
-        // For a 5-node cluster, f = 2 (can tolerate 2 failures while maintaining quorum of 3)
+        // For a 5-node cluster, f = 2 (can tolerate 2 failures while maintaining the quorum of 3)
         int faultTolerance = (CLUSTER_SIZE - 1) / 2;
         log.info("Cluster fault tolerance: f = {}", faultTolerance);
 
         // Establish some baseline state
         var clientNode = cluster.getFirst();
-        cluster.submitAndWait(clientNode, new KVCommand.Put<>("baseline-f", "baseline-value"));
+        cluster.submitAndWait(clientNode, new KVCommand.Put<>(key("baseline-f"), "baseline-value"));
 
         await().atMost(TIMEOUT)
-               .until(() -> cluster.allNodesHaveValue("baseline-f", "baseline-value"));
+               .until(() -> cluster.allNodesHaveValue(key("baseline-f"), "baseline-value"));
 
         // Select f nodes to crash (not including the client node)
         var nodesToCrash = new ArrayList<NodeId>();
@@ -257,7 +262,7 @@ public class CrashStopFailuresTest {
         log.info("Remaining nodes: {}, required for quorum: {}", remainingNodes, (CLUSTER_SIZE / 2) + 1);
 
         // Submit a new command and verify it completes
-        var postCrashKey = "post-f-crash";
+        var postCrashKey = key("post-f-crash");
         var postCrashValue = "f-crashed-value";
 
         log.info("Submitting command after crashes");
@@ -288,7 +293,7 @@ public class CrashStopFailuresTest {
         // Submit and verify multiple additional commands
         for (int i = 0; i < 10; i++) {
             final int index = i;
-            var key = "f-crashed-seq-" + i;
+            var key = key("f-crashed-seq-" + i);
             var value = "f-value-" + i;
 
             cluster.submitAndWait(clientNode, new KVCommand.Put<>(key, value));
@@ -301,7 +306,10 @@ public class CrashStopFailuresTest {
                                continue;
                            }
 
-                           var val = cluster.stores().get(nodeId).snapshot().get("f-crashed-seq-" + index);
+                           var val = cluster.stores()
+                                            .get(nodeId)
+                                            .snapshot()
+                                            .get(key("f-crashed-seq-" + index));
                            if (!("f-value-" + index).equals(val)) {
                                return false;
                            }
@@ -320,7 +328,7 @@ public class CrashStopFailuresTest {
             cluster.disconnect(oneMoreNode);
 
             // Try to submit another command - this should not complete because we've lost quorum
-            var noQuorumKey = "no-quorum-key";
+            var noQuorumKey = key("no-quorum-key");
             var noQuorumValue = "no-quorum-value";
 
             var result = cluster.engines().get(clientNode)

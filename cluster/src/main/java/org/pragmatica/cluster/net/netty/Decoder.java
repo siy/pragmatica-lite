@@ -3,6 +3,7 @@ package org.pragmatica.cluster.net.netty;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import org.pragmatica.message.Message;
 import org.pragmatica.net.serialization.Deserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +22,13 @@ public class Decoder extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
         try {
-            out.add(deserializer.read(in));
+            var object = deserializer.read(in);
+
+            if (object instanceof Message.Wired) {
+                out.add(object);
+            } else {
+                log.error("Attempt to decode non-Wired object: {}", object);
+            }
         } catch (Exception e) {
             log.error("Error decoding message", e);
             ctx.close();

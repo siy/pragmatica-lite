@@ -5,13 +5,13 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.util.Pool;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
-import org.pragmatica.serialization.binary.ClassRegistrator;
+import org.pragmatica.net.serialization.binary.ClassRegistrator;
 import org.pragmatica.net.serialization.Deserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public interface KryoDeserializer extends Deserializer {
-    static KryoDeserializer kryoDeserializer(ClassRegistrator registrator) {
+    static KryoDeserializer kryoDeserializer(ClassRegistrator... registrators) {
         record kryoDeserializer(Pool<Kryo> pool) implements KryoDeserializer {
             private static final Logger log = LoggerFactory.getLogger(KryoDeserializer.class);
 
@@ -32,6 +32,6 @@ public interface KryoDeserializer extends Deserializer {
             }
         }
 
-        return new kryoDeserializer(KryoPoolFactory.kryoPool(registrator));
+        return new kryoDeserializer(KryoPoolFactory.kryoPool(registrators));
     }
 }

@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.pragmatica.cluster.consensus.rabia.infrastructure.TestCluster.StringKey.key;
 import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 
 /**
@@ -49,14 +50,14 @@ public class ReconfigurationTest {
         int initialCommands = 100;
 
         for (int i = 0; i < initialCommands; i++) {
-            cluster.submitAndWait(clientNode, new KVCommand.Put<>("initial-key-" + i, "value-" + i));
+            cluster.submitAndWait(clientNode, new KVCommand.Put<>(key("initial-key-" + i), "value-" + i));
         }
         
         log.info("Initial state established with {} commands", initialCommands);
         
         // Verify the initial state across all nodes
         await().atMost(TIMEOUT)
-               .until(() -> cluster.allNodesHaveValue("initial-key-" + (initialCommands - 1), 
+               .until(() -> cluster.allNodesHaveValue(key("initial-key-" + (initialCommands - 1)),
                                                      "value-" + (initialCommands - 1)));
         
         // Capture the current state snapshot before adding a new node
@@ -74,7 +75,7 @@ public class ReconfigurationTest {
         log.info("New node added and started");
         
         // Submit a command after adding the new node to trigger state sync
-        var syncKey = "post-add-sync";
+        var syncKey = key("post-add-sync");
         var syncValue = "sync-value";
         cluster.submitAndWait(clientNode, new KVCommand.Put<>(syncKey, syncValue));
         
@@ -96,7 +97,7 @@ public class ReconfigurationTest {
                    }
                    
                    for (int i = 0; i < initialCommands; i += 10) {
-                       var key = "initial-key-" + i;
+                       var key = key("initial-key-" + i);
                        var expectedValue = "value-" + i;
 
                        if (!expectedValue.equals(newNodeState.get(key))) {
@@ -112,7 +113,7 @@ public class ReconfigurationTest {
         // Submit additional commands and verify a new node participates
         int additionalCommands = 20;
         for (int i = 0; i < additionalCommands; i++) {
-            var key = "post-add-key-" + i;
+            var key = key("post-add-key-" + i);
             var value = "post-value-" + i;
             
             // Submit via the new node to verify it can accept commands
@@ -125,7 +126,7 @@ public class ReconfigurationTest {
             // Verify all nodes have this value
             final int index = i;
             await().atMost(TIMEOUT)
-                   .until(() -> cluster.allNodesHaveValue("post-add-key-" + index, "post-value-" + index));
+                   .until(() -> cluster.allNodesHaveValue(key("post-add-key-" + index), "post-value-" + index));
         }
         
         log.info("Verified new node participates in consensus");
@@ -143,13 +144,13 @@ public class ReconfigurationTest {
                        
             // Check a sample of keys
             for (int i = 0; i < initialCommands; i += 10) {
-                var key = "initial-key-" + i;
+                var key = key("initial-key-" + i);
                 assertEquals(referenceState.get(key), nodeState.get(key),
                            "Node " + nodeId + " should have same value for " + key);
             }
             
             for (int i = 0; i < additionalCommands; i++) {
-                var key = "post-add-key-" + i;
+                var key = key("post-add-key-" + i);
                 assertEquals(referenceState.get(key), nodeState.get(key),
                            "Node " + nodeId + " should have same value for " + key);
             }
@@ -171,14 +172,14 @@ public class ReconfigurationTest {
         // Submit initial commands
         int initialCommands = 50;
         for (int i = 0; i < initialCommands; i++) {
-            cluster.submitAndWait(clientNode, new KVCommand.Put<>("pre-remove-key-" + i, "value-" + i));
+            cluster.submitAndWait(clientNode, new KVCommand.Put<>(key("pre-remove-key-" + i), "value-" + i));
         }
         
         log.info("Initial state established with {} commands", initialCommands);
         
         // Verify the initial state across all nodes
         await().atMost(TIMEOUT)
-               .until(() -> cluster.allNodesHaveValue("pre-remove-key-" + (initialCommands - 1), 
+               .until(() -> cluster.allNodesHaveValue(key("pre-remove-key-" + (initialCommands - 1)),
                                                      "value-" + (initialCommands - 1)));
         
         // Remove a node
@@ -188,7 +189,7 @@ public class ReconfigurationTest {
         // Submit additional commands after removal
         int postRemoveCommands = 20;
         for (int i = 0; i < postRemoveCommands; i++) {
-            var key = "post-remove-key-" + i;
+            var key = key("post-remove-key-" + i);
             var value = "post-value-" + i;
             
             cluster.submitAndWait(clientNode, new KVCommand.Put<>(key, value));
@@ -199,8 +200,11 @@ public class ReconfigurationTest {
                    .until(() -> {
                        for (NodeId nodeId : cluster.ids()) {
                            if (nodeId.equals(nodeToRemove)) continue; // Skip the removed node
-                           
-                           String val = cluster.stores().get(nodeId).snapshot().get("post-remove-key-" + index);
+
+                           var val = cluster.stores()
+                                            .get(nodeId)
+                                            .snapshot()
+                                            .get(key("post-remove-key-" + index));
                            if (!("post-value-" + index).equals(val)) {
                                return false;
                            }
@@ -215,7 +219,7 @@ public class ReconfigurationTest {
         var removedNodeState = cluster.stores().get(nodeToRemove).snapshot();
 
         for (int i = 0; i < postRemoveCommands; i++) {
-            var key = "post-remove-key-" + i;
+            var key = key("post-remove-key-" + i);
             assertNull(removedNodeState.get(key), 
                      "Removed node should not have key: " + key);
         }
@@ -265,7 +269,7 @@ public class ReconfigurationTest {
         
         int initialCommands = 50;
         for (int i = 0; i < initialCommands; i++) {
-            cluster.submitAndWait(originalPrimary, new KVCommand.Put<>("baseline-key-" + i, "value-" + i));
+            cluster.submitAndWait(originalPrimary, new KVCommand.Put<>(key("baseline-key-" + i), "value-" + i));
         }
         
         log.info("Baseline state established with {} commands", initialCommands);
@@ -294,20 +298,20 @@ public class ReconfigurationTest {
         
         // Trigger state sync by submitting a new command through the surviving node
         log.info("Triggering state sync via remaining node: {}", survivingNode);
-        cluster.submitAndWait(survivingNode, new KVCommand.Put<>("sync-key", "sync-value"));
+        cluster.submitAndWait(survivingNode, new KVCommand.Put<>(key("sync-key"), "sync-value"));
         
         // 4. Verify the new nodes have synced and participate correctly
         await().atMost(TIMEOUT.multipliedBy(2))
                .pollInterval(Duration.ofSeconds(1))
                .until(() -> {
                    // Check sync key is present on new nodes
-                   if (!cluster.allNodesHaveValue("sync-key", "sync-value")) {
+                   if (!cluster.allNodesHaveValue(key("sync-key"), "sync-value")) {
                        return false;
                    }
                    
                    // Check a sample of baseline keys
                    for (int i = 0; i < initialCommands; i += 10) {
-                       if (!cluster.allNodesHaveValue("baseline-key-" + i, "value-" + i)) {
+                       if (!cluster.allNodesHaveValue(key("baseline-key-" + i), "value-" + i)) {
                            return false;
                        }
                    }
@@ -324,7 +328,7 @@ public class ReconfigurationTest {
         var successCounter = new AtomicInteger(0);
         
         for (int i = 0; i < postReconfigCommands; i++) {
-            var key = "post-reconfig-key-" + i;
+            var key = key("post-reconfig-key-" + i);
             var value = "post-value-" + i;
             
             // Alternate between the two new nodes for submissions
@@ -371,14 +375,14 @@ public class ReconfigurationTest {
             
             // Check baseline keys
             for (int i = 0; i < initialCommands; i++) {
-                var key = "baseline-key-" + i;
+                var key = key("baseline-key-" + i);
                 assertEquals(referenceState.get(key), nodeState.get(key), 
                            "Node " + nodeId + " should have same value for " + key);
             }
             
             // Check post-reconfiguration keys
             for (int i = 0; i < postReconfigCommands; i++) {
-                var key = "post-reconfig-key-" + i;
+                var key = key("post-reconfig-key-" + i);
                 assertEquals(referenceState.get(key), nodeState.get(key),
                            "Node " + nodeId + " should have same value for " + key);
             }
@@ -405,7 +409,7 @@ public class ReconfigurationTest {
         
         int initialCommands = 50;
         for (int i = 0; i < initialCommands; i++) {
-            cluster.submitAndWait(clientNode, new KVCommand.Put<>("majority-key-" + i, "value-" + i));
+            cluster.submitAndWait(clientNode, new KVCommand.Put<>(key("majority-key-" + i), "value-" + i));
         }
         
         log.info("Baseline state established with {} commands", initialCommands);
@@ -430,7 +434,7 @@ public class ReconfigurationTest {
             cluster.disconnect(nodeToRemove);
             
             // After each disconnect, still submit a command to ensure the cluster is working
-            var key = "interim-key-" + i;
+            var key = key("interim-key-" + i);
             var value = "interim-value-" + i;
             
             cluster.submitAndWait(survivingNode, new KVCommand.Put<>(key, value));
@@ -443,7 +447,10 @@ public class ReconfigurationTest {
                                continue; // Skip removed node
                            }
 
-                           var val = cluster.stores().get(nodeId).snapshot().get("interim-key-" + i);
+                           var val = cluster.stores()
+                                            .get(nodeId)
+                                            .snapshot()
+                                            .get(key("interim-key-" + i));
 
                            if (!("interim-value-" + i).equals(val)) {
                                return false;
@@ -467,7 +474,7 @@ public class ReconfigurationTest {
             cluster.awaitNode(newNode);
             
             // After adding each new node, submit a command to help trigger state sync
-            var key = "new-node-key-" + i;
+            var key = key("new-node-key-" + i);
             var value = "new-node-value-" + i;
             
             cluster.submitAndWait(survivingNode, new KVCommand.Put<>(key, value));
@@ -475,7 +482,7 @@ public class ReconfigurationTest {
             // This ensures each new node participates in consensus before adding the next
             final int index = i;
             await().atMost(TIMEOUT)
-                   .until(() -> cluster.allNodesHaveValue("new-node-key-" + index, "new-node-value-" + index));
+                   .until(() -> cluster.allNodesHaveValue(key("new-node-key-" + index), "new-node-value-" + index));
             
             log.info("New node {} synced and participating", newNode);
         }
@@ -490,7 +497,7 @@ public class ReconfigurationTest {
         
         int finalCommands = 20;
         for (int i = 0; i < finalCommands; i++) {
-            var key = "post-majority-key-" + i;
+            var key = key("post-majority-key-" + i);
             var value = "post-majority-value-" + i;
             
             // Submit each command through a different new node to verify that all nodes are participating
@@ -506,7 +513,10 @@ public class ReconfigurationTest {
                        var connectedNodes = cluster.network().connectedNodes();
                        
                        for (var nodeId : connectedNodes) {
-                           var val = cluster.stores().get(nodeId).snapshot().get("post-majority-key-" + index);
+                           var val = cluster.stores()
+                                            .get(nodeId)
+                                            .snapshot()
+                                            .get(key("post-majority-key-" + index));
                            if (!("post-majority-value-" + index).equals(val)) {
                                return false;
                            }

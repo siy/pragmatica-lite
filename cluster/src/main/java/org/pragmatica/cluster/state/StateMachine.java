@@ -25,10 +25,10 @@ public interface StateMachine<T extends Command> {
     /// @return A Result containing the serialized state snapshot
     Result<byte[]> makeSnapshot();
 
-    /// Restore the state machine's state from a snapshot.
+    /// Restore the machine's state from a snapshot.
     /// This should completely replace the current state with the state from the snapshot.
     ///
-    /// @return A Result indicating success or failure of the restoration
+    /// @return A Result indicating the success or failure of the restoration
     Result<Unit> restoreSnapshot(byte[] snapshot);
 
     /// Reset state machine to its initial state

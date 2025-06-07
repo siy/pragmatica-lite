@@ -1,4 +1,4 @@
-package org.pragmatica.serialization.binary;
+package org.pragmatica.net.serialization.binary;
 
 import java.util.function.Consumer;
 
