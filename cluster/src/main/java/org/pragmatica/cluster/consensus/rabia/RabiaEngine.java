@@ -32,6 +32,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import static org.pragmatica.cluster.consensus.rabia.Batch.batch;
 import static org.pragmatica.cluster.consensus.rabia.Batch.emptyBatch;
@@ -138,25 +139,19 @@ public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMe
 
     @Override
     public <R> Promise<List<R>> apply(List<C> commands) {
-        return submitCommands(commands)
-                .async()
-                .flatMap(this::prepareBatchAwait);
-    }
-
-    private <R> Promise<List<R>> prepareBatchAwait(Batch<C> batch) {
         var pendingAnswer = Promise.<List<R>>promise();
 
-        correlationMap.put(batch.correlationId(), pendingAnswer);
-
-        return pendingAnswer;
+        return submitCommands(commands, batch -> correlationMap.put(batch.correlationId(), pendingAnswer))
+                .async()
+                .flatMap(_ -> pendingAnswer);
     }
 
     @MessageReceiver
     public void handleSubmit(SubmitCommands<C> submitCommands) {
-        submitCommands(submitCommands.commands());
+        submitCommands(submitCommands.commands(), _ -> {});
     }
 
-    private Result<Batch<C>> submitCommands(List<C> commands) {
+    private Result<Batch<C>> submitCommands(List<C> commands, Consumer<Batch<C>> onBatchPrepared) {
         if (commands.isEmpty()) {
             return ConsensusErrors.commandBatchIsEmpty().result();
         }
@@ -170,6 +165,7 @@ public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMe
         log.trace("Node {}: client submitted {} command(s). Prepared batch: {}", self, commands.size(), batch);
 
         pendingBatches.put(batch.correlationId(), batch);
+        onBatchPrepared.accept(batch);
         network.broadcast(new NewBatch<>(self, batch));
 
         if (!isInPhase.get()) {
