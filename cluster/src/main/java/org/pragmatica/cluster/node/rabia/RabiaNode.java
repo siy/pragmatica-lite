@@ -64,7 +64,12 @@ public interface RabiaNode<C extends Command> extends ClusterNode<C> {
         var leaderManager = LeaderManager.leaderManager(config.topology().self(), router);
         var network = new NettyClusterNetwork(topologyManager, serializer, deserializer, router);
         var consensus = new RabiaEngine<>(topologyManager, network, stateMachine,
-                                          router, config.protocol());
+                                          config.protocol());
+
+        topologyManager.configure(router);
+        leaderManager.configure(router);
+        network.configure(router);
+        consensus.configure(router);
 
         return new rabiaNode<>(config, router, stateMachine, network, topologyManager, consensus, leaderManager);
     }

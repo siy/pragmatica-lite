@@ -5,7 +5,9 @@ import org.pragmatica.cluster.topology.QuorumStateNotification;
 import org.pragmatica.cluster.topology.TopologyChangeNotification.NodeAdded;
 import org.pragmatica.cluster.topology.TopologyChangeNotification.NodeDown;
 import org.pragmatica.cluster.topology.TopologyChangeNotification.NodeRemoved;
+import org.pragmatica.message.MessageReceiver;
 import org.pragmatica.message.MessageRouter;
+import org.pragmatica.message.RouterConfigurator;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -16,16 +18,18 @@ import static org.pragmatica.lang.Option.option;
 /// Leader manager is responsible for choosing which node is the leader.
 /// Although consensus is leaderless, it is often necessary to have a single
 /// source of truth for the cluster management. The leader node can be used for this purpose.
-public interface LeaderManager {
+public interface LeaderManager extends RouterConfigurator {
     static LeaderManager leaderManager(NodeId self, MessageRouter router) {
         record leaderManager(NodeId self, MessageRouter router, AtomicBoolean active,
                              AtomicReference<NodeId> currentLeader) implements LeaderManager {
+            @MessageReceiver
             public void nodeAdded(NodeAdded nodeAdded) {
                 tryElect(nodeAdded.topology().getFirst());
             }
 
+            @MessageReceiver
             public void nodeRemoved(NodeRemoved nodeRemoved) {
-                // Should not happen, but better safe than sorry.
+                // Should not happen, but better be safe than sorry.
                 if (nodeRemoved.topology().isEmpty()) {
                     return;
                 }
@@ -33,6 +37,7 @@ public interface LeaderManager {
                 tryElect(nodeRemoved.topology().getFirst());
             }
 
+            @MessageReceiver
             public void nodeDown(NodeDown nodeDown) {
                 currentLeader().set(null);
                 stop();
@@ -56,6 +61,7 @@ public interface LeaderManager {
                 }
             }
 
+            @MessageReceiver
             public void watchQuorumState(QuorumStateNotification quorumState) {
                 switch (quorumState) {
                     case ESTABLISHED -> start();
@@ -73,15 +79,16 @@ public interface LeaderManager {
                 notifyLeaderChange();
                 active.set(false);
             }
+
+            @Override
+            public void configure(MessageRouter router) {
+                router.addRoute(NodeAdded.class, this::nodeAdded);
+                router.addRoute(NodeRemoved.class, this::nodeRemoved);
+                router.addRoute(NodeDown.class, this::nodeDown);
+                router.addRoute(QuorumStateNotification.class, this::watchQuorumState);
+            }
         }
 
-        var manager = new leaderManager(self, router, new AtomicBoolean(false), new AtomicReference<>());
-
-        router.addRoute(NodeAdded.class, manager::nodeAdded);
-        router.addRoute(NodeRemoved.class, manager::nodeRemoved);
-        router.addRoute(NodeDown.class, manager::nodeDown);
-        router.addRoute(QuorumStateNotification.class, manager::watchQuorumState);
-
-        return manager;
+        return new leaderManager(self, router, new AtomicBoolean(false), new AtomicReference<>());
     }
 }

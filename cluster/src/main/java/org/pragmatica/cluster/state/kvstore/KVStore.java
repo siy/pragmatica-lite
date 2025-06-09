@@ -13,7 +13,9 @@ import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.utils.Causes;
+import org.pragmatica.message.MessageReceiver;
 import org.pragmatica.message.MessageRouter;
+import org.pragmatica.message.RouterConfigurator;
 import org.pragmatica.net.serialization.Deserializer;
 import org.pragmatica.net.serialization.Serializer;
 
@@ -21,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class KVStore<K extends StructuredKey, V> implements StateMachine<KVCommand<K>> {
+public final class KVStore<K extends StructuredKey, V> implements StateMachine<KVCommand<K>>, RouterConfigurator {
     private final Map<K, V> storage = new ConcurrentHashMap<>();
     private final Serializer serializer;
     private final Deserializer deserializer;
@@ -32,7 +34,12 @@ public final class KVStore<K extends StructuredKey, V> implements StateMachine<K
         this.serializer = serializer;
         this.deserializer = deserializer;
 
-        this.router.addRoute(Find.class, this::find);
+
+    }
+
+    @Override
+    public void configure(MessageRouter router) {
+        router.addRoute(Find.class, this::find);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -105,7 +112,8 @@ public final class KVStore<K extends StructuredKey, V> implements StateMachine<K
         return new HashMap<>(storage);
     }
 
-    private void find(Find find) {
+    @MessageReceiver
+    public void find(Find find) {
         router.routeAsync(() -> new FoundEntries<>(storage.entrySet()
                                                           .stream()
                                                           .filter(find::matches)

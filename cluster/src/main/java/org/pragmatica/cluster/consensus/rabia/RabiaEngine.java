@@ -2,6 +2,7 @@ package org.pragmatica.cluster.consensus.rabia;
 
 import org.pragmatica.cluster.consensus.Consensus;
 import org.pragmatica.cluster.consensus.ConsensusErrors;
+import org.pragmatica.cluster.consensus.rabia.RabiaEngineIO.SubmitCommands;
 import org.pragmatica.cluster.consensus.rabia.RabiaPersistence.SavedState;
 import org.pragmatica.cluster.consensus.rabia.RabiaProtocolMessage.Asynchronous;
 import org.pragmatica.cluster.consensus.rabia.RabiaProtocolMessage.Asynchronous.NewBatch;
@@ -9,15 +10,17 @@ import org.pragmatica.cluster.consensus.rabia.RabiaProtocolMessage.Synchronous;
 import org.pragmatica.cluster.consensus.rabia.RabiaProtocolMessage.Synchronous.*;
 import org.pragmatica.cluster.net.ClusterNetwork;
 import org.pragmatica.cluster.net.NodeId;
-import org.pragmatica.cluster.topology.QuorumStateNotification;
-import org.pragmatica.cluster.topology.TopologyManager;
 import org.pragmatica.cluster.state.Command;
 import org.pragmatica.cluster.state.StateMachine;
+import org.pragmatica.cluster.topology.QuorumStateNotification;
+import org.pragmatica.cluster.topology.TopologyManager;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.utils.SharedScheduler;
+import org.pragmatica.message.MessageReceiver;
 import org.pragmatica.message.MessageRouter;
-import org.pragmatica.utility.HierarchyScanner;
+import org.pragmatica.message.RouterConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +39,7 @@ import static org.pragmatica.cluster.consensus.rabia.RabiaPersistence.SavedState
 import static org.pragmatica.cluster.consensus.rabia.RabiaProtocolMessage.Asynchronous.SyncRequest;
 
 /// Implementation of the Rabia consensus protocol.
-public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMessage, C> {
+public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMessage, C>, RouterConfigurator {
     private static final Logger log = LoggerFactory.getLogger(RabiaEngine.class);
     private static final double SCALE = 0.5d;
 
@@ -70,7 +73,6 @@ public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMe
     public RabiaEngine(TopologyManager topologyManager,
                        ClusterNetwork network,
                        StateMachine<C> stateMachine,
-                       MessageRouter router,
                        ProtocolConfig config) {
         this.self = topologyManager.self().id();
         this.topologyManager = topologyManager;
@@ -78,17 +80,32 @@ public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMe
         this.stateMachine = stateMachine;
         this.config = config;
 
-        // Subscribe to quorum events
-        router.addRoute(QuorumStateNotification.class, this::quorumState);
-
-        HierarchyScanner.concreteSubtypes(RabiaProtocolMessage.class)
-                        .forEach(cls -> router.addRoute(cls, this::processMessage));
-
         // Setup periodic tasks
         SharedScheduler.scheduleAtFixedRate(this::cleanupOldPhases, config.cleanupInterval());
         SharedScheduler.schedule(this::synchronize, config.syncRetryInterval());
     }
 
+    @Override
+    public void configure(MessageRouter router) {
+        // Subscribe to quorum events
+        router.addRoute(QuorumStateNotification.class, this::quorumState);
+
+        // Synchronous messages
+        router.addRoute(Propose.class, this::processPropose);
+        router.addRoute(VoteRound1.class, this::processVoteRound1);
+        router.addRoute(VoteRound2.class, this::processVoteRound2);
+        router.addRoute(Decision.class, this::processDecision);
+        router.addRoute(SyncResponse.class, this::processSyncResponse);
+
+        // Asynchronous messages
+        router.addRoute(SyncRequest.class, this::handleSyncRequest);
+        router.addRoute(NewBatch.class, this::handleNewBatch);
+
+        // Local command submission requests
+        router.addRoute(SubmitCommands.class, this::handleSubmit);
+    }
+
+    @MessageReceiver
     public void quorumState(QuorumStateNotification quorumStateNotification) {
         log.trace("Node {} received quorum state {}", self, quorumStateNotification);
         switch (quorumStateNotification) {
@@ -121,21 +138,37 @@ public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMe
 
     @Override
     public <R> Promise<List<R>> apply(List<C> commands) {
+        return submitCommands(commands)
+                .async()
+                .flatMap(this::prepareBatchAwait);
+    }
+
+    private <R> Promise<List<R>> prepareBatchAwait(Batch<C> batch) {
+        var pendingAnswer = Promise.<List<R>>promise();
+
+        correlationMap.put(batch.correlationId(), pendingAnswer);
+
+        return pendingAnswer;
+    }
+
+    @MessageReceiver
+    public void handleSubmit(SubmitCommands<C> submitCommands) {
+        submitCommands(submitCommands.commands());
+    }
+
+    private Result<Batch<C>> submitCommands(List<C> commands) {
         if (commands.isEmpty()) {
-            return Promise.failure(ConsensusErrors.commandBatchIsEmpty());
+            return ConsensusErrors.commandBatchIsEmpty().result();
         }
 
         if (!active.get()) {
-            return Promise.failure(ConsensusErrors.nodeInactive(self));
+            return ConsensusErrors.nodeInactive(self).result();
         }
 
         var batch = batch(commands);
 
         log.trace("Node {}: client submitted {} command(s). Prepared batch: {}", self, commands.size(), batch);
 
-        var pendingAnswer = Promise.<List<R>>promise();
-
-        correlationMap.put(batch.correlationId(), pendingAnswer);
         pendingBatches.put(batch.correlationId(), batch);
         network.broadcast(new NewBatch<>(self, batch));
 
@@ -143,7 +176,7 @@ public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMe
             executor.execute(this::startPhase);
         }
 
-        return pendingAnswer;
+        return Result.success(batch);
     }
 
     @Override
@@ -159,12 +192,38 @@ public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMe
         });
     }
 
+    @MessageReceiver
     @Override
     public void processMessage(RabiaProtocolMessage message) {
         switch (message) {
             case Synchronous sync -> processMessageSync(sync);
             case Asynchronous async -> processMessageAsync(async);
         }
+    }
+
+    @MessageReceiver
+    public void processPropose(Propose<C> propose) {
+        executor.execute(() -> handlePropose(propose));
+    }
+
+    @MessageReceiver
+    public void processVoteRound1(VoteRound1 voteRound1) {
+        executor.execute(() -> handleVoteRound1(voteRound1));
+    }
+
+    @MessageReceiver
+    public void processVoteRound2(VoteRound2 voteRound2) {
+        executor.execute(() -> handleVoteRound2(voteRound2));
+    }
+
+    @MessageReceiver
+    public void processDecision(Decision<C> decision) {
+        executor.execute(() -> handleDecision(decision));
+    }
+
+    @MessageReceiver
+    public void processSyncResponse(SyncResponse<C> syncResponse) {
+        executor.execute(() -> handleSyncResponse(syncResponse));
     }
 
     @SuppressWarnings("unchecked")
@@ -189,7 +248,6 @@ public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMe
         switch (message) {
             case SyncRequest syncRequest -> handleSyncRequest(syncRequest);
             case NewBatch<?> newBatch -> handleNewBatch(newBatch);
-            default -> log.warn("Node {} received unexpected asynchronous message: {}", self, message);
         }
     }
 
@@ -376,9 +434,15 @@ public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMe
             network.broadcast(vote);
             phaseData.round1Votes.put(self, vote.stateValue()); // Record our own vote
         } else {
-            log.trace("Node {} conditions not met to vote R1 on proposal from {} for phase {}. Active: {}, InPhase: {}, CurrentPhase: {}, HasVotedR1: {}",
-                    self, propose.sender(), propose.phase(), active.get(),
-                    isInPhase.get(), currentPhase.get(), phaseData.round1Votes.containsKey(self));
+            log.trace(
+                    "Node {} conditions not met to vote R1 on proposal from {} for phase {}. Active: {}, InPhase: {}, CurrentPhase: {}, HasVotedR1: {}",
+                    self,
+                    propose.sender(),
+                    propose.phase(),
+                    active.get(),
+                    isInPhase.get(),
+                    currentPhase.get(),
+                    phaseData.round1Votes.containsKey(self));
         }
     }
 
@@ -438,7 +502,7 @@ public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMe
         }
     }
 
-    private void processDecision(PhaseData<C> phaseData, Decision<C> decision) {
+    private void commitDecision(PhaseData<C> phaseData, Decision<C> decision) {
         // Broadcast the decision
         if (phaseData.hasDecided.compareAndSet(false, true)) {
             // Apply commands to state machine ONLY if it was a V1 decision with a non-empty batch
@@ -471,7 +535,7 @@ public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMe
 
         log.trace("Node {} received decision {}", self, decision);
 
-        processDecision(getOrCreatePhaseData(decision.phase()), decision);
+        commitDecision(getOrCreatePhaseData(decision.phase()), decision);
     }
 
     /// Moves to the next phase after a decision.

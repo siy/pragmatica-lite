@@ -47,6 +47,7 @@ class TcpTopologyManagerTest {
         var config = new TopologyConfig(nodeId1, timeSpan(100).hours(), TimeSpan.timeSpan(10).seconds(), List.of(nodeInfo1, nodeInfo2));
 
         topologyManager = tcpTopologyManager(config, router);
+        topologyManager.configure(router);
     }
 
     @Test

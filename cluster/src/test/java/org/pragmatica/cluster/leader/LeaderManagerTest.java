@@ -6,6 +6,7 @@ import org.pragmatica.cluster.leader.LeaderNotification.LeaderChange;
 import org.pragmatica.cluster.net.NodeId;
 import org.pragmatica.cluster.topology.QuorumStateNotification;
 import org.pragmatica.lang.Option;
+import org.pragmatica.message.MessageReceiver;
 import org.pragmatica.message.MessageRouter;
 
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import static org.pragmatica.message.MessageRouter.messageRouter;
 
 class LeaderManagerTest {
     record Watcher<T>(List<T> collected) {
+        @MessageReceiver
         public void watch(T notification) {
             collected.add(notification);
         }
@@ -37,7 +39,8 @@ class LeaderManagerTest {
         router.addRoute(LeaderChange.class, watcher::watch);
 
         // It still does it work, but we don't have to keep reference to it
-        LeaderManager.leaderManager(self, router);
+        var leaderManager = LeaderManager.leaderManager(self, router);
+        leaderManager.configure(router);
     }
 
     @Test

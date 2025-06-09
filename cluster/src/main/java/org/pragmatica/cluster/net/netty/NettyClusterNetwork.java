@@ -9,6 +9,8 @@ import org.pragmatica.cluster.net.*;
 import org.pragmatica.cluster.net.NetworkManagementOperation.ListConnectedNodes;
 import org.pragmatica.cluster.net.NetworkMessage.Ping;
 import org.pragmatica.cluster.net.NetworkMessage.Pong;
+import org.pragmatica.message.MessageReceiver;
+import org.pragmatica.message.RouterConfigurator;
 import org.pragmatica.net.serialization.Deserializer;
 import org.pragmatica.net.serialization.Serializer;
 import org.pragmatica.cluster.topology.QuorumStateNotification;
@@ -43,7 +45,7 @@ import static org.pragmatica.cluster.net.netty.NettyClusterNetwork.ViewChangeOpe
 /**
  * Manages network connections between nodes using Netty.
  */
-public class NettyClusterNetwork implements ClusterNetwork {
+public class NettyClusterNetwork implements ClusterNetwork, RouterConfigurator {
     private static final Logger log = LoggerFactory.getLogger(NettyClusterNetwork.class);
     private static final double SCALE = 0.3d;
 
@@ -80,14 +82,17 @@ public class NettyClusterNetwork implements ClusterNetwork {
                 new Encoder(serializer),
                 new Handler(this::peerConnected, this::peerDisconnected, router::route));
 
+        schedulePing();
+    }
+
+    @Override
+    public void configure(MessageRouter router) {
         router.addRoute(ConnectNode.class, this::connect);
         router.addRoute(DisconnectNode.class, this::disconnect);
         router.addRoute(ListConnectedNodes.class, this::listNodes);
 
         router.addRoute(Ping.class, this::handlePing);
         router.addRoute(Pong.class, this::handlePong);
-
-        schedulePing();
     }
 
     private void schedulePing() {
@@ -112,16 +117,19 @@ public class NettyClusterNetwork implements ClusterNetwork {
         schedulePing();
     }
 
-    private void handlePong(Pong pong) {
+    @MessageReceiver
+    public void handlePong(Pong pong) {
         log.debug("Node {} received pong from {}", self, pong.sender());
     }
 
-    private void handlePing(Ping ping) {
+    @MessageReceiver
+    public void handlePing(Ping ping) {
         log.debug("Node {} received ping from {}", self.id(), ping.sender());
         sendToChannel(ping.sender(), new Pong(self.id()), peerLinks.get(ping.sender()));
     }
 
-    private void listNodes(ListConnectedNodes listConnectedNodes) {
+    @MessageReceiver
+    public void listNodes(ListConnectedNodes listConnectedNodes) {
         router.route(new NetworkManagementOperation.ConnectedNodesList(List.copyOf(peerLinks.keySet())));
     }
 
@@ -187,7 +195,8 @@ public class NettyClusterNetwork implements ClusterNetwork {
         return Promise.unitPromise();
     }
 
-    private void connect(ConnectNode connectNode) {
+    @MessageReceiver
+    public void connect(ConnectNode connectNode) {
         if (!isRunning.get()) {
             log.error("Attempt to connect {} while node is not running", connectNode.node());
             return;
@@ -220,7 +229,8 @@ public class NettyClusterNetwork implements ClusterNetwork {
               .onFailure(cause -> log.warn("Node {} failed to connect to {}: {}", peerId, nodeInfo.id(), cause));
     }
 
-    private void disconnect(DisconnectNode disconnectNode) {
+    @MessageReceiver
+    public void disconnect(DisconnectNode disconnectNode) {
         var channel = peerLinks.remove(disconnectNode.nodeId());
 
         if (channel == null) {

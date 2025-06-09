@@ -6,6 +6,7 @@ import org.pragmatica.cluster.topology.TopologyManager;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.io.TimeSpan;
 import org.pragmatica.lang.utils.SharedScheduler;
+import org.pragmatica.message.MessageReceiver;
 import org.pragmatica.message.MessageRouter;
 import org.pragmatica.net.NodeAddress;
 import org.slf4j.Logger;
@@ -45,15 +46,18 @@ public interface TcpTopologyManager extends TopologyManager {
 
                 config().coreNodes().forEach(this::addNode);
 
+                log.trace("Topology manager {} initialized with {} nodes", config.self(), config.coreNodes());
+
+                SharedScheduler.scheduleAtFixedRate(this::initReconcile, config.reconciliationInterval());
+            }
+
+            @Override
+            public void configure(MessageRouter router) {
                 router.addRoute(TopologyManagementMessage.AddNode.class, this::handleAddNodeMessage)
                       .addRoute(TopologyManagementMessage.RemoveNode.class, this::handleRemoveNodeMessage)
                       .addRoute(TopologyManagementMessage.DiscoverNodes.class, this::handleDiscoverNodesMessage)
                       .addRoute(TopologyManagementMessage.DiscoveredNodes.class, this::handleMergeNodesMessage)
                       .addRoute(NetworkManagementOperation.ConnectedNodesList.class, this::reconcile);
-
-                log.trace("Topology manager {} initialized with {} nodes", config.self(), config.coreNodes());
-
-                SharedScheduler.scheduleAtFixedRate(this::initReconcile, config.reconciliationInterval());
             }
 
             private void initReconcile() {
@@ -64,7 +68,8 @@ public interface TcpTopologyManager extends TopologyManager {
                 }
             }
 
-            private void reconcile(NetworkManagementOperation.ConnectedNodesList connectedNodesList) {
+            @MessageReceiver
+            public void reconcile(NetworkManagementOperation.ConnectedNodesList connectedNodesList) {
                 var snapshot = new HashSet<>(nodesById.keySet());
 
                 connectedNodesList.connected()
@@ -73,19 +78,23 @@ public interface TcpTopologyManager extends TopologyManager {
                 snapshot.forEach(this::requestConnection);
             }
 
-            private void handleAddNodeMessage(TopologyManagementMessage.AddNode message) {
+            @MessageReceiver
+            public void handleAddNodeMessage(TopologyManagementMessage.AddNode message) {
                 addNode(message.nodeInfo());
             }
 
-            private void handleRemoveNodeMessage(TopologyManagementMessage.RemoveNode removeNode) {
+            @MessageReceiver
+            public void handleRemoveNodeMessage(TopologyManagementMessage.RemoveNode removeNode) {
                 removeNode(removeNode.nodeId());
             }
 
-            private void handleDiscoverNodesMessage(TopologyManagementMessage.DiscoverNodes discoverNodes) {
+            @MessageReceiver
+            public void handleDiscoverNodesMessage(TopologyManagementMessage.DiscoverNodes discoverNodes) {
                 router().route(new TopologyManagementMessage.DiscoveredNodes(List.copyOf(nodesById.values())));
             }
 
-            private void handleMergeNodesMessage(TopologyManagementMessage.DiscoveredNodes discoveredNodes) {
+            @MessageReceiver
+            public void handleMergeNodesMessage(TopologyManagementMessage.DiscoveredNodes discoveredNodes) {
                 discoveredNodes.nodeInfos().forEach(this::addNode);
             }
 
