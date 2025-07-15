@@ -390,6 +390,25 @@ public sealed interface Option<T> permits Some, None {
         return fold(() -> {throw new IllegalStateException("Option is empty!!!");}, Functions::id);
     }
 
+    /// Convenience method for wrapping functions/methods which may return `null`
+    ///
+    /// @param function function to wrap
+    /// @param inputValue inputValue to pass to function
+    ///
+    /// @return inputValue returned by the provided function wrapped into [Option]
+    static <R, T> Option<R> liftFn(Fn1<R, T> function, T inputValue) {
+        return option(function.apply(inputValue));
+    }
+
+    /// Convenience method for wrapping functions/methods which may return `null` and accept no parameters.
+    ///
+    /// @param function function to wrap
+    ///
+    /// @return value returned by the provided function wrapped into [Option]
+    static <R> Option<R> lift(Fn0<R> function) {
+        return option(function.apply());
+    }
+
     /// Find a first present option among ones passed as parameters.
     ///
     /// @return the first present option or empty option if all input options are empty.

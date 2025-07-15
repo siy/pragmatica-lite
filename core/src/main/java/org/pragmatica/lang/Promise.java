@@ -519,6 +519,27 @@ public interface Promise<T> {
         return Promise.promise(() -> Result.lift(exceptionMapper, supplier));
     }
 
+    /// Wrap the call to the provided function into success [Result] if the call succeeds of into failure [Result] if call throws exception.
+    ///
+    /// @param exceptionMapper the function which will transform exception into instance of [Cause]
+    /// @param function the function to call
+    /// @param inputValue the value to pass to function
+    ///
+    /// @return the [Promise] instance, which eventually will be resolved with the output of the provided lambda
+    static <U, T> Promise<U> liftFn(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn1<U, T> function, T inputValue) {
+        return Promise.promise(() -> Result.liftFn(exceptionMapper, function, inputValue));
+    }
+
+    /// Same as [#liftFn1(Fn1, ThrowingFn1, Object)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
+    ///
+    /// @param function the function to call
+    /// @param inputValue the value to pass to function
+    ///
+    /// @return the [Promise] instance, which eventually will be resolved with the output of the provided lambda
+    static <U, T> Promise<U> liftFn(ThrowingFn1<U, T> function, T inputValue) {
+        return Promise.promise(() -> Result.liftFn(function, inputValue));
+    }
+
     /// Asynchronously run the provided lambda and eventually resolve returned [Promise] with the [Unit] if the call succeeds or with the failure
     /// if call throws exception.
     ///
@@ -541,6 +562,15 @@ public interface Promise<T> {
         return Promise.promise(() -> Result.lift(cause, supplier));
     }
 
+    /// Similar to [#lift(Fn1,ThrowingFn0)] but with [Causes#fromThrowable(Throwable)] used for exception mapping.
+    ///
+    /// @param supplier the call to wrap
+    ///
+    /// @return the [Promise] instance, which eventually will be resolved with the output of the provided lambda
+    static <U> Promise<U> lift(ThrowingFn0<U> supplier) {
+        return Promise.promise(() -> Result.lift(supplier));
+    }
+
     /// Asynchronously run the provided lambda and eventually resolve returned [Promise] with the [Unit] if the call succeeds or with the failure
     /// if call throws exception.
     ///
@@ -550,6 +580,15 @@ public interface Promise<T> {
     /// @return the [Promise] instance which eventually will be resolved with the [Unit] or with the failure with the provided cause.
     static Promise<Unit> lift(Cause cause, ThrowingRunnable runnable) {
         return Promise.promise(() -> Result.lift(cause, runnable));
+    }
+
+    /// Similar to [#lift(Fn1,ThrowingRunnable)] but with [Causes#fromThrowable(Throwable)] used for exception mapping.
+    ///
+    /// @param runnable the call to wrap
+    ///
+    /// @return Unit result which is success if no exceptions were thrown or failure otherwise
+    static Promise<Unit> lift(ThrowingRunnable runnable) {
+        return Promise.promise(() -> Result.lift(runnable));
     }
 
     /// Asynchronously run the provided lambda and eventually resolve returned [Promise] with the [Unit] if the call succeeds or with the failure

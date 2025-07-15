@@ -405,6 +405,31 @@ public sealed interface Result<T> permits Success, Failure {
         }
     }
 
+    /// Wrap the call to the provided function into success [Result] if the call succeeds of into failure [Result] if call throws exception.
+    ///
+    /// @param exceptionMapper the function which will transform exception into instance of [Cause]
+    /// @param function the function to call
+    /// @param inputValue the value to pass to function
+    ///
+    /// @return invocation outcome wrapped into [Result]
+    static <R, T> Result<R> liftFn(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn1<R, T> function, T inputValue) {
+        try {
+            return success(function.apply(inputValue));
+        } catch (Throwable e) {
+            return failure(exceptionMapper.apply(e));
+        }
+    }
+
+    /// Same as [#liftFn1(Fn1, ThrowingFn1, Object)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
+    ///
+    /// @param function the function to call
+    /// @param inputValue the value to pass to function
+    ///
+    /// @return invocation outcome wrapped into [Result]
+    static <R, T> Result<R> liftFn(ThrowingFn1<R, T> function, T inputValue) {
+        return liftFn(Causes::fromThrowable, function, inputValue);
+    }
+
     /// Similar to [#lift(Fn1,ThrowingFn0)] but with a fixed [Cause] instance.
     ///
     /// @param cause    the cause to use in case of failure
@@ -415,6 +440,15 @@ public sealed interface Result<T> permits Success, Failure {
         return lift(_ -> cause, supplier);
     }
 
+    /// Similar to [#lift(Fn1,ThrowingFn0)] but with [Causes#fromThrowable(Throwable)] used for exception mapping.
+    ///
+    /// @param supplier the call to wrap
+    ///
+    /// @return result transformed by the provided lambda and wrapped into [Result]
+    static <U> Result<U> lift(ThrowingFn0<U> supplier) {
+        return lift(Causes::fromThrowable, supplier);
+    }
+
     /// Similar to [#lift(Fn1,ThrowingRunnable)] but with a fixed [Cause] instance.
     ///
     /// @param cause    the cause to use in case of failure
@@ -423,6 +457,15 @@ public sealed interface Result<T> permits Success, Failure {
     /// @return Unit result which is success if no exceptions were thrown or failure otherwise
     static Result<Unit> lift(Cause cause, ThrowingRunnable runnable) {
         return lift(_ -> cause, runnable);
+    }
+
+    /// Similar to [#lift(Fn1,ThrowingRunnable)] but with [Causes#fromThrowable(Throwable)] used for exception mapping.
+    ///
+    /// @param runnable the call to wrap
+    ///
+    /// @return Unit result which is success if no exceptions were thrown or failure otherwise
+    static Result<Unit> lift(ThrowingRunnable runnable) {
+        return lift(Causes::fromThrowable, runnable);
     }
 
     /// Find and return the first success instance among provided.

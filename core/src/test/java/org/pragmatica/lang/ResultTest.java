@@ -345,14 +345,16 @@ class ResultTest {
               .onResult(result -> assertEquals(Result.failure(Causes.cause("Some error")), result));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     void onResultRunIsInvokedForSuccess() {
         var flag = new AtomicBoolean(false);
 
-        Result.success(321)
+        var result = Result.success(321)
               .onResultRun(() -> flag.set(true));
 
         assertTrue(flag.get());
+        assertEquals(321, result.unwrap());
     }
 
     @Test
