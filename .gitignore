@@ -24,3 +24,6 @@ settings.json
 logs/
 dependency-reduced-pom.xml
 pom.xml.versionsBackup
+
+CLAUDE.md
+.claude/
