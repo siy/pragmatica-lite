@@ -3,6 +3,8 @@ package org.pragmatica.lang;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.pragmatica.lang.Functions.Fn1;
+import org.pragmatica.lang.utils.Causes;
 
 import java.util.regex.Pattern;
 
@@ -375,6 +377,152 @@ class VerifyTest {
             assertTrue(Verify.Is.nonPositive(0));
             assertFalse(Verify.Is.nonPositive(0.1));
             assertFalse(Verify.Is.nonPositive(5));
+        }
+
+        @Test
+        @DisplayName("notNull should return true for non-null values")
+        void notNullShouldReturnTrueForNonNullValues() {
+            assertTrue(Verify.Is.notNull("test"));
+            assertTrue(Verify.Is.notNull(123));
+            assertTrue(Verify.Is.notNull(new Object()));
+            assertFalse(Verify.Is.notNull(null));
+        }
+
+        @Test
+        @DisplayName("lenBetween should return true for char sequences with length in range")
+        void lenBetweenShouldReturnTrueForCharSequencesWithLengthInRange() {
+            assertTrue(Verify.Is.lenBetween("hello", 3, 10));
+            assertTrue(Verify.Is.lenBetween("test", 4, 4));
+            assertTrue(Verify.Is.lenBetween("", 0, 5));
+            assertFalse(Verify.Is.lenBetween("hello", 6, 10));
+            assertFalse(Verify.Is.lenBetween("test", 1, 3));
+        }
+    }
+
+    @Nested
+    @DisplayName("Verify enhanced methods tests")
+    class VerifyEnhancedMethodsTest {
+
+        @Test
+        @DisplayName("ensure with custom cause provider should use custom messages")
+        void ensureWithCustomCauseProviderShouldUseCustomMessages() {
+            Fn1<Cause, Integer> customCauseProvider = value -> Causes.cause("Custom error for value: " + value);
+
+            // Success case
+            Verify.ensure(customCauseProvider, 10, value -> value > 5)
+                  .onSuccess(value -> assertEquals(10, value))
+                  .onFailureRun(() -> fail("Should succeed"));
+
+            // Failure case with custom cause
+            Verify.ensure(customCauseProvider, 3, value -> value > 5)
+                  .onSuccessRun(() -> fail("Should fail"))
+                  .onFailure(cause -> assertEquals("Custom error for value: 3", cause.message()));
+        }
+
+        @Test
+        @DisplayName("ensureFn should create reusable validation functions")
+        void ensureFnShouldCreateReusableValidationFunctions() {
+            Fn1<Cause, String> customCauseProvider = value -> Causes.cause("String '" + value + "' is invalid");
+            var validationFn = Verify.ensureFn(customCauseProvider, Verify.Is::notBlank);
+
+            // Test success case
+            validationFn.apply("hello")
+                        .onSuccess(value -> assertEquals("hello", value))
+                        .onFailureRun(() -> fail("Should succeed"));
+
+            // Test failure case
+            validationFn.apply("   ")
+                        .onSuccessRun(() -> fail("Should fail"))
+                        .onFailure(cause -> assertEquals("String '   ' is invalid", cause.message()));
+        }
+
+        @Test
+        @DisplayName("ensureFn with binary predicate should work correctly")
+        void ensureFnWithBinaryPredicateShouldWorkCorrectly() {
+            Fn1<Cause, Integer> causeProvider = value -> Causes.cause("Value " + value + " failed range check");
+            var rangeCheck = Verify.ensureFn(causeProvider, Verify.Is::greaterThan, 5);
+
+            rangeCheck.apply(10)
+                      .onSuccess(value -> assertEquals(10, value))
+                      .onFailureRun(() -> fail("Should succeed"));
+
+            rangeCheck.apply(3)
+                      .onSuccessRun(() -> fail("Should fail"))
+                      .onFailure(cause -> assertEquals("Value 3 failed range check", cause.message()));
+        }
+
+        @Test
+        @DisplayName("ensureFn with ternary predicate should work correctly")
+        void ensureFnWithTernaryPredicateShouldWorkCorrectly() {
+            Fn1<Cause, Integer> causeProvider = value -> Causes.cause("Value " + value + " is not in range");
+            var betweenCheck = Verify.ensureFn(causeProvider, Verify.Is::between, 5, 10);
+
+            betweenCheck.apply(7)
+                        .onSuccess(value -> assertEquals(7, value))
+                        .onFailureRun(() -> fail("Should succeed"));
+
+            betweenCheck.apply(12)
+                        .onSuccessRun(() -> fail("Should fail"))
+                        .onFailure(cause -> assertEquals("Value 12 is not in range", cause.message()));
+        }
+
+        @Test
+        @DisplayName("combine should merge multiple validation functions")
+        void combineShouldMergeMultipleValidationFunctions() {
+            Fn1<Result<String>, String> notNullCheck = Verify.ensureFn(value -> Causes.cause("Value is null"), Verify.Is::notNull);
+            Fn1<Result<String>, String> notBlankCheck = Verify.ensureFn(value -> Causes.cause("Value is blank"), Verify.Is::notBlank);
+            Fn1<Result<String>, String> lengthCheck = Verify.ensureFn(value -> Causes.cause("Value length is invalid"), 
+                                              Verify.Is::lenBetween, 3, 10);
+
+            var combinedCheck = Verify.combine(notNullCheck, notBlankCheck, lengthCheck);
+
+            // Test success case - all validations pass
+            combinedCheck.apply("hello")
+                         .onSuccess(value -> assertEquals("hello", value))
+                         .onFailureRun(() -> fail("Should succeed"));
+
+            // Test failure on first check (null)
+            combinedCheck.apply(null)
+                         .onSuccessRun(() -> fail("Should fail"))
+                         .onFailure(cause -> assertEquals("Value is null", cause.message()));
+
+            // Test failure on second check (blank)
+            combinedCheck.apply("   ")
+                         .onSuccessRun(() -> fail("Should fail"))
+                         .onFailure(cause -> assertEquals("Value is blank", cause.message()));
+
+            // Test failure on third check (length)
+            combinedCheck.apply("hi")
+                         .onSuccessRun(() -> fail("Should fail"))
+                         .onFailure(cause -> assertEquals("Value length is invalid", cause.message()));
+        }
+
+        @Test
+        @DisplayName("ensure with binary predicate and custom cause provider should work")
+        void ensureWithBinaryPredicateAndCustomCauseProviderShouldWork() {
+            Fn1<Cause, Integer> causeProvider = value -> Causes.cause("Custom: " + value + " failed check");
+
+            Verify.ensure(causeProvider, 10, Verify.Is::greaterThan, 5)
+                  .onSuccess(value -> assertEquals(10, value))
+                  .onFailureRun(() -> fail("Should succeed"));
+
+            Verify.ensure(causeProvider, 3, Verify.Is::greaterThan, 5)
+                  .onSuccessRun(() -> fail("Should fail"))
+                  .onFailure(cause -> assertEquals("Custom: 3 failed check", cause.message()));
+        }
+
+        @Test
+        @DisplayName("ensure with ternary predicate and custom cause provider should work")
+        void ensureWithTernaryPredicateAndCustomCauseProviderShouldWork() {
+            Fn1<Cause, Integer> causeProvider = value -> Causes.cause("Custom: " + value + " out of range");
+
+            Verify.ensure(causeProvider, 7, Verify.Is::between, 5, 10)
+                  .onSuccess(value -> assertEquals(7, value))
+                  .onFailureRun(() -> fail("Should succeed"));
+
+            Verify.ensure(causeProvider, 12, Verify.Is::between, 5, 10)
+                  .onSuccessRun(() -> fail("Should fail"))
+                  .onFailure(cause -> assertEquals("Custom: 12 out of range", cause.message()));
         }
     }
 }

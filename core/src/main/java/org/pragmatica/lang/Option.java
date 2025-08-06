@@ -396,8 +396,49 @@ public sealed interface Option<T> permits Some, None {
     /// @param inputValue inputValue to pass to function
     ///
     /// @return inputValue returned by the provided function wrapped into [Option]
-    static <R, T> Option<R> liftFn(Fn1<R, T> function, T inputValue) {
-        return option(function.apply(inputValue));
+    /// Convenience method for directly invoking a function that may return null and wrapping the result in an Option.
+    /// This method provides immediate invocation rather than returning a function factory.
+    ///
+    /// @param function   The unary function to invoke
+    /// @param inputValue The parameter value to pass to the function
+    /// @param <R>        The return type of the function
+    /// @param <T>        The type of the parameter
+    ///
+    /// @return An Option that contains the function result or empty if the result is null
+    static <R, T> Option<R> lift1(Fn1<R, T> function, T inputValue) {
+        return lift(() -> function.apply(inputValue));
+    }
+
+    /// Convenience method for directly invoking a binary function that may return null and wrapping the result in an Option.
+    /// This method provides immediate invocation rather than returning a function factory.
+    ///
+    /// @param function     The binary function to invoke
+    /// @param inputValue1  The first parameter value to pass to the function
+    /// @param inputValue2  The second parameter value to pass to the function
+    /// @param <R>          The return type of the function
+    /// @param <T1>         The type of the first parameter
+    /// @param <T2>         The type of the second parameter
+    ///
+    /// @return An Option that contains the function result or empty if the result is null
+    static <R, T1, T2> Option<R> lift2(Fn2<R, T1, T2> function, T1 inputValue1, T2 inputValue2) {
+        return lift(() -> function.apply(inputValue1, inputValue2));
+    }
+
+    /// Convenience method for directly invoking a ternary function that may return null and wrapping the result in an Option.
+    /// This method provides immediate invocation rather than returning a function factory.
+    ///
+    /// @param function     The ternary function to invoke
+    /// @param inputValue1  The first parameter value to pass to the function
+    /// @param inputValue2  The second parameter value to pass to the function
+    /// @param inputValue3  The third parameter value to pass to the function
+    /// @param <R>          The return type of the function
+    /// @param <T1>         The type of the first parameter
+    /// @param <T2>         The type of the second parameter
+    /// @param <T3>         The type of the third parameter
+    ///
+    /// @return An Option that contains the function result or empty if the result is null
+    static <R, T1, T2, T3> Option<R> lift3(Fn3<R, T1, T2, T3> function, T1 inputValue1, T2 inputValue2, T3 inputValue3) {
+        return lift(() -> function.apply(inputValue1, inputValue2, inputValue3));
     }
 
     /// Convenience method for wrapping functions/methods which may return `null` and accept no parameters.
@@ -406,7 +447,11 @@ public sealed interface Option<T> permits Some, None {
     ///
     /// @return value returned by the provided function wrapped into [Option]
     static <R> Option<R> lift(Fn0<R> function) {
-        return option(function.apply());
+        try {
+            return option(function.apply());
+        } catch (Throwable e) {
+            return Option.empty();
+        }
     }
 
     /// Find a first present option among ones passed as parameters.

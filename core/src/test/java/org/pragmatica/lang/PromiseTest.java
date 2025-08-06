@@ -807,6 +807,181 @@ public class PromiseTest {
         assertEquals(1, ref.get());
     }
 
+    @Test
+    void promiseCanBeFilteredWithCauseAndPredicate() {
+        var testCause = Causes.cause("Test filter failure");
+
+        // Test success case - predicate returns true
+        Promise.success(42)
+               .filter(testCause, value -> value > 30)
+               .await()
+               .onSuccess(v -> assertEquals(42, v))
+               .onFailureRun(Assertions::fail);
+
+        // Test failure case - predicate returns false
+        Promise.success(20)
+               .filter(testCause, value -> value > 30)
+               .await()
+               .onSuccessRun(Assertions::fail)
+               .onFailure(cause -> assertEquals(testCause, cause));
+    }
+
+    @Test
+    void promiseCanBeFilteredWithCauseAndAsyncPredicate() {
+        var testCause = Causes.cause("Test async filter failure");
+
+        // Test success case - async predicate returns true
+        Promise.success(42)
+               .filter(testCause, Promise.success(true))
+               .await()
+               .onSuccess(v -> assertEquals(42, v))
+               .onFailureRun(Assertions::fail);
+
+        // Test failure case - async predicate returns false
+        Promise.success(42)
+               .filter(testCause, Promise.success(false))
+               .await()
+               .onSuccessRun(Assertions::fail)
+               .onFailure(cause -> assertEquals(testCause, cause));
+
+        // Test failure case - async predicate fails
+        Promise.success(42)
+               .filter(testCause, Promise.failure(Causes.cause("Predicate error")))
+               .await()
+               .onSuccessRun(Assertions::fail)
+               .onFailure(cause -> assertEquals("Predicate error", cause.message()));
+    }
+
+    @Test
+    void promiseCanBeFilteredWithCauseMapperAndPredicate() {
+        // Test success case - predicate returns true
+        Promise.success(42)
+               .filter(value -> Causes.cause("Value " + value + " is too small"), value -> value > 30)
+               .await()
+               .onSuccess(v -> assertEquals(42, v))
+               .onFailureRun(Assertions::fail);
+
+        // Test failure case - predicate returns false with custom cause
+        Promise.success(20)
+               .filter(value -> Causes.cause("Value " + value + " is too small"), value -> value > 30)
+               .await()
+               .onSuccessRun(Assertions::fail)
+               .onFailure(cause -> assertEquals("Value 20 is too small", cause.message()));
+    }
+
+    @Test
+    void promiseCanBeFilteredWithCauseMapperAndAsyncPredicate() {
+        // Test success case - async predicate returns true
+        Promise.success(42)
+               .filter(value -> Causes.cause("Value " + value + " failed check"), Promise.success(true))
+               .await()
+               .onSuccess(v -> assertEquals(42, v))
+               .onFailureRun(Assertions::fail);
+
+        // Test failure case - async predicate returns false with custom cause
+        Promise.success(20)
+               .filter(value -> Causes.cause("Value " + value + " failed check"), Promise.success(false))
+               .await()
+               .onSuccessRun(Assertions::fail)
+               .onFailure(cause -> assertEquals("Value 20 failed check", cause.message()));
+
+        // Test failure case - async predicate fails (should return predicate's failure, not mapper's)
+        var predicateFailure = Causes.cause("Predicate execution failed");
+        Promise.success(42)
+               .filter(_ -> Causes.cause("Should not be used"), Promise.failure(predicateFailure))
+               .await()
+               .onSuccessRun(Assertions::fail)
+               .onFailure(cause -> assertEquals(predicateFailure, cause));
+    }
+
+    @Test
+    void filterDoesNotAffectFailedPromises() {
+        var originalCause = Causes.cause("Original failure");
+        var filterCause = Causes.cause("Filter failure");
+
+        // Test filter with Cause and Predicate on failed promise
+        Promise.<Integer>failure(originalCause)
+               .filter(filterCause, value -> value > 30)
+               .await()
+               .onSuccessRun(Assertions::fail)
+               .onFailure(cause -> assertEquals(originalCause, cause));
+
+        // Test filter with Cause and async Predicate on failed promise
+        Promise.<Integer>failure(originalCause)
+               .filter(filterCause, Promise.success(true))
+               .await()
+               .onSuccessRun(Assertions::fail)
+               .onFailure(cause -> assertEquals(originalCause, cause));
+
+        // Test filter with CauseMapper and Predicate on failed promise
+        Promise.<Integer>failure(originalCause)
+               .filter(_ -> filterCause, value -> value > 30)
+               .await()
+               .onSuccessRun(Assertions::fail)
+               .onFailure(cause -> assertEquals(originalCause, cause));
+
+        // Test filter with CauseMapper and async Predicate on failed promise
+        Promise.<Integer>failure(originalCause)
+               .filter(_ -> filterCause, Promise.success(true))
+               .await()
+               .onSuccessRun(Assertions::fail)
+               .onFailure(cause -> assertEquals(originalCause, cause));
+    }
+
+    @Test
+    void filterCanBeChained() {
+        var cause1 = Causes.cause("First filter failed");
+        var cause2 = Causes.cause("Second filter failed");
+
+        // Test successful chain
+        Promise.success(50)
+               .filter(cause1, value -> value > 30)
+               .filter(cause2, value -> value < 60)
+               .await()
+               .onSuccess(v -> assertEquals(50, v))
+               .onFailureRun(Assertions::fail);
+
+        // Test chain that fails on first filter
+        Promise.success(20)
+               .filter(cause1, value -> value > 30)
+               .filter(cause2, value -> value < 60)
+               .await()
+               .onSuccessRun(Assertions::fail)
+               .onFailure(cause -> assertEquals(cause1, cause));
+
+        // Test chain that fails on second filter
+        Promise.success(70)
+               .filter(cause1, value -> value > 30)
+               .filter(cause2, value -> value < 60)
+               .await()
+               .onSuccessRun(Assertions::fail)
+               .onFailure(cause -> assertEquals(cause2, cause));
+    }
+
+    @Test
+    void filterWithAsyncPredicateHandlesConcurrency() throws InterruptedException {
+        var latch = new CountDownLatch(1);
+        var testCause = Causes.cause("Async filter test");
+        var predicatePromise = Promise.<Boolean>promise();
+
+        // Start filtering with unresolved predicate
+        var resultPromise = Promise.success(42)
+                                   .filter(testCause, predicatePromise)
+                                   .onResult(_ -> latch.countDown());
+
+        // Promise should not be resolved yet
+        assertFalse(resultPromise.isResolved());
+
+        // Resolve predicate to true
+        predicatePromise.succeed(true);
+
+        // Wait for resolution and verify
+        assertTrue(latch.await(1, TimeUnit.SECONDS));
+        resultPromise.await()
+                     .onSuccess(v -> assertEquals(42, v))
+                     .onFailureRun(Assertions::fail);
+    }
+
     void assertIsFault(Cause cause) {
         switch (cause) {
             case CoreError.Fault _ -> {
@@ -828,6 +1003,151 @@ public class PromiseTest {
             }
             default -> fail("Unexpected cause");
         }
+    }
+
+    @Test
+    void flatMap2AllowsConvenientParameterMixing() {
+        // Test successful flatMap2
+        Promise.success(10)
+               .flatMap2((value, multiplier) -> Promise.success(value * multiplier), 3)
+               .await()
+               .onSuccess(result -> assertEquals(30, result))
+               .onFailureRun(() -> fail("Should succeed"));
+
+        // Test flatMap2 with failure in original promise
+        Promise.<Integer>failure(Causes.cause("Original failure"))
+               .flatMap2((value, multiplier) -> Promise.success(value * multiplier), 3)
+               .await()
+               .onSuccessRun(() -> fail("Should fail"))
+               .onFailure(cause -> assertEquals("Original failure", cause.message()));
+
+        // Test flatMap2 with failure in mapper
+        Promise.success(10)
+               .flatMap2((value, multiplier) -> Promise.failure(Causes.cause("Mapper failure")), 3)
+               .await()
+               .onSuccessRun(() -> fail("Should fail"))
+               .onFailure(cause -> assertEquals("Mapper failure", cause.message()));
+    }
+
+    @Test
+    void liftAndLiftFnMethodsWrapThrowingFunctions() {
+        // Test lift with custom exception mapper
+        Promise.lift(Causes::fromThrowable, () -> {
+                   throw new IllegalStateException("Test exception");
+               })
+               .await()
+               .onFailure(cause -> assertTrue(cause.message().contains("IllegalStateException")))
+               .onSuccessRun(() -> fail("Should fail"));
+
+        // Test lift with success case
+        Promise.lift(() -> "success")
+               .await()
+               .onSuccess(result -> assertEquals("success", result))
+               .onFailureRun(() -> fail("Should succeed"));
+
+        // Test liftFn1 with custom exception mapper
+        var fn1 = Promise.liftFn1(Causes::fromThrowable, (String input) -> {
+            if (input == null) throw new NullPointerException("Null input");
+            return input.toUpperCase();
+        });
+
+        fn1.apply("hello")
+           .await()
+           .onSuccess(result -> assertEquals("HELLO", result))
+           .onFailureRun(() -> fail("Should succeed"));
+
+        fn1.apply(null)
+           .await()
+           .onFailure(cause -> assertTrue(cause.message().contains("NullPointerException")))
+           .onSuccessRun(() -> fail("Should fail"));
+
+        // Test liftFn1 with default exception mapper
+        var fn1Default = Promise.liftFn1((Integer input) -> input * 2);
+        fn1Default.apply(5)
+                  .await()
+                  .onSuccess(result -> assertEquals(10, result))
+                  .onFailureRun(() -> fail("Should succeed"));
+
+        // Test liftFn2 
+        var fn2 = Promise.liftFn2(Causes::fromThrowable, (Integer a, Integer b) -> a + b);
+        fn2.apply(3, 4)
+           .await()
+           .onSuccess(result -> assertEquals(7, result))
+           .onFailureRun(() -> fail("Should succeed"));
+
+        // Test liftFn3
+        var fn3 = Promise.liftFn3(Causes::fromThrowable, (Integer a, Integer b, Integer c) -> a + b + c);
+        fn3.apply(1, 2, 3)
+           .await()
+           .onSuccess(result -> assertEquals(6, result))
+           .onFailureRun(() -> fail("Should succeed"));
+
+        // Test default exception mapper variants
+        var fn2Default = Promise.liftFn2((Integer a, Integer b) -> a * b);
+        fn2Default.apply(4, 5)
+                  .await()
+                  .onSuccess(result -> assertEquals(20, result))
+                  .onFailureRun(() -> fail("Should succeed"));
+
+        var fn3Default = Promise.liftFn3((Integer a, Integer b, Integer c) -> a + b * c);
+        fn3Default.apply(2, 3, 4)
+                  .await()
+                  .onSuccess(result -> assertEquals(14, result))
+                  .onFailureRun(() -> fail("Should succeed"));
+    }
+
+    @Test
+    void liftDirectInvocationMethodsWrapThrowingFunctions() {
+        // Test lift1 with custom exception mapper
+        Promise.lift1(Causes::fromThrowable, (String input) -> {
+                    if (input == null) throw new NullPointerException("Null input");
+                    return input.length();
+                }, "hello")
+               .await()
+               .onSuccess(result -> assertEquals(5, result))
+               .onFailureRun(() -> fail("Should succeed"));
+
+        Promise.lift1(Causes::fromThrowable, (String input) -> {
+                    if (input == null) throw new NullPointerException("Null input");
+                    return input.length();
+                }, null)
+               .await()
+               .onFailure(cause -> assertTrue(cause.message().contains("NullPointerException")))
+               .onSuccessRun(() -> fail("Should fail"));
+
+        // Test lift1 with default exception mapper
+        Promise.lift1((Integer input) -> input * input, 7)
+               .await()
+               .onSuccess(result -> assertEquals(49, result))
+               .onFailureRun(() -> fail("Should succeed"));
+
+        // Test lift2 with custom and default exception mappers
+        Promise.lift2(Causes::fromThrowable, (Integer a, Integer b) -> a / b, 10, 2)
+               .await()
+               .onSuccess(result -> assertEquals(5, result))
+               .onFailureRun(() -> fail("Should succeed"));
+
+        Promise.lift2((String a, String b) -> a + ":" + b, "hello", "world")
+               .await()
+               .onSuccess(result -> assertEquals("hello:world", result))
+               .onFailureRun(() -> fail("Should succeed"));
+
+        // Test lift3 with custom and default exception mappers
+        Promise.lift3(Causes::fromThrowable, (Integer a, Integer b, Integer c) -> a * b * c, 2, 3, 4)
+               .await()
+               .onSuccess(result -> assertEquals(24, result))
+               .onFailureRun(() -> fail("Should succeed"));
+
+        Promise.lift3((String a, String b, String c) -> a + b + c, "A", "B", "C")
+               .await()
+               .onSuccess(result -> assertEquals("ABC", result))
+               .onFailureRun(() -> fail("Should succeed"));
+
+        // Test exception handling in lift2 
+        Promise.lift2((Integer a, Integer b) -> a / b, 10, 0)
+               .await()
+               .onFailure(cause -> assertTrue(cause.message().contains("ArithmeticException")))
+               .onSuccessRun(() -> fail("Should fail"));
     }
 
     void assertIsCancelled(Cause cause) {

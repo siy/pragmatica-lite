@@ -302,6 +302,87 @@ class ResultTest {
     }
 
     @Test
+    void flatMap2AllowsConvenientParameterMixing() {
+        // Test successful flatMap2
+        Result.success(10)
+              .flatMap2((value, multiplier) -> Result.success(value * multiplier), 3)
+              .onSuccess(result -> assertEquals(30, result))
+              .onFailureRun(() -> fail("Should succeed"));
+
+        // Test flatMap2 with failure in original result
+        Result.<Integer>failure(Causes.cause("Original failure"))
+              .flatMap2((value, multiplier) -> Result.success(value * multiplier), 3)
+              .onSuccessRun(() -> fail("Should fail"))
+              .onFailure(cause -> assertEquals("Original failure", cause.message()));
+
+        // Test flatMap2 with failure in mapper
+        Result.success(10)
+              .flatMap2((value, multiplier) -> Result.failure(Causes.cause("Mapper failure")), 3)
+              .onSuccessRun(() -> fail("Should fail"))
+              .onFailure(cause -> assertEquals("Mapper failure", cause.message()));
+    }
+
+    @Test
+    void liftXMethodsWrapThrowingFunctions() {
+        // Test liftFn1 with custom exception mapper
+        var fn1WithMapper = Result.liftFn1(Causes::fromThrowable, (Integer input) -> {
+            if (input < 0) throw new IllegalArgumentException("Negative input");
+            return "Value: " + input;
+        });
+        
+        fn1WithMapper.apply(5)
+                     .onSuccess(result -> assertEquals("Value: 5", result))
+                     .onFailureRun(() -> fail("Should succeed"));
+        
+        fn1WithMapper.apply(-1)
+                     .onFailure(cause -> assertTrue(cause.message().contains("IllegalArgumentException")))
+                     .onSuccessRun(() -> fail("Should fail"));
+
+        // Test liftFn1 with default exception mapper
+        Result.lift1(String::toUpperCase, "hello")
+              .onSuccess(result -> assertEquals("HELLO", result))
+              .onFailureRun(() -> fail("Should succeed"));
+
+        // Test liftFn2
+        Result.lift2(Integer::sum, 3, 4)
+              .onSuccess(result -> assertEquals(7, result))
+              .onFailureRun(() -> fail("Should succeed"));
+
+        // Test liftFn3  
+        Result.lift3((Integer a, Integer b, Integer c) -> a + b + c, 1, 2, 3)
+              .onSuccess(result -> assertEquals(6, result))
+              .onFailureRun(() -> fail("Should succeed"));
+
+        // Test liftFn2 function factory
+        var fn2Factory = Result.liftFn2(Causes::fromThrowable, (Integer a, Integer b) -> {
+            if (a < 0 || b < 0) throw new IllegalArgumentException("Negative input");
+            return a + b;
+        });
+        
+        fn2Factory.apply(3, 4)
+                  .onSuccess(result -> assertEquals(7, result))
+                  .onFailureRun(() -> fail("Should succeed"));
+        
+        fn2Factory.apply(-1, 4)
+                  .onFailure(cause -> assertTrue(cause.message().contains("IllegalArgumentException")))
+                  .onSuccessRun(() -> fail("Should fail"));
+
+        // Test liftFn3 function factory
+        var fn3Factory = Result.liftFn3(Causes::fromThrowable, (Integer a, Integer b, Integer c) -> {
+            if (a < 0 || b < 0 || c < 0) throw new IllegalArgumentException("Negative input");
+            return a + b + c;
+        });
+        
+        fn3Factory.apply(1, 2, 3)
+                  .onSuccess(result -> assertEquals(6, result))
+                  .onFailureRun(() -> fail("Should succeed"));
+        
+        fn3Factory.apply(-1, 2, 3)
+                  .onFailure(cause -> assertTrue(cause.message().contains("IllegalArgumentException")))
+                  .onSuccessRun(() -> fail("Should fail"));
+    }
+
+    @Test
     void resultCanBeConvertedToStream() {
         assertEquals(321, Result.success(321).stream().findFirst().orElseThrow());
         assertTrue(Result.failure(Causes.cause("Some error")).stream().findFirst().isEmpty());
@@ -879,7 +960,7 @@ class ResultTest {
     @Test
     void allFor1SuccessInputsConvertibleToPromise() {
         Result.all(Result.success(321))
-              .toPromise()
+              .async()
               .map(value -> {
                   assertEquals(321, value);
                   return value;
@@ -891,7 +972,7 @@ class ResultTest {
     @Test
     void allFor2SuccessInputsConvertibleToPromise() {
         Result.all(Result.success(321), Result.success(123))
-              .toPromise()
+              .async()
               .map((value1, value2) -> {
                   assertEquals(321, value1);
                   assertEquals(123, value2);
@@ -904,7 +985,7 @@ class ResultTest {
     @Test
     void allFor3SuccessInputsConvertibleToPromise() {
         Result.all(Result.success(321), Result.success(123), Result.success(456))
-              .toPromise()
+              .async()
               .map((value1, value2, value3) -> {
                   assertEquals(321, value1);
                   assertEquals(123, value2);
@@ -918,7 +999,7 @@ class ResultTest {
     @Test
     void allFor4SuccessInputsConvertibleToPromise() {
         Result.all(Result.success(321), Result.success(123), Result.success(456), Result.success(789))
-              .toPromise()
+              .async()
               .map((value1, value2, value3, value4) -> {
                   assertEquals(321, value1);
                   assertEquals(123, value2);
@@ -937,7 +1018,7 @@ class ResultTest {
                    Result.success(456),
                    Result.success(789),
                    Result.success(654))
-              .toPromise()
+              .async()
               .map((value1, value2, value3, value4, value5) -> {
                   assertEquals(321, value1);
                   assertEquals(123, value2);
@@ -958,7 +1039,7 @@ class ResultTest {
                    Result.success(789),
                    Result.success(654),
                    Result.success(987))
-              .toPromise()
+              .async()
               .map((value1, value2, value3, value4, value5, value6) -> {
                   assertEquals(321, value1);
                   assertEquals(123, value2);
@@ -981,7 +1062,7 @@ class ResultTest {
                    Result.success(654),
                    Result.success(987),
                    Result.success(321))
-              .toPromise()
+              .async()
               .map((value1, value2, value3, value4, value5, value6, value7) -> {
                   assertEquals(321, value1);
                   assertEquals(123, value2);
@@ -1006,7 +1087,7 @@ class ResultTest {
                    Result.success(987),
                    Result.success(321),
                    Result.success(123))
-              .toPromise()
+              .async()
               .map((value1, value2, value3, value4, value5, value6, value7, value8) -> {
                   assertEquals(321, value1);
                   assertEquals(123, value2);
@@ -1033,7 +1114,7 @@ class ResultTest {
                    Result.success(321),
                    Result.success(123),
                    Result.success(456))
-              .toPromise()
+              .async()
               .map((value1, value2, value3, value4, value5, value6, value7, value8, value9) -> {
                   assertEquals(321, value1);
                   assertEquals(123, value2);

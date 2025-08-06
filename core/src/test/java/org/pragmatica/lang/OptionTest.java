@@ -413,6 +413,37 @@ class OptionTest {
     }
 
     @Test
+    void liftFnAndLiftMethodsWrapNullableValues() {
+        // Test liftFn with non-null value
+        Option.lift1(String::toUpperCase, "hello")
+              .onEmpty(() -> fail("Should be present"))
+              .onPresent(result -> assertEquals("HELLO", result));
+
+        // Test liftFn with null input returns empty
+        Option.lift1((String input) -> input.toUpperCase(), null)
+              .onPresentRun(() -> fail("Should be empty"));
+
+        // Test liftFn with function returning null
+        Option.lift1((String input) -> null, "hello")
+              .onPresentRun(() -> fail("Should be empty"));
+
+        // Test lift with non-null supplier result
+        Option.lift(() -> "success")
+              .onEmpty(() -> fail("Should be present"))
+              .onPresent(result -> assertEquals("success", result));
+
+        // Test lift with supplier returning null
+        Option.lift(() -> null)
+              .onPresentRun(() -> fail("Should be empty"));
+
+        // Test complex transformation chain
+        Option.lift1((Integer input) -> input * 2, 5)
+              .flatMap(doubled -> Option.lift1((Integer input) -> "Result: " + input, doubled))
+              .onEmpty(() -> fail("Should be present"))
+              .onPresent(result -> assertEquals("Result: 10", result));
+    }
+
+    @Test
     void anyLazilyEvaluatesOtherOptions() {
         var flag = new AtomicBoolean(false);
 
