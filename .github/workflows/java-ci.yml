@@ -3,9 +3,9 @@ name: Java CI
 # Run CI on all pushes and pull requests
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [ main, develop ]
 
 jobs:
   test:
@@ -23,10 +23,7 @@ jobs:
           java-version: '21.0.1+12'
           cache: 'maven'
 
-      - name: Run tests
-        run: MAVEN_OPTS=--enable-preview mvn --no-transfer-progress --batch-mode test
-
-      - name: Build package
+      - name: Run tests and build package
         run: MAVEN_OPTS=--enable-preview mvn --no-transfer-progress --batch-mode --update-snapshots package
 
   # Only publish packages when changes are pushed to main branch
