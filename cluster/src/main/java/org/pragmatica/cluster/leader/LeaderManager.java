@@ -22,12 +22,12 @@ public interface LeaderManager extends RouterConfigurator {
     static LeaderManager leaderManager(NodeId self, MessageRouter router) {
         record leaderManager(NodeId self, MessageRouter router, AtomicBoolean active,
                              AtomicReference<NodeId> currentLeader) implements LeaderManager {
-            @MessageReceiver
+            @Override
             public void nodeAdded(NodeAdded nodeAdded) {
                 tryElect(nodeAdded.topology().getFirst());
             }
 
-            @MessageReceiver
+            @Override
             public void nodeRemoved(NodeRemoved nodeRemoved) {
                 // Should not happen, but better be safe than sorry.
                 if (nodeRemoved.topology().isEmpty()) {
@@ -37,7 +37,7 @@ public interface LeaderManager extends RouterConfigurator {
                 tryElect(nodeRemoved.topology().getFirst());
             }
 
-            @MessageReceiver
+            @Override
             public void nodeDown(NodeDown nodeDown) {
                 currentLeader().set(null);
                 stop();
@@ -61,7 +61,7 @@ public interface LeaderManager extends RouterConfigurator {
                 }
             }
 
-            @MessageReceiver
+            @Override
             public void watchQuorumState(QuorumStateNotification quorumState) {
                 switch (quorumState) {
                     case ESTABLISHED -> start();
@@ -91,4 +91,16 @@ public interface LeaderManager extends RouterConfigurator {
 
         return new leaderManager(self, router, new AtomicBoolean(false), new AtomicReference<>());
     }
+
+    @MessageReceiver
+    void nodeAdded(NodeAdded nodeAdded);
+
+    @MessageReceiver
+    void nodeRemoved(NodeRemoved nodeRemoved);
+
+    @MessageReceiver
+    void nodeDown(NodeDown nodeDown);
+
+    @MessageReceiver
+    void watchQuorumState(QuorumStateNotification quorumState);
 }

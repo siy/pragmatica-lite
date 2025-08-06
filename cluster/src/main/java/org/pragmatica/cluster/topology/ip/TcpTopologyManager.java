@@ -1,6 +1,8 @@
 package org.pragmatica.cluster.topology.ip;
 
-import org.pragmatica.cluster.net.*;
+import org.pragmatica.cluster.net.NetworkManagementOperation;
+import org.pragmatica.cluster.net.NodeId;
+import org.pragmatica.cluster.net.NodeInfo;
 import org.pragmatica.cluster.topology.TopologyManagementMessage;
 import org.pragmatica.cluster.topology.TopologyManager;
 import org.pragmatica.lang.Option;
@@ -22,6 +24,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /// Topology manager for TCP/IP networks.
 public interface TcpTopologyManager extends TopologyManager {
+    @MessageReceiver
+    void reconcile(NetworkManagementOperation.ConnectedNodesList connectedNodesList);
+
+    @MessageReceiver
+    void handleAddNodeMessage(TopologyManagementMessage.AddNode message);
+
+    @MessageReceiver
+    void handleRemoveNodeMessage(TopologyManagementMessage.RemoveNode removeNode);
+
+    @MessageReceiver
+    void handleDiscoverNodesMessage(TopologyManagementMessage.DiscoverNodes discoverNodes);
+
+    @MessageReceiver
+    void handleMergeNodesMessage(TopologyManagementMessage.DiscoveredNodes discoveredNodes);
+
     void start();
 
     void stop();
@@ -68,7 +85,7 @@ public interface TcpTopologyManager extends TopologyManager {
                 }
             }
 
-            @MessageReceiver
+            @Override
             public void reconcile(NetworkManagementOperation.ConnectedNodesList connectedNodesList) {
                 var snapshot = new HashSet<>(nodesById.keySet());
 
@@ -78,22 +95,22 @@ public interface TcpTopologyManager extends TopologyManager {
                 snapshot.forEach(this::requestConnection);
             }
 
-            @MessageReceiver
+            @Override
             public void handleAddNodeMessage(TopologyManagementMessage.AddNode message) {
                 addNode(message.nodeInfo());
             }
 
-            @MessageReceiver
+            @Override
             public void handleRemoveNodeMessage(TopologyManagementMessage.RemoveNode removeNode) {
                 removeNode(removeNode.nodeId());
             }
 
-            @MessageReceiver
+            @Override
             public void handleDiscoverNodesMessage(TopologyManagementMessage.DiscoverNodes discoverNodes) {
                 router().route(new TopologyManagementMessage.DiscoveredNodes(List.copyOf(nodesById.values())));
             }
 
-            @MessageReceiver
+            @Override
             public void handleMergeNodesMessage(TopologyManagementMessage.DiscoveredNodes discoveredNodes) {
                 discoveredNodes.nodeInfos().forEach(this::addNode);
             }

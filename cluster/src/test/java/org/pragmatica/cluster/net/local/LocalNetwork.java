@@ -3,6 +3,8 @@ package org.pragmatica.cluster.net.local;
 import org.pragmatica.cluster.consensus.ProtocolMessage;
 import org.pragmatica.cluster.consensus.rabia.RabiaProtocolMessage;
 import org.pragmatica.cluster.net.ClusterNetwork;
+import org.pragmatica.cluster.net.NetworkManagementOperation;
+import org.pragmatica.cluster.net.NetworkMessage;
 import org.pragmatica.cluster.net.NodeId;
 import org.pragmatica.cluster.topology.QuorumStateNotification;
 import org.pragmatica.cluster.topology.TopologyManager;
@@ -21,8 +23,6 @@ import java.util.stream.Stream;
 
 /// Local network implementation suitable for testing purposes
 public class LocalNetwork implements ClusterNetwork {
-
-
     public enum FaultType {
         MESSAGE_LOSS,
         MESSAGE_DELAY,
@@ -54,6 +54,31 @@ public class LocalNetwork implements ClusterNetwork {
     public <M extends ProtocolMessage> void broadcast(M message) {
         nodes.keySet()
              .forEach(nodeId -> send(nodeId, message));
+    }
+
+    @Override
+    public void connect(NetworkManagementOperation.ConnectNode connectNode) {
+
+    }
+
+    @Override
+    public void disconnect(NetworkManagementOperation.DisconnectNode disconnectNode) {
+
+    }
+
+    @Override
+    public void listNodes(NetworkManagementOperation.ListConnectedNodes listConnectedNodes) {
+
+    }
+
+    @Override
+    public void handlePing(NetworkMessage.Ping ping) {
+
+    }
+
+    @Override
+    public void handlePong(NetworkMessage.Pong pong) {
+
     }
 
     @Override

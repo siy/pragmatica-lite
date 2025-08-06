@@ -3,6 +3,7 @@ package org.pragmatica.cluster.net;
 import org.pragmatica.cluster.consensus.ProtocolMessage;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
+import org.pragmatica.message.MessageReceiver;
 
 /// Generalized Network API
 public interface ClusterNetwork {
@@ -10,6 +11,21 @@ public interface ClusterNetwork {
     /// Note that actual implementation may just send messages directly, not necessarily use broadcasting in
     /// underlying protocol.
     <M extends ProtocolMessage> void broadcast(M message);
+
+    @MessageReceiver
+    void connect(NetworkManagementOperation.ConnectNode connectNode);
+
+    @MessageReceiver
+    void disconnect(NetworkManagementOperation.DisconnectNode disconnectNode);
+
+    @MessageReceiver
+    void listNodes(NetworkManagementOperation.ListConnectedNodes listConnectedNodes);
+
+    @MessageReceiver
+    void handlePing(NetworkMessage.Ping ping);
+
+    @MessageReceiver
+    void handlePong(NetworkMessage.Pong pong);
 
     /// Send a message to a specific node
     <M extends ProtocolMessage> void send(NodeId nodeId, M message);

@@ -5,14 +5,13 @@ import io.netty.channel.ChannelHandler;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import org.pragmatica.cluster.consensus.ProtocolMessage;
-import org.pragmatica.cluster.net.*;
+import org.pragmatica.cluster.net.ClusterNetwork;
+import org.pragmatica.cluster.net.NetworkManagementOperation;
 import org.pragmatica.cluster.net.NetworkManagementOperation.ListConnectedNodes;
 import org.pragmatica.cluster.net.NetworkMessage.Ping;
 import org.pragmatica.cluster.net.NetworkMessage.Pong;
-import org.pragmatica.message.MessageReceiver;
-import org.pragmatica.message.RouterConfigurator;
-import org.pragmatica.net.serialization.Deserializer;
-import org.pragmatica.net.serialization.Serializer;
+import org.pragmatica.cluster.net.NodeId;
+import org.pragmatica.cluster.net.NodeInfo;
 import org.pragmatica.cluster.topology.QuorumStateNotification;
 import org.pragmatica.cluster.topology.TopologyChangeNotification;
 import org.pragmatica.cluster.topology.TopologyManager;
@@ -23,7 +22,10 @@ import org.pragmatica.lang.utils.Causes;
 import org.pragmatica.lang.utils.SharedScheduler;
 import org.pragmatica.message.Message;
 import org.pragmatica.message.MessageRouter;
+import org.pragmatica.message.RouterConfigurator;
 import org.pragmatica.net.Server;
+import org.pragmatica.net.serialization.Deserializer;
+import org.pragmatica.net.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -117,18 +119,18 @@ public class NettyClusterNetwork implements ClusterNetwork, RouterConfigurator {
         schedulePing();
     }
 
-    @MessageReceiver
-    public void handlePong(Pong pong) {
-        log.debug("Node {} received pong from {}", self, pong.sender());
-    }
-
-    @MessageReceiver
+    @Override
     public void handlePing(Ping ping) {
         log.debug("Node {} received ping from {}", self.id(), ping.sender());
         sendToChannel(ping.sender(), new Pong(self.id()), peerLinks.get(ping.sender()));
     }
 
-    @MessageReceiver
+    @Override
+    public void handlePong(Pong pong) {
+        log.debug("Node {} received pong from {}", self, pong.sender());
+    }
+
+    @Override
     public void listNodes(ListConnectedNodes listConnectedNodes) {
         router.route(new NetworkManagementOperation.ConnectedNodesList(List.copyOf(peerLinks.keySet())));
     }
@@ -195,7 +197,7 @@ public class NettyClusterNetwork implements ClusterNetwork, RouterConfigurator {
         return Promise.unitPromise();
     }
 
-    @MessageReceiver
+    @Override
     public void connect(ConnectNode connectNode) {
         if (!isRunning.get()) {
             log.error("Attempt to connect {} while node is not running", connectNode.node());
@@ -229,7 +231,7 @@ public class NettyClusterNetwork implements ClusterNetwork, RouterConfigurator {
               .onFailure(cause -> log.warn("Node {} failed to connect to {}: {}", peerId, nodeInfo.id(), cause));
     }
 
-    @MessageReceiver
+    @Override
     public void disconnect(DisconnectNode disconnectNode) {
         var channel = peerLinks.remove(disconnectNode.nodeId());
 
