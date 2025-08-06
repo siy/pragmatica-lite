@@ -70,6 +70,10 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(_ -> (Result<U>) this, mapper);
     }
 
+    default <U, I> Result<U> flatMap2(Fn2<Result<U>, ? super T, ? super I> mapper, I parameter2) {
+        return flatMap(value -> mapper.apply(value, parameter2));
+    }
+
     /// Replace the current instance with the instance returned by provided [Supplier]. The replacement happens only if the current instance contains
     /// a successful result, otherwise the current instance remains unchanged.
     ///
@@ -376,6 +380,10 @@ public sealed interface Result<T> permits Success, Failure {
         }
     }
 
+    //------------------------------------------------------------------------------------------------------------------
+    // Interaction with legacy code
+    //------------------------------------------------------------------------------------------------------------------
+
     /// Wrap value returned by provided lambda into success [Result] if the call succeeds or into failure [Result] if call throws exception.
     ///
     /// @param exceptionMapper the function which will transform exception into instance of [Cause]
@@ -388,6 +396,30 @@ public sealed interface Result<T> permits Success, Failure {
         } catch (Throwable e) {
             return failure(exceptionMapper.apply(e));
         }
+    }
+
+    static <U, T1> Result<U> lift1(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn1<U, T1> function, T1 value1) {
+        return lift(exceptionMapper, () -> function.apply(value1));
+    }
+
+    static <R, T> Result<R> lift1(ThrowingFn1<R, T> function, T inputValue) {
+        return lift1(Causes::fromThrowable, function, inputValue);
+    }
+
+    static <U, T1, T2> Result<U> lift2(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn2<U, T1, T2> function, T1 value1, T2 value2) {
+        return lift(exceptionMapper, () -> function.apply(value1, value2));
+    }
+
+    static <R, T1, T2> Result<R> lift2(ThrowingFn2<R, T1, T2> function, T1 inputValue1, T2 inputValue2) {
+        return lift2(Causes::fromThrowable, function, inputValue1, inputValue2);
+    }
+
+    static <U, T1, T2, T3> Result<U> lift3(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn3<U, T1, T2, T3> function, T1 value1, T2 value2, T3 value3) {
+        return lift(exceptionMapper, () -> function.apply(value1, value2, value3));
+    }
+
+    static <R, T1, T2, T3> Result<R> lift3(ThrowingFn3<R, T1, T2, T3> function, T1 inputValue1, T2 inputValue2, T3 inputValue3) {
+        return lift3(Causes::fromThrowable, function, inputValue1, inputValue2, inputValue3);
     }
 
     /// Wrap the call to the provided lambda into success [Result] if the call succeeds or into failure [Result] if call throws exception.
@@ -403,31 +435,6 @@ public sealed interface Result<T> permits Success, Failure {
         } catch (Throwable e) {
             return failure(exceptionMapper.apply(e));
         }
-    }
-
-    /// Wrap the call to the provided function into success [Result] if the call succeeds of into failure [Result] if call throws exception.
-    ///
-    /// @param exceptionMapper the function which will transform exception into instance of [Cause]
-    /// @param function the function to call
-    /// @param inputValue the value to pass to function
-    ///
-    /// @return invocation outcome wrapped into [Result]
-    static <R, T> Result<R> liftFn(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn1<R, T> function, T inputValue) {
-        try {
-            return success(function.apply(inputValue));
-        } catch (Throwable e) {
-            return failure(exceptionMapper.apply(e));
-        }
-    }
-
-    /// Same as [#liftFn1(Fn1, ThrowingFn1, Object)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
-    ///
-    /// @param function the function to call
-    /// @param inputValue the value to pass to function
-    ///
-    /// @return invocation outcome wrapped into [Result]
-    static <R, T> Result<R> liftFn(ThrowingFn1<R, T> function, T inputValue) {
-        return liftFn(Causes::fromThrowable, function, inputValue);
     }
 
     /// Similar to [#lift(Fn1,ThrowingFn0)] but with a fixed [Cause] instance.
@@ -467,6 +474,28 @@ public sealed interface Result<T> permits Success, Failure {
     static Result<Unit> lift(ThrowingRunnable runnable) {
         return lift(Causes::fromThrowable, runnable);
     }
+
+    /// Wrap the call to the provided function into success [Result] if the call succeeds of into failure [Result] if call throws exception.
+    ///
+    /// @param exceptionMapper the function which will transform exception into instance of [Cause]
+    /// @param function        the function to call
+    ///
+    /// @return invocation outcome wrapped into [Result]
+    static <R, T1> Fn1<Result<R>, T1> liftFn1(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn1<R, T1> function) {
+        return input -> lift(exceptionMapper, () -> function.apply(input));
+    }
+
+    static <R, T1, T2> Fn2<Result<R>, T1, T2> liftFn2(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn2<R, T1, T2> function) {
+        return (inputValue1, inputValue2) -> lift(exceptionMapper, () -> function.apply(inputValue1, inputValue2));
+    }
+
+    static <R, T1, T2, T3> Fn3<Result<R>, T1, T2, T3> liftFn3(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn3<R, T1, T2, T3> function) {
+        return (inputValue1, inputValue2, inputValue3) -> lift(exceptionMapper, () -> function.apply(inputValue1, inputValue2, inputValue3));
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Predicates
+    //------------------------------------------------------------------------------------------------------------------
 
     /// Find and return the first success instance among provided.
     ///
@@ -772,7 +801,7 @@ public sealed interface Result<T> permits Success, Failure {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
 
-        default Promise.Mapper1<T1> toPromise() {
+        default Promise.Mapper1<T1> async() {
             return () -> Promise.resolved(id());
         }
     }
@@ -797,7 +826,7 @@ public sealed interface Result<T> permits Success, Failure {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
 
-        default Promise.Mapper2<T1, T2> toPromise() {
+        default Promise.Mapper2<T1, T2> async() {
             return () -> Promise.resolved(id());
         }
     }
@@ -822,7 +851,7 @@ public sealed interface Result<T> permits Success, Failure {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
 
-        default Promise.Mapper3<T1, T2, T3> toPromise() {
+        default Promise.Mapper3<T1, T2, T3> async() {
             return () -> Promise.resolved(id());
         }
     }
@@ -847,7 +876,7 @@ public sealed interface Result<T> permits Success, Failure {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
 
-        default Promise.Mapper4<T1, T2, T3, T4> toPromise() {
+        default Promise.Mapper4<T1, T2, T3, T4> async() {
             return () -> Promise.resolved(id());
         }
     }
@@ -872,7 +901,7 @@ public sealed interface Result<T> permits Success, Failure {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
 
-        default Promise.Mapper5<T1, T2, T3, T4, T5> toPromise() {
+        default Promise.Mapper5<T1, T2, T3, T4, T5> async() {
             return () -> Promise.resolved(id());
         }
     }
@@ -897,7 +926,7 @@ public sealed interface Result<T> permits Success, Failure {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
 
-        default Promise.Mapper6<T1, T2, T3, T4, T5, T6> toPromise() {
+        default Promise.Mapper6<T1, T2, T3, T4, T5, T6> async() {
             return () -> Promise.resolved(id());
         }
     }
@@ -922,7 +951,7 @@ public sealed interface Result<T> permits Success, Failure {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
 
-        default Promise.Mapper7<T1, T2, T3, T4, T5, T6, T7> toPromise() {
+        default Promise.Mapper7<T1, T2, T3, T4, T5, T6, T7> async() {
             return () -> Promise.resolved(id());
         }
     }
@@ -947,7 +976,7 @@ public sealed interface Result<T> permits Success, Failure {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
 
-        default Promise.Mapper8<T1, T2, T3, T4, T5, T6, T7, T8> toPromise() {
+        default Promise.Mapper8<T1, T2, T3, T4, T5, T6, T7, T8> async() {
             return () -> Promise.resolved(id());
         }
     }
@@ -972,7 +1001,7 @@ public sealed interface Result<T> permits Success, Failure {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
 
-        default Promise.Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> toPromise() {
+        default Promise.Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> async() {
             return () -> Promise.resolved(id());
         }
     }

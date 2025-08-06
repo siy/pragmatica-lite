@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
@@ -124,6 +125,12 @@ public interface Promise<T> {
     /// @return New promise instance.
     default <U> Promise<U> flatMap(Fn1<Promise<U>, ? super T> transformation) {
         return fold(result -> result.fold(Promise::<U>failure, transformation));
+    }
+
+    /// Version of the [#flatMap(Fn1)] which allows convenient "mixing in" additional parameter without the need to revert
+    /// to traditional lambda.
+    default <U, I> Promise<U> flatMap2(Fn2<Promise<U>, ? super T, ? super I> mapper, I parameter2) {
+        return flatMap(value -> mapper.apply(value, parameter2));
     }
 
     /// Replace the success value of the promise once the promise is resolved with the promise obtained from the provided supplier.
@@ -273,6 +280,38 @@ public interface Promise<T> {
 
     default Promise<T> onFailureRunAsync(Runnable action) {
         return onFailureRun(action);
+    }
+
+    /// Filter instance against provided predicate. If the predicate returns `true`, then the instance remains unchanged. If the predicate returns
+    /// `false`, then a failure instance is created using given [Cause].
+    ///
+    /// @param cause     failure to use in case if predicate returns `false`
+    /// @param predicate predicate to invoke
+    ///
+    /// @return current instance if predicate returns `true` or failure instance if predicate returns `false`
+    default Promise<T> filter(Cause cause, Predicate<T> predicate) {
+        return fold(result -> result.filter(cause, predicate).async());
+    }
+
+    /// Asynchronous version of the filtering
+    default Promise<T> filter(Cause cause, Promise<Boolean> predicate) {
+        return filter(_ -> cause, predicate);
+    }
+
+    /// Filter instance against provided predicate. If the predicate returns `true`, then the instance remains unchanged. If the predicate returns
+    /// `false`, then a failure instance is created using [Cause] created by the provided function.
+    ///
+    /// @param causeMapper function which transforms the tested value into an instance of [Cause] if predicate returns `false`
+    /// @param predicate   predicate to invoke
+    ///
+    /// @return current instance if predicate returns `true` or failure instance if predicate returns `false`
+    default Promise<T> filter(Fn1<Cause, T> causeMapper, Predicate<T> predicate) {
+        return fold(result -> result.filter(causeMapper, predicate).async());
+    }
+
+    default Promise<T> filter(Fn1<Cause, T> causeMapper, Promise<Boolean> predicate) {
+        return fold(result -> result.fold(Promise::failure,
+                                          value -> predicate.flatMap(decision -> decision ? Promise.this : causeMapper.apply(value).promise())));
     }
 
     /// Run an action once the promise is resolved with failure. The action is executed in the order in which transformations are written in the code.
@@ -522,22 +561,30 @@ public interface Promise<T> {
     /// Wrap the call to the provided function into success [Result] if the call succeeds of into failure [Result] if call throws exception.
     ///
     /// @param exceptionMapper the function which will transform exception into instance of [Cause]
-    /// @param function the function to call
-    /// @param inputValue the value to pass to function
+    /// @param function        the function to call
+    /// @param inputValue      the value to pass to function
     ///
     /// @return the [Promise] instance, which eventually will be resolved with the output of the provided lambda
-    static <U, T> Promise<U> liftFn(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn1<U, T> function, T inputValue) {
-        return Promise.promise(() -> Result.liftFn(exceptionMapper, function, inputValue));
+    static <U, T1> Fn1<Promise<U>, T1> liftFn1(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn1<U, T1> function) {
+        return value -> Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value)));
+    }
+
+    static <U, T1, T2> Fn2<Promise<U>, T1, T2> liftFn2(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn2<U, T1, T2> function) {
+        return (value1, value2) -> Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value1, value2)));
+    }
+
+    static <U, T1, T2, T3> Fn3<Promise<U>, T1, T2, T3> liftFn3(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn3<U, T1, T2, T3> function) {
+        return (value1, value2, value3) -> Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value1, value2, value3)));
     }
 
     /// Same as [#liftFn1(Fn1, ThrowingFn1, Object)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
     ///
-    /// @param function the function to call
+    /// @param function   the function to call
     /// @param inputValue the value to pass to function
     ///
     /// @return the [Promise] instance, which eventually will be resolved with the output of the provided lambda
-    static <U, T> Promise<U> liftFn(ThrowingFn1<U, T> function, T inputValue) {
-        return Promise.promise(() -> Result.liftFn(function, inputValue));
+    static <U, T1> Fn1<Promise<U>, T1> liftFn1(ThrowingFn1<U, T1> function) {
+        return liftFn1(Causes::fromThrowable, function);
     }
 
     /// Asynchronously run the provided lambda and eventually resolve returned [Promise] with the [Unit] if the call succeeds or with the failure

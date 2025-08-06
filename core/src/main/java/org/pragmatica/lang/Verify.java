@@ -1,5 +1,6 @@
 package org.pragmatica.lang;
 
+import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Functions.Fn2;
 import org.pragmatica.lang.Functions.Fn3;
 import org.pragmatica.lang.utils.Causes;
@@ -36,13 +37,32 @@ public sealed interface Verify {
     /// @return a success result containing the value if the predicate is satisfied,
     ///         or a failure result if the predicate is not satisfied
     static <T> Result<T> ensure(T value, Predicate<T> predicate) {
+        return ensure(Causes.forValue("Value {0} does not satisfy the predicate"), value, predicate);
+    }
+
+    /// Ensures that a value satisfies a given predicate.
+    ///
+    /// This method evaluates the provided value against the given predicate. If the predicate returns
+    /// true, a success result containing the original value is returned. Otherwise, a failure result
+    /// is returned with an appropriate error message.
+    ///
+    /// @param <T> the type of the value being verified
+    /// @param causeProvider the function which is invoked to generate cause for the failure result
+    /// @param value the value to verify
+    /// @param predicate the predicate to test the value against
+    /// @return a success result containing the value if the predicate is satisfied,
+    ///         or a failure result if the predicate is not satisfied
+    static <T> Result<T> ensure(Fn1<Cause, T> causeProvider, T value, Predicate<T> predicate) {
         if (predicate.test(value)) {
             return Result.success(value);
         }
 
-        return Causes.forValue("Value {0} does not satisfy the predicate")
-                     .apply(value)
-                     .result();
+        return causeProvider.apply(value).result();
+    }
+
+    /// Create a function which will perform given check and return [Result]
+    static <T> Fn1<Result<T>, T> ensureFn(Fn1<Cause, T> causeProvider, Predicate<T> predicate) {
+        return value -> ensure(causeProvider, value, predicate);
     }
 
     /// Ensures that a value satisfies a binary predicate with one additional parameter.
@@ -62,6 +82,34 @@ public sealed interface Verify {
         return ensure(value, v -> predicate.apply(v, param1));
     }
 
+    /// Create a function which will perform given check and return [Result]
+    static <T, P1> Fn1<Result<T>, T> ensureFn(Fn2<Boolean, T, P1> predicate, P1 param1) {
+        return value -> ensure(value, predicate, param1);
+    }
+
+    /// Ensures that a value satisfies a binary predicate with one additional parameter.
+    ///
+    /// This method is a convenience wrapper around the single-parameter `ensure` method,
+    /// allowing the use of a predicate that takes two parameters: the value being tested
+    /// and an additional parameter.
+    ///
+    /// @param <T> the type of the value being verified
+    /// @param <P1> the type of the additional parameter
+    /// @param causeProvider the function which is invoked to generate cause for the failure result
+    /// @param value the value to verify
+    /// @param predicate the binary predicate to test the value against
+    /// @param param1 the additional parameter to pass to the predicate
+    /// @return a success result containing the value if the predicate is satisfied,
+    ///         or a failure result if the predicate is not satisfied
+    static <T, P1> Result<T> ensure(Fn1<Cause, T> causeProvider, T value, Fn2<Boolean, T, P1> predicate, P1 param1) {
+        return ensure(causeProvider, value, v -> predicate.apply(v, param1));
+    }
+
+    /// Create a function which will perform given check and return [Result]
+    static <T, P1> Fn1<Result<T>, T> ensureFn(Fn1<Cause, T> causeProvider, Fn2<Boolean, T, P1> predicate, P1 param1) {
+        return value -> ensure(causeProvider, value, predicate, param1);
+    }
+
     /// Ensures that a value satisfies a ternary predicate with two additional parameters.
     ///
     /// This method is a convenience wrapper around the single-parameter `ensure` method,
@@ -79,6 +127,53 @@ public sealed interface Verify {
     ///         or a failure result if the predicate is not satisfied
     static <T, P1, P2> Result<T> ensure(T value, Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2) {
         return ensure(value, v -> predicate.apply(v, param1, param2));
+    }
+
+    /// Create a function which will perform given check and return [Result]
+    static <T, P1, P2> Fn1<Result<T>, T> ensureFn(Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2) {
+        return value -> ensure(value, predicate, param1, param2);
+    }
+
+    /// Ensures that a value satisfies a ternary predicate with two additional parameters.
+    ///
+    /// This method is a convenience wrapper around the single-parameter `ensure` method,
+    /// allowing the use of a predicate that takes three parameters: the value being tested
+    /// and two additional parameters.
+    ///
+    /// @param <T> the type of the value being verified
+    /// @param <P1> the type of the first additional parameter
+    /// @param <P2> the type of the second additional parameter
+    /// @param causeProvider the function which is invoked to generate cause for the failure result
+    /// @param value the value to verify
+    /// @param predicate the ternary predicate to test the value against
+    /// @param param1 the first additional parameter to pass to the predicate
+    /// @param param2 the second additional parameter to pass to the predicate
+    /// @return a success result containing the value if the predicate is satisfied,
+    ///         or a failure result if the predicate is not satisfied
+    static <T, P1, P2> Result<T> ensure(Fn1<Cause, T> causeProvider, T value, Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2) {
+        return ensure(causeProvider, value, v -> predicate.apply(v, param1, param2));
+    }
+
+    /// Create a function which will perform given check and return [Result]
+    static <T, P1, P2> Fn1<Result<T>, T> ensureFn(Fn1<Cause, T> causeProvider, Fn3<Boolean, T, P1, P2> predicate, P1 param1,  P2 param2) {
+        return value -> ensure(causeProvider, value, predicate, param1, param2);
+    }
+
+
+    /// Combine individual checks into single function
+    @SafeVarargs
+    static <T> Fn1<Result<T>, T> combine(Fn1<Result<T>, T> ... checks) {
+        return value -> {
+            for (var check : checks) {
+                var result = check.apply(value);
+
+                if (result.isSuccess()) {
+                    continue;
+                }
+                return result;
+            }
+            return Result.success(value);
+        };
     }
 
     /// A collection of predicate functions that can be used with the `ensure` methods.
@@ -222,6 +317,14 @@ public sealed interface Verify {
             return greaterThanOrEqualTo(value, min) && lessThanOrEqualTo(value, max);
         }
 
+        /// Check if a value is not null
+        ///
+        /// @param <T> the type of value
+        /// @param value the value to check
+        static <T> boolean notNull(T value) {
+            return value != null;
+        }
+
         /// Checks if a char sequence is empty.
         ///
         /// @param <T> the type of char sequence being checked
@@ -255,6 +358,15 @@ public sealed interface Verify {
         /// @return true if the char sequence is not blank, false otherwise
         static <T extends CharSequence> boolean notBlank(T value) {
             return !blank(value);
+        }
+
+        /// Checks if a char sequence has length between specified boundaries.
+        ///
+        /// @param <T> the type of char sequence being checked
+        /// @param value the char sequence to check
+        /// @return true if the char sequence length is within limits (inclusive), false otherwise
+        static <T extends CharSequence> boolean lenBetween(T value, int minLen, int maxLen) {
+            return value.length() >= minLen && value.length() <= maxLen;
         }
 
         /// Checks if a String contains a substring.
