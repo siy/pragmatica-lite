@@ -396,8 +396,16 @@ public sealed interface Option<T> permits Some, None {
     /// @param inputValue inputValue to pass to function
     ///
     /// @return inputValue returned by the provided function wrapped into [Option]
-    static <R, T> Option<R> liftFn(Fn1<R, T> function, T inputValue) {
-        return option(function.apply(inputValue));
+    static <R, T> Option<R> lift1(Fn1<R, T> function, T inputValue) {
+        return lift(() -> function.apply(inputValue));
+    }
+
+    static <R, T1, T2> Option<R> lift2(Fn2<R, T1, T2> function, T1 inputValue1, T2 inputValue2) {
+        return lift(() -> function.apply(inputValue1, inputValue2));
+    }
+
+    static <R, T1, T2, T3> Option<R> lift3(Fn3<R, T1, T2, T3> function, T1 inputValue1, T2 inputValue2, T3 inputValue3) {
+        return lift(() -> function.apply(inputValue1, inputValue2, inputValue3));
     }
 
     /// Convenience method for wrapping functions/methods which may return `null` and accept no parameters.
@@ -406,7 +414,11 @@ public sealed interface Option<T> permits Some, None {
     ///
     /// @return value returned by the provided function wrapped into [Option]
     static <R> Option<R> lift(Fn0<R> function) {
-        return option(function.apply());
+        try {
+            return option(function.apply());
+        } catch (Throwable e) {
+            return Option.empty();
+        }
     }
 
     /// Find a first present option among ones passed as parameters.
