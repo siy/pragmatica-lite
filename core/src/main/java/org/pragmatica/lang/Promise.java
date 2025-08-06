@@ -569,54 +569,157 @@ public interface Promise<T> {
         return value -> Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value)));
     }
 
+    /// Convenience method for creating a binary function that wraps a throwing function and returns a Promise.
+    /// This is a function factory that creates reusable binary functions for promise-based operations.
+    ///
+    /// @param exceptionMapper Function to convert exceptions to Cause instances
+    /// @param function        The throwing binary function to wrap
+    /// @param <U>             The return type of the function
+    /// @param <T1>            The type of the first parameter
+    /// @param <T2>            The type of the second parameter
+    ///
+    /// @return A binary function that takes two parameters and returns a Promise
     static <U, T1, T2> Fn2<Promise<U>, T1, T2> liftFn2(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn2<U, T1, T2> function) {
         return (value1, value2) -> Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value1, value2)));
     }
 
+    /// Convenience method for creating a ternary function that wraps a throwing function and returns a Promise.
+    /// This is a function factory that creates reusable ternary functions for promise-based operations.
+    ///
+    /// @param exceptionMapper Function to convert exceptions to Cause instances
+    /// @param function        The throwing ternary function to wrap
+    /// @param <U>             The return type of the function
+    /// @param <T1>            The type of the first parameter
+    /// @param <T2>            The type of the second parameter
+    /// @param <T3>            The type of the third parameter
+    ///
+    /// @return A ternary function that takes three parameters and returns a Promise
     static <U, T1, T2, T3> Fn3<Promise<U>, T1, T2, T3> liftFn3(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn3<U, T1, T2, T3> function) {
         return (value1, value2, value3) -> Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value1, value2, value3)));
     }
 
-    /// Same as [#liftFn1(Fn1, ThrowingFn1, Object)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
+    /// Same as [#liftFn1(Fn1, ThrowingFn1)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
     ///
-    /// @param function   the function to call
-    /// @param inputValue the value to pass to function
+    /// @param function The throwing unary function to wrap
+    /// @param <U>      The return type of the function
+    /// @param <T1>     The type of the parameter
     ///
-    /// @return the [Promise] instance, which eventually will be resolved with the output of the provided lambda
+    /// @return A unary function that takes one parameter and returns a Promise
     static <U, T1> Fn1<Promise<U>, T1> liftFn1(ThrowingFn1<U, T1> function) {
         return liftFn1(Causes::fromThrowable, function);
     }
 
+    /// Same as [#liftFn2(Fn1, ThrowingFn2)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
+    ///
+    /// @param function The throwing binary function to wrap
+    /// @param <U>      The return type of the function
+    /// @param <T1>     The type of the first parameter
+    /// @param <T2>     The type of the second parameter
+    ///
+    /// @return A binary function that takes two parameters and returns a Promise
     static <U, T1, T2> Fn2<Promise<U>, T1, T2> liftFn2(ThrowingFn2<U, T1, T2> function) {
         return liftFn2(Causes::fromThrowable, function);
     }
 
+    /// Same as [#liftFn3(Fn1, ThrowingFn3)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
+    ///
+    /// @param function The throwing ternary function to wrap
+    /// @param <U>      The return type of the function
+    /// @param <T1>     The type of the first parameter
+    /// @param <T2>     The type of the second parameter
+    /// @param <T3>     The type of the third parameter
+    ///
+    /// @return A ternary function that takes three parameters and returns a Promise
     static <U, T1, T2, T3> Fn3<Promise<U>, T1, T2, T3> liftFn3(ThrowingFn3<U, T1, T2, T3> function) {
         return liftFn3(Causes::fromThrowable, function);
     }
 
-    /// Direct invocation variants for consistency with Result class
-
+    /// Convenience method for directly invoking a throwing unary function and wrapping the result in a Promise.
+    /// This method provides immediate invocation rather than returning a function factory.
+    ///
+    /// @param exceptionMapper Function to convert exceptions to Cause instances
+    /// @param function        The throwing unary function to invoke
+    /// @param value1          The parameter value to pass to the function
+    /// @param <U>             The return type of the function
+    /// @param <T1>            The type of the parameter
+    ///
+    /// @return A Promise that will be resolved with the function result or failure
     static <U, T1> Promise<U> lift1(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn1<U, T1> function, T1 value1) {
         return Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value1)));
     }
 
+    /// Same as [#lift1(Fn1, ThrowingFn1, Object)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
+    ///
+    /// @param function The throwing unary function to invoke
+    /// @param value1   The parameter value to pass to the function
+    /// @param <U>      The return type of the function
+    /// @param <T1>     The type of the parameter
+    ///
+    /// @return A Promise that will be resolved with the function result or failure
     static <U, T1> Promise<U> lift1(ThrowingFn1<U, T1> function, T1 value1) {
         return lift1(Causes::fromThrowable, function, value1);
     }
 
+    /// Convenience method for directly invoking a throwing binary function and wrapping the result in a Promise.
+    /// This method provides immediate invocation rather than returning a function factory.
+    ///
+    /// @param exceptionMapper Function to convert exceptions to Cause instances
+    /// @param function        The throwing binary function to invoke
+    /// @param value1          The first parameter value to pass to the function
+    /// @param value2          The second parameter value to pass to the function
+    /// @param <U>             The return type of the function
+    /// @param <T1>            The type of the first parameter
+    /// @param <T2>            The type of the second parameter
+    ///
+    /// @return A Promise that will be resolved with the function result or failure
     static <U, T1, T2> Promise<U> lift2(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn2<U, T1, T2> function, T1 value1, T2 value2) {
         return Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value1, value2)));
     }
 
+    /// Same as [#lift2(Fn1, ThrowingFn2, Object, Object)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
+    ///
+    /// @param function The throwing binary function to invoke
+    /// @param value1   The first parameter value to pass to the function
+    /// @param value2   The second parameter value to pass to the function
+    /// @param <U>      The return type of the function
+    /// @param <T1>     The type of the first parameter
+    /// @param <T2>     The type of the second parameter
+    ///
+    /// @return A Promise that will be resolved with the function result or failure
     static <U, T1, T2> Promise<U> lift2(ThrowingFn2<U, T1, T2> function, T1 value1, T2 value2) {
         return lift2(Causes::fromThrowable, function, value1, value2);
     }
 
+    /// Convenience method for directly invoking a throwing ternary function and wrapping the result in a Promise.
+    /// This method provides immediate invocation rather than returning a function factory.
+    ///
+    /// @param exceptionMapper Function to convert exceptions to Cause instances
+    /// @param function        The throwing ternary function to invoke
+    /// @param value1          The first parameter value to pass to the function
+    /// @param value2          The second parameter value to pass to the function
+    /// @param value3          The third parameter value to pass to the function
+    /// @param <U>             The return type of the function
+    /// @param <T1>            The type of the first parameter
+    /// @param <T2>            The type of the second parameter
+    /// @param <T3>            The type of the third parameter
+    ///
+    /// @return A Promise that will be resolved with the function result or failure
     static <U, T1, T2, T3> Promise<U> lift3(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn3<U, T1, T2, T3> function, T1 value1, T2 value2, T3 value3) {
         return Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value1, value2, value3)));
     }
 
+    /// Same as [#lift3(Fn1, ThrowingFn3, Object, Object, Object)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
+    ///
+    /// @param function The throwing ternary function to invoke
+    /// @param value1   The first parameter value to pass to the function
+    /// @param value2   The second parameter value to pass to the function
+    /// @param value3   The third parameter value to pass to the function
+    /// @param <U>      The return type of the function
+    /// @param <T1>     The type of the first parameter
+    /// @param <T2>     The type of the second parameter
+    /// @param <T3>     The type of the third parameter
+    ///
+    /// @return A Promise that will be resolved with the function result or failure
     static <U, T1, T2, T3> Promise<U> lift3(ThrowingFn3<U, T1, T2, T3> function, T1 value1, T2 value2, T3 value3) {
         return lift3(Causes::fromThrowable, function, value1, value2, value3);
     }

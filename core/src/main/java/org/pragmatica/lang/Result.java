@@ -70,6 +70,15 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(_ -> (Result<U>) this, mapper);
     }
 
+    /// Version of the [#flatMap(Fn1)] which allows convenient "mixing in" additional parameter without the need to revert
+    /// to traditional lambda.
+    ///
+    /// @param mapper     Mapping function that takes the success value and an additional parameter
+    /// @param parameter2 Additional parameter to pass to the mapping function
+    /// @param <U>        The type of the new result value
+    /// @param <I>        The type of the additional parameter
+    ///
+    /// @return New result instance
     default <U, I> Result<U> flatMap2(Fn2<Result<U>, ? super T, ? super I> mapper, I parameter2) {
         return flatMap(value -> mapper.apply(value, parameter2));
     }
@@ -398,26 +407,92 @@ public sealed interface Result<T> permits Success, Failure {
         }
     }
 
+    /// Convenience method for directly invoking a throwing unary function and wrapping the result in a Result.
+    /// This method provides immediate invocation rather than returning a function factory.
+    ///
+    /// @param exceptionMapper Function to convert exceptions to Cause instances
+    /// @param function        The throwing unary function to invoke
+    /// @param value1          The parameter value to pass to the function
+    /// @param <U>             The return type of the function
+    /// @param <T1>            The type of the parameter
+    ///
+    /// @return A Result that contains either the function result or failure
     static <U, T1> Result<U> lift1(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn1<U, T1> function, T1 value1) {
         return lift(exceptionMapper, () -> function.apply(value1));
     }
 
+    /// Same as [#lift1(Fn1, ThrowingFn1, Object)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
+    ///
+    /// @param function   The throwing unary function to invoke
+    /// @param inputValue The parameter value to pass to the function
+    /// @param <R>        The return type of the function
+    /// @param <T>        The type of the parameter
+    ///
+    /// @return A Result that contains either the function result or failure
     static <R, T> Result<R> lift1(ThrowingFn1<R, T> function, T inputValue) {
         return lift1(Causes::fromThrowable, function, inputValue);
     }
 
+    /// Convenience method for directly invoking a throwing binary function and wrapping the result in a Result.
+    /// This method provides immediate invocation rather than returning a function factory.
+    ///
+    /// @param exceptionMapper Function to convert exceptions to Cause instances
+    /// @param function        The throwing binary function to invoke
+    /// @param value1          The first parameter value to pass to the function
+    /// @param value2          The second parameter value to pass to the function
+    /// @param <U>             The return type of the function
+    /// @param <T1>            The type of the first parameter
+    /// @param <T2>            The type of the second parameter
+    ///
+    /// @return A Result that contains either the function result or failure
     static <U, T1, T2> Result<U> lift2(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn2<U, T1, T2> function, T1 value1, T2 value2) {
         return lift(exceptionMapper, () -> function.apply(value1, value2));
     }
 
+    /// Same as [#lift2(Fn1, ThrowingFn2, Object, Object)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
+    ///
+    /// @param function     The throwing binary function to invoke
+    /// @param inputValue1  The first parameter value to pass to the function
+    /// @param inputValue2  The second parameter value to pass to the function
+    /// @param <R>          The return type of the function
+    /// @param <T1>         The type of the first parameter
+    /// @param <T2>         The type of the second parameter
+    ///
+    /// @return A Result that contains either the function result or failure
     static <R, T1, T2> Result<R> lift2(ThrowingFn2<R, T1, T2> function, T1 inputValue1, T2 inputValue2) {
         return lift2(Causes::fromThrowable, function, inputValue1, inputValue2);
     }
 
+    /// Convenience method for directly invoking a throwing ternary function and wrapping the result in a Result.
+    /// This method provides immediate invocation rather than returning a function factory.
+    ///
+    /// @param exceptionMapper Function to convert exceptions to Cause instances
+    /// @param function        The throwing ternary function to invoke
+    /// @param value1          The first parameter value to pass to the function
+    /// @param value2          The second parameter value to pass to the function
+    /// @param value3          The third parameter value to pass to the function
+    /// @param <U>             The return type of the function
+    /// @param <T1>            The type of the first parameter
+    /// @param <T2>            The type of the second parameter
+    /// @param <T3>            The type of the third parameter
+    ///
+    /// @return A Result that contains either the function result or failure
     static <U, T1, T2, T3> Result<U> lift3(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn3<U, T1, T2, T3> function, T1 value1, T2 value2, T3 value3) {
         return lift(exceptionMapper, () -> function.apply(value1, value2, value3));
     }
 
+    /// Same as [#lift3(Fn1, ThrowingFn3, Object, Object, Object)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
+    ///
+    /// @param function     The throwing ternary function to invoke
+    /// @param inputValue1  The first parameter value to pass to the function
+    /// @param inputValue2  The second parameter value to pass to the function
+    /// @param inputValue3  The third parameter value to pass to the function
+    /// @param <R>          The return type of the function
+    /// @param <T1>         The type of the first parameter
+    /// @param <T2>         The type of the second parameter
+    /// @param <T3>         The type of the third parameter
+    ///
+    /// @return A Result that contains either the function result or failure
     static <R, T1, T2, T3> Result<R> lift3(ThrowingFn3<R, T1, T2, T3> function, T1 inputValue1, T2 inputValue2, T3 inputValue3) {
         return lift3(Causes::fromThrowable, function, inputValue1, inputValue2, inputValue3);
     }
@@ -481,16 +556,71 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param function        the function to call
     ///
     /// @return invocation outcome wrapped into [Result]
+    /// Convenience method for creating a unary function that wraps a throwing function and returns a Result.
+    /// This is a function factory that creates reusable unary functions for result-based operations.
+    ///
+    /// @param exceptionMapper Function to convert exceptions to Cause instances
+    /// @param function        The throwing unary function to wrap
+    /// @param <R>             The return type of the function
+    /// @param <T1>            The type of the parameter
+    ///
+    /// @return A unary function that takes one parameter and returns a Result
     static <R, T1> Fn1<Result<R>, T1> liftFn1(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn1<R, T1> function) {
         return input -> lift(exceptionMapper, () -> function.apply(input));
     }
 
+    /// Convenience method for creating a binary function that wraps a throwing function and returns a Result.
+    /// This is a function factory that creates reusable binary functions for result-based operations.
+    ///
+    /// @param exceptionMapper Function to convert exceptions to Cause instances
+    /// @param function        The throwing binary function to wrap
+    /// @param <R>             The return type of the function
+    /// @param <T1>            The type of the first parameter
+    /// @param <T2>            The type of the second parameter
+    ///
+    /// @return A binary function that takes two parameters and returns a Result
     static <R, T1, T2> Fn2<Result<R>, T1, T2> liftFn2(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn2<R, T1, T2> function) {
         return (inputValue1, inputValue2) -> lift(exceptionMapper, () -> function.apply(inputValue1, inputValue2));
     }
 
+    /// Convenience method for creating a ternary function that wraps a throwing function and returns a Result.
+    /// This is a function factory that creates reusable ternary functions for result-based operations.
+    ///
+    /// @param exceptionMapper Function to convert exceptions to Cause instances
+    /// @param function        The throwing ternary function to wrap
+    /// @param <R>             The return type of the function
+    /// @param <T1>            The type of the first parameter
+    /// @param <T2>            The type of the second parameter
+    /// @param <T3>            The type of the third parameter
+    ///
+    /// @return A ternary function that takes three parameters and returns a Result
     static <R, T1, T2, T3> Fn3<Result<R>, T1, T2, T3> liftFn3(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn3<R, T1, T2, T3> function) {
         return (inputValue1, inputValue2, inputValue3) -> lift(exceptionMapper, () -> function.apply(inputValue1, inputValue2, inputValue3));
+    }
+
+    /// Same as [#liftFn2(Fn1, ThrowingFn2)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
+    ///
+    /// @param function The throwing binary function to wrap
+    /// @param <R>      The return type of the function
+    /// @param <T1>     The type of the first parameter
+    /// @param <T2>     The type of the second parameter
+    ///
+    /// @return A binary function that takes two parameters and returns a Result
+    static <R, T1, T2> Fn2<Result<R>, T1, T2> liftFn2(ThrowingFn2<R, T1, T2> function) {
+        return liftFn2(Causes::fromThrowable, function);
+    }
+
+    /// Same as [#liftFn3(Fn1, ThrowingFn3)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
+    ///
+    /// @param function The throwing ternary function to wrap
+    /// @param <R>      The return type of the function
+    /// @param <T1>     The type of the first parameter
+    /// @param <T2>     The type of the second parameter
+    /// @param <T3>     The type of the third parameter
+    ///
+    /// @return A ternary function that takes three parameters and returns a Result
+    static <R, T1, T2, T3> Fn3<Result<R>, T1, T2, T3> liftFn3(ThrowingFn3<R, T1, T2, T3> function) {
+        return liftFn3(Causes::fromThrowable, function);
     }
 
     //------------------------------------------------------------------------------------------------------------------
