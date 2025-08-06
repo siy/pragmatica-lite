@@ -469,10 +469,9 @@ class VerifyTest {
         @Test
         @DisplayName("combine should merge multiple validation functions")
         void combineShouldMergeMultipleValidationFunctions() {
-            Fn1<Result<String>, String> notNullCheck = Verify.ensureFn(value -> Causes.cause("Value is null"), Verify.Is::notNull);
-            Fn1<Result<String>, String> notBlankCheck = Verify.ensureFn(value -> Causes.cause("Value is blank"), Verify.Is::notBlank);
-            Fn1<Result<String>, String> lengthCheck = Verify.ensureFn(value -> Causes.cause("Value length is invalid"), 
-                                              Verify.Is::lenBetween, 3, 10);
+            Fn1<Result<String>, String> notNullCheck = Verify.ensureFn(_ -> Causes.cause("Value is null"), Verify.Is::notNull);
+            Fn1<Result<String>, String> notBlankCheck = Verify.ensureFn(_ -> Causes.cause("Value is blank"), Verify.Is::notBlank);
+            Fn1<Result<String>, String> lengthCheck = Verify.ensureFn(_ -> Causes.cause("Value length is invalid"), Verify.Is::lenBetween, 3, 10);
 
             var combinedCheck = Verify.combine(notNullCheck, notBlankCheck, lengthCheck);
 
@@ -481,17 +480,17 @@ class VerifyTest {
                          .onSuccess(value -> assertEquals("hello", value))
                          .onFailureRun(() -> fail("Should succeed"));
 
-            // Test failure on first check (null)
+            // Test failure on the first check (null)
             combinedCheck.apply(null)
                          .onSuccessRun(() -> fail("Should fail"))
                          .onFailure(cause -> assertEquals("Value is null", cause.message()));
 
-            // Test failure on second check (blank)
+            // Test failure on the second check (blank)
             combinedCheck.apply("   ")
                          .onSuccessRun(() -> fail("Should fail"))
                          .onFailure(cause -> assertEquals("Value is blank", cause.message()));
 
-            // Test failure on third check (length)
+            // Test failure on the third check (length)
             combinedCheck.apply("hi")
                          .onSuccessRun(() -> fail("Should fail"))
                          .onFailure(cause -> assertEquals("Value length is invalid", cause.message()));
@@ -523,6 +522,62 @@ class VerifyTest {
             Verify.ensure(causeProvider, 12, Verify.Is::between, 5, 10)
                   .onSuccessRun(() -> fail("Should fail"))
                   .onFailure(cause -> assertEquals("Custom: 12 out of range", cause.message()));
+        }
+
+        @Test
+        @DisplayName("ensureFn with binary predicate should create reusable validation functions")
+        void ensureFnWithBinaryPredicateShouldCreateReusableValidationFunctions() {
+            Fn1<Result<Integer>, Integer> rangeCheck = Verify.ensureFn(Verify.Is::greaterThan, 5);
+
+            // Test success case
+            rangeCheck.apply(10)
+                      .onSuccess(value -> assertEquals(10, value))
+                      .onFailureRun(() -> fail("Should succeed"));
+
+            // Test failure case
+            rangeCheck.apply(3)
+                      .onSuccessRun(() -> fail("Should fail"))
+                      .onFailure(cause -> assertTrue(cause.message().contains("does not satisfy the predicate")));
+
+            // Test with different value types
+            Fn1<Result<String>, String> lengthCheck = Verify.ensureFn(Verify.Is::lenBetween, 3, 10);
+            lengthCheck.apply("hello")
+                       .onSuccess(value -> assertEquals("hello", value))
+                       .onFailureRun(() -> fail("Should succeed"));
+
+            lengthCheck.apply("hi")
+                       .onSuccessRun(() -> fail("Should fail"))
+                       .onFailure(cause -> assertTrue(cause.message().contains("does not satisfy the predicate")));
+        }
+
+        @Test
+        @DisplayName("ensureFn with ternary predicate should create reusable validation functions")
+        void ensureFnWithTernaryPredicateShouldCreateReusableValidationFunctions() {
+            Fn1<Result<Integer>, Integer> betweenCheck = Verify.ensureFn(Verify.Is::between, 5, 10);
+
+            // Test success case
+            betweenCheck.apply(7)
+                        .onSuccess(value -> assertEquals(7, value))
+                        .onFailureRun(() -> fail("Should succeed"));
+
+            // Test failure case - below range
+            betweenCheck.apply(3)
+                        .onSuccessRun(() -> fail("Should fail"))
+                        .onFailure(cause -> assertTrue(cause.message().contains("does not satisfy the predicate")));
+
+            // Test failure case - above range
+            betweenCheck.apply(12)
+                        .onSuccessRun(() -> fail("Should fail"))
+                        .onFailure(cause -> assertTrue(cause.message().contains("does not satisfy the predicate")));
+
+            // Test edge cases - boundary values
+            betweenCheck.apply(5)
+                        .onSuccess(value -> assertEquals(5, value))
+                        .onFailureRun(() -> fail("Should succeed for min boundary"));
+
+            betweenCheck.apply(10)
+                        .onSuccess(value -> assertEquals(10, value))
+                        .onFailureRun(() -> fail("Should succeed for max boundary"));
         }
     }
 }

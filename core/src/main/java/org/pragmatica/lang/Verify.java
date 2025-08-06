@@ -50,7 +50,7 @@ public sealed interface Verify {
     /// @param predicate     The predicate to test the value against
     /// @param <T>           The type of the value being verified
     ///
-    /// @return Success result containing the value if predicate returns true, failure result otherwise
+    /// @return Success result containing the value if the predicate returns true, a failure result otherwise
     static <T> Result<T> ensure(Fn1<Cause, T> causeProvider, T value, Predicate<T> predicate) {
         if (predicate.test(value)) {
             return Result.success(value);
@@ -59,7 +59,7 @@ public sealed interface Verify {
         return causeProvider.apply(value).result();
     }
 
-    /// Creates a reusable validation function that performs a given check with custom cause provider.
+    /// Creates a reusable validation function that performs a given check with the custom cause provider.
     /// This is a function factory that creates validation functions that can be reused across
     /// different validation scenarios with consistent error messaging.
     ///
@@ -89,7 +89,7 @@ public sealed interface Verify {
         return ensure(value, v -> predicate.apply(v, param1));
     }
 
-    /// Create a function which will perform given check and return [Result]
+    /// Create a function which will perform the given check and return [Result]
     static <T, P1> Fn1<Result<T>, T> ensureFn(Fn2<Boolean, T, P1> predicate, P1 param1) {
         return value -> ensure(value, predicate, param1);
     }
@@ -106,12 +106,12 @@ public sealed interface Verify {
     /// @param <T>           The type of the value being verified
     /// @param <P1>          The type of the additional parameter
     ///
-    /// @return Success result containing the value if predicate returns true, failure result otherwise
+    /// @return Success result containing the value if the predicate returns true, a failure result otherwise
     static <T, P1> Result<T> ensure(Fn1<Cause, T> causeProvider, T value, Fn2<Boolean, T, P1> predicate, P1 param1) {
         return ensure(causeProvider, value, v -> predicate.apply(v, param1));
     }
 
-    /// Creates a reusable validation function that performs a binary check with custom cause provider.
+    /// Creates a reusable validation function that performs a binary check with the custom cause provider.
     /// This is a function factory that creates validation functions with one additional parameter,
     /// useful for creating reusable range checks, comparisons, etc.
     ///
@@ -145,7 +145,7 @@ public sealed interface Verify {
         return ensure(value, v -> predicate.apply(v, param1, param2));
     }
 
-    /// Create a function which will perform given check and return [Result]
+    /// Create a function which will perform the given check and return [Result]
     static <T, P1, P2> Fn1<Result<T>, T> ensureFn(Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2) {
         return value -> ensure(value, predicate, param1, param2);
     }
@@ -164,12 +164,12 @@ public sealed interface Verify {
     /// @param <P1>          The type of the first additional parameter
     /// @param <P2>          The type of the second additional parameter
     ///
-    /// @return Success result containing the value if predicate returns true, failure result otherwise
+    /// @return Success result containing the value if the predicate returns true, a failure result otherwise
     static <T, P1, P2> Result<T> ensure(Fn1<Cause, T> causeProvider, T value, Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2) {
         return ensure(causeProvider, value, v -> predicate.apply(v, param1, param2));
     }
 
-    /// Creates a reusable validation function that performs a ternary check with custom cause provider.
+    /// Creates a reusable validation function that performs a ternary check with the custom cause provider.
     /// This is a function factory that creates validation functions with two additional parameters,
     /// useful for creating reusable range checks between bounds, pattern matching, etc.
     ///
@@ -195,7 +195,7 @@ public sealed interface Verify {
     /// @param checks Variable number of validation functions to combine
     /// @param <T>    The type of the values being verified
     ///
-    /// @return A single validation function that applies all checks in sequence
+    /// @return A single validation function that applies all checks in a sequence
     @SafeVarargs
     static <T> Fn1<Result<T>, T> combine(Fn1<Result<T>, T> ... checks) {
         return value -> {

@@ -558,7 +558,7 @@ public interface Promise<T> {
         return Promise.promise(() -> Result.lift(exceptionMapper, supplier));
     }
 
-    /// Wrap the call to the provided function into success [Result] if the call succeeds of into failure [Result] if call throws exception.
+    /// Wrap the call to the provided function into success [Result] if the call succeeds, into failure [Result] if call throws exception.
     ///
     /// @param exceptionMapper the function which will transform exception into instance of [Cause]
     /// @param function        the function to wrap

@@ -550,12 +550,6 @@ public sealed interface Result<T> permits Success, Failure {
         return lift(Causes::fromThrowable, runnable);
     }
 
-    /// Wrap the call to the provided function into success [Result] if the call succeeds of into failure [Result] if call throws exception.
-    ///
-    /// @param exceptionMapper the function which will transform exception into instance of [Cause]
-    /// @param function        the function to call
-    ///
-    /// @return invocation outcome wrapped into [Result]
     /// Convenience method for creating a unary function that wraps a throwing function and returns a Result.
     /// This is a function factory that creates reusable unary functions for result-based operations.
     ///
