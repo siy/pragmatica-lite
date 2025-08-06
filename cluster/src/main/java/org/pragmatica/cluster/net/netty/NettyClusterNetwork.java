@@ -26,6 +26,8 @@ import org.pragmatica.message.RouterConfigurator;
 import org.pragmatica.net.Server;
 import org.pragmatica.net.serialization.Deserializer;
 import org.pragmatica.net.serialization.Serializer;
+import org.pragmatica.net.serialization.SerializationRegistry;
+import org.pragmatica.net.serialization.binary.ClassRegistrator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +73,21 @@ public class NettyClusterNetwork implements ClusterNetwork, RouterConfigurator {
                                Serializer serializer,
                                Deserializer deserializer,
                                MessageRouter router) {
+        this(topologyManager, router, serializer, deserializer);
+    }
 
+    public NettyClusterNetwork(TopologyManager topologyManager,
+                               MessageRouter router,
+                               ClassRegistrator... registrators) {
+        this(topologyManager, router, 
+             SerializationRegistry.binarySerializer(registrators),
+             SerializationRegistry.binaryDeserializer(registrators));
+    }
+
+    private NettyClusterNetwork(TopologyManager topologyManager,
+                                MessageRouter router,
+                                Serializer serializer,
+                                Deserializer deserializer) {
         var processors = Runtime.getRuntime().availableProcessors();
         this.executor = Executors.newFixedThreadPool(processors > 1 ? processors : 2);
         this.self = topologyManager.self();
