@@ -4,7 +4,7 @@
 
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>pragmatica-lite</artifactId>
-    <version>0.7.12</version>
+    <version>0.7.15</version>
     <modules>
         <module>core</module>
         <module>examples</module>
@@ -49,10 +49,10 @@
         <github.global.server>github</github.global.server>
 
         <!-- Dependencies -->
-        <netty.version>4.2.0.Final</netty.version>
-        <slf4j.version>2.0.12</slf4j.version>
-        <junit.version>5.13.0</junit.version>
-        <assertj-core.version>3.26.3</assertj-core.version>
+        <netty.version>4.2.2.Final</netty.version>
+        <slf4j.version>2.0.17</slf4j.version>
+        <junit.version>5.13.4</junit.version>
+        <assertj-core.version>3.27.3</assertj-core.version>
         <mockito.version>5.18.0</mockito.version>
         <awaitility.version>4.3.0</awaitility.version>
         <tinylog.version>2.7.0</tinylog.version>

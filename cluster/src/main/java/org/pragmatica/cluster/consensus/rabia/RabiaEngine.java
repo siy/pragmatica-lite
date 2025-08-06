@@ -1,12 +1,9 @@
 package org.pragmatica.cluster.consensus.rabia;
 
-import org.pragmatica.cluster.consensus.Consensus;
 import org.pragmatica.cluster.consensus.ConsensusErrors;
 import org.pragmatica.cluster.consensus.rabia.RabiaEngineIO.SubmitCommands;
 import org.pragmatica.cluster.consensus.rabia.RabiaPersistence.SavedState;
-import org.pragmatica.cluster.consensus.rabia.RabiaProtocolMessage.Asynchronous;
 import org.pragmatica.cluster.consensus.rabia.RabiaProtocolMessage.Asynchronous.NewBatch;
-import org.pragmatica.cluster.consensus.rabia.RabiaProtocolMessage.Synchronous;
 import org.pragmatica.cluster.consensus.rabia.RabiaProtocolMessage.Synchronous.*;
 import org.pragmatica.cluster.net.ClusterNetwork;
 import org.pragmatica.cluster.net.NodeId;
@@ -40,7 +37,7 @@ import static org.pragmatica.cluster.consensus.rabia.RabiaPersistence.SavedState
 import static org.pragmatica.cluster.consensus.rabia.RabiaProtocolMessage.Asynchronous.SyncRequest;
 
 /// Implementation of the Rabia consensus protocol.
-public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMessage, C>, RouterConfigurator {
+public class RabiaEngine<C extends Command> implements RouterConfigurator {
     private static final Logger log = LoggerFactory.getLogger(RabiaEngine.class);
     private static final double SCALE = 0.5d;
 
@@ -137,7 +134,6 @@ public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMe
         pendingBatches.clear();
     }
 
-    @Override
     public <R> Promise<List<R>> apply(List<C> commands) {
         var pendingAnswer = Promise.<List<R>>promise();
 
@@ -175,26 +171,16 @@ public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMe
         return Result.success(batch);
     }
 
-    @Override
     public Promise<Unit> start() {
         return startPromise.get();
     }
 
-    @Override
     public Promise<Unit> stop() {
         return Promise.promise(promise -> {
             clusterDisconnected();
+            executor.shutdown();
             promise.succeed(Unit.unit());
         });
-    }
-
-    @MessageReceiver
-    @Override
-    public void processMessage(RabiaProtocolMessage message) {
-        switch (message) {
-            case Synchronous sync -> processMessageSync(sync);
-            case Asynchronous async -> processMessageAsync(async);
-        }
     }
 
     @MessageReceiver
@@ -223,32 +209,8 @@ public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMe
     }
 
     @SuppressWarnings("unchecked")
-    private void processMessageSync(Synchronous message) {
-        executor.execute(() -> {
-            try {
-                switch (message) {
-                    case Propose<?> propose -> handlePropose((Propose<C>) propose);
-                    case VoteRound1 voteRnd1 -> handleVoteRound1(voteRnd1);
-                    case VoteRound2 voteRnd2 -> handleVoteRound2(voteRnd2);
-                    case Decision<?> decision -> handleDecision((Decision<C>) decision);
-                    case SyncResponse<?> syncResponse -> handleSyncResponse((SyncResponse<C>) syncResponse);
-                }
-            } catch (Exception e) {
-                // Unlikely anything like that will happen, but better safe than sorry
-                log.error("Error processing message: {}", message, e);
-            }
-        });
-    }
-
-    private void processMessageAsync(Asynchronous message) {
-        switch (message) {
-            case SyncRequest syncRequest -> handleSyncRequest(syncRequest);
-            case NewBatch<?> newBatch -> handleNewBatch(newBatch);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void handleNewBatch(NewBatch<?> newBatch) {
+    @MessageReceiver
+    public void handleNewBatch(NewBatch<?> newBatch) {
         pendingBatches.put(newBatch.batch().correlationId(), (Batch<C>) newBatch.batch());
     }
 
@@ -281,6 +243,8 @@ public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMe
             return;
         }
 
+        // Clear stale responses
+        syncResponses.clear();
         var request = new SyncRequest(self);
         log.trace("Node {}: requesting phase synchronization {}", self, request);
         network.broadcast(request);
@@ -351,7 +315,8 @@ public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMe
     }
 
     /// Handles a synchronization request from another node.
-    private void handleSyncRequest(SyncRequest request) {
+    @MessageReceiver
+    public void handleSyncRequest(SyncRequest request) {
         if (active.get()) {
             stateMachine.makeSnapshot()
                         .map(snapshot -> new SyncResponse<>(self, savedState(snapshot,
@@ -493,7 +458,7 @@ public class RabiaEngine<C extends Command> implements Consensus<RabiaProtocolMe
             if (phaseData.hasRound2MajorityVotes(topologyManager.quorumSize())) {
                 var decision = phaseData.processRound2Completion(self, topologyManager.fPlusOne());
                 network.broadcast(decision);
-                executor.submit(() -> processMessage(decision));
+                processDecision(decision);
             }
         }
     }

@@ -2,10 +2,12 @@ package org.pragmatica.cluster.consensus.rabia.infrastructure;
 
 import org.pragmatica.cluster.consensus.rabia.ProtocolConfig;
 import org.pragmatica.cluster.consensus.rabia.RabiaEngine;
+import org.pragmatica.cluster.consensus.rabia.RabiaProtocolMessage;
 import org.pragmatica.cluster.net.NodeId;
 import org.pragmatica.cluster.net.local.LocalNetwork;
 import org.pragmatica.cluster.net.local.LocalNetwork.FaultInjector;
 import org.pragmatica.cluster.node.rabia.CustomClasses;
+import org.pragmatica.cluster.state.Command;
 import org.pragmatica.cluster.state.kvstore.*;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.message.MessageRouter;
@@ -19,6 +21,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.pragmatica.cluster.consensus.rabia.RabiaProtocolMessage.Asynchronous;
+import static org.pragmatica.cluster.consensus.rabia.RabiaProtocolMessage.Synchronous;
 import static org.pragmatica.cluster.net.NodeId.randomNodeId;
 import static org.pragmatica.cluster.net.NodeInfo.nodeInfo;
 import static org.pragmatica.lang.io.TimeSpan.timeSpan;
@@ -104,13 +108,28 @@ public class TestCluster {
         topologyManager.configure(router);
         engine.configure(router);
 
-        network.addNode(id, engine::processMessage);
+        network.addNode(id, createHandler(engine));
         stores.put(id, store);
         engines.put(id, engine);
         routers.put(id, router);
 
         var stateChangePrinter = new StateChangePrinter(id);
         router.addRoute(KVStoreNotification.ValuePut.class, stateChangePrinter::accept);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <C extends Command> Consumer<RabiaProtocolMessage> createHandler(RabiaEngine<C> engine) {
+        return message -> {
+            switch (message) {
+                case Synchronous.Propose<?> propose -> engine.processPropose((Synchronous.Propose<C>) propose);
+                case Synchronous.VoteRound1 voteRnd1 -> engine.processVoteRound1(voteRnd1);
+                case Synchronous.VoteRound2 voteRnd2 -> engine.processVoteRound2(voteRnd2);
+                case Synchronous.Decision<?> decision -> engine.processDecision((Synchronous.Decision<C>) decision);
+                case Synchronous.SyncResponse<?> syncResponse -> engine.processSyncResponse((Synchronous.SyncResponse<C>) syncResponse);
+                case Asynchronous.SyncRequest syncRequest -> engine.handleSyncRequest(syncRequest);
+                case Asynchronous.NewBatch<?> newBatch -> engine.handleNewBatch(newBatch);
+            }
+        };
     }
 
     public void awaitNode(NodeId nodeId) {
