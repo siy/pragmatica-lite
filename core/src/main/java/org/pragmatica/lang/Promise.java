@@ -561,8 +561,7 @@ public interface Promise<T> {
     /// Wrap the call to the provided function into success [Result] if the call succeeds of into failure [Result] if call throws exception.
     ///
     /// @param exceptionMapper the function which will transform exception into instance of [Cause]
-    /// @param function        the function to call
-    /// @param inputValue      the value to pass to function
+    /// @param function        the function to wrap
     ///
     /// @return the [Promise] instance, which eventually will be resolved with the output of the provided lambda
     static <U, T1> Fn1<Promise<U>, T1> liftFn1(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn1<U, T1> function) {

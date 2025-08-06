@@ -1033,8 +1033,7 @@ public class PromiseTest {
     void liftAndLiftFnMethodsWrapThrowingFunctions() {
         // Test lift with custom exception mapper
         Promise.lift(Causes::fromThrowable, () -> {
-                   if (System.currentTimeMillis() > 0) throw new IllegalStateException("Test exception");
-                   return "never reached";
+                   throw new IllegalStateException("Test exception");
                })
                .await()
                .onFailure(cause -> assertTrue(cause.message().contains("IllegalStateException")))
