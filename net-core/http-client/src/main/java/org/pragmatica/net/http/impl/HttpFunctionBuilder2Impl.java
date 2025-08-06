@@ -27,23 +27,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/// Implementation of HttpFunctionBuilder1 for functions with one path variable
-public record HttpFunctionBuilder1Impl<T1>(HttpClient client, String baseUrl, List<String> pathSegments,
-                                          List<Class<?>> paramTypes, UrlBuilder urlBuilder) implements HttpFunction.HttpFunctionBuilder1<T1> {
+/// Implementation of HttpFunctionBuilder2 for functions with two path variables
+public record HttpFunctionBuilder2Impl<T1, T2>(HttpClient client, String baseUrl, List<String> pathSegments,
+                                              List<Class<?>> paramTypes, UrlBuilder urlBuilder) implements HttpFunction.HttpFunctionBuilder2<T1, T2> {
     
-    public HttpFunctionBuilder1Impl {
+    public HttpFunctionBuilder2Impl {
         Objects.requireNonNull(client, "Client cannot be null");
         Objects.requireNonNull(baseUrl, "Base URL cannot be null");
         Objects.requireNonNull(pathSegments, "Path segments cannot be null");
         Objects.requireNonNull(paramTypes, "Parameter types cannot be null");
         Objects.requireNonNull(urlBuilder, "URL builder cannot be null");
-        if (paramTypes.size() != 1) {
-            throw new IllegalArgumentException("Expected exactly 1 parameter type, got " + paramTypes.size());
+        if (paramTypes.size() != 2) {
+            throw new IllegalArgumentException("Expected exactly 2 parameter types, got " + paramTypes.size());
         }
     }
     
     @Override
-    public HttpFunction.HttpFunctionBuilder1<T1> path(String pathSegments) {
+    public HttpFunction.HttpFunctionBuilder2<T1, T2> path(String pathSegments) {
         Objects.requireNonNull(pathSegments, "Path segments cannot be null");
         var segments = pathSegments.split("/");
         var newSegments = new ArrayList<>(this.pathSegments);
@@ -52,70 +52,76 @@ public record HttpFunctionBuilder1Impl<T1>(HttpClient client, String baseUrl, Li
                 newSegments.add(segment);
             }
         }
-        return new HttpFunctionBuilder1Impl<>(client, baseUrl, newSegments, paramTypes, urlBuilder);
+        return new HttpFunctionBuilder2Impl<>(client, baseUrl, newSegments, paramTypes, urlBuilder);
     }
     
     @Override
-    public <T2> HttpFunction.HttpFunctionBuilder2<T1, T2> pathVar(Class<T2> type) {
+    public <T3> HttpFunction.HttpFunctionBuilder3<T1, T2, T3> pathVar(Class<T3> type) {
         Objects.requireNonNull(type, "Type cannot be null");
         var newParamTypes = new ArrayList<>(paramTypes);
         newParamTypes.add(type);
-        return new HttpFunctionBuilder2Impl<>(client, baseUrl, pathSegments, newParamTypes, urlBuilder);
+        return new HttpFunctionBuilder3Impl<>(client, baseUrl, pathSegments, newParamTypes, urlBuilder);
     }
     
     @Override
-    public <T2> HttpFunction.HttpFunctionBuilder2<T1, T2> pathVar(TypeToken<T2> type) {
+    public <T3> HttpFunction.HttpFunctionBuilder3<T1, T2, T3> pathVar(TypeToken<T3> type) {
         Objects.requireNonNull(type, "Type cannot be null");
         var newParamTypes = new ArrayList<>(paramTypes);
         newParamTypes.add(type.rawType());
-        return new HttpFunctionBuilder2Impl<>(client, baseUrl, pathSegments, newParamTypes, urlBuilder);
+        return new HttpFunctionBuilder3Impl<>(client, baseUrl, pathSegments, newParamTypes, urlBuilder);
     }
     
     // === Core Implementation Methods ===
     
     @Override
-    public <R> Fn1<Promise<Result<HttpResponse<R>>>, T1> method(HttpMethod method, Class<R> responseType) {
+    public <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, T2> method(HttpMethod method, Class<R> responseType) {
         Objects.requireNonNull(method, "HTTP method cannot be null");
         Objects.requireNonNull(responseType, "Response type cannot be null");
-        return param1 -> {
+        return (param1, param2) -> {
             validateParameter(param1, 0);
-            var url = buildUrlWithParams(List.of(param1));
+            validateParameter(param2, 1);
+            var url = buildUrlWithParams(List.of(param1, param2));
             return client.request().url(url).method(method).responseType(responseType).send();
         };
     }
     
     @Override
-    public <R> Fn1<Promise<Result<HttpResponse<R>>>, T1> method(HttpMethod method, TypeToken<R> responseType) {
+    public <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, T2> method(HttpMethod method, TypeToken<R> responseType) {
         Objects.requireNonNull(method, "HTTP method cannot be null");
         Objects.requireNonNull(responseType, "Response type cannot be null");
-        return param1 -> {
+        return (param1, param2) -> {
             validateParameter(param1, 0);
-            var url = buildUrlWithParams(List.of(param1));
+            validateParameter(param2, 1);
+            var url = buildUrlWithParams(List.of(param1, param2));
             return client.request().url(url).method(method).responseType(responseType).send();
         };
     }
     
     @Override
-    public <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, Object> methodWithBody(HttpMethod method, Class<R> responseType) {
+    public <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, Object> methodWithBody(HttpMethod method, Class<R> responseType) {
         Objects.requireNonNull(method, "HTTP method cannot be null");
         Objects.requireNonNull(responseType, "Response type cannot be null");
-        return (param1, body) -> {
+        return (param1, param2, body) -> {
             validateParameter(param1, 0);
-            var url = buildUrlWithParams(List.of(param1));
+            validateParameter(param2, 1);
+            var url = buildUrlWithParams(List.of(param1, param2));
             return client.request().url(url).method(method).body(body).responseType(responseType).send();
         };
     }
     
     @Override
-    public <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, Object> methodWithBody(HttpMethod method, TypeToken<R> responseType) {
+    public <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, Object> methodWithBody(HttpMethod method, TypeToken<R> responseType) {
         Objects.requireNonNull(method, "HTTP method cannot be null");
         Objects.requireNonNull(responseType, "Response type cannot be null");
-        return (param1, body) -> {
+        return (param1, param2, body) -> {
             validateParameter(param1, 0);
-            var url = buildUrlWithParams(List.of(param1));
+            validateParameter(param2, 1);
+            var url = buildUrlWithParams(List.of(param1, param2));
             return client.request().url(url).method(method).body(body).responseType(responseType).send();
         };
     }
+    
+    // === Helper Methods ===
     
     private void validateParameter(Object param, int index) {
         Objects.requireNonNull(param, "Parameter " + (index + 1) + " cannot be null");

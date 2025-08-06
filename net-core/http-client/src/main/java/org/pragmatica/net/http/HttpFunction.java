@@ -56,52 +56,96 @@ public interface HttpFunction {
         /// Add a generic typed path variable
         <T1> HttpFunctionBuilder1<T1> pathVar(TypeToken<T1> type);
         
-        // === Terminal Operations (Return Functions) ===
+        // === Core Terminal Operations ===
         
-        /// Create GET function with no parameters
-        <R> Fn0<Promise<Result<HttpResponse<R>>>> get(Class<R> responseType);
+        /// Create function for HTTP method with typed response (no body)
+        <R> Fn0<Promise<HttpResponse<R>>> method(HttpMethod method, Class<R> responseType);
         
-        /// Create GET function with no parameters and generic response type
-        <R> Fn0<Promise<Result<HttpResponse<R>>>> get(TypeToken<R> responseType);
+        /// Create function for HTTP method with generic response type (no body)
+        <R> Fn0<Promise<HttpResponse<R>>> method(HttpMethod method, TypeToken<R> responseType);
         
-        /// Create GET function with no parameters, no response body expected
-        Fn0<Promise<Result<HttpResponse<Unit>>>> get();
+        /// Create function for HTTP method with body parameter
+        <R> Fn1<Promise<HttpResponse<R>>, Object> methodWithBody(HttpMethod method, Class<R> responseType);
+        
+        /// Create function for HTTP method with body parameter and generic response type  
+        <R> Fn1<Promise<HttpResponse<R>>, Object> methodWithBody(HttpMethod method, TypeToken<R> responseType);
+        
+        // === Convenience Methods (Default Implementations) ===
+        
+        /// Create GET function with typed response
+        default <R> Fn0<Promise<HttpResponse<R>>> get(Class<R> responseType) {
+            return method(HttpMethod.GET, responseType);
+        }
+        
+        /// Create GET function with generic response type
+        default <R> Fn0<Promise<HttpResponse<R>>> get(TypeToken<R> responseType) {
+            return method(HttpMethod.GET, responseType);
+        }
+        
+        /// Create GET function, no response body expected
+        default Fn0<Promise<HttpResponse<Unit>>> get() {
+            return method(HttpMethod.GET, Unit.class);
+        }
         
         /// Create POST function with body parameter
-        <R> Fn1<Promise<Result<HttpResponse<R>>>, Object> post(Class<R> responseType);
+        default <R> Fn1<Promise<HttpResponse<R>>, Object> post(Class<R> responseType) {
+            return methodWithBody(HttpMethod.POST, responseType);
+        }
         
         /// Create POST function with body parameter and generic response type
-        <R> Fn1<Promise<Result<HttpResponse<R>>>, Object> post(TypeToken<R> responseType);
+        default <R> Fn1<Promise<HttpResponse<R>>, Object> post(TypeToken<R> responseType) {
+            return methodWithBody(HttpMethod.POST, responseType);
+        }
         
         /// Create POST function with body parameter, no response body expected
-        Fn1<Promise<Result<HttpResponse<Unit>>>, Object> post();
+        default Fn1<Promise<HttpResponse<Unit>>, Object> post() {
+            return methodWithBody(HttpMethod.POST, Unit.class);
+        }
         
         /// Create PUT function with body parameter
-        <R> Fn1<Promise<Result<HttpResponse<R>>>, Object> put(Class<R> responseType);
+        default <R> Fn1<Promise<HttpResponse<R>>, Object> put(Class<R> responseType) {
+            return methodWithBody(HttpMethod.PUT, responseType);
+        }
         
         /// Create PUT function with body parameter and generic response type
-        <R> Fn1<Promise<Result<HttpResponse<R>>>, Object> put(TypeToken<R> responseType);
+        default <R> Fn1<Promise<HttpResponse<R>>, Object> put(TypeToken<R> responseType) {
+            return methodWithBody(HttpMethod.PUT, responseType);
+        }
         
         /// Create PUT function with body parameter, no response body expected
-        Fn1<Promise<Result<HttpResponse<Unit>>>, Object> put();
+        default Fn1<Promise<HttpResponse<Unit>>, Object> put() {
+            return methodWithBody(HttpMethod.PUT, Unit.class);
+        }
         
         /// Create PATCH function with body parameter
-        <R> Fn1<Promise<Result<HttpResponse<R>>>, Object> patch(Class<R> responseType);
+        default <R> Fn1<Promise<HttpResponse<R>>, Object> patch(Class<R> responseType) {
+            return methodWithBody(HttpMethod.PATCH, responseType);
+        }
         
         /// Create PATCH function with body parameter and generic response type
-        <R> Fn1<Promise<Result<HttpResponse<R>>>, Object> patch(TypeToken<R> responseType);
+        default <R> Fn1<Promise<HttpResponse<R>>, Object> patch(TypeToken<R> responseType) {
+            return methodWithBody(HttpMethod.PATCH, responseType);
+        }
         
         /// Create PATCH function with body parameter, no response body expected
-        Fn1<Promise<Result<HttpResponse<Unit>>>, Object> patch();
+        default Fn1<Promise<HttpResponse<Unit>>, Object> patch() {
+            return methodWithBody(HttpMethod.PATCH, Unit.class);
+        }
         
-        /// Create DELETE function with no parameters
-        <R> Fn0<Promise<Result<HttpResponse<R>>>> delete(Class<R> responseType);
+        /// Create DELETE function
+        default <R> Fn0<Promise<HttpResponse<R>>> delete(Class<R> responseType) {
+            return method(HttpMethod.DELETE, responseType);
+        }
         
-        /// Create DELETE function with no parameters and generic response type
-        <R> Fn0<Promise<Result<HttpResponse<R>>>> delete(TypeToken<R> responseType);
+        /// Create DELETE function with generic response type
+        default <R> Fn0<Promise<HttpResponse<R>>> delete(TypeToken<R> responseType) {
+            return method(HttpMethod.DELETE, responseType);
+        }
         
-        /// Create DELETE function with no parameters, no response body expected
-        Fn0<Promise<Result<HttpResponse<Unit>>>> delete();
+        /// Create DELETE function, no response body expected
+        default Fn0<Promise<HttpResponse<Unit>>> delete() {
+            return method(HttpMethod.DELETE, Unit.class);
+        }
     }
     
     /// Function builder with one path variable
@@ -118,52 +162,96 @@ public interface HttpFunction {
         /// Add another generic typed path variable
         <T2> HttpFunctionBuilder2<T1, T2> pathVar(TypeToken<T2> type);
         
-        // === Terminal Operations (Return Functions) ===
+        // === Core Terminal Operations ===
+        
+        /// Create function for HTTP method with one path parameter (no body)
+        <R> Fn1<Promise<Result<HttpResponse<R>>>, T1> method(HttpMethod method, Class<R> responseType);
+        
+        /// Create function for HTTP method with one path parameter and generic response (no body)
+        <R> Fn1<Promise<Result<HttpResponse<R>>>, T1> method(HttpMethod method, TypeToken<R> responseType);
+        
+        /// Create function for HTTP method with path parameter and body
+        <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, Object> methodWithBody(HttpMethod method, Class<R> responseType);
+        
+        /// Create function for HTTP method with path parameter, body, and generic response
+        <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, Object> methodWithBody(HttpMethod method, TypeToken<R> responseType);
+        
+        // === Convenience Methods (Default Implementations) ===
         
         /// Create GET function with one path parameter
-        <R> Fn1<Promise<Result<HttpResponse<R>>>, T1> get(Class<R> responseType);
+        default <R> Fn1<Promise<Result<HttpResponse<R>>>, T1> get(Class<R> responseType) {
+            return method(HttpMethod.GET, responseType);
+        }
         
         /// Create GET function with one path parameter and generic response type
-        <R> Fn1<Promise<Result<HttpResponse<R>>>, T1> get(TypeToken<R> responseType);
+        default <R> Fn1<Promise<Result<HttpResponse<R>>>, T1> get(TypeToken<R> responseType) {
+            return method(HttpMethod.GET, responseType);
+        }
         
         /// Create GET function with one path parameter, no response body expected
-        Fn1<Promise<Result<HttpResponse<Unit>>>, T1> get();
+        default Fn1<Promise<Result<HttpResponse<Unit>>>, T1> get() {
+            return method(HttpMethod.GET, Unit.class);
+        }
         
         /// Create POST function with path parameter and body
-        <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, Object> post(Class<R> responseType);
+        default <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, Object> post(Class<R> responseType) {
+            return methodWithBody(HttpMethod.POST, responseType);
+        }
         
         /// Create POST function with path parameter, body, and generic response type
-        <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, Object> post(TypeToken<R> responseType);
+        default <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, Object> post(TypeToken<R> responseType) {
+            return methodWithBody(HttpMethod.POST, responseType);
+        }
         
         /// Create POST function with path parameter and body, no response body expected
-        Fn2<Promise<Result<HttpResponse<Unit>>>, T1, Object> post();
+        default Fn2<Promise<Result<HttpResponse<Unit>>>, T1, Object> post() {
+            return methodWithBody(HttpMethod.POST, Unit.class);
+        }
         
         /// Create PUT function with path parameter and body
-        <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, Object> put(Class<R> responseType);
+        default <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, Object> put(Class<R> responseType) {
+            return methodWithBody(HttpMethod.PUT, responseType);
+        }
         
         /// Create PUT function with path parameter, body, and generic response type
-        <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, Object> put(TypeToken<R> responseType);
+        default <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, Object> put(TypeToken<R> responseType) {
+            return methodWithBody(HttpMethod.PUT, responseType);
+        }
         
         /// Create PUT function with path parameter and body, no response body expected
-        Fn2<Promise<Result<HttpResponse<Unit>>>, T1, Object> put();
+        default Fn2<Promise<Result<HttpResponse<Unit>>>, T1, Object> put() {
+            return methodWithBody(HttpMethod.PUT, Unit.class);
+        }
         
         /// Create PATCH function with path parameter and body
-        <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, Object> patch(Class<R> responseType);
+        default <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, Object> patch(Class<R> responseType) {
+            return methodWithBody(HttpMethod.PATCH, responseType);
+        }
         
         /// Create PATCH function with path parameter, body, and generic response type
-        <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, Object> patch(TypeToken<R> responseType);
+        default <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, Object> patch(TypeToken<R> responseType) {
+            return methodWithBody(HttpMethod.PATCH, responseType);
+        }
         
         /// Create PATCH function with path parameter and body, no response body expected
-        Fn2<Promise<Result<HttpResponse<Unit>>>, T1, Object> patch();
+        default Fn2<Promise<Result<HttpResponse<Unit>>>, T1, Object> patch() {
+            return methodWithBody(HttpMethod.PATCH, Unit.class);
+        }
         
         /// Create DELETE function with one path parameter
-        <R> Fn1<Promise<Result<HttpResponse<R>>>, T1> delete(Class<R> responseType);
+        default <R> Fn1<Promise<Result<HttpResponse<R>>>, T1> delete(Class<R> responseType) {
+            return method(HttpMethod.DELETE, responseType);
+        }
         
         /// Create DELETE function with one path parameter and generic response type
-        <R> Fn1<Promise<Result<HttpResponse<R>>>, T1> delete(TypeToken<R> responseType);
+        default <R> Fn1<Promise<Result<HttpResponse<R>>>, T1> delete(TypeToken<R> responseType) {
+            return method(HttpMethod.DELETE, responseType);
+        }
         
         /// Create DELETE function with one path parameter, no response body expected
-        Fn1<Promise<Result<HttpResponse<Unit>>>, T1> delete();
+        default Fn1<Promise<Result<HttpResponse<Unit>>>, T1> delete() {
+            return method(HttpMethod.DELETE, Unit.class);
+        }
     }
     
     /// Function builder with two path variables
@@ -180,52 +268,81 @@ public interface HttpFunction {
         /// Add another generic typed path variable
         <T3> HttpFunctionBuilder3<T1, T2, T3> pathVar(TypeToken<T3> type);
         
-        // === Terminal Operations (Return Functions) ===
+        // === Core Terminal Operations ===
         
-        /// Create GET function with two path parameters
-        <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, T2> get(Class<R> responseType);
+        /// Create function for HTTP method with two path parameters (no body)
+        <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, T2> method(HttpMethod method, Class<R> responseType);
         
-        /// Create GET function with two path parameters and generic response type
-        <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, T2> get(TypeToken<R> responseType);
+        /// Create function for HTTP method with two path parameters and generic response (no body)
+        <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, T2> method(HttpMethod method, TypeToken<R> responseType);
         
-        /// Create GET function with two path parameters, no response body expected
-        Fn2<Promise<Result<HttpResponse<Unit>>>, T1, T2> get();
+        /// Create function for HTTP method with two path parameters and body
+        <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, Object> methodWithBody(HttpMethod method, Class<R> responseType);
         
-        /// Create POST function with two path parameters and body
-        <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, Object> post(Class<R> responseType);
+        /// Create function for HTTP method with two path parameters, body, and generic response
+        <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, Object> methodWithBody(HttpMethod method, TypeToken<R> responseType);
         
-        /// Create POST function with two path parameters, body, and generic response type
-        <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, Object> post(TypeToken<R> responseType);
+        // === Convenience Methods (Default Implementations) ===
         
-        /// Create POST function with two path parameters and body, no response body expected
-        Fn3<Promise<Result<HttpResponse<Unit>>>, T1, T2, Object> post();
+        default <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, T2> get(Class<R> responseType) {
+            return method(HttpMethod.GET, responseType);
+        }
         
-        /// Create PUT function with two path parameters and body
-        <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, Object> put(Class<R> responseType);
+        default <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, T2> get(TypeToken<R> responseType) {
+            return method(HttpMethod.GET, responseType);
+        }
         
-        /// Create PUT function with two path parameters, body, and generic response type
-        <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, Object> put(TypeToken<R> responseType);
+        default Fn2<Promise<Result<HttpResponse<Unit>>>, T1, T2> get() {
+            return method(HttpMethod.GET, Unit.class);
+        }
         
-        /// Create PUT function with two path parameters and body, no response body expected
-        Fn3<Promise<Result<HttpResponse<Unit>>>, T1, T2, Object> put();
+        default <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, Object> post(Class<R> responseType) {
+            return methodWithBody(HttpMethod.POST, responseType);
+        }
         
-        /// Create PATCH function with two path parameters and body
-        <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, Object> patch(Class<R> responseType);
+        default <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, Object> post(TypeToken<R> responseType) {
+            return methodWithBody(HttpMethod.POST, responseType);
+        }
         
-        /// Create PATCH function with two path parameters, body, and generic response type
-        <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, Object> patch(TypeToken<R> responseType);
+        default Fn3<Promise<Result<HttpResponse<Unit>>>, T1, T2, Object> post() {
+            return methodWithBody(HttpMethod.POST, Unit.class);
+        }
         
-        /// Create PATCH function with two path parameters and body, no response body expected
-        Fn3<Promise<Result<HttpResponse<Unit>>>, T1, T2, Object> patch();
+        default <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, Object> put(Class<R> responseType) {
+            return methodWithBody(HttpMethod.PUT, responseType);
+        }
         
-        /// Create DELETE function with two path parameters
-        <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, T2> delete(Class<R> responseType);
+        default <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, Object> put(TypeToken<R> responseType) {
+            return methodWithBody(HttpMethod.PUT, responseType);
+        }
         
-        /// Create DELETE function with two path parameters and generic response type
-        <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, T2> delete(TypeToken<R> responseType);
+        default Fn3<Promise<Result<HttpResponse<Unit>>>, T1, T2, Object> put() {
+            return methodWithBody(HttpMethod.PUT, Unit.class);
+        }
         
-        /// Create DELETE function with two path parameters, no response body expected
-        Fn2<Promise<Result<HttpResponse<Unit>>>, T1, T2> delete();
+        default <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, Object> patch(Class<R> responseType) {
+            return methodWithBody(HttpMethod.PATCH, responseType);
+        }
+        
+        default <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, Object> patch(TypeToken<R> responseType) {
+            return methodWithBody(HttpMethod.PATCH, responseType);
+        }
+        
+        default Fn3<Promise<Result<HttpResponse<Unit>>>, T1, T2, Object> patch() {
+            return methodWithBody(HttpMethod.PATCH, Unit.class);
+        }
+        
+        default <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, T2> delete(Class<R> responseType) {
+            return method(HttpMethod.DELETE, responseType);
+        }
+        
+        default <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, T2> delete(TypeToken<R> responseType) {
+            return method(HttpMethod.DELETE, responseType);
+        }
+        
+        default Fn2<Promise<Result<HttpResponse<Unit>>>, T1, T2> delete() {
+            return method(HttpMethod.DELETE, Unit.class);
+        }
     }
     
     /// Function builder with three path variables
@@ -236,51 +353,80 @@ public interface HttpFunction {
         /// Add more path segments
         HttpFunctionBuilder3<T1, T2, T3> path(String pathSegments);
         
-        // === Terminal Operations (Return Functions) ===
+        // === Core Terminal Operations ===
         
-        /// Create GET function with three path parameters
-        <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, T3> get(Class<R> responseType);
+        /// Create function for HTTP method with three path parameters (no body)
+        <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, T3> method(HttpMethod method, Class<R> responseType);
         
-        /// Create GET function with three path parameters and generic response type
-        <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, T3> get(TypeToken<R> responseType);
+        /// Create function for HTTP method with three path parameters and generic response (no body)
+        <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, T3> method(HttpMethod method, TypeToken<R> responseType);
         
-        /// Create GET function with three path parameters, no response body expected
-        Fn3<Promise<Result<HttpResponse<Unit>>>, T1, T2, T3> get();
+        /// Create function for HTTP method with three path parameters and body
+        <R> Fn4<Promise<Result<HttpResponse<R>>>, T1, T2, T3, Object> methodWithBody(HttpMethod method, Class<R> responseType);
         
-        /// Create POST function with three path parameters and body
-        <R> Fn4<Promise<Result<HttpResponse<R>>>, T1, T2, T3, Object> post(Class<R> responseType);
+        /// Create function for HTTP method with three path parameters, body, and generic response
+        <R> Fn4<Promise<Result<HttpResponse<R>>>, T1, T2, T3, Object> methodWithBody(HttpMethod method, TypeToken<R> responseType);
         
-        /// Create POST function with three path parameters, body, and generic response type
-        <R> Fn4<Promise<Result<HttpResponse<R>>>, T1, T2, T3, Object> post(TypeToken<R> responseType);
+        // === Convenience Methods (Default Implementations) ===
         
-        /// Create POST function with three path parameters and body, no response body expected
-        Fn4<Promise<Result<HttpResponse<Unit>>>, T1, T2, T3, Object> post();
+        default <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, T3> get(Class<R> responseType) {
+            return method(HttpMethod.GET, responseType);
+        }
         
-        /// Create PUT function with three path parameters and body
-        <R> Fn4<Promise<Result<HttpResponse<R>>>, T1, T2, T3, Object> put(Class<R> responseType);
+        default <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, T3> get(TypeToken<R> responseType) {
+            return method(HttpMethod.GET, responseType);
+        }
         
-        /// Create PUT function with three path parameters, body, and generic response type
-        <R> Fn4<Promise<Result<HttpResponse<R>>>, T1, T2, T3, Object> put(TypeToken<R> responseType);
+        default Fn3<Promise<Result<HttpResponse<Unit>>>, T1, T2, T3> get() {
+            return method(HttpMethod.GET, Unit.class);
+        }
         
-        /// Create PUT function with three path parameters and body, no response body expected
-        Fn4<Promise<Result<HttpResponse<Unit>>>, T1, T2, T3, Object> put();
+        default <R> Fn4<Promise<Result<HttpResponse<R>>>, T1, T2, T3, Object> post(Class<R> responseType) {
+            return methodWithBody(HttpMethod.POST, responseType);
+        }
         
-        /// Create PATCH function with three path parameters and body
-        <R> Fn4<Promise<Result<HttpResponse<R>>>, T1, T2, T3, Object> patch(Class<R> responseType);
+        default <R> Fn4<Promise<Result<HttpResponse<R>>>, T1, T2, T3, Object> post(TypeToken<R> responseType) {
+            return methodWithBody(HttpMethod.POST, responseType);
+        }
         
-        /// Create PATCH function with three path parameters, body, and generic response type
-        <R> Fn4<Promise<Result<HttpResponse<R>>>, T1, T2, T3, Object> patch(TypeToken<R> responseType);
+        default Fn4<Promise<Result<HttpResponse<Unit>>>, T1, T2, T3, Object> post() {
+            return methodWithBody(HttpMethod.POST, Unit.class);
+        }
         
-        /// Create PATCH function with three path parameters and body, no response body expected
-        Fn4<Promise<Result<HttpResponse<Unit>>>, T1, T2, T3, Object> patch();
+        default <R> Fn4<Promise<Result<HttpResponse<R>>>, T1, T2, T3, Object> put(Class<R> responseType) {
+            return methodWithBody(HttpMethod.PUT, responseType);
+        }
         
-        /// Create DELETE function with three path parameters
-        <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, T3> delete(Class<R> responseType);
+        default <R> Fn4<Promise<Result<HttpResponse<R>>>, T1, T2, T3, Object> put(TypeToken<R> responseType) {
+            return methodWithBody(HttpMethod.PUT, responseType);
+        }
         
-        /// Create DELETE function with three path parameters and generic response type
-        <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, T3> delete(TypeToken<R> responseType);
+        default Fn4<Promise<Result<HttpResponse<Unit>>>, T1, T2, T3, Object> put() {
+            return methodWithBody(HttpMethod.PUT, Unit.class);
+        }
         
-        /// Create DELETE function with three path parameters, no response body expected
-        Fn3<Promise<Result<HttpResponse<Unit>>>, T1, T2, T3> delete();
+        default <R> Fn4<Promise<Result<HttpResponse<R>>>, T1, T2, T3, Object> patch(Class<R> responseType) {
+            return methodWithBody(HttpMethod.PATCH, responseType);
+        }
+        
+        default <R> Fn4<Promise<Result<HttpResponse<R>>>, T1, T2, T3, Object> patch(TypeToken<R> responseType) {
+            return methodWithBody(HttpMethod.PATCH, responseType);
+        }
+        
+        default Fn4<Promise<Result<HttpResponse<Unit>>>, T1, T2, T3, Object> patch() {
+            return methodWithBody(HttpMethod.PATCH, Unit.class);
+        }
+        
+        default <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, T3> delete(Class<R> responseType) {
+            return method(HttpMethod.DELETE, responseType);
+        }
+        
+        default <R> Fn3<Promise<Result<HttpResponse<R>>>, T1, T2, T3> delete(TypeToken<R> responseType) {
+            return method(HttpMethod.DELETE, responseType);
+        }
+        
+        default Fn3<Promise<Result<HttpResponse<Unit>>>, T1, T2, T3> delete() {
+            return method(HttpMethod.DELETE, Unit.class);
+        }
     }
 }

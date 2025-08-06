@@ -61,49 +61,49 @@ public interface HttpResource {
     // === Terminal Operations (Execute Request) ===
     
     /// Execute GET request with typed response
-    <T> Promise<Result<HttpResponse<T>>> get(Class<T> responseType);
+    <T> Promise<HttpResponse<T>> get(Class<T> responseType);
     
     /// Execute GET request with generic response type
-    <T> Promise<Result<HttpResponse<T>>> get(TypeToken<T> responseType);
+    <T> Promise<HttpResponse<T>> get(TypeToken<T> responseType);
     
     /// Execute GET request, no response body expected
-    Promise<Result<HttpResponse<Unit>>> get();
+    Promise<HttpResponse<Unit>> get();
     
     /// Execute POST request with body and typed response
-    <T> Promise<Result<HttpResponse<T>>> post(Object body, Class<T> responseType);
+    <T> Promise<HttpResponse<T>> post(Object body, Class<T> responseType);
     
     /// Execute POST request with body and generic response type
-    <T> Promise<Result<HttpResponse<T>>> post(Object body, TypeToken<T> responseType);
+    <T> Promise<HttpResponse<T>> post(Object body, TypeToken<T> responseType);
     
     /// Execute POST request with body, no response body expected
-    Promise<Result<HttpResponse<Unit>>> post(Object body);
+    Promise<HttpResponse<Unit>> post(Object body);
     
     /// Execute PUT request with body and typed response
-    <T> Promise<Result<HttpResponse<T>>> put(Object body, Class<T> responseType);
+    <T> Promise<HttpResponse<T>> put(Object body, Class<T> responseType);
     
     /// Execute PUT request with body and generic response type
-    <T> Promise<Result<HttpResponse<T>>> put(Object body, TypeToken<T> responseType);
+    <T> Promise<HttpResponse<T>> put(Object body, TypeToken<T> responseType);
     
     /// Execute PUT request with body, no response body expected
-    Promise<Result<HttpResponse<Unit>>> put(Object body);
+    Promise<HttpResponse<Unit>> put(Object body);
     
     /// Execute PATCH request with body and typed response
-    <T> Promise<Result<HttpResponse<T>>> patch(Object body, Class<T> responseType);
+    <T> Promise<HttpResponse<T>> patch(Object body, Class<T> responseType);
     
     /// Execute PATCH request with body and generic response type
-    <T> Promise<Result<HttpResponse<T>>> patch(Object body, TypeToken<T> responseType);
+    <T> Promise<HttpResponse<T>> patch(Object body, TypeToken<T> responseType);
     
     /// Execute PATCH request with body, no response body expected
-    Promise<Result<HttpResponse<Unit>>> patch(Object body);
+    Promise<HttpResponse<Unit>> patch(Object body);
     
     /// Execute DELETE request with typed response
-    <T> Promise<Result<HttpResponse<T>>> delete(Class<T> responseType);
+    <T> Promise<HttpResponse<T>> delete(Class<T> responseType);
     
     /// Execute DELETE request with generic response type
-    <T> Promise<Result<HttpResponse<T>>> delete(TypeToken<T> responseType);
+    <T> Promise<HttpResponse<T>> delete(TypeToken<T> responseType);
     
     /// Execute DELETE request, no response body expected
-    Promise<Result<HttpResponse<Unit>>> delete();
+    Promise<HttpResponse<Unit>> delete();
     
     // === Advanced Access ===
     

@@ -63,133 +63,45 @@ public record HttpFunctionBuilder0Impl(HttpClient client, String baseUrl, List<S
         return new HttpFunctionBuilder1Impl<>(client, baseUrl, pathSegments, List.of(type.rawType()), urlBuilder);
     }
     
+    // === Core Implementation Methods ===
+    
     @Override
-    public <R> Fn0<Promise<Result<HttpResponse<R>>>> get(Class<R> responseType) {
+    public <R> Fn0<Promise<Result<HttpResponse<R>>>> method(HttpMethod method, Class<R> responseType) {
+        Objects.requireNonNull(method, "HTTP method cannot be null");
         Objects.requireNonNull(responseType, "Response type cannot be null");
         return () -> {
             var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).get(responseType);
+            return client.request().url(url).method(method).responseType(responseType).send();
         };
     }
     
     @Override
-    public <R> Fn0<Promise<Result<HttpResponse<R>>>> get(TypeToken<R> responseType) {
+    public <R> Fn0<Promise<Result<HttpResponse<R>>>> method(HttpMethod method, TypeToken<R> responseType) {
+        Objects.requireNonNull(method, "HTTP method cannot be null");
         Objects.requireNonNull(responseType, "Response type cannot be null");
         return () -> {
             var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).get(responseType);
+            return client.request().url(url).method(method).responseType(responseType).send();
         };
     }
     
     @Override
-    public Fn0<Promise<Result<HttpResponse<Unit>>>> get() {
-        return () -> {
-            var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).get();
-        };
-    }
-    
-    @Override
-    public <R> Fn1<Promise<Result<HttpResponse<R>>>, Object> post(Class<R> responseType) {
+    public <R> Fn1<Promise<Result<HttpResponse<R>>>, Object> methodWithBody(HttpMethod method, Class<R> responseType) {
+        Objects.requireNonNull(method, "HTTP method cannot be null");
         Objects.requireNonNull(responseType, "Response type cannot be null");
         return body -> {
             var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).post(body, responseType);
+            return client.request().url(url).method(method).body(body).responseType(responseType).send();
         };
     }
     
     @Override
-    public <R> Fn1<Promise<Result<HttpResponse<R>>>, Object> post(TypeToken<R> responseType) {
+    public <R> Fn1<Promise<Result<HttpResponse<R>>>, Object> methodWithBody(HttpMethod method, TypeToken<R> responseType) {
+        Objects.requireNonNull(method, "HTTP method cannot be null");
         Objects.requireNonNull(responseType, "Response type cannot be null");
         return body -> {
             var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).post(body, responseType);
-        };
-    }
-    
-    @Override
-    public Fn1<Promise<Result<HttpResponse<Unit>>>, Object> post() {
-        return body -> {
-            var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).post(body);
-        };
-    }
-    
-    @Override
-    public <R> Fn1<Promise<Result<HttpResponse<R>>>, Object> put(Class<R> responseType) {
-        Objects.requireNonNull(responseType, "Response type cannot be null");
-        return body -> {
-            var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).put(body, responseType);
-        };
-    }
-    
-    @Override
-    public <R> Fn1<Promise<Result<HttpResponse<R>>>, Object> put(TypeToken<R> responseType) {
-        Objects.requireNonNull(responseType, "Response type cannot be null");
-        return body -> {
-            var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).put(body, responseType);
-        };
-    }
-    
-    @Override
-    public Fn1<Promise<Result<HttpResponse<Unit>>>, Object> put() {
-        return body -> {
-            var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).put(body);
-        };
-    }
-    
-    @Override
-    public <R> Fn1<Promise<Result<HttpResponse<R>>>, Object> patch(Class<R> responseType) {
-        Objects.requireNonNull(responseType, "Response type cannot be null");
-        return body -> {
-            var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).patch(body, responseType);
-        };
-    }
-    
-    @Override
-    public <R> Fn1<Promise<Result<HttpResponse<R>>>, Object> patch(TypeToken<R> responseType) {
-        Objects.requireNonNull(responseType, "Response type cannot be null");
-        return body -> {
-            var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).patch(body, responseType);
-        };
-    }
-    
-    @Override
-    public Fn1<Promise<Result<HttpResponse<Unit>>>, Object> patch() {
-        return body -> {
-            var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).patch(body);
-        };
-    }
-    
-    @Override
-    public <R> Fn0<Promise<Result<HttpResponse<R>>>> delete(Class<R> responseType) {
-        Objects.requireNonNull(responseType, "Response type cannot be null");
-        return () -> {
-            var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).delete(responseType);
-        };
-    }
-    
-    @Override
-    public <R> Fn0<Promise<Result<HttpResponse<R>>>> delete(TypeToken<R> responseType) {
-        Objects.requireNonNull(responseType, "Response type cannot be null");
-        return () -> {
-            var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).delete(responseType);
-        };
-    }
-    
-    @Override
-    public Fn0<Promise<Result<HttpResponse<Unit>>>> delete() {
-        return () -> {
-            var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).delete();
+            return client.request().url(url).method(method).body(body).responseType(responseType).send();
         };
     }
 }

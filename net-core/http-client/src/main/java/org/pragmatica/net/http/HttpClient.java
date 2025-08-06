@@ -53,30 +53,30 @@ public interface HttpClient {
     // === Direct Template Methods ===
     
     /// Direct GET with URL template
-    <R> Promise<Result<HttpResponse<R>>> get(String urlTemplate, Object[] params, Class<R> responseType);
+    <R> Promise<HttpResponse<R>> get(String urlTemplate, Object[] params, Class<R> responseType);
     
     /// Direct GET with URL template and TypeToken
-    <R> Promise<Result<HttpResponse<R>>> get(String urlTemplate, Object[] params, TypeToken<R> responseType);
+    <R> Promise<HttpResponse<R>> get(String urlTemplate, Object[] params, TypeToken<R> responseType);
     
     /// Direct GET with URL template, no response body expected
-    Promise<Result<HttpResponse<Unit>>> get(String urlTemplate, Object[] params);
+    Promise<HttpResponse<Unit>> get(String urlTemplate, Object[] params);
     
     /// Direct POST with URL template
-    <R> Promise<Result<HttpResponse<R>>> post(String urlTemplate, Object[] params, Object body, Class<R> responseType);
+    <R> Promise<HttpResponse<R>> post(String urlTemplate, Object[] params, Object body, Class<R> responseType);
     
     /// Direct POST with URL template and TypeToken
-    <R> Promise<Result<HttpResponse<R>>> post(String urlTemplate, Object[] params, Object body, TypeToken<R> responseType);
+    <R> Promise<HttpResponse<R>> post(String urlTemplate, Object[] params, Object body, TypeToken<R> responseType);
     
     /// Direct POST with URL template, no response body expected
-    Promise<Result<HttpResponse<Unit>>> post(String urlTemplate, Object[] params, Object body);
+    Promise<HttpResponse<Unit>> post(String urlTemplate, Object[] params, Object body);
     
     // === Lifecycle ===
     
     /// Start the HTTP client
-    Promise<Result<Unit>> start();
+    Promise<Unit> start();
     
     /// Stop the HTTP client
-    Promise<Result<Unit>> stop();
+    Promise<Unit> stop();
     
     // === Factory Methods ===
     
