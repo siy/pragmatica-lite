@@ -587,6 +587,40 @@ public interface Promise<T> {
         return liftFn1(Causes::fromThrowable, function);
     }
 
+    static <U, T1, T2> Fn2<Promise<U>, T1, T2> liftFn2(ThrowingFn2<U, T1, T2> function) {
+        return liftFn2(Causes::fromThrowable, function);
+    }
+
+    static <U, T1, T2, T3> Fn3<Promise<U>, T1, T2, T3> liftFn3(ThrowingFn3<U, T1, T2, T3> function) {
+        return liftFn3(Causes::fromThrowable, function);
+    }
+
+    /// Direct invocation variants for consistency with Result class
+
+    static <U, T1> Promise<U> lift1(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn1<U, T1> function, T1 value1) {
+        return Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value1)));
+    }
+
+    static <U, T1> Promise<U> lift1(ThrowingFn1<U, T1> function, T1 value1) {
+        return lift1(Causes::fromThrowable, function, value1);
+    }
+
+    static <U, T1, T2> Promise<U> lift2(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn2<U, T1, T2> function, T1 value1, T2 value2) {
+        return Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value1, value2)));
+    }
+
+    static <U, T1, T2> Promise<U> lift2(ThrowingFn2<U, T1, T2> function, T1 value1, T2 value2) {
+        return lift2(Causes::fromThrowable, function, value1, value2);
+    }
+
+    static <U, T1, T2, T3> Promise<U> lift3(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn3<U, T1, T2, T3> function, T1 value1, T2 value2, T3 value3) {
+        return Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value1, value2, value3)));
+    }
+
+    static <U, T1, T2, T3> Promise<U> lift3(ThrowingFn3<U, T1, T2, T3> function, T1 value1, T2 value2, T3 value3) {
+        return lift3(Causes::fromThrowable, function, value1, value2, value3);
+    }
+
     /// Asynchronously run the provided lambda and eventually resolve returned [Promise] with the [Unit] if the call succeeds or with the failure
     /// if call throws exception.
     ///

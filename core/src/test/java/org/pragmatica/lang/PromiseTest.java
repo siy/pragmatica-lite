@@ -1082,6 +1082,73 @@ public class PromiseTest {
            .await()
            .onSuccess(result -> assertEquals(6, result))
            .onFailureRun(() -> fail("Should succeed"));
+
+        // Test default exception mapper variants
+        var fn2Default = Promise.liftFn2((Integer a, Integer b) -> a * b);
+        fn2Default.apply(4, 5)
+                  .await()
+                  .onSuccess(result -> assertEquals(20, result))
+                  .onFailureRun(() -> fail("Should succeed"));
+
+        var fn3Default = Promise.liftFn3((Integer a, Integer b, Integer c) -> a + b * c);
+        fn3Default.apply(2, 3, 4)
+                  .await()
+                  .onSuccess(result -> assertEquals(14, result))
+                  .onFailureRun(() -> fail("Should succeed"));
+    }
+
+    @Test
+    void liftDirectInvocationMethodsWrapThrowingFunctions() {
+        // Test lift1 with custom exception mapper
+        Promise.lift1(Causes::fromThrowable, (String input) -> {
+                    if (input == null) throw new NullPointerException("Null input");
+                    return input.length();
+                }, "hello")
+               .await()
+               .onSuccess(result -> assertEquals(5, result))
+               .onFailureRun(() -> fail("Should succeed"));
+
+        Promise.lift1(Causes::fromThrowable, (String input) -> {
+                    if (input == null) throw new NullPointerException("Null input");
+                    return input.length();
+                }, null)
+               .await()
+               .onFailure(cause -> assertTrue(cause.message().contains("NullPointerException")))
+               .onSuccessRun(() -> fail("Should fail"));
+
+        // Test lift1 with default exception mapper
+        Promise.lift1((Integer input) -> input * input, 7)
+               .await()
+               .onSuccess(result -> assertEquals(49, result))
+               .onFailureRun(() -> fail("Should succeed"));
+
+        // Test lift2 with custom and default exception mappers
+        Promise.lift2(Causes::fromThrowable, (Integer a, Integer b) -> a / b, 10, 2)
+               .await()
+               .onSuccess(result -> assertEquals(5, result))
+               .onFailureRun(() -> fail("Should succeed"));
+
+        Promise.lift2((String a, String b) -> a + ":" + b, "hello", "world")
+               .await()
+               .onSuccess(result -> assertEquals("hello:world", result))
+               .onFailureRun(() -> fail("Should succeed"));
+
+        // Test lift3 with custom and default exception mappers
+        Promise.lift3(Causes::fromThrowable, (Integer a, Integer b, Integer c) -> a * b * c, 2, 3, 4)
+               .await()
+               .onSuccess(result -> assertEquals(24, result))
+               .onFailureRun(() -> fail("Should succeed"));
+
+        Promise.lift3((String a, String b, String c) -> a + b + c, "A", "B", "C")
+               .await()
+               .onSuccess(result -> assertEquals("ABC", result))
+               .onFailureRun(() -> fail("Should succeed"));
+
+        // Test exception handling in lift2 
+        Promise.lift2((Integer a, Integer b) -> a / b, 10, 0)
+               .await()
+               .onFailure(cause -> assertTrue(cause.message().contains("ArithmeticException")))
+               .onSuccessRun(() -> fail("Should fail"));
     }
 
     void assertIsCancelled(Cause cause) {
