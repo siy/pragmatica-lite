@@ -1,6 +1,7 @@
 package org.pragmatica.net.http.impl;
 
 import org.pragmatica.lang.type.TypeToken;
+import org.pragmatica.net.http.ContentType;
 import org.pragmatica.net.http.HttpClient;
 import org.pragmatica.net.http.HttpHeaders;
 import org.pragmatica.net.http.HttpMethod;
@@ -8,7 +9,6 @@ import org.pragmatica.net.http.HttpRequest;
 import org.pragmatica.net.http.HttpRequestBuilder;
 
 import java.time.Duration;
-import java.util.Objects;
 
 public final class HttpRequestBuilderImpl implements HttpRequestBuilder {
     private String url;
@@ -28,13 +28,13 @@ public final class HttpRequestBuilderImpl implements HttpRequestBuilder {
     
     @Override
     public HttpRequestBuilder url(String url) {
-        this.url = Objects.requireNonNull(url, "URL cannot be null");
+        this.url = url;
         return this;
     }
     
     @Override
     public HttpRequestBuilder method(HttpMethod method) {
-        this.method = Objects.requireNonNull(method, "Method cannot be null");
+        this.method = method;
         return this;
     }
     
@@ -46,7 +46,7 @@ public final class HttpRequestBuilderImpl implements HttpRequestBuilder {
     
     @Override
     public HttpRequestBuilder headers(HttpHeaders headers) {
-        this.headers = Objects.requireNonNull(headers, "Headers cannot be null");
+        this.headers = headers;
         return this;
     }
     
@@ -63,14 +63,27 @@ public final class HttpRequestBuilderImpl implements HttpRequestBuilder {
     }
     
     @Override
+    public HttpRequestBuilder json(String contentType) {
+        return header("Content-Type", contentType);
+    }
+    
+    @Override
+    public HttpRequestBuilder plainText(String contentType) {
+        return header("Content-Type", contentType);
+    }
+    
+    @Override
+    public HttpRequestBuilder contentType(String contentType) {
+        return header("Content-Type", contentType);
+    }
+    
+    @Override
     public <T> HttpRequest<T> responseType(Class<T> responseType) {
-        Objects.requireNonNull(responseType, "Response type cannot be null");
         return new HttpRequestImpl<>(url, method, headers, body, responseType, null, client);
     }
     
     @Override
     public <T> HttpRequest<T> responseType(TypeToken<T> responseType) {
-        Objects.requireNonNull(responseType, "Response type cannot be null");
         return new HttpRequestImpl<>(url, method, headers, body, null, responseType, client);
     }
 }

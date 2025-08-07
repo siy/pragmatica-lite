@@ -25,18 +25,13 @@ import org.pragmatica.net.http.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 
 /// Implementation of HttpFunctionBuilder1 for functions with one path variable
 public record HttpFunctionBuilder1Impl<T1>(HttpClient client, String baseUrl, List<String> pathSegments,
                                           List<Class<?>> paramTypes, UrlBuilder urlBuilder) implements HttpFunction.HttpFunctionBuilder1<T1> {
     
     public HttpFunctionBuilder1Impl {
-        Objects.requireNonNull(client, "Client cannot be null");
-        Objects.requireNonNull(baseUrl, "Base URL cannot be null");
-        Objects.requireNonNull(pathSegments, "Path segments cannot be null");
-        Objects.requireNonNull(paramTypes, "Parameter types cannot be null");
-        Objects.requireNonNull(urlBuilder, "URL builder cannot be null");
         if (paramTypes.size() != 1) {
             throw new IllegalArgumentException("Expected exactly 1 parameter type, got " + paramTypes.size());
         }
@@ -44,7 +39,6 @@ public record HttpFunctionBuilder1Impl<T1>(HttpClient client, String baseUrl, Li
     
     @Override
     public HttpFunction.HttpFunctionBuilder1<T1> path(String pathSegments) {
-        Objects.requireNonNull(pathSegments, "Path segments cannot be null");
         var segments = pathSegments.split("/");
         var newSegments = new ArrayList<>(this.pathSegments);
         for (var segment : segments) {
@@ -57,7 +51,6 @@ public record HttpFunctionBuilder1Impl<T1>(HttpClient client, String baseUrl, Li
     
     @Override
     public <T2> HttpFunction.HttpFunctionBuilder2<T1, T2> pathVar(Class<T2> type) {
-        Objects.requireNonNull(type, "Type cannot be null");
         var newParamTypes = new ArrayList<>(paramTypes);
         newParamTypes.add(type);
         return new HttpFunctionBuilder2Impl<>(client, baseUrl, pathSegments, newParamTypes, urlBuilder);
@@ -65,7 +58,6 @@ public record HttpFunctionBuilder1Impl<T1>(HttpClient client, String baseUrl, Li
     
     @Override
     public <T2> HttpFunction.HttpFunctionBuilder2<T1, T2> pathVar(TypeToken<T2> type) {
-        Objects.requireNonNull(type, "Type cannot be null");
         var newParamTypes = new ArrayList<>(paramTypes);
         newParamTypes.add(type.rawType());
         return new HttpFunctionBuilder2Impl<>(client, baseUrl, pathSegments, newParamTypes, urlBuilder);
@@ -73,52 +65,40 @@ public record HttpFunctionBuilder1Impl<T1>(HttpClient client, String baseUrl, Li
     
     // === Core Implementation Methods ===
     
+    // === Content Type Bridge Methods ===
+    
     @Override
-    public <R> Fn1<Promise<Result<HttpResponse<R>>>, T1> method(HttpMethod method, Class<R> responseType) {
-        Objects.requireNonNull(method, "HTTP method cannot be null");
-        Objects.requireNonNull(responseType, "Response type cannot be null");
-        return param1 -> {
-            validateParameter(param1, 0);
-            var url = buildUrlWithParams(List.of(param1));
-            return client.request().url(url).method(method).responseType(responseType).send();
-        };
+    public HttpFunction.HttpMethodFunctionBuilder1<T1> json() {
+        return new HttpMethodFunctionBuilder1Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, CommonContentTypes.APPLICATION_JSON.headerText());
     }
     
     @Override
-    public <R> Fn1<Promise<Result<HttpResponse<R>>>, T1> method(HttpMethod method, TypeToken<R> responseType) {
-        Objects.requireNonNull(method, "HTTP method cannot be null");
-        Objects.requireNonNull(responseType, "Response type cannot be null");
-        return param1 -> {
-            validateParameter(param1, 0);
-            var url = buildUrlWithParams(List.of(param1));
-            return client.request().url(url).method(method).responseType(responseType).send();
-        };
+    public HttpFunction.HttpMethodFunctionBuilder1<T1> json(String contentType) {
+        return new HttpMethodFunctionBuilder1Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, contentType);
     }
     
     @Override
-    public <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, Object> methodWithBody(HttpMethod method, Class<R> responseType) {
-        Objects.requireNonNull(method, "HTTP method cannot be null");
-        Objects.requireNonNull(responseType, "Response type cannot be null");
-        return (param1, body) -> {
-            validateParameter(param1, 0);
-            var url = buildUrlWithParams(List.of(param1));
-            return client.request().url(url).method(method).body(body).responseType(responseType).send();
-        };
+    public HttpFunction.HttpMethodFunctionBuilder1<T1> plainText() {
+        return new HttpMethodFunctionBuilder1Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, CommonContentTypes.TEXT_PLAIN.headerText());
     }
     
     @Override
-    public <R> Fn2<Promise<Result<HttpResponse<R>>>, T1, Object> methodWithBody(HttpMethod method, TypeToken<R> responseType) {
-        Objects.requireNonNull(method, "HTTP method cannot be null");
-        Objects.requireNonNull(responseType, "Response type cannot be null");
-        return (param1, body) -> {
-            validateParameter(param1, 0);
-            var url = buildUrlWithParams(List.of(param1));
-            return client.request().url(url).method(method).body(body).responseType(responseType).send();
-        };
+    public HttpFunction.HttpMethodFunctionBuilder1<T1> plainText(String contentType) {
+        return new HttpMethodFunctionBuilder1Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, contentType);
     }
+    
+    @Override
+    public HttpFunction.HttpMethodFunctionBuilder1<T1> contentType(String contentType) {
+        return new HttpMethodFunctionBuilder1Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, contentType);
+    }
+    
+    @Override
+    public HttpFunction.HttpMethodFunctionBuilder1<T1> contentType(ContentType contentType) {
+        return contentType(contentType.headerText());
+    }
+    
     
     private void validateParameter(Object param, int index) {
-        Objects.requireNonNull(param, "Parameter " + (index + 1) + " cannot be null");
         var expectedType = paramTypes.get(index);
         if (!expectedType.isInstance(param)) {
             throw new IllegalArgumentException(
@@ -133,6 +113,6 @@ public record HttpFunctionBuilder1Impl<T1>(HttpClient client, String baseUrl, Li
         for (var param : params) {
             segments.add(param.toString());
         }
-        return urlBuilder.buildUrl(baseUrl, segments, java.util.Map.of());
+        return urlBuilder.buildUrl(baseUrl, segments, Map.of());
     }
 }

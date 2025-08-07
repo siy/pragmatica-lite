@@ -25,22 +25,17 @@ import org.pragmatica.net.http.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 
 /// Implementation of HttpFunctionBuilder0 for functions with no path variables
 public record HttpFunctionBuilder0Impl(HttpClient client, String baseUrl, List<String> pathSegments, 
                                       UrlBuilder urlBuilder) implements HttpFunction.HttpFunctionBuilder0 {
     
     public HttpFunctionBuilder0Impl {
-        Objects.requireNonNull(client, "Client cannot be null");
-        Objects.requireNonNull(baseUrl, "Base URL cannot be null");
-        Objects.requireNonNull(pathSegments, "Path segments cannot be null");
-        Objects.requireNonNull(urlBuilder, "URL builder cannot be null");
     }
     
     @Override
     public HttpFunction.HttpFunctionBuilder0 path(String pathSegments) {
-        Objects.requireNonNull(pathSegments, "Path segments cannot be null");
         var segments = pathSegments.split("/");
         var newSegments = new ArrayList<>(this.pathSegments);
         for (var segment : segments) {
@@ -53,55 +48,43 @@ public record HttpFunctionBuilder0Impl(HttpClient client, String baseUrl, List<S
     
     @Override
     public <T1> HttpFunction.HttpFunctionBuilder1<T1> pathVar(Class<T1> type) {
-        Objects.requireNonNull(type, "Type cannot be null");
         return new HttpFunctionBuilder1Impl<>(client, baseUrl, pathSegments, List.of(type), urlBuilder);
     }
     
     @Override
     public <T1> HttpFunction.HttpFunctionBuilder1<T1> pathVar(TypeToken<T1> type) {
-        Objects.requireNonNull(type, "Type cannot be null");
         return new HttpFunctionBuilder1Impl<>(client, baseUrl, pathSegments, List.of(type.rawType()), urlBuilder);
     }
     
-    // === Core Implementation Methods ===
+    // === Content Type Bridge Methods ===
     
     @Override
-    public <R> Fn0<Promise<Result<HttpResponse<R>>>> method(HttpMethod method, Class<R> responseType) {
-        Objects.requireNonNull(method, "HTTP method cannot be null");
-        Objects.requireNonNull(responseType, "Response type cannot be null");
-        return () -> {
-            var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).method(method).responseType(responseType).send();
-        };
+    public HttpFunction.HttpMethodFunctionBuilder0 json() {
+        return new HttpMethodFunctionBuilder0Impl(client, baseUrl, pathSegments, urlBuilder, CommonContentTypes.APPLICATION_JSON.headerText());
     }
     
     @Override
-    public <R> Fn0<Promise<Result<HttpResponse<R>>>> method(HttpMethod method, TypeToken<R> responseType) {
-        Objects.requireNonNull(method, "HTTP method cannot be null");
-        Objects.requireNonNull(responseType, "Response type cannot be null");
-        return () -> {
-            var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).method(method).responseType(responseType).send();
-        };
+    public HttpFunction.HttpMethodFunctionBuilder0 json(String contentType) {
+        return new HttpMethodFunctionBuilder0Impl(client, baseUrl, pathSegments, urlBuilder, contentType);
     }
     
     @Override
-    public <R> Fn1<Promise<Result<HttpResponse<R>>>, Object> methodWithBody(HttpMethod method, Class<R> responseType) {
-        Objects.requireNonNull(method, "HTTP method cannot be null");
-        Objects.requireNonNull(responseType, "Response type cannot be null");
-        return body -> {
-            var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).method(method).body(body).responseType(responseType).send();
-        };
+    public HttpFunction.HttpMethodFunctionBuilder0 plainText() {
+        return new HttpMethodFunctionBuilder0Impl(client, baseUrl, pathSegments, urlBuilder, CommonContentTypes.TEXT_PLAIN.headerText());
     }
     
     @Override
-    public <R> Fn1<Promise<Result<HttpResponse<R>>>, Object> methodWithBody(HttpMethod method, TypeToken<R> responseType) {
-        Objects.requireNonNull(method, "HTTP method cannot be null");
-        Objects.requireNonNull(responseType, "Response type cannot be null");
-        return body -> {
-            var url = urlBuilder.buildUrl(baseUrl, pathSegments, java.util.Map.of());
-            return client.request().url(url).method(method).body(body).responseType(responseType).send();
-        };
+    public HttpFunction.HttpMethodFunctionBuilder0 plainText(String contentType) {
+        return new HttpMethodFunctionBuilder0Impl(client, baseUrl, pathSegments, urlBuilder, contentType);
+    }
+    
+    @Override
+    public HttpFunction.HttpMethodFunctionBuilder0 contentType(String contentType) {
+        return new HttpMethodFunctionBuilder0Impl(client, baseUrl, pathSegments, urlBuilder, contentType);
+    }
+    
+    @Override
+    public HttpFunction.HttpMethodFunctionBuilder0 contentType(ContentType contentType) {
+        return contentType(contentType.headerText());
     }
 }

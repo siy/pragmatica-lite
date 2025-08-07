@@ -21,6 +21,7 @@ import org.pragmatica.lang.Option;
 
 import java.util.Objects;
 
+
 /// HTTP error representation implementing Cause for integration with Result type
 public final class HttpError implements Cause {
     private final int statusCode;
@@ -30,9 +31,9 @@ public final class HttpError implements Cause {
     
     private HttpError(int statusCode, String statusText, String body, Option<Cause> source) {
         this.statusCode = statusCode;
-        this.statusText = Objects.requireNonNull(statusText, "Status text cannot be null");
-        this.body = Objects.requireNonNull(body, "Body cannot be null");
-        this.source = Objects.requireNonNull(source, "Source cannot be null");
+        this.statusText = statusText;
+        this.body = body;
+        this.source = source;
     }
     
     /// Create HTTP error from status code and text
@@ -42,26 +43,26 @@ public final class HttpError implements Cause {
     
     /// Create HTTP error with underlying cause
     public static HttpError httpError(int statusCode, String statusText, String body, Cause source) {
-        Objects.requireNonNull(source, "Source cause cannot be null");
+        
         return new HttpError(statusCode, statusText, body, Option.present(source));
     }
     
     /// Create HTTP error from HTTP status
     public static HttpError fromStatus(HttpStatus status) {
-        Objects.requireNonNull(status, "Status cannot be null");
+        
         return httpError(status.code(), status.reasonPhrase(), "");
     }
     
     /// Create error for empty body when body was expected
     public static HttpError emptyBody(HttpStatus status) {
-        Objects.requireNonNull(status, "Status cannot be null");
+        
         return httpError(status.code(), status.reasonPhrase(), "Response body is empty");
     }
     
     /// Create HTTP error from response
     public static <T> HttpError fromResponse(HttpResponse<T> response) {
-        Objects.requireNonNull(response, "Response cannot be null");
-        var bodyStr = response.body().fold(() -> "", Object::toString);
+        
+        var bodyStr = response.body().toString();
         return httpError(response.status().code(), response.status().reasonPhrase(), bodyStr);
     }
     

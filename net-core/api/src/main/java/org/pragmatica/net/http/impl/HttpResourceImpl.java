@@ -8,7 +8,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public final class HttpResourceImpl implements HttpResource {
     private final HttpClient client;
@@ -20,8 +19,8 @@ public final class HttpResourceImpl implements HttpResource {
     private record QueryParam(String name, String value) {}
     
     public HttpResourceImpl(HttpClient client, String baseUrl) {
-        this.client = Objects.requireNonNull(client, "Client cannot be null");
-        this.baseUrl = Objects.requireNonNull(baseUrl, "Base URL cannot be null");
+        this.client = client;
+        this.baseUrl = baseUrl;
         this.pathSegments = new ArrayList<>();
         this.queryParams = new ArrayList<>();
         this.headers = new HttpHeaders();
@@ -59,7 +58,6 @@ public final class HttpResourceImpl implements HttpResource {
     
     @Override
     public HttpResource path(String pathSegment) {
-        Objects.requireNonNull(pathSegment, "Path segment cannot be null");
         var newSegments = new ArrayList<>(pathSegments);
         newSegments.add(pathSegment);
         return new HttpResourceImpl(client, baseUrl, newSegments, queryParams, headers);
@@ -67,8 +65,6 @@ public final class HttpResourceImpl implements HttpResource {
     
     @Override
     public HttpResource queryParam(String name, String value) {
-        Objects.requireNonNull(name, "Query param name cannot be null");
-        Objects.requireNonNull(value, "Query param value cannot be null");
         var newParams = new ArrayList<>(queryParams);
         newParams.add(new QueryParam(name, value));
         return new HttpResourceImpl(client, baseUrl, pathSegments, newParams, headers);
@@ -76,8 +72,6 @@ public final class HttpResourceImpl implements HttpResource {
     
     @Override
     public HttpResource header(String name, String value) {
-        Objects.requireNonNull(name, "Header name cannot be null");
-        Objects.requireNonNull(value, "Header value cannot be null");
         var newHeaders = new HttpHeaders();
         // Copy existing headers
         for (var headerName : headers.names()) {
@@ -91,7 +85,6 @@ public final class HttpResourceImpl implements HttpResource {
     
     @Override
     public HttpResource headers(HttpHeaders headers) {
-        Objects.requireNonNull(headers, "Headers cannot be null");
         return new HttpResourceImpl(client, baseUrl, pathSegments, queryParams, headers);
     }
     

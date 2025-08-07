@@ -28,6 +28,7 @@ import org.pragmatica.lang.type.TypeToken;
 /// {@code
 /// var user = client.resource("https://api.example.com")
 ///     .path("api/v1/users").pathVar("userId", "123")
+///     .json()
 ///     .get(User.class)
 ///     .await();
 /// }
@@ -57,6 +58,23 @@ public interface HttpResource {
     
     /// Replace all headers
     HttpResource headers(HttpHeaders headers);
+    
+    // === Content Type Configuration ===
+    
+    /// Set JSON content type for request/response
+    HttpResource json();
+    
+    /// Set JSON with specific content type
+    HttpResource json(String contentType);
+    
+    /// Set plain text content type
+    HttpResource plainText();
+    
+    /// Set plain text with specific content type  
+    HttpResource plainText(String contentType);
+    
+    /// Set custom content type
+    HttpResource contentType(String contentType);
     
     // === Terminal Operations (Execute Request) ===
     

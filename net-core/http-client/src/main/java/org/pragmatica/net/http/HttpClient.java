@@ -23,9 +23,10 @@ import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.type.TypeToken;
 import org.pragmatica.net.http.impl.UrlBuilder;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -70,6 +71,20 @@ public interface HttpClient {
     /// Direct POST with URL template, no response body expected
     Promise<HttpResponse<Unit>> post(String urlTemplate, Object[] params, Object body);
     
+    // === Direct Template Methods with Content Type ===
+    
+    /// Direct GET with URL template and content type
+    <R> Promise<HttpResponse<R>> get(String urlTemplate, Object[] params, String contentType, Class<R> responseType);
+    
+    /// Direct GET with URL template, content type and TypeToken
+    <R> Promise<HttpResponse<R>> get(String urlTemplate, Object[] params, String contentType, TypeToken<R> responseType);
+    
+    /// Direct POST with URL template and content type
+    <R> Promise<HttpResponse<R>> post(String urlTemplate, Object[] params, Object body, String contentType, Class<R> responseType);
+    
+    /// Direct POST with URL template, content type and TypeToken
+    <R> Promise<HttpResponse<R>> post(String urlTemplate, Object[] params, Object body, String contentType, TypeToken<R> responseType);
+    
     // === Lifecycle ===
     
     /// Start the HTTP client
@@ -93,62 +108,47 @@ public interface HttpClient {
     // === Default Implementations ===
     
     default HttpResource resourceImpl(String baseUrl) {
-        Objects.requireNonNull(baseUrl, "Base URL cannot be null");
         
         record httpResource(HttpClient client, String baseUrl, 
                            List<String> pathSegments, Map<String, String> queryParams,
-                           HttpHeaders headers, UrlBuilder urlBuilder) implements HttpResource {
+                           HttpHeaders headers, UrlBuilder urlBuilder, String contentType) implements HttpResource {
             
             httpResource {
-                Objects.requireNonNull(client, "Client cannot be null");
-                Objects.requireNonNull(baseUrl, "Base URL cannot be null");
-                Objects.requireNonNull(pathSegments, "Path segments cannot be null");
-                Objects.requireNonNull(queryParams, "Query params cannot be null");
-                Objects.requireNonNull(headers, "Headers cannot be null");
-                Objects.requireNonNull(urlBuilder, "URL builder cannot be null");
+                // contentType can be null (no content type set)
             }
             
             @Override
             public HttpResource path(String pathSegments) {
-                Objects.requireNonNull(pathSegments, "Path segments cannot be null");
                 var segments = pathSegments.split("/");
-                var newSegments = new java.util.ArrayList<>(this.pathSegments);
+                var newSegments = new ArrayList<>(this.pathSegments);
                 for (var segment : segments) {
                     if (!segment.isEmpty()) {
                         newSegments.add(segment);
                     }
                 }
-                return new httpResource(client, baseUrl, newSegments, queryParams, headers, urlBuilder);
+                return new httpResource(client, baseUrl, newSegments, queryParams, headers, urlBuilder, contentType);
             }
             
             @Override
             public HttpResource pathVar(String name, String value) {
-                Objects.requireNonNull(name, "Path variable name cannot be null");
-                Objects.requireNonNull(value, "Path variable value cannot be null");
                 return path(value);
             }
             
             @Override
             public HttpResource pathTemplate(String template, Object... args) {
-                Objects.requireNonNull(template, "Template cannot be null");
-                Objects.requireNonNull(args, "Arguments cannot be null");
                 var resolvedPath = urlBuilder.resolveTemplate(template, args);
                 return path(resolvedPath);
             }
             
             @Override
             public HttpResource queryParam(String name, String value) {
-                Objects.requireNonNull(name, "Query param name cannot be null");
-                Objects.requireNonNull(value, "Query param value cannot be null");
-                var newParams = new java.util.HashMap<>(queryParams);
+                var newParams = new HashMap<>(queryParams);
                 newParams.put(name, value);
-                return new httpResource(client, baseUrl, pathSegments, newParams, headers, urlBuilder);
+                return new httpResource(client, baseUrl, pathSegments, newParams, headers, urlBuilder, contentType);
             }
             
             @Override
             public HttpResource header(String name, String value) {
-                Objects.requireNonNull(name, "Header name cannot be null");
-                Objects.requireNonNull(value, "Header value cannot be null");
                 var newHeaders = new HttpHeaders();
                 // Copy existing headers
                 for (var headerName : headers.names()) {
@@ -157,53 +157,121 @@ public interface HttpClient {
                     }
                 }
                 newHeaders.add(name, value);
-                return new httpResource(client, baseUrl, pathSegments, queryParams, newHeaders, urlBuilder);
+                return new httpResource(client, baseUrl, pathSegments, queryParams, newHeaders, urlBuilder, contentType);
             }
             
             @Override
             public HttpResource headers(HttpHeaders headers) {
-                Objects.requireNonNull(headers, "Headers cannot be null");
-                return new httpResource(client, baseUrl, pathSegments, queryParams, headers, urlBuilder);
+                return new httpResource(client, baseUrl, pathSegments, queryParams, headers, urlBuilder, contentType);
             }
             
             @Override
-            public <T> Promise<Result<HttpResponse<T>>> get(Class<T> responseType) {
-                Objects.requireNonNull(responseType, "Response type cannot be null");
-                var url = urlBuilder.buildUrl(baseUrl, pathSegments, queryParams);
-                return client.request().url(url).headers(headers).get(responseType);
+            public HttpResource json() {
+                return new httpResource(client, baseUrl, pathSegments, queryParams, headers, urlBuilder, "application/json");
             }
             
             @Override
-            public <T> Promise<Result<HttpResponse<T>>> get(TypeToken<T> responseType) {
-                Objects.requireNonNull(responseType, "Response type cannot be null");
-                var url = urlBuilder.buildUrl(baseUrl, pathSegments, queryParams);
-                return client.request().url(url).headers(headers).get(responseType);
+            public HttpResource json(String contentType) {
+                return new httpResource(client, baseUrl, pathSegments, queryParams, headers, urlBuilder, contentType);
             }
             
             @Override
-            public Promise<Result<HttpResponse<Unit>>> get() {
-                var url = urlBuilder.buildUrl(baseUrl, pathSegments, queryParams);
-                return client.request().url(url).headers(headers).get();
+            public HttpResource plainText() {
+                return new httpResource(client, baseUrl, pathSegments, queryParams, headers, urlBuilder, "text/plain");
             }
             
             @Override
-            public <T> Promise<Result<HttpResponse<T>>> post(Object body, Class<T> responseType) {
-                Objects.requireNonNull(responseType, "Response type cannot be null");
-                var url = urlBuilder.buildUrl(baseUrl, pathSegments, queryParams);
-                return client.request().url(url).headers(headers).body(body).post(responseType);
+            public HttpResource plainText(String contentType) {
+                return new httpResource(client, baseUrl, pathSegments, queryParams, headers, urlBuilder, contentType);
             }
             
             @Override
-            public <T> Promise<Result<HttpResponse<T>>> post(Object body, TypeToken<T> responseType) {
-                Objects.requireNonNull(responseType, "Response type cannot be null");
+            public HttpResource contentType(String contentType) {
+                return new httpResource(client, baseUrl, pathSegments, queryParams, headers, urlBuilder, contentType);
+            }
+            
+            private HttpRequestBuilder prepareRequest() {
                 var url = urlBuilder.buildUrl(baseUrl, pathSegments, queryParams);
-                return client.request().url(url).headers(headers).body(body).post(responseType);
+                var requestBuilder = client.request().url(url).headers(headers);
+                if (contentType != null) {
+                    requestBuilder = requestBuilder.header("Content-Type", contentType);
+                }
+                return requestBuilder;
             }
             
             @Override
-            public Promise<Result<HttpResponse<Unit>>> post(Object body) {
-                var url = urlBuilder.buildUrl(baseUrl, pathSegments, queryParams);
-                return client.request().url(url).headers(headers).body(body).post();
+            public <T> Promise<HttpResponse<T>> get(Class<T> responseType) {
+                return prepareRequest().get(responseType);
+            }
+            
+            @Override
+            public <T> Promise<HttpResponse<T>> get(TypeToken<T> responseType) {
+                return prepareRequest().get(responseType);
+            }
+            
+            @Override
+            public Promise<HttpResponse<Unit>> get() {
+                return prepareRequest().get(Unit.class);
+            }
+            
+            @Override
+            public <T> Promise<HttpResponse<T>> post(Object body, Class<T> responseType) {
+                return prepareRequest().post(body, responseType);
+            }
+            
+            @Override
+            public <T> Promise<HttpResponse<T>> post(Object body, TypeToken<T> responseType) {
+                return prepareRequest().post(body, responseType);
+            }
+            
+            @Override
+            public Promise<HttpResponse<Unit>> post(Object body) {
+                return prepareRequest().method(HttpMethod.POST).body(body).responseType(Unit.class).send();
+            }
+            
+            @Override
+            public <T> Promise<HttpResponse<T>> put(Object body, Class<T> responseType) {
+                return prepareRequest().put(body, responseType);
+            }
+            
+            @Override
+            public <T> Promise<HttpResponse<T>> put(Object body, TypeToken<T> responseType) {
+                return prepareRequest().put(body, responseType);
+            }
+            
+            @Override
+            public Promise<HttpResponse<Unit>> put(Object body) {
+                return prepareRequest().method(HttpMethod.PUT).body(body).responseType(Unit.class).send();
+            }
+            
+            @Override
+            public <T> Promise<HttpResponse<T>> patch(Object body, Class<T> responseType) {
+                return prepareRequest().body(body).method(HttpMethod.PATCH).responseType(responseType).send();
+            }
+            
+            @Override
+            public <T> Promise<HttpResponse<T>> patch(Object body, TypeToken<T> responseType) {
+                return prepareRequest().body(body).method(HttpMethod.PATCH).responseType(responseType).send();
+            }
+            
+            @Override
+            public Promise<HttpResponse<Unit>> patch(Object body) {
+                return prepareRequest().body(body).method(HttpMethod.PATCH).responseType(Unit.class).send();
+            }
+            
+            @Override
+            public <T> Promise<HttpResponse<T>> delete(Class<T> responseType) {
+                return prepareRequest().delete(responseType);
+            }
+            
+            @Override
+            public <T> Promise<HttpResponse<T>> delete(TypeToken<T> responseType) {
+                return prepareRequest().delete(responseType);
+            }
+            
+            @Override
+            public Promise<HttpResponse<Unit>> delete() {
+                return prepareRequest().delete(Unit.class);
             }
             
             @Override
@@ -213,24 +281,19 @@ public interface HttpClient {
             }
         };
         
-        return new httpResource(this, baseUrl, emptyList(), emptyMap(), new HttpHeaders(), UrlBuilder.create());
+        return new httpResource(this, baseUrl, emptyList(), emptyMap(), new HttpHeaders(), UrlBuilder.create(), null);
     }
     
     default HttpFunction functionImpl(String baseUrl) {
-        Objects.requireNonNull(baseUrl, "Base URL cannot be null");
         
         record httpFunction(HttpClient client, String baseUrl, 
                            UrlBuilder urlBuilder) implements HttpFunction {
             
             httpFunction {
-                Objects.requireNonNull(client, "Client cannot be null");
-                Objects.requireNonNull(baseUrl, "Base URL cannot be null");
-                Objects.requireNonNull(urlBuilder, "URL builder cannot be null");
             }
             
             @Override
             public HttpFunctionBuilder0 path(String pathSegments) {
-                Objects.requireNonNull(pathSegments, "Path segments cannot be null");
                 var segments = List.of(pathSegments.split("/"));
                 return new org.pragmatica.net.http.impl.HttpFunctionBuilder0Impl(client, baseUrl, segments, urlBuilder);
             }

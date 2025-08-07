@@ -19,6 +19,32 @@ public interface HttpRequestBuilder {
     
     HttpRequestBuilder timeout(Duration timeout);
     
+    // === Content Type Configuration ===
+    
+    /// Set JSON content type for request/response
+    default HttpRequestBuilder json() {
+        return contentType(CommonContentTypes.APPLICATION_JSON);
+    }
+    
+    /// Set JSON with specific content type
+    HttpRequestBuilder json(String contentType);
+    
+    /// Set plain text content type
+    default HttpRequestBuilder plainText() {
+        return contentType(CommonContentTypes.TEXT_PLAIN);
+    }
+    
+    /// Set plain text with specific content type  
+    HttpRequestBuilder plainText(String contentType);
+    
+    /// Set custom content type
+    HttpRequestBuilder contentType(String contentType);
+    
+    /// Set content type using ContentType interface
+    default HttpRequestBuilder contentType(ContentType contentType) {
+        return contentType(contentType.headerText());
+    }
+    
     <T> HttpRequest<T> responseType(Class<T> responseType);
     
     <T> HttpRequest<T> responseType(TypeToken<T> responseType);

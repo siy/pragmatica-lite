@@ -15,44 +15,35 @@ public final class HttpHeaders {
     }
     
     public HttpHeaders add(String name, String value) {
-        Objects.requireNonNull(name, "Header name cannot be null");
-        Objects.requireNonNull(value, "Header value cannot be null");
         
         headers.computeIfAbsent(name.toLowerCase(), k -> new ArrayList<>()).add(value);
         return this;
     }
     
     public HttpHeaders set(String name, String value) {
-        Objects.requireNonNull(name, "Header name cannot be null");
-        Objects.requireNonNull(value, "Header value cannot be null");
         
         headers.put(name.toLowerCase(), new ArrayList<>(List.of(value)));
         return this;
     }
     
     public HttpHeaders addAll(String name, List<String> values) {
-        Objects.requireNonNull(name, "Header name cannot be null");
-        Objects.requireNonNull(values, "Header values cannot be null");
         
         headers.computeIfAbsent(name.toLowerCase(), k -> new ArrayList<>()).addAll(values);
         return this;
     }
     
     public Optional<String> first(String name) {
-        Objects.requireNonNull(name, "Header name cannot be null");
         
         var values = headers.get(name.toLowerCase());
         return values != null && !values.isEmpty() ? Optional.of(values.get(0)) : Optional.empty();
     }
     
     public List<String> all(String name) {
-        Objects.requireNonNull(name, "Header name cannot be null");
         
         return headers.getOrDefault(name.toLowerCase(), Collections.emptyList());
     }
     
     public boolean contains(String name) {
-        Objects.requireNonNull(name, "Header name cannot be null");
         
         return headers.containsKey(name.toLowerCase());
     }

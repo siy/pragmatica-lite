@@ -20,7 +20,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /// URL building and template resolution utility
 public interface UrlBuilder {
@@ -40,9 +39,6 @@ public interface UrlBuilder {
             
             @Override
             public String buildUrl(String baseUrl, List<String> pathSegments, Map<String, String> queryParams) {
-                Objects.requireNonNull(baseUrl, "Base URL cannot be null");
-                Objects.requireNonNull(pathSegments, "Path segments cannot be null");
-                Objects.requireNonNull(queryParams, "Query params cannot be null");
                 
                 var url = new StringBuilder(baseUrl);
                 
@@ -76,8 +72,6 @@ public interface UrlBuilder {
             
             @Override
             public String resolveTemplate(String template, Object... args) {
-                Objects.requireNonNull(template, "Template cannot be null");
-                Objects.requireNonNull(args, "Arguments cannot be null");
                 
                 var result = template;
                 var argIndex = 0;
@@ -94,8 +88,6 @@ public interface UrlBuilder {
             
             @Override
             public String resolveTemplate(String template, Map<String, Object> variables) {
-                Objects.requireNonNull(template, "Template cannot be null");
-                Objects.requireNonNull(variables, "Variables cannot be null");
                 
                 var result = template;
                 
