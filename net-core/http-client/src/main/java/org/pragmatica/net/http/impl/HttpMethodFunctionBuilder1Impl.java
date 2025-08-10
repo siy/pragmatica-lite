@@ -37,49 +37,23 @@ public record HttpMethodFunctionBuilder1Impl<T1>(HttpClient client, String baseU
         }
     }
     
-    @Override
-    public <R> Fn1<Promise<R>, T1> method(HttpMethod method, Class<R> responseType) {
-        return param1 -> {
-            validateParameter(param1, 0);
-            var url = buildUrlWithParams(List.of(param1));
-            return client.request()
-                .url(url)
-                .method(method)
-                .header("Content-Type", contentType)
-                .responseType(responseType)
-                .send()
-                .map(HttpResponse::body)
-                .flatMap(optionBody -> optionBody.async());
-        };
-    }
     
     @Override
-    public <R> Fn1<Promise<R>, T1> method(HttpMethod method, TypeToken<R> responseType) {
-        return param1 -> {
-            validateParameter(param1, 0);
-            var url = buildUrlWithParams(List.of(param1));
-            return client.request()
-                .url(url)
-                .method(method)
-                .header("Content-Type", contentType)
-                .responseType(responseType)
-                .send()
-                .map(HttpResponse::body)
-                .flatMap(optionBody -> optionBody.async());
-        };
-    }
-    
-    @Override
-    public <R> Fn2<Promise<R>, T1, Object> methodWithBody(HttpMethod method, Class<R> responseType) {
+    public <R, U> Fn2<Promise<R>, T1, U> methodWithBody(HttpMethod method, Class<R> responseType, Class<U> bodyType) {
         return (param1, body) -> {
             validateParameter(param1, 0);
             var url = buildUrlWithParams(List.of(param1));
-            return client.request()
+            var request = client.request()
                 .url(url)
                 .method(method)
-                .body(body)
-                .header("Content-Type", contentType)
-                .responseType(responseType)
+                .header("Content-Type", contentType);
+            
+            // Only set body if it's not Unit (for methods that don't have a body)
+            if (bodyType != Unit.class && body != null) {
+                request = request.body(body);
+            }
+            
+            return request.responseType(responseType)
                 .send()
                 .map(HttpResponse::body)
                 .flatMap(optionBody -> optionBody.async());
@@ -87,16 +61,21 @@ public record HttpMethodFunctionBuilder1Impl<T1>(HttpClient client, String baseU
     }
     
     @Override
-    public <R> Fn2<Promise<R>, T1, Object> methodWithBody(HttpMethod method, TypeToken<R> responseType) {
+    public <R, U> Fn2<Promise<R>, T1, U> methodWithBody(HttpMethod method, TypeToken<R> responseType, TypeToken<U> bodyType) {
         return (param1, body) -> {
             validateParameter(param1, 0);
             var url = buildUrlWithParams(List.of(param1));
-            return client.request()
+            var request = client.request()
                 .url(url)
                 .method(method)
-                .body(body)
-                .header("Content-Type", contentType)
-                .responseType(responseType)
+                .header("Content-Type", contentType);
+            
+            // Only set body if it's not Unit (for methods that don't have a body)
+            if (!bodyType.rawType().equals(Unit.class) && body != null) {
+                request = request.body(body);
+            }
+            
+            return request.responseType(responseType)
                 .send()
                 .map(HttpResponse::body)
                 .flatMap(optionBody -> optionBody.async());

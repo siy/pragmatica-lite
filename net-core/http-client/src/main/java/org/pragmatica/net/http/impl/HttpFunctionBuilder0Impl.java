@@ -59,32 +59,17 @@ public record HttpFunctionBuilder0Impl(HttpClient client, String baseUrl, List<S
     // === Content Type Bridge Methods ===
     
     @Override
-    public HttpFunction.HttpMethodFunctionBuilder0 json() {
-        return new HttpMethodFunctionBuilder0Impl(client, baseUrl, pathSegments, urlBuilder, CommonContentTypes.APPLICATION_JSON.headerText());
+    public HttpFunction.HttpMethodBuilder0 send(ContentType requestContentType) {
+        return new HttpMethodBuilder0Impl(client, baseUrl, pathSegments, urlBuilder, requestContentType.headerText());
     }
     
     @Override
-    public HttpFunction.HttpMethodFunctionBuilder0 json(String contentType) {
-        return new HttpMethodFunctionBuilder0Impl(client, baseUrl, pathSegments, urlBuilder, contentType);
+    public <T> HttpFunction.HttpMethodBuilderWithBody0<T> send(ContentType requestContentType, Class<T> bodyType) {
+        return new HttpMethodBuilderWithBody0Impl<>(client, baseUrl, pathSegments, urlBuilder, requestContentType.headerText(), bodyType);
     }
     
     @Override
-    public HttpFunction.HttpMethodFunctionBuilder0 plainText() {
-        return new HttpMethodFunctionBuilder0Impl(client, baseUrl, pathSegments, urlBuilder, CommonContentTypes.TEXT_PLAIN.headerText());
-    }
-    
-    @Override
-    public HttpFunction.HttpMethodFunctionBuilder0 plainText(String contentType) {
-        return new HttpMethodFunctionBuilder0Impl(client, baseUrl, pathSegments, urlBuilder, contentType);
-    }
-    
-    @Override
-    public HttpFunction.HttpMethodFunctionBuilder0 contentType(String contentType) {
-        return new HttpMethodFunctionBuilder0Impl(client, baseUrl, pathSegments, urlBuilder, contentType);
-    }
-    
-    @Override
-    public HttpFunction.HttpMethodFunctionBuilder0 contentType(ContentType contentType) {
-        return contentType(contentType.headerText());
+    public <T> HttpFunction.HttpMethodBuilderWithBody0<T> send(ContentType requestContentType, TypeToken<T> bodyType) {
+        return new HttpMethodBuilderWithBody0Impl<>(client, baseUrl, pathSegments, urlBuilder, requestContentType.headerText(), bodyType);
     }
 }

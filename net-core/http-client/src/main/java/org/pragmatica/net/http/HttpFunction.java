@@ -26,26 +26,35 @@ import org.pragmatica.lang.type.TypeToken;
 ///
 /// Example usage:
 /// {@code
-/// // Define reusable endpoint
+/// // Define reusable endpoint (no request body)
 /// Fn1<Promise<User>, UserId> getUser = 
 ///     client.function("https://api.example.com")
 ///           .path("api/v1/users").pathVar(UserId.class)
-///           .json()
-///           .get(User.class);
+///           .send(APPLICATION_JSON)
+///           .get(User.class)
+///           .as(APPLICATION_JSON);
+///
+/// // Define endpoint with request body
+/// Fn2<Promise<User>, UserId, UpdateUserRequest> updateUser = 
+///     client.function("https://api.example.com")
+///           .path("api/v1/users").pathVar(UserId.class)
+///           .send(APPLICATION_JSON, UpdateUserRequest.class)
+///           .put(User.class)
+///           .as(APPLICATION_JSON);
 ///
 /// // Use multiple times with different parameters
 /// var user1 = getUser.apply(new UserId("123")).await();
-/// var user2 = getUser.apply(new UserId("456")).await();
+/// var updatedUser = updateUser.apply(new UserId("123"), updateRequest).await();
 /// }
 public interface HttpFunction {
     
     /// Start building a function-style endpoint with path segments
     HttpFunctionBuilder0 path(String pathSegments);
     
-    /// Function builder with no path variables - only path building methods
+    /// Function builder with no path variables - path building and content type bridge
     interface HttpFunctionBuilder0 {
         
-        // === Path Building Only ===
+        // === Path Building ===
         
         /// Add more path segments
         HttpFunctionBuilder0 path(String pathSegments);
@@ -58,23 +67,14 @@ public interface HttpFunction {
         
         // === Content Type Bridge Methods ===
         
-        /// Use JSON content type for request/response
-        HttpMethodFunctionBuilder0 json();
+        /// Send request with no body - specify request content type for Accept header
+        HttpMethodBuilder0 send(ContentType requestContentType);
         
-        /// Use JSON with specific content type
-        HttpMethodFunctionBuilder0 json(String contentType);
+        /// Send request with body - specify request content type and body type
+        <T> HttpMethodBuilderWithBody0<T> send(ContentType requestContentType, Class<T> bodyType);
         
-        /// Use plain text content type
-        HttpMethodFunctionBuilder0 plainText();
-        
-        /// Use plain text with specific content type  
-        HttpMethodFunctionBuilder0 plainText(String contentType);
-        
-        /// Use custom content type
-        HttpMethodFunctionBuilder0 contentType(String contentType);
-        
-        /// Use ContentType interface
-        HttpMethodFunctionBuilder0 contentType(ContentType contentType);
+        /// Send request with body using TypeToken - specify request content type and body type
+        <T> HttpMethodBuilderWithBody0<T> send(ContentType requestContentType, TypeToken<T> bodyType);
     }
     
     /// Function builder with one path variable - path building + content type bridge
@@ -93,23 +93,14 @@ public interface HttpFunction {
         
         // === Content Type Bridge Methods ===
         
-        /// Use JSON content type for request/response
-        HttpMethodFunctionBuilder1<T1> json();
+        /// Send request with no body - specify request content type for Accept header
+        HttpMethodBuilder1<T1> send(ContentType requestContentType);
         
-        /// Use JSON with specific content type
-        HttpMethodFunctionBuilder1<T1> json(String contentType);
+        /// Send request with body - specify request content type and body type
+        <T> HttpMethodBuilderWithBody1<T1, T> send(ContentType requestContentType, Class<T> bodyType);
         
-        /// Use plain text content type
-        HttpMethodFunctionBuilder1<T1> plainText();
-        
-        /// Use plain text with specific content type  
-        HttpMethodFunctionBuilder1<T1> plainText(String contentType);
-        
-        /// Use custom content type
-        HttpMethodFunctionBuilder1<T1> contentType(String contentType);
-        
-        /// Use ContentType interface
-        HttpMethodFunctionBuilder1<T1> contentType(ContentType contentType);
+        /// Send request with body using TypeToken - specify request content type and body type
+        <T> HttpMethodBuilderWithBody1<T1, T> send(ContentType requestContentType, TypeToken<T> bodyType);
     }
     
     /// Function builder with two path variables - path building + content type bridge
@@ -128,23 +119,14 @@ public interface HttpFunction {
         
         // === Content Type Bridge Methods ===
         
-        /// Use JSON content type for request/response
-        HttpMethodFunctionBuilder2<T1, T2> json();
+        /// Send request with no body - specify request content type for Accept header
+        HttpMethodBuilder2<T1, T2> send(ContentType requestContentType);
         
-        /// Use JSON with specific content type
-        HttpMethodFunctionBuilder2<T1, T2> json(String contentType);
+        /// Send request with body - specify request content type and body type
+        <T> HttpMethodBuilderWithBody2<T1, T2, T> send(ContentType requestContentType, Class<T> bodyType);
         
-        /// Use plain text content type
-        HttpMethodFunctionBuilder2<T1, T2> plainText();
-        
-        /// Use plain text with specific content type  
-        HttpMethodFunctionBuilder2<T1, T2> plainText(String contentType);
-        
-        /// Use custom content type
-        HttpMethodFunctionBuilder2<T1, T2> contentType(String contentType);
-        
-        /// Use ContentType interface
-        HttpMethodFunctionBuilder2<T1, T2> contentType(ContentType contentType);
+        /// Send request with body using TypeToken - specify request content type and body type
+        <T> HttpMethodBuilderWithBody2<T1, T2, T> send(ContentType requestContentType, TypeToken<T> bodyType);
     }
     
     /// Function builder with three path variables - path building + content type bridge
@@ -157,324 +139,293 @@ public interface HttpFunction {
         
         // === Content Type Bridge Methods ===
         
-        /// Use JSON content type for request/response
-        HttpMethodFunctionBuilder3<T1, T2, T3> json();
+        /// Send request with no body - specify request content type for Accept header
+        HttpMethodBuilder3<T1, T2, T3> send(ContentType requestContentType);
         
-        /// Use JSON with specific content type
-        HttpMethodFunctionBuilder3<T1, T2, T3> json(String contentType);
+        /// Send request with body - specify request content type and body type
+        <T> HttpMethodBuilderWithBody3<T1, T2, T3, T> send(ContentType requestContentType, Class<T> bodyType);
         
-        /// Use plain text content type
-        HttpMethodFunctionBuilder3<T1, T2, T3> plainText();
-        
-        /// Use plain text with specific content type  
-        HttpMethodFunctionBuilder3<T1, T2, T3> plainText(String contentType);
-        
-        /// Use custom content type
-        HttpMethodFunctionBuilder3<T1, T2, T3> contentType(String contentType);
-        
-        /// Use ContentType interface
-        HttpMethodFunctionBuilder3<T1, T2, T3> contentType(ContentType contentType);
+        /// Send request with body using TypeToken - specify request content type and body type
+        <T> HttpMethodBuilderWithBody3<T1, T2, T3, T> send(ContentType requestContentType, TypeToken<T> bodyType);
     }
     
-    // === HTTP Method Function Builders ===
-    // These return Promise<R> (clean, no HTTP specifics)
+    // === HTTP Method Builders ===
+    // These handle HTTP method selection and return response content type builders
     
-    /// HTTP method builder with no path variables
-    interface HttpMethodFunctionBuilder0 {
+    /// HTTP method builder for no-body requests (GET, DELETE)
+    interface HttpMethodBuilder0 {
         
-        // === Core Terminal Operations ===
+        /// Create GET method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder0<R> get(Class<R> responseType);
         
-        /// Create function for HTTP method with typed response (no body)
-        <R> Fn0<Promise<R>> method(HttpMethod method, Class<R> responseType);
+        /// Create GET method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilder0<R> get(TypeToken<R> responseType);
         
-        /// Create function for HTTP method with generic response type (no body)
-        <R> Fn0<Promise<R>> method(HttpMethod method, TypeToken<R> responseType);
+        /// Create GET method, no response body expected
+        HttpResponseContentTypeBuilder0<Unit> get();
         
-        // === Convenience Methods (Default Implementations) ===
+        /// Create DELETE method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder0<R> delete(Class<R> responseType);
         
-        /// Create GET function with typed response
-        default <R> Fn0<Promise<R>> get(Class<R> responseType) {
-            return method(HttpMethod.GET, responseType);
-        }
+        /// Create DELETE method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilder0<R> delete(TypeToken<R> responseType);
         
-        /// Create GET function with generic response type
-        default <R> Fn0<Promise<R>> get(TypeToken<R> responseType) {
-            return method(HttpMethod.GET, responseType);
-        }
-        
-        /// Create GET function, no response body expected
-        default Fn0<Promise<Unit>> get() {
-            return method(HttpMethod.GET, Unit.class);
-        }
-        
-        /// Create DELETE function with typed response
-        default <R> Fn0<Promise<R>> delete(Class<R> responseType) {
-            return method(HttpMethod.DELETE, responseType);
-        }
-        
-        /// Create DELETE function with generic response type
-        default <R> Fn0<Promise<R>> delete(TypeToken<R> responseType) {
-            return method(HttpMethod.DELETE, responseType);
-        }
-        
-        /// Create DELETE function, no response body expected
-        default Fn0<Promise<Unit>> delete() {
-            return method(HttpMethod.DELETE, Unit.class);
-        }
+        /// Create DELETE method, no response body expected
+        HttpResponseContentTypeBuilder0<Unit> delete();
     }
     
-    /// HTTP method builder with one path variable
-    interface HttpMethodFunctionBuilder1<T1> {
+    /// HTTP method builder for one path variable, no-body requests
+    interface HttpMethodBuilder1<T1> {
         
-        // === Core Terminal Operations ===
+        /// Create GET method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder1<T1, R> get(Class<R> responseType);
         
-        /// Create function for HTTP method with one path parameter (no body)
-        <R> Fn1<Promise<R>, T1> method(HttpMethod method, Class<R> responseType);
+        /// Create GET method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilder1<T1, R> get(TypeToken<R> responseType);
         
-        /// Create function for HTTP method with one path parameter and generic response (no body)
-        <R> Fn1<Promise<R>, T1> method(HttpMethod method, TypeToken<R> responseType);
+        /// Create GET method, no response body expected
+        HttpResponseContentTypeBuilder1<T1, Unit> get();
         
-        /// Create function for HTTP method with path parameter and body
-        <R> Fn2<Promise<R>, T1, Object> methodWithBody(HttpMethod method, Class<R> responseType);
+        /// Create DELETE method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder1<T1, R> delete(Class<R> responseType);
         
-        /// Create function for HTTP method with path parameter, body, and generic response
-        <R> Fn2<Promise<R>, T1, Object> methodWithBody(HttpMethod method, TypeToken<R> responseType);
+        /// Create DELETE method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilder1<T1, R> delete(TypeToken<R> responseType);
         
-        // === Convenience Methods (Default Implementations) ===
-        
-        /// Create GET function with one path parameter
-        default <R> Fn1<Promise<R>, T1> get(Class<R> responseType) {
-            return method(HttpMethod.GET, responseType);
-        }
-        
-        /// Create GET function with one path parameter and generic response type
-        default <R> Fn1<Promise<R>, T1> get(TypeToken<R> responseType) {
-            return method(HttpMethod.GET, responseType);
-        }
-        
-        /// Create GET function with one path parameter, no response body expected
-        default Fn1<Promise<Unit>, T1> get() {
-            return method(HttpMethod.GET, Unit.class);
-        }
-        
-        /// Create POST function with path parameter and body
-        default <R> Fn2<Promise<R>, T1, Object> post(Class<R> responseType) {
-            return methodWithBody(HttpMethod.POST, responseType);
-        }
-        
-        /// Create POST function with path parameter, body, and generic response type
-        default <R> Fn2<Promise<R>, T1, Object> post(TypeToken<R> responseType) {
-            return methodWithBody(HttpMethod.POST, responseType);
-        }
-        
-        /// Create POST function with path parameter and body, no response body expected
-        default Fn2<Promise<Unit>, T1, Object> post() {
-            return methodWithBody(HttpMethod.POST, Unit.class);
-        }
-        
-        /// Create PUT function with path parameter and body
-        default <R> Fn2<Promise<R>, T1, Object> put(Class<R> responseType) {
-            return methodWithBody(HttpMethod.PUT, responseType);
-        }
-        
-        /// Create PUT function with path parameter, body, and generic response type
-        default <R> Fn2<Promise<R>, T1, Object> put(TypeToken<R> responseType) {
-            return methodWithBody(HttpMethod.PUT, responseType);
-        }
-        
-        /// Create PUT function with path parameter and body, no response body expected
-        default Fn2<Promise<Unit>, T1, Object> put() {
-            return methodWithBody(HttpMethod.PUT, Unit.class);
-        }
-        
-        /// Create PATCH function with path parameter and body
-        default <R> Fn2<Promise<R>, T1, Object> patch(Class<R> responseType) {
-            return methodWithBody(HttpMethod.PATCH, responseType);
-        }
-        
-        /// Create PATCH function with path parameter, body, and generic response type
-        default <R> Fn2<Promise<R>, T1, Object> patch(TypeToken<R> responseType) {
-            return methodWithBody(HttpMethod.PATCH, responseType);
-        }
-        
-        /// Create PATCH function with path parameter and body, no response body expected
-        default Fn2<Promise<Unit>, T1, Object> patch() {
-            return methodWithBody(HttpMethod.PATCH, Unit.class);
-        }
-        
-        /// Create DELETE function with one path parameter
-        default <R> Fn1<Promise<R>, T1> delete(Class<R> responseType) {
-            return method(HttpMethod.DELETE, responseType);
-        }
-        
-        /// Create DELETE function with one path parameter and generic response type
-        default <R> Fn1<Promise<R>, T1> delete(TypeToken<R> responseType) {
-            return method(HttpMethod.DELETE, responseType);
-        }
-        
-        /// Create DELETE function with one path parameter, no response body expected
-        default Fn1<Promise<Unit>, T1> delete() {
-            return method(HttpMethod.DELETE, Unit.class);
-        }
+        /// Create DELETE method, no response body expected
+        HttpResponseContentTypeBuilder1<T1, Unit> delete();
     }
     
-    /// HTTP method builder with two path variables  
-    interface HttpMethodFunctionBuilder2<T1, T2> {
+    /// HTTP method builder for two path variables, no-body requests
+    interface HttpMethodBuilder2<T1, T2> {
         
-        // === Core Terminal Operations ===
+        /// Create GET method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder2<T1, T2, R> get(Class<R> responseType);
         
-        /// Create function for HTTP method with two path parameters (no body)
-        <R> Fn2<Promise<R>, T1, T2> method(HttpMethod method, Class<R> responseType);
+        /// Create GET method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilder2<T1, T2, R> get(TypeToken<R> responseType);
         
-        /// Create function for HTTP method with two path parameters and generic response (no body)
-        <R> Fn2<Promise<R>, T1, T2> method(HttpMethod method, TypeToken<R> responseType);
+        /// Create GET method, no response body expected
+        HttpResponseContentTypeBuilder2<T1, T2, Unit> get();
         
-        /// Create function for HTTP method with two path parameters and body
-        <R> Fn3<Promise<R>, T1, T2, Object> methodWithBody(HttpMethod method, Class<R> responseType);
+        /// Create DELETE method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder2<T1, T2, R> delete(Class<R> responseType);
         
-        /// Create function for HTTP method with two path parameters, body, and generic response
-        <R> Fn3<Promise<R>, T1, T2, Object> methodWithBody(HttpMethod method, TypeToken<R> responseType);
+        /// Create DELETE method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilder2<T1, T2, R> delete(TypeToken<R> responseType);
         
-        // === Convenience Methods (Default Implementations) ===
-        
-        default <R> Fn2<Promise<R>, T1, T2> get(Class<R> responseType) {
-            return method(HttpMethod.GET, responseType);
-        }
-        
-        default <R> Fn2<Promise<R>, T1, T2> get(TypeToken<R> responseType) {
-            return method(HttpMethod.GET, responseType);
-        }
-        
-        default Fn2<Promise<Unit>, T1, T2> get() {
-            return method(HttpMethod.GET, Unit.class);
-        }
-        
-        default <R> Fn3<Promise<R>, T1, T2, Object> post(Class<R> responseType) {
-            return methodWithBody(HttpMethod.POST, responseType);
-        }
-        
-        default <R> Fn3<Promise<R>, T1, T2, Object> post(TypeToken<R> responseType) {
-            return methodWithBody(HttpMethod.POST, responseType);
-        }
-        
-        default Fn3<Promise<Unit>, T1, T2, Object> post() {
-            return methodWithBody(HttpMethod.POST, Unit.class);
-        }
-        
-        default <R> Fn3<Promise<R>, T1, T2, Object> put(Class<R> responseType) {
-            return methodWithBody(HttpMethod.PUT, responseType);
-        }
-        
-        default <R> Fn3<Promise<R>, T1, T2, Object> put(TypeToken<R> responseType) {
-            return methodWithBody(HttpMethod.PUT, responseType);
-        }
-        
-        default Fn3<Promise<Unit>, T1, T2, Object> put() {
-            return methodWithBody(HttpMethod.PUT, Unit.class);
-        }
-        
-        default <R> Fn3<Promise<R>, T1, T2, Object> patch(Class<R> responseType) {
-            return methodWithBody(HttpMethod.PATCH, responseType);
-        }
-        
-        default <R> Fn3<Promise<R>, T1, T2, Object> patch(TypeToken<R> responseType) {
-            return methodWithBody(HttpMethod.PATCH, responseType);
-        }
-        
-        default Fn3<Promise<Unit>, T1, T2, Object> patch() {
-            return methodWithBody(HttpMethod.PATCH, Unit.class);
-        }
-        
-        default <R> Fn2<Promise<R>, T1, T2> delete(Class<R> responseType) {
-            return method(HttpMethod.DELETE, responseType);
-        }
-        
-        default <R> Fn2<Promise<R>, T1, T2> delete(TypeToken<R> responseType) {
-            return method(HttpMethod.DELETE, responseType);
-        }
-        
-        default Fn2<Promise<Unit>, T1, T2> delete() {
-            return method(HttpMethod.DELETE, Unit.class);
-        }
+        /// Create DELETE method, no response body expected
+        HttpResponseContentTypeBuilder2<T1, T2, Unit> delete();
     }
     
-    /// HTTP method builder with three path variables
-    interface HttpMethodFunctionBuilder3<T1, T2, T3> {
+    /// HTTP method builder for three path variables, no-body requests
+    interface HttpMethodBuilder3<T1, T2, T3> {
         
-        // === Core Terminal Operations ===
+        /// Create GET method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder3<T1, T2, T3, R> get(Class<R> responseType);
         
-        /// Create function for HTTP method with three path parameters (no body)
-        <R> Fn3<Promise<R>, T1, T2, T3> method(HttpMethod method, Class<R> responseType);
+        /// Create GET method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilder3<T1, T2, T3, R> get(TypeToken<R> responseType);
         
-        /// Create function for HTTP method with three path parameters and generic response (no body)
-        <R> Fn3<Promise<R>, T1, T2, T3> method(HttpMethod method, TypeToken<R> responseType);
+        /// Create GET method, no response body expected
+        HttpResponseContentTypeBuilder3<T1, T2, T3, Unit> get();
         
-        /// Create function for HTTP method with three path parameters and body
-        <R> Fn4<Promise<R>, T1, T2, T3, Object> methodWithBody(HttpMethod method, Class<R> responseType);
+        /// Create DELETE method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder3<T1, T2, T3, R> delete(Class<R> responseType);
         
-        /// Create function for HTTP method with three path parameters, body, and generic response
-        <R> Fn4<Promise<R>, T1, T2, T3, Object> methodWithBody(HttpMethod method, TypeToken<R> responseType);
+        /// Create DELETE method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilder3<T1, T2, T3, R> delete(TypeToken<R> responseType);
         
-        // === Convenience Methods (Default Implementations) ===
+        /// Create DELETE method, no response body expected
+        HttpResponseContentTypeBuilder3<T1, T2, T3, Unit> delete();
+    }
+    
+    // === HTTP Method Builders with Body ===
+    // These handle HTTP method selection for requests with body
+    
+    /// HTTP method builder for body requests (POST, PUT, PATCH)
+    interface HttpMethodBuilderWithBody0<B> {
         
-        default <R> Fn3<Promise<R>, T1, T2, T3> get(Class<R> responseType) {
-            return method(HttpMethod.GET, responseType);
-        }
+        /// Create POST method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody0<B, R> post(Class<R> responseType);
         
-        default <R> Fn3<Promise<R>, T1, T2, T3> get(TypeToken<R> responseType) {
-            return method(HttpMethod.GET, responseType);
-        }
+        /// Create POST method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilderWithBody0<B, R> post(TypeToken<R> responseType);
         
-        default Fn3<Promise<Unit>, T1, T2, T3> get() {
-            return method(HttpMethod.GET, Unit.class);
-        }
+        /// Create POST method, no response body expected
+        HttpResponseContentTypeBuilderWithBody0<B, Unit> post();
         
-        default <R> Fn4<Promise<R>, T1, T2, T3, Object> post(Class<R> responseType) {
-            return methodWithBody(HttpMethod.POST, responseType);
-        }
+        /// Create PUT method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody0<B, R> put(Class<R> responseType);
         
-        default <R> Fn4<Promise<R>, T1, T2, T3, Object> post(TypeToken<R> responseType) {
-            return methodWithBody(HttpMethod.POST, responseType);
-        }
+        /// Create PUT method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody0<B, R> put(TypeToken<R> responseType);
         
-        default Fn4<Promise<Unit>, T1, T2, T3, Object> post() {
-            return methodWithBody(HttpMethod.POST, Unit.class);
-        }
+        /// Create PUT method, no response body expected
+        HttpResponseContentTypeBuilderWithBody0<B, Unit> put();
         
-        default <R> Fn4<Promise<R>, T1, T2, T3, Object> put(Class<R> responseType) {
-            return methodWithBody(HttpMethod.PUT, responseType);
-        }
+        /// Create PATCH method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody0<B, R> patch(Class<R> responseType);
         
-        default <R> Fn4<Promise<R>, T1, T2, T3, Object> put(TypeToken<R> responseType) {
-            return methodWithBody(HttpMethod.PUT, responseType);
-        }
+        /// Create PATCH method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody0<B, R> patch(TypeToken<R> responseType);
         
-        default Fn4<Promise<Unit>, T1, T2, T3, Object> put() {
-            return methodWithBody(HttpMethod.PUT, Unit.class);
-        }
+        /// Create PATCH method, no response body expected
+        HttpResponseContentTypeBuilderWithBody0<B, Unit> patch();
+    }
+    
+    /// HTTP method builder for one path variable with body requests
+    interface HttpMethodBuilderWithBody1<T1, B> {
         
-        default <R> Fn4<Promise<R>, T1, T2, T3, Object> patch(Class<R> responseType) {
-            return methodWithBody(HttpMethod.PATCH, responseType);
-        }
+        /// Create POST method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody1<T1, B, R> post(Class<R> responseType);
         
-        default <R> Fn4<Promise<R>, T1, T2, T3, Object> patch(TypeToken<R> responseType) {
-            return methodWithBody(HttpMethod.PATCH, responseType);
-        }
+        /// Create POST method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilderWithBody1<T1, B, R> post(TypeToken<R> responseType);
         
-        default Fn4<Promise<Unit>, T1, T2, T3, Object> patch() {
-            return methodWithBody(HttpMethod.PATCH, Unit.class);
-        }
+        /// Create POST method, no response body expected
+        HttpResponseContentTypeBuilderWithBody1<T1, B, Unit> post();
         
-        default <R> Fn3<Promise<R>, T1, T2, T3> delete(Class<R> responseType) {
-            return method(HttpMethod.DELETE, responseType);
-        }
+        /// Create PUT method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody1<T1, B, R> put(Class<R> responseType);
         
-        default <R> Fn3<Promise<R>, T1, T2, T3> delete(TypeToken<R> responseType) {
-            return method(HttpMethod.DELETE, responseType);
-        }
+        /// Create PUT method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody1<T1, B, R> put(TypeToken<R> responseType);
         
-        default Fn3<Promise<Unit>, T1, T2, T3> delete() {
-            return method(HttpMethod.DELETE, Unit.class);
-        }
+        /// Create PUT method, no response body expected
+        HttpResponseContentTypeBuilderWithBody1<T1, B, Unit> put();
+        
+        /// Create PATCH method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody1<T1, B, R> patch(Class<R> responseType);
+        
+        /// Create PATCH method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody1<T1, B, R> patch(TypeToken<R> responseType);
+        
+        /// Create PATCH method, no response body expected
+        HttpResponseContentTypeBuilderWithBody1<T1, B, Unit> patch();
+    }
+    
+    /// HTTP method builder for two path variables with body requests
+    interface HttpMethodBuilderWithBody2<T1, T2, B> {
+        
+        /// Create POST method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody2<T1, T2, B, R> post(Class<R> responseType);
+        
+        /// Create POST method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilderWithBody2<T1, T2, B, R> post(TypeToken<R> responseType);
+        
+        /// Create POST method, no response body expected
+        HttpResponseContentTypeBuilderWithBody2<T1, T2, B, Unit> post();
+        
+        /// Create PUT method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody2<T1, T2, B, R> put(Class<R> responseType);
+        
+        /// Create PUT method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody2<T1, T2, B, R> put(TypeToken<R> responseType);
+        
+        /// Create PUT method, no response body expected
+        HttpResponseContentTypeBuilderWithBody2<T1, T2, B, Unit> put();
+        
+        /// Create PATCH method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody2<T1, T2, B, R> patch(Class<R> responseType);
+        
+        /// Create PATCH method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody2<T1, T2, B, R> patch(TypeToken<R> responseType);
+        
+        /// Create PATCH method, no response body expected
+        HttpResponseContentTypeBuilderWithBody2<T1, T2, B, Unit> patch();
+    }
+    
+    /// HTTP method builder for three path variables with body requests
+    interface HttpMethodBuilderWithBody3<T1, T2, T3, B> {
+        
+        /// Create POST method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody3<T1, T2, T3, B, R> post(Class<R> responseType);
+        
+        /// Create POST method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilderWithBody3<T1, T2, T3, B, R> post(TypeToken<R> responseType);
+        
+        /// Create POST method, no response body expected
+        HttpResponseContentTypeBuilderWithBody3<T1, T2, T3, B, Unit> post();
+        
+        /// Create PUT method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody3<T1, T2, T3, B, R> put(Class<R> responseType);
+        
+        /// Create PUT method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody3<T1, T2, T3, B, R> put(TypeToken<R> responseType);
+        
+        /// Create PUT method, no response body expected
+        HttpResponseContentTypeBuilderWithBody3<T1, T2, T3, B, Unit> put();
+        
+        /// Create PATCH method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody3<T1, T2, T3, B, R> patch(Class<R> responseType);
+        
+        /// Create PATCH method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody3<T1, T2, T3, B, R> patch(TypeToken<R> responseType);
+        
+        /// Create PATCH method, no response body expected
+        HttpResponseContentTypeBuilderWithBody3<T1, T2, T3, B, Unit> patch();
+    }
+    
+    // === Response Content Type Builders ===
+    // These handle the final .as(ContentType) step and return the actual function
+    
+    /// Response content type builder for no path variables
+    interface HttpResponseContentTypeBuilder0<R> {
+        
+        /// Specify response content type and create final function
+        Fn0<Promise<R>> as(ContentType responseContentType);
+    }
+    
+    /// Response content type builder for one path variable
+    interface HttpResponseContentTypeBuilder1<T1, R> {
+        
+        /// Specify response content type and create final function
+        Fn1<Promise<R>, T1> as(ContentType responseContentType);
+    }
+    
+    /// Response content type builder for two path variables
+    interface HttpResponseContentTypeBuilder2<T1, T2, R> {
+        
+        /// Specify response content type and create final function
+        Fn2<Promise<R>, T1, T2> as(ContentType responseContentType);
+    }
+    
+    /// Response content type builder for three path variables
+    interface HttpResponseContentTypeBuilder3<T1, T2, T3, R> {
+        
+        /// Specify response content type and create final function
+        Fn3<Promise<R>, T1, T2, T3> as(ContentType responseContentType);
+    }
+    
+    // === Response Content Type Builders with Body ===
+    // These handle the final .as(ContentType) step for requests with body and return the actual function
+    
+    /// Response content type builder for no path variables with body
+    interface HttpResponseContentTypeBuilderWithBody0<B, R> {
+        
+        /// Specify response content type and create final function
+        Fn1<Promise<R>, B> as(ContentType responseContentType);
+    }
+    
+    /// Response content type builder for one path variable with body
+    interface HttpResponseContentTypeBuilderWithBody1<T1, B, R> {
+        
+        /// Specify response content type and create final function
+        Fn2<Promise<R>, T1, B> as(ContentType responseContentType);
+    }
+    
+    /// Response content type builder for two path variables with body
+    interface HttpResponseContentTypeBuilderWithBody2<T1, T2, B, R> {
+        
+        /// Specify response content type and create final function
+        Fn3<Promise<R>, T1, T2, B> as(ContentType responseContentType);
+    }
+    
+    /// Response content type builder for three path variables with body
+    interface HttpResponseContentTypeBuilderWithBody3<T1, T2, T3, B, R> {
+        
+        /// Specify response content type and create final function
+        Fn4<Promise<R>, T1, T2, T3, B> as(ContentType responseContentType);
     }
 }

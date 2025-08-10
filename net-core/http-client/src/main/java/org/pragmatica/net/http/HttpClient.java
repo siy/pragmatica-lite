@@ -41,11 +41,15 @@ public interface HttpClient {
     
     /// Resource-style DSL for immediate execution
     /// Best for: one-off requests, exploratory API calls, simple CRUD operations
-    HttpResource resource(String baseUrl);
+    default HttpResource resource(String baseUrl) {
+        return resourceImpl(baseUrl);
+    }
     
     /// Function-style DSL for reusable endpoint definitions
     /// Best for: API clients, repeated calls with different parameters, type-safe parameter handling
-    HttpFunction function(String baseUrl);
+    default HttpFunction function(String baseUrl) {
+        return functionImpl(baseUrl);
+    }
     
     /// Template-style request builder
     /// Best for: complex URLs, migration from existing string-based APIs, dynamic URL construction

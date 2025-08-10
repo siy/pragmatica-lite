@@ -68,33 +68,18 @@ public record HttpFunctionBuilder1Impl<T1>(HttpClient client, String baseUrl, Li
     // === Content Type Bridge Methods ===
     
     @Override
-    public HttpFunction.HttpMethodFunctionBuilder1<T1> json() {
-        return new HttpMethodFunctionBuilder1Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, CommonContentTypes.APPLICATION_JSON.headerText());
+    public HttpFunction.HttpMethodBuilder1<T1> send(ContentType requestContentType) {
+        return new HttpMethodBuilder1Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType.headerText());
     }
     
     @Override
-    public HttpFunction.HttpMethodFunctionBuilder1<T1> json(String contentType) {
-        return new HttpMethodFunctionBuilder1Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, contentType);
+    public <T> HttpFunction.HttpMethodBuilderWithBody1<T1, T> send(ContentType requestContentType, Class<T> bodyType) {
+        return new HttpMethodBuilderWithBody1Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType.headerText(), bodyType);
     }
     
     @Override
-    public HttpFunction.HttpMethodFunctionBuilder1<T1> plainText() {
-        return new HttpMethodFunctionBuilder1Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, CommonContentTypes.TEXT_PLAIN.headerText());
-    }
-    
-    @Override
-    public HttpFunction.HttpMethodFunctionBuilder1<T1> plainText(String contentType) {
-        return new HttpMethodFunctionBuilder1Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, contentType);
-    }
-    
-    @Override
-    public HttpFunction.HttpMethodFunctionBuilder1<T1> contentType(String contentType) {
-        return new HttpMethodFunctionBuilder1Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, contentType);
-    }
-    
-    @Override
-    public HttpFunction.HttpMethodFunctionBuilder1<T1> contentType(ContentType contentType) {
-        return contentType(contentType.headerText());
+    public <T> HttpFunction.HttpMethodBuilderWithBody1<T1, T> send(ContentType requestContentType, TypeToken<T> bodyType) {
+        return new HttpMethodBuilderWithBody1Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType.headerText(), bodyType);
     }
     
     

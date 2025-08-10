@@ -37,55 +37,25 @@ public record HttpMethodFunctionBuilder3Impl<T1, T2, T3>(HttpClient client, Stri
         }
     }
     
-    @Override
-    public <R> Fn3<Promise<R>, T1, T2, T3> method(HttpMethod method, Class<R> responseType) {
-        return (param1, param2, param3) -> {
-            validateParameter(param1, 0);
-            validateParameter(param2, 1);
-            validateParameter(param3, 2);
-            var url = buildUrlWithParams(List.of(param1, param2, param3));
-            return client.request()
-                .url(url)
-                .method(method)
-                .header("Content-Type", contentType)
-                .responseType(responseType)
-                .send()
-                .map(HttpResponse::body)
-                .flatMap(optionBody -> optionBody.async());
-        };
-    }
     
     @Override
-    public <R> Fn3<Promise<R>, T1, T2, T3> method(HttpMethod method, TypeToken<R> responseType) {
-        return (param1, param2, param3) -> {
-            validateParameter(param1, 0);
-            validateParameter(param2, 1);
-            validateParameter(param3, 2);
-            var url = buildUrlWithParams(List.of(param1, param2, param3));
-            return client.request()
-                .url(url)
-                .method(method)
-                .header("Content-Type", contentType)
-                .responseType(responseType)
-                .send()
-                .map(HttpResponse::body)
-                .flatMap(optionBody -> optionBody.async());
-        };
-    }
-    
-    @Override
-    public <R> Fn4<Promise<R>, T1, T2, T3, Object> methodWithBody(HttpMethod method, Class<R> responseType) {
+    public <R, U> Fn4<Promise<R>, T1, T2, T3, U> methodWithBody(HttpMethod method, Class<R> responseType, Class<U> bodyType) {
         return (param1, param2, param3, body) -> {
             validateParameter(param1, 0);
             validateParameter(param2, 1);
             validateParameter(param3, 2);
             var url = buildUrlWithParams(List.of(param1, param2, param3));
-            return client.request()
+            var request = client.request()
                 .url(url)
                 .method(method)
-                .body(body)
-                .header("Content-Type", contentType)
-                .responseType(responseType)
+                .header("Content-Type", contentType);
+            
+            // Only set body if it's not Unit (for methods that don't have a body)
+            if (bodyType != Unit.class && body != null) {
+                request = request.body(body);
+            }
+            
+            return request.responseType(responseType)
                 .send()
                 .map(HttpResponse::body)
                 .flatMap(optionBody -> optionBody.async());
@@ -93,18 +63,23 @@ public record HttpMethodFunctionBuilder3Impl<T1, T2, T3>(HttpClient client, Stri
     }
     
     @Override
-    public <R> Fn4<Promise<R>, T1, T2, T3, Object> methodWithBody(HttpMethod method, TypeToken<R> responseType) {
+    public <R, U> Fn4<Promise<R>, T1, T2, T3, U> methodWithBody(HttpMethod method, TypeToken<R> responseType, TypeToken<U> bodyType) {
         return (param1, param2, param3, body) -> {
             validateParameter(param1, 0);
             validateParameter(param2, 1);
             validateParameter(param3, 2);
             var url = buildUrlWithParams(List.of(param1, param2, param3));
-            return client.request()
+            var request = client.request()
                 .url(url)
                 .method(method)
-                .body(body)
-                .header("Content-Type", contentType)
-                .responseType(responseType)
+                .header("Content-Type", contentType);
+            
+            // Only set body if it's not Unit (for methods that don't have a body)
+            if (!bodyType.rawType().equals(Unit.class) && body != null) {
+                request = request.body(body);
+            }
+            
+            return request.responseType(responseType)
                 .send()
                 .map(HttpResponse::body)
                 .flatMap(optionBody -> optionBody.async());
