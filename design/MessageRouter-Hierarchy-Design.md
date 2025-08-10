@@ -10,230 +10,270 @@ The current `MessageRouter` interface (in `common/src/main/java/org/pragmatica/m
 
 ## Proposed New Design
 
-### Base Interface - MessageRouter
+### Sealed Interface Architecture
+
+The new design uses Java's sealed interfaces to create a clear hierarchy with distinct implementations for different use cases:
+
 ```java
 package org.pragmatica.message;
 
-import org.pragmatica.lang.annotations.StableAPI;
+import org.pragmatica.lang.Cause;
+import org.pragmatica.lang.Option;
+import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Tuple.Tuple2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Base interface for message routing - contains only invocation methods.
- * This interface provides the core routing functionality without configuration methods.
- * 
- * <p><strong>Dispatch Semantics:</strong></p>
- * <ul>
- *   <li>Exact-type matching: handlers are matched based on exact message class</li>
- *   <li>Multiple handlers: all registered handlers for a type are invoked</li>
- *   <li>Execution order: handlers execute in registration order</li>
- *   <li>Exception handling: first handler exception terminates processing</li>
- *   <li>No handlers: silent no-op (no exception thrown)</li>
- * </ul>
- */
-@StableAPI
-public interface MessageRouter {
-    /**
-     * Route a message to all registered handlers for its exact type.
-     * 
-     * <p><strong>Behavior:</strong></p>
-     * <ul>
-     *   <li>All handlers for the message type are invoked in registration order</li>
-     *   <li>If any handler throws an exception, processing stops and exception propagates</li>
-     *   <li>If no handlers are registered, this is a silent no-op</li>
-     * </ul>
-     * 
-     * @param message the message to route (must not be null)
-     * @param <T> the message type
-     * @throws NullPointerException if message is null
-     * @throws RuntimeException if any handler throws an exception
-     */
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.pragmatica.lang.Tuple.tuple;
+
+/// **NOTE**: This implementation assumes that the instance is configured and then used without
+/// changes.
+public sealed interface MessageRouter {
     <T extends Message> void route(T message);
-    
-    /**
-     * Route a message asynchronously.
-     * @param messageSupplier supplier for the message
-     * @param <T> the message type
-     */
+
     default <T extends Message> void routeAsync(Supplier<T> messageSupplier) {
         Promise.async(() -> route(messageSupplier.get()));
     }
-    
-    /**
-     * Check if this router can handle a specific message type.
-     * 
-     * @param messageType the message type to check (must not be null)
-     * @return true if the router has one or more handlers for this exact type
-     * @throws NullPointerException if messageType is null
-     */
-    <T extends Message> boolean canHandle(Class<T> messageType);
+
+    static MutableRouter mutable() {
+        return new MutableRouter.SimpleMutableRouter<>(new ConcurrentHashMap<>());
+    }
+
+    sealed interface MutableRouter extends MessageRouter {
+        <T extends Message> MessageRouter addRoute(Class<? extends T> messageType, Consumer<? extends T> receiver);
+
+        record SimpleMutableRouter<T extends Message>(
+                ConcurrentMap<Class<T>, List<Consumer<T>>> routingTable) implements
+                MutableRouter {
+
+            private static final Logger log = LoggerFactory.getLogger(MessageRouter.class);
+
+            @Override
+            public <R extends Message> void route(R message) {
+                Option.option(routingTable.get(message.getClass()))
+                      .onPresent(list -> list.forEach(fn -> fn.accept((T) message)))
+                      .onEmpty(() -> log.warn("No route for message type: {}", message.getClass().getSimpleName()));
+            }
+
+            @SuppressWarnings("unchecked")
+            @Override
+            public <R extends Message> MessageRouter addRoute(Class<? extends R> messageType,
+                                                              Consumer<? extends R> receiver) {
+                routingTable.computeIfAbsent((Class<T>) messageType, _ -> new ArrayList<>())
+                            .add((Consumer<T>) receiver);
+
+                return this;
+            }
+        }
+    }
+
+    non-sealed interface ImmutableRouter<T extends Message> extends MessageRouter {
+        Map<Class<T>, List<Consumer<T>>> routingTable();
+
+        @SuppressWarnings("unchecked")
+        default <R extends Message> void route(R message) {
+            routingTable().get(message.getClass()).forEach(fn -> fn.accept((T) message));
+        }
+    }
+
+    interface Entry<T extends Message> {
+        Stream<Tuple2<Class<? extends T>, Consumer<? extends T>>> entries();
+
+        Class<T> type();
+
+        Set<Class<?>> validate();
+
+        @SuppressWarnings("unchecked")
+        default Result<MessageRouter> asRouter() {
+            var validated = validate();
+
+            if (!validated.isEmpty()) {
+                var missing = validated.stream()
+                                       .map(Class::getSimpleName)
+                                       .collect(Collectors.joining(", "));
+                return new InvalidMessageRouterConfiguration("Missing message types: " + missing).result();
+            }
+
+            record router<T extends Message>(
+                    Map<Class<T>, List<Consumer<T>>> routingTable) implements ImmutableRouter<T> {}
+
+            var routingTable = new HashMap<Class<T>, List<Consumer<T>>>();
+
+            entries().forEach(tuple -> routingTable.compute((Class<T>) tuple.first(),
+                                                            (_, oldValue) -> merge(tuple, oldValue)));
+
+            return Result.success(new router<>(routingTable));
+        }
+
+        @SuppressWarnings("unchecked")
+        private static <T extends Message> List<Consumer<T>> merge(Tuple2<Class<? extends T>, Consumer<? extends T>> tuple,
+                                                                   List<Consumer<T>> oldValue) {
+            var list = oldValue == null ? new ArrayList<Consumer<T>>() : oldValue;
+            list.add((Consumer<T>) tuple.last());
+            return list;
+        }
+
+        interface SealedBuilder<T extends Message> extends Entry<T> {
+            static <T extends Message> SealedBuilder<T> from(Class<T> clazz) {
+                record sealedBuilder<T extends Message>(Class<T> type,
+                                                        List<Entry<? extends T>> routes) implements SealedBuilder<T> {
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public Stream<Tuple2<Class<? extends T>, Consumer<? extends T>>> entries() {
+                        return routes.stream()
+                                     .map(entry -> (Entry<T>) entry)
+                                     .flatMap(Entry::entries);
+                    }
+
+                    @SafeVarargs
+                    @Override
+                    public final Entry<T> route(Entry<? extends T>... routes) {
+                        routes().addAll(List.of(routes));
+
+                        return this;
+                    }
+
+                    @Override
+                    public Set<Class<?>> validate() {
+                        if (!type().isSealed()) {
+                            return mergeSubroutes(new HashSet<>());
+                        }
+
+                        var declared = routes().stream()
+                                               .map(Entry::type)
+                                               .collect(Collectors.toSet());
+                        var permitted = new HashSet<>(Set.of(type().getPermittedSubclasses()));
+
+                        permitted.removeAll(declared);
+
+                        return mergeSubroutes(permitted);
+                    }
+
+                    private Set<Class<?>> mergeSubroutes(Set<Class<?>> local) {
+                        routes().forEach(route -> local.addAll(route.validate()));
+                        return local;
+                    }
+                }
+
+                return new sealedBuilder<>(clazz, new ArrayList<>());
+            }
+
+            @SuppressWarnings("unchecked")
+            Entry<T> route(Entry<? extends T>... routes);
+        }
+
+        static <T extends Message> Entry<T> route(Class<T> type, Consumer<T> receiver) {
+            record entry<T extends Message>(Class<T> type, Consumer<T> receiver) implements Entry<T> {
+
+                @Override
+                public Stream<Tuple2<Class<? extends T>, Consumer<? extends T>>> entries() {
+                    return Stream.of(tuple(type(), receiver()));
+                }
+
+                @Override
+                public Set<Class<?>> validate() {
+                    return Set.of(); // Route is always valid
+                }
+            }
+
+            return new entry<>(type, receiver);
+        }
+    }
+
+    record InvalidMessageRouterConfiguration(String message) implements Cause {}
 }
 ```
 
-### Mutable Implementation - For Tests
+## Key Design Principles
+
+### 1. Sealed Interface Hierarchy
+- **MessageRouter**: Base sealed interface with core routing functionality
+- **MutableRouter**: Sealed sub-interface for test scenarios with runtime route addition
+- **ImmutableRouter**: Non-sealed interface for production use with build-time configuration
+
+### 2. No canHandle() Method
+The `canHandle()` method is redundant in this design:
+- **Mutable implementation**: Lack of handler logs warning, doesn't throw exception
+- **Immutable implementation**: Routes are validated at build time, runtime failure impossible
+
+### 3. Simplified Mutable Router
+- No builder pattern - direct `mutable()` factory method
+- Thread-safe using ConcurrentHashMap and ArrayList
+- Logs warning when no handler found instead of silent failure
+
+### 4. Sophisticated Immutable Router
+- Entry-based builder for complex routing hierarchies
+- Validates sealed type hierarchies at build time
+- Returns Result<MessageRouter> with validation errors
+- Supports nested routing structures
+
+### 5. Error Handling Strategy
+- **Mutable**: Logs warnings for missing handlers
+- **Immutable**: Build-time validation prevents runtime errors
+- **Invalid configuration**: Returns Result with descriptive error messages
+
+## Usage Examples
+
+### Simple Mutable Router (Tests)
 ```java
-package org.pragmatica.message;
+var router = MessageRouter.mutable()
+    .addRoute(TestMessage.class, msg -> System.out.println("Test: " + msg))
+    .addRoute(ErrorMessage.class, msg -> System.err.println("Error: " + msg));
 
-import org.pragmatica.lang.annotations.TeamAPI;
-import java.util.concurrent.ConcurrentHashMap;
-
-/**
- * Mutable message router implementation using ConcurrentHashMap for thread safety.
- * <p><strong>⚠️ TEST USE ONLY:</strong> This implementation is intended exclusively for test scenarios 
- * where routes need to be added at runtime. Do not use in production code.</p>
- * 
- * <p><strong>Threading Model:</strong></p>
- * <ul>
- *   <li>Thread-safe for concurrent route additions and message routing</li>
- *   <li>Uses ConcurrentHashMap and CopyOnWriteArrayList for thread safety</li>
- *   <li>Route registration may block briefly during list copying</li>
- * </ul>
- */
-@TeamAPI
-final class MutableMessageRouter implements MessageRouter { // package-private - test use only
-    private final ConcurrentHashMap<Class<? extends Message>, List<Consumer<? extends Message>>> routes;
-    
-    private MutableMessageRouter() {
-        this.routes = new ConcurrentHashMap<>();
-    }
-    
-    /**
-     * Add a route for a specific message type.
-     * Thread-safe operation.
-     */
-    public <T extends Message> MutableMessageRouter addRoute(Class<T> messageType, Consumer<T> handler) {
-        routes.computeIfAbsent(messageType, k -> new CopyOnWriteArrayList<>())
-              .add((Consumer<Message>) handler);
-        return this;
-    }
-    
-    @Override
-    public <T extends Message> void route(T message) {
-        // Implementation using ConcurrentHashMap
-    }
-    
-    /**
-     * Simple builder for test scenarios.
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
-    
-    public static class Builder {
-        private final MutableMessageRouter router = new MutableMessageRouter();
-        
-        public <T extends Message> Builder addRoute(Class<T> messageType, Consumer<T> handler) {
-            router.addRoute(messageType, handler);
-            return this;
-        }
-        
-        public MutableMessageRouter build() {
-            return router;
-        }
-    }
-}
+router.route(new TestMessage("Hello"));
 ```
 
-### Immutable Implementation - For Production
+### Complex Immutable Router (Production)
 ```java
-package org.pragmatica.message;
+var routerResult = Entry.SealedBuilder.from(Message.class)
+    .route(
+        Entry.route(UserMessage.class, this::handleUser),
+        Entry.route(SystemMessage.class, this::handleSystem)
+    )
+    .asRouter();
 
-import org.pragmatica.lang.annotations.StableAPI;
-import java.util.Map;
-
-/**
- * Immutable message router implementation for production use.
- * Built using hierarchical builder pattern with from().route() syntax.
- * 
- * <p><strong>Threading Model:</strong></p>
- * <ul>
- *   <li>Completely thread-safe - all internal state is immutable</li>
- *   <li>Zero synchronization overhead during message routing</li>
- *   <li>Safe to share across multiple threads and components</li>
- * </ul>
- * 
- * <p><strong>Performance Characteristics:</strong></p>
- * <ul>
- *   <li>O(1) handler lookup using HashMap</li>
- *   <li>O(n) handler execution where n = number of handlers for message type</li>
- * </ul>
- */
-@StableAPI 
-public final class ImmutableMessageRouter implements MessageRouter {
-    private final Map<Class<? extends Message>, List<Consumer<? extends Message>>> routes;
-    
-    private ImmutableMessageRouter(Map<Class<? extends Message>, List<Consumer<? extends Message>>> routes) {
-        this.routes = Map.copyOf(routes); // Immutable copy
-    }
-    
-    @Override
-    public <T extends Message> void route(T message) {
-        // Implementation using immutable map
-    }
-    
-    /**
-     * Start building with a message type - maintains existing from().route() pattern
-     */
-    public static <T extends Message> RouterBuilder<T> from(Class<T> messageType) {
-        return new RouterBuilder<>(messageType);
-    }
-    
-    // Hierarchical builder implementation...
+if (routerResult.isSuccess()) {
+    MessageRouter router = routerResult.unwrap();
+    router.route(new UserMessage("user data"));
 }
 ```
 
 ## Migration Strategy
 
-### Release 1.0-rc1 (Immediate)
-1. **Phase 1**: Implement new interfaces alongside existing code
-   - Add new MessageRouter interface with routing-only methods
-   - Implement MutableMessageRouter (package-private, tests only)
-   - Implement ImmutableMessageRouter with hierarchical builder
-   - **Deprecation**: Mark `RouterConfigurator` with `@Deprecated` and `@ScheduledForRemoval(inVersion = "1.0")`
-   - **Deprecation**: Mark existing `MessageRouter.addRoute()` with `@Deprecated` and `@ScheduledForRemoval(inVersion = "1.0")`
+### Phase 1: Replace Current Interface
+1. Replace current MessageRouter with sealed interface design
+2. Update all existing usage to use `MessageRouter.mutable()` for tests
+3. Convert production code to use Entry-based builders
 
-### Release 1.0-rc2
-2. **Phase 2**: Update all test code
-   - Migrate all test code to use `MutableMessageRouter.builder()` 
-   - Provide migration guide and examples
-   - **Compatibility**: Create `LegacyRouterAdapter` that wraps new implementations
+### Phase 2: Validation and Testing  
+1. Ensure all existing tests pass with new implementation
+2. Add comprehensive tests for validation logic
+3. Test sealed type hierarchy validation
 
-### Release 1.0-rc3
-3. **Phase 3**: Update production code
-   - Migrate all production code to use `ImmutableMessageRouter.from().route()`
-   - Update documentation and examples
-   - **Validation**: Compile-time errors for deprecated API usage
-
-### Release 1.0.0 (Final)
-4. **Phase 4**: Remove deprecated code
-   - Remove `RouterConfigurator` completely
-   - Remove old `MessageRouter.addRoute()` method
-   - Remove `LegacyRouterAdapter`
-   - Clean up all deprecation warnings
-
-### Migration Compatibility Adapter
-```java
-/**
- * Temporary adapter for migrating from old RouterConfigurator pattern.
- * @deprecated Use ImmutableMessageRouter.from().route() directly
- */
-@Deprecated
-@ScheduledForRemoval(inVersion = "1.0")
-public final class LegacyRouterAdapter {
-    public static MessageRouter fromConfigurator(RouterConfigurator config) {
-        // Convert old configuration to new ImmutableMessageRouter
-    }
-}
-```
+### Phase 3: Documentation and Examples
+1. Update all documentation to reflect new design
+2. Provide migration examples for complex routing scenarios
+3. Document error handling patterns
 
 ## Benefits
 
-- **Clear Separation**: Different implementations for different use cases
-- **Thread Safety**: ConcurrentHashMap for mutable, immutability for production  
-- **API Stability**: @StableAPI for production interfaces
-- **Backward Compatibility**: Existing from().route() pattern preserved
-- **Explicit Semantics**: Clear documentation of dispatch behavior, handler ordering, and exception handling
-- **Test Isolation**: Package-private MutableMessageRouter prevents accidental production usage
-- **Migration Support**: Structured release plan with deprecation timeline and compatibility adapters
+- **Type Safety**: Sealed interfaces prevent incorrect implementations
+- **Build-time Validation**: Immutable router catches configuration errors early  
+- **Simplified API**: No redundant methods like canHandle()
+- **Performance**: Direct map lookup without additional checks
+- **Logging**: Proper warning messages for debugging
+- **Flexibility**: Entry system supports complex routing hierarchies
+- **Thread Safety**: Both implementations are thread-safe by design
 
 ---
-*Design by: Core Framework Team*
-*Date: 2025-08-09*
+*Design by: Core Framework Team (updated based on Project Owner feedback)*
+*Date: 2025-08-10*
