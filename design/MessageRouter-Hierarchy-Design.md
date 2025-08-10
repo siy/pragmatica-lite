@@ -225,7 +225,7 @@ The `canHandle()` method is redundant in this design:
 
 ### Simple Mutable Router (Tests)
 ```java
-var router = MessageRouter.mutable()
+MessageRouter router = MessageRouter.mutable()
     .addRoute(TestMessage.class, msg -> System.out.println("Test: " + msg))
     .addRoute(ErrorMessage.class, msg -> System.err.println("Error: " + msg));
 
@@ -234,10 +234,13 @@ router.route(new TestMessage("Hello"));
 
 ### Complex Immutable Router (Production)
 ```java
-var routerResult = Entry.SealedBuilder.from(Message.class)
+import static org.pragmatica.message.MessageRouter.Entry.SealedBuilder.from;
+import static org.pragmatica.message.MessageRouter.Entry.route;
+
+var routerResult = from(Message.class)
     .route(
-        Entry.route(UserMessage.class, this::handleUser),
-        Entry.route(SystemMessage.class, this::handleSystem)
+        route(UserMessage.class, this::handleUser),
+        route(SystemMessage.class, this::handleSystem)
     )
     .asRouter();
 
