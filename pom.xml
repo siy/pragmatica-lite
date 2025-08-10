@@ -45,7 +45,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.release>24</java.release>
-        <java.enable-preview>--enable-preview</java.enable-preview>
         <github.global.server>github</github.global.server>
 
         <!-- Dependencies -->
@@ -182,7 +181,6 @@
                         <source>${java.release}</source>
                         <target>${java.release}</target>
                         <compilerArgs>
-                            <arg>${java.enable-preview}</arg>
                             <arg>-proc:full</arg>
                         </compilerArgs>
                     </configuration>
@@ -193,7 +191,6 @@
                     <version>3.5.1</version>
                     <configuration>
                         <excludedGroups>Infinite, Slow, Benchmark</excludedGroups>
-                        <argLine>${java.enable-preview}</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
