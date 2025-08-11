@@ -1,11 +1,11 @@
 package org.pragmatica.net.http;
 
-import java.time.Duration;
+import org.pragmatica.lang.io.TimeSpan;
 
 public record HttpClientConfig(
-    Duration connectTimeout,
-    Duration requestTimeout,
-    Duration readTimeout,
+    TimeSpan connectTimeout,
+    TimeSpan requestTimeout,
+    TimeSpan readTimeout,
     int maxConnections,
     int maxConnectionsPerHost,
     boolean followRedirects,
@@ -22,26 +22,26 @@ public record HttpClientConfig(
     }
     
     public static class Builder {
-        private Duration connectTimeout = Duration.ofSeconds(10);
-        private Duration requestTimeout = Duration.ofSeconds(30);
-        private Duration readTimeout = Duration.ofSeconds(30);
+        private TimeSpan connectTimeout = TimeSpan.timeSpan(10).seconds();
+        private TimeSpan requestTimeout = TimeSpan.timeSpan(30).seconds();
+        private TimeSpan readTimeout = TimeSpan.timeSpan(30).seconds();
         private int maxConnections = 100;
         private int maxConnectionsPerHost = 10;
         private boolean followRedirects = true;
         private String userAgent = "pragmatica-http-client/1.0";
         private HttpHeaders defaultHeaders = new HttpHeaders();
         
-        public Builder connectTimeout(Duration connectTimeout) {
+        public Builder connectTimeout(TimeSpan connectTimeout) {
             this.connectTimeout = connectTimeout;
             return this;
         }
         
-        public Builder requestTimeout(Duration requestTimeout) {
+        public Builder requestTimeout(TimeSpan requestTimeout) {
             this.requestTimeout = requestTimeout;
             return this;
         }
         
-        public Builder readTimeout(Duration readTimeout) {
+        public Builder readTimeout(TimeSpan readTimeout) {
             this.readTimeout = readTimeout;
             return this;
         }

@@ -1,6 +1,7 @@
 package org.pragmatica.net.http.impl;
 
 import org.pragmatica.lang.type.TypeToken;
+import org.pragmatica.lang.io.TimeSpan;
 import org.pragmatica.net.http.ContentType;
 import org.pragmatica.net.http.HttpClient;
 import org.pragmatica.net.http.HttpHeaders;
@@ -8,14 +9,12 @@ import org.pragmatica.net.http.HttpMethod;
 import org.pragmatica.net.http.HttpRequest;
 import org.pragmatica.net.http.HttpRequestBuilder;
 
-import java.time.Duration;
-
 public final class HttpRequestBuilderImpl implements HttpRequestBuilder {
     private String url;
     private HttpMethod method = HttpMethod.GET;
     private HttpHeaders headers = new HttpHeaders();
     private Object body;
-    private Duration timeout;
+    private TimeSpan timeout;
     private HttpClient client;
     
     public HttpRequestBuilderImpl() {
@@ -57,7 +56,7 @@ public final class HttpRequestBuilderImpl implements HttpRequestBuilder {
     }
     
     @Override
-    public HttpRequestBuilder timeout(Duration timeout) {
+    public HttpRequestBuilder timeout(TimeSpan timeout) {
         this.timeout = timeout;
         return this;
     }

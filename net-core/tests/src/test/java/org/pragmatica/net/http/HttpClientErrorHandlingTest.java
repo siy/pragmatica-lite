@@ -5,7 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.lang.type.TypeToken;
 
-import java.time.Duration;
+import org.pragmatica.lang.io.TimeSpan;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,8 +21,8 @@ class HttpClientErrorHandlingTest {
     void setUp() {
         var config = HttpClientConfig.builder()
             .userAgent("pragmatica-http-client-error-test/1.0")
-            .connectTimeout(Duration.ofSeconds(5))
-            .requestTimeout(Duration.ofSeconds(10))
+            .connectTimeout(TimeSpan.timeSpan(5).seconds())
+            .requestTimeout(TimeSpan.timeSpan(10).seconds())
             .followRedirects(true)
             .build();
             
@@ -230,7 +230,7 @@ class HttpClientErrorHandlingTest {
         // Use httpbin's delay endpoint with a delay longer than our timeout
         var shortTimeoutClient = HttpClient.create(
             HttpClientConfig.builder()
-                .requestTimeout(Duration.ofSeconds(1))
+                .requestTimeout(TimeSpan.timeSpan(1).seconds())
                 .build()
         );
         

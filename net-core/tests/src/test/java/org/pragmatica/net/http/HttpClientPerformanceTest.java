@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.type.TypeToken;
 
+import org.pragmatica.lang.io.TimeSpan;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -28,8 +29,8 @@ class HttpClientPerformanceTest {
     void setUp() {
         var config = HttpClientConfig.builder()
             .userAgent("pragmatica-http-client-performance-test/1.0")
-            .connectTimeout(Duration.ofSeconds(10))
-            .requestTimeout(Duration.ofSeconds(30))
+            .connectTimeout(TimeSpan.timeSpan(10).seconds())
+            .requestTimeout(TimeSpan.timeSpan(30).seconds())
             .maxConnections(50)
             .maxConnectionsPerHost(20)
             .followRedirects(true)
@@ -136,7 +137,7 @@ class HttpClientPerformanceTest {
         var limitedConfig = HttpClientConfig.builder()
             .maxConnections(5)
             .maxConnectionsPerHost(2)
-            .requestTimeout(Duration.ofSeconds(15))
+            .requestTimeout(TimeSpan.timeSpan(15).seconds())
             .build();
             
         var limitedClient = HttpClient.create(limitedConfig);

@@ -2,8 +2,7 @@ package org.pragmatica.net.http;
 
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.type.TypeToken;
-
-import java.time.Duration;
+import org.pragmatica.lang.io.TimeSpan;
 
 public interface HttpRequestBuilder {
     
@@ -17,7 +16,7 @@ public interface HttpRequestBuilder {
     
     HttpRequestBuilder body(Object body);
     
-    HttpRequestBuilder timeout(Duration timeout);
+    HttpRequestBuilder timeout(TimeSpan timeout);
     
     // === Content Type Configuration ===
     

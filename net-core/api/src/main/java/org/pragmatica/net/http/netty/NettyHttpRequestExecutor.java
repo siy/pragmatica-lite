@@ -49,7 +49,7 @@ public final class NettyHttpRequestExecutor {
                             
                             pipeline.addLast(new HttpClientCodec());
                             pipeline.addLast(new HttpObjectAggregator(1048576)); // 1MB max response size
-                            pipeline.addLast(new ReadTimeoutHandler(config.readTimeout().toSeconds(), TimeUnit.SECONDS));
+                            pipeline.addLast(new ReadTimeoutHandler(config.readTimeout().secondsAndNanos().first(), TimeUnit.SECONDS));
                             pipeline.addLast(new HttpResponseHandler<>(request, future));
                         }
                     })

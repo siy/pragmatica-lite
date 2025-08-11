@@ -5,7 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.lang.type.TypeToken;
 
-import java.time.Duration;
+import org.pragmatica.lang.io.TimeSpan;
 import java.util.List;
 import java.util.Map;
 
@@ -29,8 +29,8 @@ class HttpClientRealAPITest {
     void setUp() {
         var config = HttpClientConfig.builder()
             .userAgent("pragmatica-http-client-integration-test/1.0")
-            .connectTimeout(Duration.ofSeconds(10))
-            .requestTimeout(Duration.ofSeconds(30))
+            .connectTimeout(TimeSpan.timeSpan(10).seconds())
+            .requestTimeout(TimeSpan.timeSpan(30).seconds())
             .followRedirects(true)
             .build();
             

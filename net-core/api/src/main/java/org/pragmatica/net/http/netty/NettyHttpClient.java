@@ -36,7 +36,7 @@ public final class NettyHttpClient implements HttpClient {
         return new Bootstrap()
             .group(eventLoopGroup)
             .channel(NioSocketChannel.class)
-            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) config.connectTimeout().toMillis())
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) config.connectTimeout().millis())
             .option(ChannelOption.SO_KEEPALIVE, true)
             .option(ChannelOption.TCP_NODELAY, true);
     }

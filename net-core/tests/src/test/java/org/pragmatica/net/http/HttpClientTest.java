@@ -3,8 +3,8 @@ package org.pragmatica.net.http;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.lang.type.TypeToken;
+import org.pragmatica.lang.io.TimeSpan;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -124,9 +124,9 @@ class HttpClientTest {
     @Test
     void shouldCreateConfigWithBuilder() {
         var config = HttpClientConfig.builder()
-            .connectTimeout(Duration.ofSeconds(5))
-            .requestTimeout(Duration.ofSeconds(20))
-            .readTimeout(Duration.ofSeconds(15))
+            .connectTimeout(TimeSpan.timeSpan(5).seconds())
+            .requestTimeout(TimeSpan.timeSpan(20).seconds())
+            .readTimeout(TimeSpan.timeSpan(15).seconds())
             .maxConnections(50)
             .maxConnectionsPerHost(20)
             .followRedirects(false)
@@ -134,9 +134,9 @@ class HttpClientTest {
             .defaultHeader("Accept", "application/json")
             .build();
             
-        assertThat(config.connectTimeout()).isEqualTo(Duration.ofSeconds(5));
-        assertThat(config.requestTimeout()).isEqualTo(Duration.ofSeconds(20));
-        assertThat(config.readTimeout()).isEqualTo(Duration.ofSeconds(15));
+        assertThat(config.connectTimeout()).isEqualTo(TimeSpan.timeSpan(5).seconds());
+        assertThat(config.requestTimeout()).isEqualTo(TimeSpan.timeSpan(20).seconds());
+        assertThat(config.readTimeout()).isEqualTo(TimeSpan.timeSpan(15).seconds());
         assertThat(config.maxConnections()).isEqualTo(50);
         assertThat(config.maxConnectionsPerHost()).isEqualTo(20);
         assertThat(config.followRedirects()).isFalse();

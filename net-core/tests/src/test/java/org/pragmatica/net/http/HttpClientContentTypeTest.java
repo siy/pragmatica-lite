@@ -5,7 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.lang.type.TypeToken;
 
-import java.time.Duration;
+import org.pragmatica.lang.io.TimeSpan;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,8 +21,8 @@ class HttpClientContentTypeTest {
     void setUp() {
         var config = HttpClientConfig.builder()
             .userAgent("pragmatica-http-client-content-test/1.0")
-            .connectTimeout(Duration.ofSeconds(10))
-            .requestTimeout(Duration.ofSeconds(30))
+            .connectTimeout(TimeSpan.timeSpan(10).seconds())
+            .requestTimeout(TimeSpan.timeSpan(30).seconds())
             .build();
             
         client = HttpClient.create(config);
