@@ -30,7 +30,7 @@ class LeaderManagerTest {
     private final NodeId self = NodeId.randomNodeId();
     private final List<NodeId> nodes = List.of(NodeId.randomNodeId(), self, NodeId.randomNodeId());
 
-    private final MessageRouter router = messageRouter();
+    private final MessageRouter router = MessageRouter.mutable();
     private final Watcher<LeaderNotification> watcher = new Watcher<>(new ArrayList<>());
 
     @BeforeEach

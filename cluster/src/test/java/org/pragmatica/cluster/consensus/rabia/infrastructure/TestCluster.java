@@ -99,7 +99,7 @@ public class TestCluster {
     }
 
     public void addNewNode(NodeId id) {
-        var router = MessageRouter.messageRouter();
+        var router = MessageRouter.mutable();
         var store = new KVStore<StringKey, String>(router, serializer, deserializer);
         var topologyManager = new TestTopologyManager(size, nodeInfo(id, nodeAddress("localhost", 8090)));
         var engine = new RabiaEngine<>(topologyManager, network, store, ProtocolConfig.testConfig());
