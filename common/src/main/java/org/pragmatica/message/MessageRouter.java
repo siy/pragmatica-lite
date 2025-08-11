@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -18,19 +20,23 @@ import static org.pragmatica.lang.Tuple.tuple;
 
 /// **NOTE**: This implementation assumes that the instance is configured and then used without
 /// changes.
-public interface MessageRouter {
+public sealed interface MessageRouter {
     <T extends Message> void route(T message);
 
     default <T extends Message> void routeAsync(Supplier<T> messageSupplier) {
         Promise.async(() -> route(messageSupplier.get()));
     }
 
-    <T extends Message> MessageRouter addRoute(Class<? extends T> messageType, Consumer<? extends T> receiver);
+    static MutableRouter mutable() {
+        return new MutableRouter.SimpleMutableRouter<>(new ConcurrentHashMap<>());
+    }
 
-    static MessageRouter messageRouter() {
-        @SuppressWarnings("unchecked")
-        record messageRouter<T extends Message>(Map<Class<T>, List<Consumer<T>>> routingTable) implements
-                MessageRouter {
+    sealed interface MutableRouter extends MessageRouter {
+        <T extends Message> MessageRouter addRoute(Class<? extends T> messageType, Consumer<? extends T> receiver);
+
+        record SimpleMutableRouter<T extends Message>(
+                ConcurrentMap<Class<T>, List<Consumer<T>>> routingTable) implements
+                MutableRouter {
 
             private static final Logger log = LoggerFactory.getLogger(MessageRouter.class);
 
@@ -41,16 +47,25 @@ public interface MessageRouter {
                       .onEmpty(() -> log.warn("No route for message type: {}", message.getClass().getSimpleName()));
             }
 
+            @SuppressWarnings("unchecked")
             @Override
-            public <R extends Message> MessageRouter addRoute(Class<? extends R> messageType, Consumer<? extends R> receiver) {
+            public <R extends Message> MessageRouter addRoute(Class<? extends R> messageType,
+                                                              Consumer<? extends R> receiver) {
                 routingTable.computeIfAbsent((Class<T>) messageType, _ -> new ArrayList<>())
                             .add((Consumer<T>) receiver);
 
                 return this;
             }
         }
+    }
 
-        return new messageRouter<>(new HashMap<>());
+    non-sealed interface ImmutableRouter<T extends Message> extends MessageRouter {
+        Map<Class<T>, List<Consumer<T>>> routingTable();
+
+        @SuppressWarnings("unchecked")
+        default <R extends Message> void route(R message) {
+            routingTable().get(message.getClass()).forEach(fn -> fn.accept((T) message));
+        }
     }
 
     interface Entry<T extends Message> {
@@ -60,6 +75,7 @@ public interface MessageRouter {
 
         Set<Class<?>> validate();
 
+        @SuppressWarnings("unchecked")
         default Result<MessageRouter> asRouter() {
             var validated = validate();
 
@@ -70,9 +86,23 @@ public interface MessageRouter {
                 return new InvalidMessageRouterConfiguration("Missing message types: " + missing).result();
             }
 
-            var router = messageRouter();
-            entries().forEach(tuple -> tuple.map(router::addRoute));
-            return Result.success(router);
+            record router<T extends Message>(
+                    Map<Class<T>, List<Consumer<T>>> routingTable) implements ImmutableRouter<T> {}
+
+            var routingTable = new HashMap<Class<T>, List<Consumer<T>>>();
+
+            entries().forEach(tuple -> routingTable.compute((Class<T>) tuple.first(),
+                                                            (_, oldValue) -> merge(tuple, oldValue)));
+
+            return Result.success(new router<>(routingTable));
+        }
+
+        @SuppressWarnings("unchecked")
+        private static <T extends Message> List<Consumer<T>> merge(Tuple2<Class<? extends T>, Consumer<? extends T>> tuple,
+                                                                   List<Consumer<T>> oldValue) {
+            var list = oldValue == null ? new ArrayList<Consumer<T>>() : oldValue;
+            list.add((Consumer<T>) tuple.last());
+            return list;
         }
 
         interface SealedBuilder<T extends Message> extends Entry<T> {

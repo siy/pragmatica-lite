@@ -66,7 +66,7 @@ class RabiaNodeNettyIntegrationTest {
                                                     RECONCILE_INTERVAL,
                                                     PING_INTERVAL,
                                                     configuredNodes);
-            var router = MessageRouter.messageRouter();
+            var router = MessageRouter.mutable();
 
             routers.add(router);
             var store = new KVStore<StringKey, String>(router, serializer, deserializer);
