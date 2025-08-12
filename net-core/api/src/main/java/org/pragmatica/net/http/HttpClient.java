@@ -50,7 +50,21 @@ public interface HttpClient {
     /// Function-style endpoint builder - the primary API
     /// Best for: reusable endpoint definitions, type-safe parameter handling, both one-shot and repeated calls
     default HttpFunction from(String baseUrl) {
-        return fromImpl(baseUrl);
+        
+        record httpFunction(HttpClient client, String baseUrl, 
+                           UrlBuilder urlBuilder) implements HttpFunction {
+            
+            httpFunction {
+            }
+            
+            @Override
+            public HttpFunctionBuilder0 path(String pathSegments) {
+                var segments = List.of(pathSegments.split("/"));
+                return new org.pragmatica.net.http.impl.HttpFunctionBuilder0Impl(client, baseUrl, segments, urlBuilder, null);
+            }
+        };
+        
+        return new httpFunction(this, baseUrl, UrlBuilder.create());
     }
     
     // === Lifecycle ===
@@ -71,25 +85,5 @@ public interface HttpClient {
     /// Create HTTP client with custom configuration
     static HttpClient create(HttpClientConfig config) {
         return new org.pragmatica.net.http.netty.NettyHttpClient(config);
-    }
-    
-    // === Default Implementation ===
-    
-    default HttpFunction fromImpl(String baseUrl) {
-        
-        record httpFunction(HttpClient client, String baseUrl, 
-                           UrlBuilder urlBuilder) implements HttpFunction {
-            
-            httpFunction {
-            }
-            
-            @Override
-            public HttpFunctionBuilder0 path(String pathSegments) {
-                var segments = List.of(pathSegments.split("/"));
-                return new org.pragmatica.net.http.impl.HttpFunctionBuilder0Impl(client, baseUrl, segments, urlBuilder, null);
-            }
-        };
-        
-        return new httpFunction(this, baseUrl, UrlBuilder.create());
     }
 }
