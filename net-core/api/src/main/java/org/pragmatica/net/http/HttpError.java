@@ -19,8 +19,7 @@ package org.pragmatica.net.http;
 import org.pragmatica.lang.Cause;
 
 /// Sealed interface representing HTTP errors organized by status code groups
-public sealed interface HttpError extends Cause 
-    permits HttpError.Success, HttpError.Redirection, HttpError.ClientError, HttpError.ServerError, HttpError.UnknownStatusCode {
+public sealed interface HttpError extends Cause {
     
     /// Returns the HTTP status code as enum
     HttpStatusCode code();
@@ -48,8 +47,7 @@ public sealed interface HttpError extends Cause
     // === Sealed Interface Groups ===
     
     /// 2xx Success responses that still represent errors in business logic
-    sealed interface Success extends HttpError 
-        permits Success.Ok, Success.Created, Success.Accepted, Success.NoContent, Success.ResetContent, Success.PartialContent {
+    sealed interface Success extends HttpError {
         
         record Ok(String text) implements Success {
             @Override
@@ -83,9 +81,7 @@ public sealed interface HttpError extends Cause
     }
     
     /// 3xx Redirection responses  
-    sealed interface Redirection extends HttpError 
-        permits Redirection.MultipleChoices, Redirection.MovedPermanently, Redirection.Found, Redirection.SeeOther, 
-                Redirection.NotModified, Redirection.TemporaryRedirect, Redirection.PermanentRedirect {
+    sealed interface Redirection extends HttpError {
         
         record MultipleChoices(String text) implements Redirection {
             @Override
@@ -124,13 +120,7 @@ public sealed interface HttpError extends Cause
     }
     
     /// 4xx Client Error responses
-    sealed interface ClientError extends HttpError 
-        permits ClientError.BadRequest, ClientError.Unauthorized, ClientError.PaymentRequired, ClientError.Forbidden,
-                ClientError.NotFound, ClientError.MethodNotAllowed, ClientError.NotAcceptable, ClientError.ProxyAuthenticationRequired,
-                ClientError.RequestTimeout, ClientError.Conflict, ClientError.Gone, ClientError.LengthRequired,
-                ClientError.PreconditionFailed, ClientError.PayloadTooLarge, ClientError.UriTooLong, ClientError.UnsupportedMediaType,
-                ClientError.RangeNotSatisfiable, ClientError.ExpectationFailed, ClientError.ImATeapot, ClientError.UnprocessableEntity,
-                ClientError.TooManyRequests {
+    sealed interface ClientError extends HttpError {
         
         record BadRequest(String text) implements ClientError {
             @Override
@@ -239,10 +229,7 @@ public sealed interface HttpError extends Cause
     }
     
     /// 5xx Server Error responses
-    sealed interface ServerError extends HttpError 
-        permits ServerError.InternalServerError, ServerError.NotImplemented, ServerError.BadGateway, ServerError.ServiceUnavailable,
-                ServerError.GatewayTimeout, ServerError.HttpVersionNotSupported, ServerError.InsufficientStorage, 
-                ServerError.LoopDetected, ServerError.NetworkAuthenticationRequired {
+    sealed interface ServerError extends HttpError {
         
         record InternalServerError(String text) implements ServerError {
             @Override

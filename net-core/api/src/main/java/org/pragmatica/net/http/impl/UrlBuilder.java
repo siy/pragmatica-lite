@@ -21,17 +21,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-/// URL building and template resolution utility
+/// URL building utility
 public interface UrlBuilder {
     
     /// Build URL from base URL, path segments, and query parameters
     String buildUrl(String baseUrl, List<String> pathSegments, Map<String, String> queryParams);
-    
-    /// Resolve URL template with positional arguments
-    String resolveTemplate(String template, Object... args);
-    
-    /// Resolve URL template with named variables
-    String resolveTemplate(String template, Map<String, Object> variables);
     
     /// Create default URL builder implementation
     static UrlBuilder create() {
@@ -68,38 +62,6 @@ public interface UrlBuilder {
                 }
                 
                 return url.toString();
-            }
-            
-            @Override
-            public String resolveTemplate(String template, Object... args) {
-                
-                var result = template;
-                var argIndex = 0;
-                
-                // Replace {} placeholders with positional arguments
-                while (result.contains("{}") && argIndex < args.length) {
-                    var arg = args[argIndex] != null ? args[argIndex].toString() : "";
-                    result = result.replaceFirst("\\{\\}", URLEncoder.encode(arg, StandardCharsets.UTF_8));
-                    argIndex++;
-                }
-                
-                return result;
-            }
-            
-            @Override
-            public String resolveTemplate(String template, Map<String, Object> variables) {
-                
-                var result = template;
-                
-                // Replace {name} placeholders with named variables
-                for (var entry : variables.entrySet()) {
-                    var placeholder = "{" + entry.getKey() + "}";
-                    var value = entry.getValue() != null ? entry.getValue().toString() : "";
-                    var encodedValue = URLEncoder.encode(value, StandardCharsets.UTF_8);
-                    result = result.replace(placeholder, encodedValue);
-                }
-                
-                return result;
             }
         };
         

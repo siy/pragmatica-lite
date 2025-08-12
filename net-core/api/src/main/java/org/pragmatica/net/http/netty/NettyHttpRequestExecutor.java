@@ -35,38 +35,10 @@ public final class NettyHttpRequestExecutor {
                 var future = new CompletableFuture<HttpResponse<T>>();
                 
                 var channelFuture = bootstrap.clone()
-                    .handler(new ChannelInitializer<Channel>() {
-                        @Override
-                        protected void initChannel(Channel ch) throws Exception {
-                            var pipeline = ch.pipeline();
-                            
-                            if (ssl) {
-                                var sslContext = SslContextBuilder.forClient()
-                                    .trustManager(InsecureTrustManagerFactory.INSTANCE)
-                                    .build();
-                                pipeline.addLast(sslContext.newHandler(ch.alloc(), uri.getHost(), port));
-                            }
-                            
-                            pipeline.addLast(new HttpClientCodec());
-                            pipeline.addLast(new HttpObjectAggregator(1048576)); // 1MB max response size
-                            pipeline.addLast(new ReadTimeoutHandler(config.readTimeout().secondsAndNanos().first(), TimeUnit.SECONDS));
-                            pipeline.addLast(new HttpResponseHandler<>(request, future));
-                        }
-                    })
+                    .handler(createChannelInitializer(ssl, uri, port, config, request, future))
                     .connect(uri.getHost(), port);
                 
-                channelFuture.addListener((ChannelFutureListener) connectFuture -> {
-                    if (connectFuture.isSuccess()) {
-                        try {
-                            var httpRequest = createNettyRequest(request, uri);
-                            connectFuture.channel().writeAndFlush(httpRequest);
-                        } catch (Exception e) {
-                            future.completeExceptionally(e);
-                        }
-                    } else {
-                        future.completeExceptionally(connectFuture.cause());
-                    }
-                });
+                channelFuture.addListener(createConnectionListener(request, uri, future));
                 
                 var response = future.get();
                 return Result.success(response);
@@ -76,6 +48,45 @@ public final class NettyHttpRequestExecutor {
                 return Result.failure(Causes.fromThrowable(e));
             }
         });
+    }
+    
+    private static <T> ChannelInitializer<Channel> createChannelInitializer(
+            boolean ssl, URI uri, int port, HttpClientConfig config, 
+            HttpRequest<T> request, CompletableFuture<HttpResponse<T>> future) {
+        return new ChannelInitializer<Channel>() {
+            @Override
+            protected void initChannel(Channel ch) throws Exception {
+                var pipeline = ch.pipeline();
+                
+                if (ssl) {
+                    var sslContext = SslContextBuilder.forClient()
+                        .trustManager(InsecureTrustManagerFactory.INSTANCE)
+                        .build();
+                    pipeline.addLast(sslContext.newHandler(ch.alloc(), uri.getHost(), port));
+                }
+                
+                pipeline.addLast(new HttpClientCodec());
+                pipeline.addLast(new HttpObjectAggregator(1048576)); // 1MB max response size
+                pipeline.addLast(new ReadTimeoutHandler(config.readTimeout().secondsAndNanos().first(), TimeUnit.SECONDS));
+                pipeline.addLast(new HttpResponseHandler<>(request, future));
+            }
+        };
+    }
+    
+    private static <T> ChannelFutureListener createConnectionListener(
+            HttpRequest<T> request, URI uri, CompletableFuture<HttpResponse<T>> future) {
+        return connectFuture -> {
+            if (connectFuture.isSuccess()) {
+                try {
+                    var httpRequest = createNettyRequest(request, uri);
+                    connectFuture.channel().writeAndFlush(httpRequest);
+                } catch (Exception e) {
+                    future.completeExceptionally(e);
+                }
+            } else {
+                future.completeExceptionally(connectFuture.cause());
+            }
+        };
     }
     
     private static FullHttpRequest createNettyRequest(HttpRequest<?> request, URI uri) throws Exception {

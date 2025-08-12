@@ -6,8 +6,13 @@ public interface HttpResponse<T> {
     
     int statusCode();
     
-    default HttpStatus status() {
-        return HttpStatus.valueOf(statusCode());
+    default HttpStatusCode status() {
+        return HttpStatusCode.fromCode(statusCode()).orElseThrow();
+    }
+    
+    /// Get HttpError instance for this response 
+    default HttpError error() {
+        return HttpError.fromCode(statusCode(), statusText());
     }
     
     String statusText();
