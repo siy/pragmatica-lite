@@ -20,7 +20,7 @@ import org.pragmatica.lang.Cause;
 
 /// Sealed interface representing HTTP errors organized by status code groups
 public sealed interface HttpError extends Cause 
-    permits HttpError.Success, HttpError.Redirection, HttpError.ClientError, HttpError.ServerError {
+    permits HttpError.Success, HttpError.Redirection, HttpError.ClientError, HttpError.ServerError, HttpError.UnknownStatusCode {
     
     /// Returns the HTTP status code as enum
     HttpStatusCode code();
@@ -33,16 +33,11 @@ public sealed interface HttpError extends Cause
         return String.format("HTTP %d %s", code().code(), code().defaultMessage());
     }
     
-    /// Factory method to create HttpError from status code
+    /// Factory method to create HttpError from status code using functional chaining
     static HttpError fromCode(int statusCode, String statusText) {
-        var code = HttpStatusCode.fromCode(statusCode);
-        return switch (statusCode / 100) {
-            case 2 -> new SuccessError(statusText, code);
-            case 3 -> new RedirectionError(statusText, code);
-            case 4 -> new ClientErrorImpl(statusText, code);
-            case 5 -> new ServerErrorImpl(statusText, code);
-            default -> new ServerErrorImpl(statusText, HttpStatusCode.INTERNAL_SERVER_ERROR);
-        };
+        return HttpStatusCode.fromCode(statusCode)
+                           .map(code -> code.asError(statusText))
+                           .recover(error -> UnknownStatusCode.create(statusCode, statusText));
     }
     
     /// Factory method from response
@@ -50,55 +45,270 @@ public sealed interface HttpError extends Cause
         return fromCode(response.statusCode(), response.statusText());
     }
     
-    // === Sealed Interface Implementations ===
+    // === Sealed Interface Groups ===
     
     /// 2xx Success responses that still represent errors in business logic
-    sealed interface Success extends HttpError permits SuccessError {
+    sealed interface Success extends HttpError 
+        permits Success.Ok, Success.Created, Success.Accepted, Success.NoContent, Success.ResetContent, Success.PartialContent {
+        
+        record Ok(String text) implements Success {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.OK; }
+        }
+        
+        record Created(String text) implements Success {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.CREATED; }
+        }
+        
+        record Accepted(String text) implements Success {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.ACCEPTED; }
+        }
+        
+        record NoContent(String text) implements Success {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.NO_CONTENT; }
+        }
+        
+        record ResetContent(String text) implements Success {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.RESET_CONTENT; }
+        }
+        
+        record PartialContent(String text) implements Success {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.PARTIAL_CONTENT; }
+        }
     }
     
     /// 3xx Redirection responses  
-    sealed interface Redirection extends HttpError permits RedirectionError {
+    sealed interface Redirection extends HttpError 
+        permits Redirection.MultipleChoices, Redirection.MovedPermanently, Redirection.Found, Redirection.SeeOther, 
+                Redirection.NotModified, Redirection.TemporaryRedirect, Redirection.PermanentRedirect {
+        
+        record MultipleChoices(String text) implements Redirection {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.MULTIPLE_CHOICES; }
+        }
+        
+        record MovedPermanently(String text) implements Redirection {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.MOVED_PERMANENTLY; }
+        }
+        
+        record Found(String text) implements Redirection {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.FOUND; }
+        }
+        
+        record SeeOther(String text) implements Redirection {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.SEE_OTHER; }
+        }
+        
+        record NotModified(String text) implements Redirection {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.NOT_MODIFIED; }
+        }
+        
+        record TemporaryRedirect(String text) implements Redirection {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.TEMPORARY_REDIRECT; }
+        }
+        
+        record PermanentRedirect(String text) implements Redirection {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.PERMANENT_REDIRECT; }
+        }
     }
     
     /// 4xx Client Error responses
-    sealed interface ClientError extends HttpError permits ClientErrorImpl {
+    sealed interface ClientError extends HttpError 
+        permits ClientError.BadRequest, ClientError.Unauthorized, ClientError.PaymentRequired, ClientError.Forbidden,
+                ClientError.NotFound, ClientError.MethodNotAllowed, ClientError.NotAcceptable, ClientError.ProxyAuthenticationRequired,
+                ClientError.RequestTimeout, ClientError.Conflict, ClientError.Gone, ClientError.LengthRequired,
+                ClientError.PreconditionFailed, ClientError.PayloadTooLarge, ClientError.UriTooLong, ClientError.UnsupportedMediaType,
+                ClientError.RangeNotSatisfiable, ClientError.ExpectationFailed, ClientError.ImATeapot, ClientError.UnprocessableEntity,
+                ClientError.TooManyRequests {
+        
+        record BadRequest(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.BAD_REQUEST; }
+        }
+        
+        record Unauthorized(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.UNAUTHORIZED; }
+        }
+        
+        record PaymentRequired(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.PAYMENT_REQUIRED; }
+        }
+        
+        record Forbidden(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.FORBIDDEN; }
+        }
+        
+        record NotFound(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.NOT_FOUND; }
+        }
+        
+        record MethodNotAllowed(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.METHOD_NOT_ALLOWED; }
+        }
+        
+        record NotAcceptable(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.NOT_ACCEPTABLE; }
+        }
+        
+        record ProxyAuthenticationRequired(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.PROXY_AUTHENTICATION_REQUIRED; }
+        }
+        
+        record RequestTimeout(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.REQUEST_TIMEOUT; }
+        }
+        
+        record Conflict(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.CONFLICT; }
+        }
+        
+        record Gone(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.GONE; }
+        }
+        
+        record LengthRequired(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.LENGTH_REQUIRED; }
+        }
+        
+        record PreconditionFailed(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.PRECONDITION_FAILED; }
+        }
+        
+        record PayloadTooLarge(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.PAYLOAD_TOO_LARGE; }
+        }
+        
+        record UriTooLong(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.URI_TOO_LONG; }
+        }
+        
+        record UnsupportedMediaType(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.UNSUPPORTED_MEDIA_TYPE; }
+        }
+        
+        record RangeNotSatisfiable(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.RANGE_NOT_SATISFIABLE; }
+        }
+        
+        record ExpectationFailed(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.EXPECTATION_FAILED; }
+        }
+        
+        record ImATeapot(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.IM_A_TEAPOT; }
+        }
+        
+        record UnprocessableEntity(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.UNPROCESSABLE_ENTITY; }
+        }
+        
+        record TooManyRequests(String text) implements ClientError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.TOO_MANY_REQUESTS; }
+        }
     }
     
     /// 5xx Server Error responses
-    sealed interface ServerError extends HttpError permits ServerErrorImpl {
-    }
-    
-    // === Record Implementations ===
-    
-    /// Success error implementation
-    record SuccessError(String text, HttpStatusCode statusCode) implements Success {
-        @Override
-        public HttpStatusCode code() {
-            return statusCode;
+    sealed interface ServerError extends HttpError 
+        permits ServerError.InternalServerError, ServerError.NotImplemented, ServerError.BadGateway, ServerError.ServiceUnavailable,
+                ServerError.GatewayTimeout, ServerError.HttpVersionNotSupported, ServerError.InsufficientStorage, 
+                ServerError.LoopDetected, ServerError.NetworkAuthenticationRequired {
+        
+        record InternalServerError(String text) implements ServerError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.INTERNAL_SERVER_ERROR; }
+        }
+        
+        record NotImplemented(String text) implements ServerError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.NOT_IMPLEMENTED; }
+        }
+        
+        record BadGateway(String text) implements ServerError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.BAD_GATEWAY; }
+        }
+        
+        record ServiceUnavailable(String text) implements ServerError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.SERVICE_UNAVAILABLE; }
+        }
+        
+        record GatewayTimeout(String text) implements ServerError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.GATEWAY_TIMEOUT; }
+        }
+        
+        record HttpVersionNotSupported(String text) implements ServerError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.HTTP_VERSION_NOT_SUPPORTED; }
+        }
+        
+        record InsufficientStorage(String text) implements ServerError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.INSUFFICIENT_STORAGE; }
+        }
+        
+        record LoopDetected(String text) implements ServerError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.LOOP_DETECTED; }
+        }
+        
+        record NetworkAuthenticationRequired(String text) implements ServerError {
+            @Override
+            public HttpStatusCode code() { return HttpStatusCode.NETWORK_AUTHENTICATION_REQUIRED; }
         }
     }
     
-    /// Redirection error implementation  
-    record RedirectionError(String text, HttpStatusCode statusCode) implements Redirection {
+    /// Unknown status code error
+    record UnknownStatusCode(int statusCode, String text) implements HttpError {
         @Override
         public HttpStatusCode code() {
-            return statusCode;
+            // Use a default fallback since the code is unknown
+            return HttpStatusCode.INTERNAL_SERVER_ERROR;
         }
-    }
-    
-    /// Client error implementation
-    record ClientErrorImpl(String text, HttpStatusCode statusCode) implements ClientError {
+        
         @Override
-        public HttpStatusCode code() {
-            return statusCode;
+        public String message() {
+            return String.format("HTTP %d %s (Unknown Status Code)", statusCode, text);
         }
-    }
-    
-    /// Server error implementation
-    record ServerErrorImpl(String text, HttpStatusCode statusCode) implements ServerError {
-        @Override
-        public HttpStatusCode code() {
-            return statusCode;
+        
+        public static UnknownStatusCode create(int statusCode) {
+            return new UnknownStatusCode(statusCode, "Unknown Status Code");
+        }
+        
+        public static UnknownStatusCode create(int statusCode, String text) {
+            return new UnknownStatusCode(statusCode, text);
         }
     }
 }

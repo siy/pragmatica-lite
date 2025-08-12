@@ -43,7 +43,7 @@ public final class NettyHttpClient implements HttpClient {
     @Override
     public <T> Promise<HttpResponse<T>> send(HttpRequest<T> request) {
         if (!started.get()) {
-            return Promise.failure(org.pragmatica.net.http.HttpError.httpError(0, "Client not started", "HTTP client must be started before sending requests"));
+            return Promise.failure(HttpError.UnknownStatusCode.create(0, "Client not started"));
         }
         
         return NettyHttpRequestExecutor.execute(bootstrap, request, config);
