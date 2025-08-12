@@ -1,6 +1,7 @@
 package org.pragmatica.net.http;
 
 import java.util.*;
+import org.pragmatica.lang.Option;
 
 public final class HttpHeaders {
     private final Map<String, List<String>> headers;
@@ -41,12 +42,12 @@ public final class HttpHeaders {
         return addAll(header.headerName(), values);
     }
     
-    public Optional<String> first(String name) {
+    public Option<String> first(String name) {
         var values = headers.get(name.toLowerCase());
-        return values != null && !values.isEmpty() ? Optional.of(values.get(0)) : Optional.empty();
+        return values != null && !values.isEmpty() ? Option.option(values.get(0)) : Option.none();
     }
     
-    public Optional<String> first(CommonHttpHeaders header) {
+    public Option<String> first(CommonHttpHeaders header) {
         return first(header.headerName());
     }
     
