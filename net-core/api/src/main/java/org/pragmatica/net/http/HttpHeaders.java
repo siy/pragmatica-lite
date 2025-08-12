@@ -82,29 +82,6 @@ public final class HttpHeaders {
         return headers.size();
     }
     
-    /// @deprecated Use CommonHttpHeaders enum instead
-    public static final String ACCEPT = CommonHttpHeaders.ACCEPT.headerName();
-    /// @deprecated Use CommonHttpHeaders enum instead
-    public static final String ACCEPT_ENCODING = CommonHttpHeaders.ACCEPT_ENCODING.headerName();
-    /// @deprecated Use CommonHttpHeaders enum instead
-    public static final String AUTHORIZATION = CommonHttpHeaders.AUTHORIZATION.headerName();
-    /// @deprecated Use CommonHttpHeaders enum instead
-    public static final String CONTENT_TYPE = CommonHttpHeaders.CONTENT_TYPE.headerName();
-    /// @deprecated Use CommonHttpHeaders enum instead
-    public static final String CONTENT_LENGTH = CommonHttpHeaders.CONTENT_LENGTH.headerName();
-    /// @deprecated Use CommonHttpHeaders enum instead
-    public static final String USER_AGENT = CommonHttpHeaders.USER_AGENT.headerName();
-    /// @deprecated Use CommonHttpHeaders enum instead
-    public static final String HOST = CommonHttpHeaders.HOST.headerName();
-    /// @deprecated Use CommonHttpHeaders enum instead
-    public static final String CONNECTION = CommonHttpHeaders.CONNECTION.headerName();
-    
-    // Common content types - keep as strings since these are values, not header names
-    public static final String APPLICATION_JSON = "application/json";
-    public static final String APPLICATION_XML = "application/xml";
-    public static final String TEXT_PLAIN = "text/plain";
-    public static final String TEXT_HTML = "text/html";
-    public static final String APPLICATION_FORM_URLENCODED = "application/x-www-form-urlencoded";
     
     @Override
     public boolean equals(Object obj) {
