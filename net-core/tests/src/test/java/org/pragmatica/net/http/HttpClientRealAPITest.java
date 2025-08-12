@@ -62,7 +62,7 @@ class HttpClientRealAPITest {
         var httpResponse = response.get();
         
         assertThat(httpResponse.isSuccess()).isTrue();
-        assertThat(httpResponse.statusCode()).isEqualTo(200);
+        assertThat(httpResponse.status().code()).isEqualTo(200);
         assertThat(httpResponse.body()).isNotNull();
         assertThat(httpResponse.body().id()).isEqualTo(1);
         assertThat(httpResponse.body().title()).isNotEmpty();
@@ -106,7 +106,7 @@ class HttpClientRealAPITest {
         var httpResponse = response.get();
         
         assertThat(httpResponse.isSuccess()).isTrue();
-        assertThat(httpResponse.statusCode()).isEqualTo(201);
+        assertThat(httpResponse.status().code()).isEqualTo(201);
         assertThat(httpResponse.body()).isNotNull();
         assertThat(httpResponse.body().title()).isEqualTo("Test Post");
         
@@ -148,7 +148,7 @@ class HttpClientRealAPITest {
         var httpResponse = response.get();
         
         assertThat(httpResponse.isSuccess()).isTrue();
-        assertThat(httpResponse.statusCode()).isEqualTo(200);
+        assertThat(httpResponse.status().code()).isEqualTo(200);
         
         System.out.println("✅ Successfully deleted post");
     }
@@ -217,7 +217,7 @@ class HttpClientRealAPITest {
         
         assertThat(httpResponse.isError()).isTrue();
         assertThat(httpResponse.isClientError()).isTrue();
-        assertThat(httpResponse.statusCode()).isEqualTo(404);
+        assertThat(httpResponse.status().code()).isEqualTo(404);
         
         // Test Result conversion
         var result = httpResponse.result();
@@ -240,7 +240,7 @@ class HttpClientRealAPITest {
         
         assertThat(httpResponse.isError()).isTrue();
         assertThat(httpResponse.isServerError()).isTrue();
-        assertThat(httpResponse.statusCode()).isEqualTo(500);
+        assertThat(httpResponse.status().code()).isEqualTo(500);
         
         System.out.println("✅ Successfully handled 500 error");
     }
@@ -288,7 +288,7 @@ class HttpClientRealAPITest {
         var httpResponse = response.get();
         
         assertThat(httpResponse.isSuccess()).isTrue();
-        assertThat(httpResponse.statusCode()).isEqualTo(200);
+        assertThat(httpResponse.status().code()).isEqualTo(200);
         
         System.out.println("✅ Successfully followed redirects");
     }
@@ -337,7 +337,7 @@ class HttpClientRealAPITest {
         var httpResponse = response.get();
         
         assertThat(httpResponse.isSuccess()).isTrue();
-        assertThat(httpResponse.statusCode()).isEqualTo(201);
+        assertThat(httpResponse.status().code()).isEqualTo(201);
         
         System.out.println("✅ Successfully used Template API POST");
     }

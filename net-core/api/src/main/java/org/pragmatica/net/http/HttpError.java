@@ -41,7 +41,7 @@ public sealed interface HttpError extends Cause {
     
     /// Factory method from response
     static <T> HttpError fromResponse(HttpResponse<T> response) {
-        return fromCode(response.statusCode(), response.statusText());
+        return response.status().asError(response.status().defaultMessage());
     }
     
     // === Sealed Interface Groups ===

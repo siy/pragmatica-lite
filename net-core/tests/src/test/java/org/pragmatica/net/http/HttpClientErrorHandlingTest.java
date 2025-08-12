@@ -55,7 +55,7 @@ class HttpClientErrorHandlingTest {
         
         assertThat(httpResponse.isError()).isTrue();
         assertThat(httpResponse.isClientError()).isTrue();
-        assertThat(httpResponse.statusCode()).isEqualTo(400);
+        assertThat(httpResponse.status().code()).isEqualTo(400);
         assertThat(httpResponse.status()).isEqualTo(HttpStatus.BAD_REQUEST);
         
         // Test Result conversion
@@ -79,7 +79,7 @@ class HttpClientErrorHandlingTest {
         
         assertThat(httpResponse.isError()).isTrue();
         assertThat(httpResponse.isClientError()).isTrue();
-        assertThat(httpResponse.statusCode()).isEqualTo(401);
+        assertThat(httpResponse.status().code()).isEqualTo(401);
         assertThat(httpResponse.status()).isEqualTo(HttpStatus.UNAUTHORIZED);
         
         System.out.println("✅ Successfully handled 401 Unauthorized");
@@ -99,7 +99,7 @@ class HttpClientErrorHandlingTest {
         
         assertThat(httpResponse.isError()).isTrue();
         assertThat(httpResponse.isClientError()).isTrue();
-        assertThat(httpResponse.statusCode()).isEqualTo(403);
+        assertThat(httpResponse.status().code()).isEqualTo(403);
         assertThat(httpResponse.status()).isEqualTo(HttpStatus.FORBIDDEN);
         
         System.out.println("✅ Successfully handled 403 Forbidden");
@@ -119,7 +119,7 @@ class HttpClientErrorHandlingTest {
         
         assertThat(httpResponse.isError()).isTrue();
         assertThat(httpResponse.isClientError()).isTrue();
-        assertThat(httpResponse.statusCode()).isEqualTo(404);
+        assertThat(httpResponse.status().code()).isEqualTo(404);
         assertThat(httpResponse.status()).isEqualTo(HttpStatus.NOT_FOUND);
         
         System.out.println("✅ Successfully handled 404 Not Found");
@@ -139,7 +139,7 @@ class HttpClientErrorHandlingTest {
         
         assertThat(httpResponse.isError()).isTrue();
         assertThat(httpResponse.isServerError()).isTrue();
-        assertThat(httpResponse.statusCode()).isEqualTo(500);
+        assertThat(httpResponse.status().code()).isEqualTo(500);
         assertThat(httpResponse.status()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         
         System.out.println("✅ Successfully handled 500 Internal Server Error");
@@ -159,7 +159,7 @@ class HttpClientErrorHandlingTest {
         
         assertThat(httpResponse.isError()).isTrue();
         assertThat(httpResponse.isServerError()).isTrue();
-        assertThat(httpResponse.statusCode()).isEqualTo(502);
+        assertThat(httpResponse.status().code()).isEqualTo(502);
         assertThat(httpResponse.status()).isEqualTo(HttpStatus.BAD_GATEWAY);
         
         System.out.println("✅ Successfully handled 502 Bad Gateway");
@@ -179,7 +179,7 @@ class HttpClientErrorHandlingTest {
         
         assertThat(httpResponse.isError()).isTrue();
         assertThat(httpResponse.isServerError()).isTrue();
-        assertThat(httpResponse.statusCode()).isEqualTo(503);
+        assertThat(httpResponse.status().code()).isEqualTo(503);
         assertThat(httpResponse.status()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
         
         System.out.println("✅ Successfully handled 503 Service Unavailable");
@@ -343,7 +343,7 @@ class HttpClientErrorHandlingTest {
         var httpResponse = response.get();
         
         assertThat(httpResponse.isSuccess()).isTrue();
-        assertThat(httpResponse.statusCode()).isEqualTo(204);
+        assertThat(httpResponse.status().code()).isEqualTo(204);
         assertThat(httpResponse.status()).isEqualTo(HttpStatus.NO_CONTENT);
         
         // Body might be null or empty for 204 No Content
@@ -417,9 +417,9 @@ class HttpClientErrorHandlingTest {
         assertThat(responses.t2().isError()).isTrue();
         assertThat(responses.t3().isError()).isTrue();
         
-        assertThat(responses.t1().statusCode()).isEqualTo(404);
-        assertThat(responses.t2().statusCode()).isEqualTo(500);
-        assertThat(responses.t3().statusCode()).isEqualTo(503);
+        assertThat(responses.t1().status().code()).isEqualTo(404);
+        assertThat(responses.t2().status().code()).isEqualTo(500);
+        assertThat(responses.t3().status().code()).isEqualTo(503);
         
         System.out.println("✅ Successfully handled concurrent errors");
     }

@@ -4,37 +4,27 @@ import org.pragmatica.lang.Result;
 
 public interface HttpResponse<T> {
     
-    int statusCode();
-    
-    default Result<HttpStatusCode> status() {
-        return HttpStatusCode.fromCode(statusCode());
-    }
-    
-    /// Get HttpError instance for this response 
-    default HttpError error() {
-        return HttpError.fromCode(statusCode(), statusText());
-    }
-    
-    String statusText();
+    /// Returns the HTTP status code as enum
+    HttpStatusCode status();
     
     HttpHeaders headers();
     
     T body();
     
     default boolean isSuccess() {
-        return status().map(HttpStatusCode::isSuccess).orElse(false);
+        return status().isSuccess();
     }
     
     default boolean isError() {
-        return status().map(s -> s.isClientError() || s.isServerError()).orElse(true);
+        return status().isClientError() || status().isServerError();
     }
     
     default boolean isClientError() {
-        return status().map(HttpStatusCode::isClientError).orElse(false);
+        return status().isClientError();
     }
     
     default boolean isServerError() {
-        return status().map(HttpStatusCode::isServerError).orElse(false);
+        return status().isServerError();
     }
     
     default Result<T> result() {
