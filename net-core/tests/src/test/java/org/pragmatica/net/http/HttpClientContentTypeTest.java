@@ -60,7 +60,7 @@ class HttpClientContentTypeTest {
             .asString()
             .contains("application/json");
             
-        var body = httpResponse.body();
+        var body = httpResponse.body().orElseThrow();
         assertThat(body).isNotEmpty();
         
         System.out.println("✅ Successfully handled JSON content type");
@@ -87,7 +87,7 @@ class HttpClientContentTypeTest {
         assertThat(httpResponse.isSuccess()).isTrue();
         
         // Verify that the request was sent with correct content type
-        var responseBody = httpResponse.body();
+        var responseBody = httpResponse.body().orElseThrow();
         @SuppressWarnings("unchecked")
         var headers = (Map<String, Object>) responseBody.get("headers");
         assertThat(headers).containsKey("Content-Type");
@@ -111,8 +111,8 @@ class HttpClientContentTypeTest {
         var httpResponse = response.get();
         
         assertThat(httpResponse.isSuccess()).isTrue();
-        assertThat(httpResponse.body()).isNotNull();
-        assertThat(httpResponse.body()).contains("User-agent");
+        assertThat(httpResponse.body().isSuccess()).isTrue();
+        assertThat(httpResponse.body().orElseThrow()).contains("User-agent");
         
         System.out.println("✅ Successfully handled plain text content type");
     }
@@ -134,7 +134,7 @@ class HttpClientContentTypeTest {
         
         assertThat(httpResponse.isSuccess()).isTrue();
         
-        var responseBody = httpResponse.body();
+        var responseBody = httpResponse.body().orElseThrow();
         @SuppressWarnings("unchecked")
         var headers = (Map<String, Object>) responseBody.get("headers");
         assertThat(headers).containsKey("Content-Type");
@@ -161,8 +161,8 @@ class HttpClientContentTypeTest {
         var httpResponse = response.get();
         
         assertThat(httpResponse.isSuccess()).isTrue();
-        assertThat(httpResponse.body()).contains("<html>");
-        assertThat(httpResponse.body()).contains("</html>");
+        assertThat(httpResponse.body().orElseThrow()).contains("<html>");
+        assertThat(httpResponse.body().orElseThrow()).contains("</html>");
         
         System.out.println("✅ Successfully handled HTML content type");
     }
@@ -183,8 +183,8 @@ class HttpClientContentTypeTest {
         var httpResponse = response.get();
         
         assertThat(httpResponse.isSuccess()).isTrue();
-        assertThat(httpResponse.body()).contains("<?xml");
-        assertThat(httpResponse.body()).contains("<slideshow");
+        assertThat(httpResponse.body().orElseThrow()).contains("<?xml");
+        assertThat(httpResponse.body().orElseThrow()).contains("<slideshow");
         
         System.out.println("✅ Successfully handled XML content type");
     }
@@ -212,7 +212,7 @@ class HttpClientContentTypeTest {
         
         assertThat(httpResponse.isSuccess()).isTrue();
         
-        var responseBody = httpResponse.body();
+        var responseBody = httpResponse.body().orElseThrow();
         @SuppressWarnings("unchecked")
         var headers = (Map<String, Object>) responseBody.get("headers");
         assertThat(headers).containsKey("Content-Type");
@@ -238,8 +238,8 @@ class HttpClientContentTypeTest {
         var httpResponse = response.get();
         
         assertThat(httpResponse.isSuccess()).isTrue();
-        assertThat(httpResponse.body()).isNotNull();
-        assertThat(httpResponse.body().length).isEqualTo(1024);
+        assertThat(httpResponse.body().isSuccess()).isTrue();
+        assertThat(httpResponse.body().orElseThrow().length).isEqualTo(1024);
         
         System.out.println("✅ Successfully handled binary content");
     }
@@ -261,7 +261,7 @@ class HttpClientContentTypeTest {
         
         assertThat(httpResponse.isSuccess()).isTrue();
         
-        var responseBody = httpResponse.body();
+        var responseBody = httpResponse.body().orElseThrow();
         @SuppressWarnings("unchecked")
         var headers = (Map<String, Object>) responseBody.get("headers");
         assertThat(headers).containsKey("Content-Type");
@@ -288,7 +288,7 @@ class HttpClientContentTypeTest {
         
         assertThat(httpResponse.isSuccess()).isTrue();
         
-        var responseBody = httpResponse.body();
+        var responseBody = httpResponse.body().orElseThrow();
         @SuppressWarnings("unchecked")
         var headers = (Map<String, Object>) responseBody.get("headers");
         assertThat(headers).containsKey("Content-Type");
@@ -320,7 +320,7 @@ class HttpClientContentTypeTest {
         
         assertThat(httpResponse.isSuccess()).isTrue();
         
-        var responseBody = httpResponse.body();
+        var responseBody = httpResponse.body().orElseThrow();
         @SuppressWarnings("unchecked")
         var headers = (Map<String, Object>) responseBody.get("headers");
         assertThat(headers).containsKey("Content-Type");
@@ -375,7 +375,7 @@ class HttpClientContentTypeTest {
         
         assertThat(httpResponse.isSuccess()).isTrue();
         
-        var responseBody = httpResponse.body();
+        var responseBody = httpResponse.body().orElseThrow();
         assertThat(responseBody.get("data")).isEqualTo(unicodeText);
         
         System.out.println("✅ Successfully handled UTF-8 charset");

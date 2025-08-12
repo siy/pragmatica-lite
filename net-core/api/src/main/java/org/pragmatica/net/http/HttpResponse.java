@@ -9,7 +9,7 @@ public interface HttpResponse<T> {
     
     HttpHeaders headers();
     
-    T body();
+    Result<T> body();
     
     default boolean isSuccess() {
         return status().isSuccess();
@@ -25,11 +25,5 @@ public interface HttpResponse<T> {
     
     default boolean isServerError() {
         return status().isServerError();
-    }
-    
-    default Result<T> result() {
-        return isSuccess() ? 
-            Result.success(body()) : 
-            Result.failure(HttpError.fromResponse(this));
     }
 }

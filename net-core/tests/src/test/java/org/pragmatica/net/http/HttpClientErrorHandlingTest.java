@@ -295,8 +295,8 @@ class HttpClientErrorHandlingTest {
         var httpResponse = response.get();
         
         assertThat(httpResponse.isSuccess()).isTrue();
-        assertThat(httpResponse.body()).isNotNull();
-        assertThat(httpResponse.body().length).isEqualTo(10240);
+        assertThat(httpResponse.body().isSuccess()).isTrue();
+        assertThat(httpResponse.body().orElseThrow().length).isEqualTo(10240);
         
         System.out.println("✅ Successfully handled large response");
     }
@@ -319,7 +319,7 @@ class HttpClientErrorHandlingTest {
         
         assertThat(httpResponse.isSuccess()).isTrue();
         
-        var responseBody = httpResponse.body();
+        var responseBody = httpResponse.body().orElseThrow();
         @SuppressWarnings("unchecked")
         var args = (Map<String, Object>) responseBody.get("args");
         assertThat(args).containsKey("message");
