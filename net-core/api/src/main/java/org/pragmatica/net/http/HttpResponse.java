@@ -6,8 +6,8 @@ public interface HttpResponse<T> {
     
     int statusCode();
     
-    default HttpStatusCode status() {
-        return HttpStatusCode.fromCode(statusCode()).orElseThrow();
+    default Result<HttpStatusCode> status() {
+        return HttpStatusCode.fromCode(statusCode());
     }
     
     /// Get HttpError instance for this response 
@@ -22,19 +22,19 @@ public interface HttpResponse<T> {
     T body();
     
     default boolean isSuccess() {
-        return status().isSuccess();
+        return status().map(HttpStatusCode::isSuccess).orElse(false);
     }
     
     default boolean isError() {
-        return status().isError();
+        return status().map(s -> s.isClientError() || s.isServerError()).orElse(true);
     }
     
     default boolean isClientError() {
-        return status().isClientError();
+        return status().map(HttpStatusCode::isClientError).orElse(false);
     }
     
     default boolean isServerError() {
-        return status().isServerError();
+        return status().map(HttpStatusCode::isServerError).orElse(false);
     }
     
     default Result<T> result() {

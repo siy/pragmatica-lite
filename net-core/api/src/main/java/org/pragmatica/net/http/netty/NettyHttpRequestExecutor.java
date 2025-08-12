@@ -14,6 +14,7 @@ import org.pragmatica.net.http.HttpRequest;
 import org.pragmatica.net.http.HttpResponse;
 import org.pragmatica.net.http.HttpClientConfig;
 import org.pragmatica.net.http.impl.HttpResponseImpl;
+import org.pragmatica.net.http.HttpError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -160,7 +161,8 @@ public final class NettyHttpRequestExecutor {
                 response.content().readBytes(bodyBytes);
                 var body = deserializeBody(bodyBytes, request);
                 
-                var httpResponse = new HttpResponseImpl<>(statusCode, statusText, headers, body);
+                var error = HttpError.fromCode(statusCode, statusText);
+                var httpResponse = new HttpResponseImpl<>(error, headers, body);
                 future.complete(httpResponse);
                 
             } catch (Exception e) {
