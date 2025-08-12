@@ -8,6 +8,6 @@ import org.pragmatica.lang.Result;
 public record HttpResponseImpl<T>(
     HttpStatusCode status,
     HttpHeaders headers,
-    Result<T> body
+    Result<T> result
 ) implements HttpResponse<T> {
 }

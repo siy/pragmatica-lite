@@ -9,7 +9,7 @@ public interface HttpResponse<T> {
     
     HttpHeaders headers();
     
-    Result<T> body();
+    Result<T> result();
     
     default boolean isSuccess() {
         return status().isSuccess();

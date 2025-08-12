@@ -63,11 +63,11 @@ class HttpClientRealAPITest {
         
         assertThat(httpResponse.isSuccess()).isTrue();
         assertThat(httpResponse.status().code()).isEqualTo(200);
-        assertThat(httpResponse.body().isSuccess()).isTrue();
-        assertThat(httpResponse.body().orElseThrow().id()).isEqualTo(1);
-        assertThat(httpResponse.body().orElseThrow().title()).isNotEmpty();
+        assertThat(httpResponse.result().isSuccess()).isTrue();
+        assertThat(httpResponse.result().orElseThrow().id()).isEqualTo(1);
+        assertThat(httpResponse.result().orElseThrow().title()).isNotEmpty();
         
-        System.out.println("✅ Successfully fetched post: " + httpResponse.body().orElseThrow().title());
+        System.out.println("✅ Successfully fetched post: " + httpResponse.result().orElseThrow().title());
     }
     
     @Test
@@ -84,10 +84,10 @@ class HttpClientRealAPITest {
         var httpResponse = response.get();
         
         assertThat(httpResponse.isSuccess()).isTrue();
-        assertThat(httpResponse.body().orElseThrow()).isNotEmpty();
-        assertThat(httpResponse.body().orElseThrow().get(0).userId()).isEqualTo(1);
+        assertThat(httpResponse.result().orElseThrow()).isNotEmpty();
+        assertThat(httpResponse.result().orElseThrow().get(0).userId()).isEqualTo(1);
         
-        System.out.println("✅ Successfully fetched " + httpResponse.body().orElseThrow().size() + " posts");
+        System.out.println("✅ Successfully fetched " + httpResponse.result().orElseThrow().size() + " posts");
     }
     
     @Test
@@ -107,10 +107,10 @@ class HttpClientRealAPITest {
         
         assertThat(httpResponse.isSuccess()).isTrue();
         assertThat(httpResponse.status().code()).isEqualTo(201);
-        assertThat(httpResponse.body().isSuccess()).isTrue();
-        assertThat(httpResponse.body().orElseThrow().title()).isEqualTo("Test Post");
+        assertThat(httpResponse.result().isSuccess()).isTrue();
+        assertThat(httpResponse.result().orElseThrow().title()).isEqualTo("Test Post");
         
-        System.out.println("✅ Successfully posted data, created ID: " + httpResponse.body().orElseThrow().id());
+        System.out.println("✅ Successfully posted data, created ID: " + httpResponse.result().orElseThrow().id());
     }
     
     @Test
@@ -129,10 +129,10 @@ class HttpClientRealAPITest {
         var httpResponse = response.get();
         
         assertThat(httpResponse.isSuccess()).isTrue();
-        assertThat(httpResponse.body().isSuccess()).isTrue();
-        assertThat(httpResponse.body().orElseThrow().title()).isEqualTo("Updated Post");
+        assertThat(httpResponse.result().isSuccess()).isTrue();
+        assertThat(httpResponse.result().orElseThrow().title()).isEqualTo("Updated Post");
         
-        System.out.println("✅ Successfully updated post: " + httpResponse.body().orElseThrow().title());
+        System.out.println("✅ Successfully updated post: " + httpResponse.result().orElseThrow().title());
     }
     
     @Test
@@ -169,7 +169,7 @@ class HttpClientRealAPITest {
         var httpResponse = response.get();
         
         assertThat(httpResponse.isSuccess()).isTrue();
-        assertThat(httpResponse.body().orElseThrow()).contains("User-agent");
+        assertThat(httpResponse.result().orElseThrow()).contains("User-agent");
         
         System.out.println("✅ Successfully fetched robots.txt");
     }
@@ -191,7 +191,7 @@ class HttpClientRealAPITest {
         var httpResponse = response.get();
         
         assertThat(httpResponse.isSuccess()).isTrue();
-        var responseBody = httpResponse.body().orElseThrow();
+        var responseBody = httpResponse.result().orElseThrow();
         
         @SuppressWarnings("unchecked")
         var headers = (Map<String, Object>) responseBody.get("headers");
@@ -264,7 +264,7 @@ class HttpClientRealAPITest {
         var httpResponse = response.get();
         
         assertThat(httpResponse.isSuccess()).isTrue();
-        var responseBody = httpResponse.body().orElseThrow();
+        var responseBody = httpResponse.result().orElseThrow();
         
         @SuppressWarnings("unchecked")
         var headers = (Map<String, Object>) responseBody.get("headers");
@@ -310,10 +310,10 @@ class HttpClientRealAPITest {
         var httpResponse = response.get();
         
         assertThat(httpResponse.isSuccess()).isTrue();
-        assertThat(httpResponse.body().isSuccess()).isTrue();
-        assertThat(httpResponse.body().orElseThrow().id()).isEqualTo(userId);
+        assertThat(httpResponse.result().isSuccess()).isTrue();
+        assertThat(httpResponse.result().orElseThrow().id()).isEqualTo(userId);
         
-        System.out.println("✅ Successfully used Template API for user: " + httpResponse.body().orElseThrow().name());
+        System.out.println("✅ Successfully used Template API for user: " + httpResponse.result().orElseThrow().name());
     }
     
     @Test
@@ -362,7 +362,7 @@ class HttpClientRealAPITest {
         
         // Wait for all to complete
         var allPosts = org.pragmatica.lang.Promise.all(post1Promise, post2Promise, post3Promise)
-            .map((p1, p2, p3) -> List.of(p1.body().orElseThrow(), p2.body().orElseThrow(), p3.body().orElseThrow()))
+            .map((p1, p2, p3) -> List.of(p1.result().orElseThrow(), p2.result().orElseThrow(), p3.result().orElseThrow()))
             .await();
             
         assertThat(allPosts.isSuccess()).isTrue();
