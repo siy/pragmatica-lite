@@ -12,64 +12,39 @@ Proceed with development tasks autonomously to maximize efficiency.
 
 ## 🚨 CRITICAL: Start Here Immediately After Bootstrap
 
-### 🔥 URGENT TASK 1 - Java 24 Migration (Issue #18) - **ROOT CAUSE FIX**
-
-**The compilation errors in PR #22 are caused by Java version mismatch. Fix the root cause first!**
+### 🎯 CURRENT FOCUS: Business API Framework Development
 
 **Immediate Commands to Run:**
 ```bash
 # 1. Check your current status
 pwd && git status && git branch --show-current
 
-# 2. Switch to main branch for Java 24 migration
-git checkout main
-git pull origin main
+# 2. Check assigned issues
+gh issue list --repo siy/team --assignee @me --state open
 
-# 3. Read detailed migration guide
-cat /Users/siy/Projects/team/contexts/agents/business-api-java24-migration.md
+# 3. Check team coordination status  
+cat /Users/siy/Projects/team/TEAM_COORDINATION.md
 
-# 4. Start Java 24 migration immediately
-# This will fix compilation errors in PR #22 and PR #21
+# 4. Review recent work
+git log --oneline -5
 ```
 
-### JAVA 24 MIGRATION - **TOP PRIORITY**:
+### BUSINESS API DEVELOPMENT PRIORITIES:
 
-**Why This Comes First:**
-- **Root Cause**: Java version mismatch causing compilation errors
-- **Impact**: Will fix PR #22 compilation errors automatically
-- **Scope**: Both Pragmatica Lite and Aether projects
-- **Access**: Both projects are available in your workspace
-  - Pragmatica Lite: `/Users/siy/Projects/agents/business-api/pragmatica-lite/`
-  - Aether: `/Users/siy/Projects/agents/business-api/aether/`
+**Domain Research (Priority 1):**
+- Financial Services domain analysis
+- E-Commerce patterns research
+- Business error handling framework design
 
-### What You Must Do NOW:
+**API Design (Priority 2):**
+- High-level abstraction patterns
+- Type-safe business rules
+- Declarative configuration systems
 
-1. **Start Java 24 Migration**: Follow the detailed guide
-2. **Migrate Both Projects**: Pragmatica Lite and Aether
-3. **Test Compilation**: With and without preview features
-4. **Create Migration PR**: To main branch
-5. **After Migration Merged**: Update PR #22 by merging main back
-
-### TASK 2 - Update PR #22 (AFTER Java 24 Migration)
-
-**After Java 24 migration is merged to main:**
-
-**Migration Commands:**
-```bash
-# Read detailed migration guide
-cat /Users/siy/Projects/team/contexts/agents/business-api-java24-migration.md
-
-# Check current Java versions
-java -version && javac -version
-
-# Start migration process for both projects
-```
-
-**Migration Scope:**
-- Migrate Pragmatica Lite to Java 24
-- Migrate Aether to Java 24
-- Investigate if `--enable-preview` still needed
-- Remove preview flags where possible
+**Integration Planning (Priority 3):**
+- Core Framework @StableAPI dependencies
+- Distributed Systems coordination
+- Networking layer abstractions
 
 ## Business API Development Context
 
@@ -106,33 +81,30 @@ cd /Users/siy/Projects/agents/business-api/aether
 - **Commit Format**: `type(scope#ticket): description` (SINGLE LINE ONLY)
 - **FORBIDDEN**: Multiline commits, Claude attribution, Co-Authored-By lines
 - **Max Length**: 72 characters maximum
-- **Current Branch**: `feature/business-api#13-promise-examples`
-
 ### Context Restoration Commands
 ```bash
 # Check your context
 cat /Users/siy/Projects/team/contexts/agents/business-api-agent.md
 
-# Check Java 24 migration guide
-cat /Users/siy/Projects/team/contexts/agents/business-api-java24-migration.md
-
 # Check team status
 cat /Users/siy/Projects/team/TEAM_COORDINATION.md
+
+# Check current git status
+git status && git log --oneline -5
 ```
 
 ## 📋 Daily Startup Checklist
 
-1. **Check GitHub Issues**: `gh issue list --repo siy/pragmatica-lite --assignee @me`
+1. **Check GitHub Issues**: `gh issue list --repo siy/team --assignee @me`
 2. **Check PR Status**: `gh pr list --repo siy/pragmatica-lite --author @me`
-3. **Check Both Projects**: `gh issue list --repo siy/team --assignee @me`  
+3. **Check Both Projects**: `gh issue list --repo siy/pragmatica-lite --assignee @me`  
 4. **Git Status**: `pwd && git status`
 
 ## 🎯 Work Sequence Priority
 
-1. **🚨 IMMEDIATE**: Fix PR #22 compilation errors (CRITICAL)
-2. **🚨 URGENT**: Java 24 migration for both projects (Issue #18)
-3. **📋 CONTINUING**: Business error handling framework design
-4. **📋 FUTURE**: High-level API framework after Core @StableAPI ready
+1. **📋 IMMEDIATE**: Business error handling framework research and design
+2. **📋 CONTINUING**: Domain pattern analysis (Financial, E-Commerce, Logistics)
+3. **📋 FUTURE**: High-level API framework after Core @StableAPI ready
 
 ## ⚠️ Validation Policy
 
@@ -150,4 +122,4 @@ echo "Exit code: $?" # Must be 0
 
 ---
 
-**🚨 REMEMBER: Fix PR #22 compilation errors first, then start Java 24 migration. Both are critical path items.**
+**🎯 FOCUS: Research and design business API patterns while waiting for Core Framework @StableAPI completion.**
