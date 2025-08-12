@@ -55,39 +55,59 @@ public interface HttpClient {
     /// Best for: complex URLs, migration from existing string-based APIs, dynamic URL construction
     HttpRequestBuilder request();
     
-    // === Direct Template Methods ===
+    // === Direct Template Methods (delegated to HttpRequestBuilder) ===
     
     /// Direct GET with URL template
-    <R> Promise<HttpResponse<R>> get(String urlTemplate, Object[] params, Class<R> responseType);
+    default <R> Promise<HttpResponse<R>> get(String urlTemplate, Object[] params, Class<R> responseType) {
+        return request().get(urlTemplate, params, responseType);
+    }
     
     /// Direct GET with URL template and TypeToken
-    <R> Promise<HttpResponse<R>> get(String urlTemplate, Object[] params, TypeToken<R> responseType);
+    default <R> Promise<HttpResponse<R>> get(String urlTemplate, Object[] params, TypeToken<R> responseType) {
+        return request().get(urlTemplate, params, responseType);
+    }
     
     /// Direct GET with URL template, no response body expected
-    Promise<HttpResponse<Unit>> get(String urlTemplate, Object[] params);
+    default Promise<HttpResponse<Unit>> get(String urlTemplate, Object[] params) {
+        return request().get(urlTemplate, params);
+    }
     
     /// Direct POST with URL template
-    <R> Promise<HttpResponse<R>> post(String urlTemplate, Object[] params, Object body, Class<R> responseType);
+    default <R> Promise<HttpResponse<R>> post(String urlTemplate, Object[] params, Object body, Class<R> responseType) {
+        return request().post(urlTemplate, params, body, responseType);
+    }
     
     /// Direct POST with URL template and TypeToken
-    <R> Promise<HttpResponse<R>> post(String urlTemplate, Object[] params, Object body, TypeToken<R> responseType);
+    default <R> Promise<HttpResponse<R>> post(String urlTemplate, Object[] params, Object body, TypeToken<R> responseType) {
+        return request().post(urlTemplate, params, body, responseType);
+    }
     
     /// Direct POST with URL template, no response body expected
-    Promise<HttpResponse<Unit>> post(String urlTemplate, Object[] params, Object body);
+    default Promise<HttpResponse<Unit>> post(String urlTemplate, Object[] params, Object body) {
+        return request().post(urlTemplate, params, body);
+    }
     
     // === Direct Template Methods with Content Type ===
     
     /// Direct GET with URL template and content type
-    <R> Promise<HttpResponse<R>> get(String urlTemplate, Object[] params, String contentType, Class<R> responseType);
+    default <R> Promise<HttpResponse<R>> get(String urlTemplate, Object[] params, String contentType, Class<R> responseType) {
+        return request().get(urlTemplate, params, contentType, responseType);
+    }
     
     /// Direct GET with URL template, content type and TypeToken
-    <R> Promise<HttpResponse<R>> get(String urlTemplate, Object[] params, String contentType, TypeToken<R> responseType);
+    default <R> Promise<HttpResponse<R>> get(String urlTemplate, Object[] params, String contentType, TypeToken<R> responseType) {
+        return request().get(urlTemplate, params, contentType, responseType);
+    }
     
     /// Direct POST with URL template and content type
-    <R> Promise<HttpResponse<R>> post(String urlTemplate, Object[] params, Object body, String contentType, Class<R> responseType);
+    default <R> Promise<HttpResponse<R>> post(String urlTemplate, Object[] params, Object body, String contentType, Class<R> responseType) {
+        return request().post(urlTemplate, params, body, contentType, responseType);
+    }
     
     /// Direct POST with URL template, content type and TypeToken
-    <R> Promise<HttpResponse<R>> post(String urlTemplate, Object[] params, Object body, String contentType, TypeToken<R> responseType);
+    default <R> Promise<HttpResponse<R>> post(String urlTemplate, Object[] params, Object body, String contentType, TypeToken<R> responseType) {
+        return request().post(urlTemplate, params, body, contentType, responseType);
+    }
     
     // === Lifecycle ===
     
@@ -299,7 +319,7 @@ public interface HttpClient {
             @Override
             public HttpFunctionBuilder0 path(String pathSegments) {
                 var segments = List.of(pathSegments.split("/"));
-                return new org.pragmatica.net.http.impl.HttpFunctionBuilder0Impl(client, baseUrl, segments, urlBuilder);
+                return new org.pragmatica.net.http.impl.HttpFunctionBuilder0Impl(client, baseUrl, segments, urlBuilder, null);
             }
         };
         

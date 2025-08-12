@@ -113,14 +113,14 @@ public final class NettyHttpRequestExecutor {
     }
     
     private static byte[] serializeBody(Object body) throws Exception {
-        if (body instanceof String str) {
-            return str.getBytes(StandardCharsets.UTF_8);
-        } else if (body instanceof byte[] bytes) {
-            return bytes;
-        } else {
-            // For now, just convert to string - users can provide pre-serialized JSON
-            return body.toString().getBytes(StandardCharsets.UTF_8);
-        }
+        return switch (body) {
+            case String str -> str.getBytes(StandardCharsets.UTF_8);
+            case byte[] bytes -> bytes;
+            case null, default -> {
+                // For now, just convert to string - users can provide pre-serialized JSON
+                yield body.toString().getBytes(StandardCharsets.UTF_8);
+            }
+        };
     }
     
     private static class HttpResponseHandler<T> extends SimpleChannelInboundHandler<FullHttpResponse> {

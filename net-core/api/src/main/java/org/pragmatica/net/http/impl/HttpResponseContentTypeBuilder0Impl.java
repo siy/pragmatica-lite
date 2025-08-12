@@ -54,19 +54,17 @@ public record HttpResponseContentTypeBuilder0Impl<R>(HttpClient client, String b
                 .header("Content-Type", requestContentType)
                 .header("Accept", responseContentType.headerText());
 
-            if (responseTypeInfo instanceof Class<?> responseClass) {
-                return request.responseType((Class<R>) responseClass)
+            return switch (responseTypeInfo) {
+                case Class<?> responseClass -> request.responseType((Class<R>) responseClass)
                     .send()
                     .map(HttpResponse::body)
                     .flatMap(optionBody -> optionBody.async());
-            } else if (responseTypeInfo instanceof TypeToken<?> responseToken) {
-                return request.responseType((TypeToken<R>) responseToken)
+                case TypeToken<?> responseToken -> request.responseType((TypeToken<R>) responseToken)
                     .send()
                     .map(HttpResponse::body)
                     .flatMap(optionBody -> optionBody.async());
-            } else {
-                throw new IllegalStateException("Invalid response type info: " + responseTypeInfo);
-            }
+                case null, default -> throw new IllegalStateException("Invalid response type info: " + responseTypeInfo);
+            };
         };
     }
 }

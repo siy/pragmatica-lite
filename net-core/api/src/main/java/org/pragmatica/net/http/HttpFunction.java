@@ -65,6 +65,35 @@ public interface HttpFunction {
         /// Add a generic typed path variable
         <T1> HttpFunctionBuilder1<T1> pathVar(TypeToken<T1> type);
         
+        // === Client Configuration ===
+        
+        /// Set connection timeout
+        HttpFunctionBuilder0 connectTimeout(org.pragmatica.lang.io.TimeSpan timeout);
+        
+        /// Set request timeout
+        HttpFunctionBuilder0 requestTimeout(org.pragmatica.lang.io.TimeSpan timeout);
+        
+        /// Set read timeout
+        HttpFunctionBuilder0 readTimeout(org.pragmatica.lang.io.TimeSpan timeout);
+        
+        /// Set user agent
+        HttpFunctionBuilder0 userAgent(String userAgent);
+        
+        /// Add default header
+        HttpFunctionBuilder0 header(String name, String value);
+        
+        /// Set default headers
+        HttpFunctionBuilder0 headers(HttpHeaders headers);
+        
+        /// Set max connections
+        HttpFunctionBuilder0 maxConnections(int maxConnections);
+        
+        /// Set max connections per host
+        HttpFunctionBuilder0 maxConnectionsPerHost(int maxConnectionsPerHost);
+        
+        /// Set follow redirects
+        HttpFunctionBuilder0 followRedirects(boolean followRedirects);
+        
         // === Content Type Bridge Methods ===
         
         /// Send request with no body - specify request content type for Accept header

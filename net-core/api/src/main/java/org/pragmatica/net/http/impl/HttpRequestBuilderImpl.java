@@ -32,6 +32,13 @@ public final class HttpRequestBuilderImpl implements HttpRequestBuilder {
     }
     
     @Override
+    public HttpRequestBuilder urlTemplate(String urlTemplate, Object... params) {
+        var urlBuilder = UrlBuilder.create();
+        this.url = urlBuilder.resolveTemplate(urlTemplate, params);
+        return this;
+    }
+    
+    @Override
     public HttpRequestBuilder method(HttpMethod method) {
         this.method = method;
         return this;

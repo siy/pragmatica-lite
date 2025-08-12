@@ -1,12 +1,15 @@
 package org.pragmatica.net.http;
 
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.type.TypeToken;
 import org.pragmatica.lang.io.TimeSpan;
 
 public interface HttpRequestBuilder {
     
     HttpRequestBuilder url(String url);
+    
+    HttpRequestBuilder urlTemplate(String urlTemplate, Object... params);
     
     HttpRequestBuilder method(HttpMethod method);
     
@@ -79,6 +82,60 @@ public interface HttpRequestBuilder {
     
     default <T> Promise<HttpResponse<T>> delete(TypeToken<T> responseType) {
         return method(HttpMethod.DELETE).responseType(responseType).send();
+    }
+    
+    // === Template-style HTTP Methods ===
+    
+    /// GET with URL template
+    default <R> Promise<HttpResponse<R>> get(String urlTemplate, Object[] params, Class<R> responseType) {
+        return urlTemplate(urlTemplate, params).get(responseType);
+    }
+    
+    /// GET with URL template and TypeToken
+    default <R> Promise<HttpResponse<R>> get(String urlTemplate, Object[] params, TypeToken<R> responseType) {
+        return urlTemplate(urlTemplate, params).get(responseType);
+    }
+    
+    /// GET with URL template, no response body expected
+    default Promise<HttpResponse<Unit>> get(String urlTemplate, Object[] params) {
+        return urlTemplate(urlTemplate, params).get(Unit.class);
+    }
+    
+    /// POST with URL template
+    default <R> Promise<HttpResponse<R>> post(String urlTemplate, Object[] params, Object body, Class<R> responseType) {
+        return urlTemplate(urlTemplate, params).post(body, responseType);
+    }
+    
+    /// POST with URL template and TypeToken
+    default <R> Promise<HttpResponse<R>> post(String urlTemplate, Object[] params, Object body, TypeToken<R> responseType) {
+        return urlTemplate(urlTemplate, params).post(body, responseType);
+    }
+    
+    /// POST with URL template, no response body expected
+    default Promise<HttpResponse<Unit>> post(String urlTemplate, Object[] params, Object body) {
+        return urlTemplate(urlTemplate, params).method(HttpMethod.POST).body(body).responseType(Unit.class).send();
+    }
+    
+    // === Template Methods with Content Type ===
+    
+    /// GET with URL template and content type
+    default <R> Promise<HttpResponse<R>> get(String urlTemplate, Object[] params, String contentType, Class<R> responseType) {
+        return urlTemplate(urlTemplate, params).contentType(contentType).get(responseType);
+    }
+    
+    /// GET with URL template, content type and TypeToken
+    default <R> Promise<HttpResponse<R>> get(String urlTemplate, Object[] params, String contentType, TypeToken<R> responseType) {
+        return urlTemplate(urlTemplate, params).contentType(contentType).get(responseType);
+    }
+    
+    /// POST with URL template and content type
+    default <R> Promise<HttpResponse<R>> post(String urlTemplate, Object[] params, Object body, String contentType, Class<R> responseType) {
+        return urlTemplate(urlTemplate, params).contentType(contentType).post(body, responseType);
+    }
+    
+    /// POST with URL template, content type and TypeToken
+    default <R> Promise<HttpResponse<R>> post(String urlTemplate, Object[] params, Object body, String contentType, TypeToken<R> responseType) {
+        return urlTemplate(urlTemplate, params).contentType(contentType).post(body, responseType);
     }
     
     static HttpRequestBuilder create() {
