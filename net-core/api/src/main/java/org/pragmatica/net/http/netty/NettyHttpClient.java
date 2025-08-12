@@ -11,7 +11,6 @@ import org.pragmatica.net.http.HttpClient;
 import org.pragmatica.net.http.HttpClientConfig;
 import org.pragmatica.net.http.HttpRequest;
 import org.pragmatica.net.http.HttpRequestBuilder;
-import org.pragmatica.net.http.HttpResource;
 import org.pragmatica.net.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,10 +54,6 @@ public final class NettyHttpClient implements HttpClient {
         return HttpRequestBuilder.create(this);
     }
     
-    @Override
-    public HttpResource resource(String baseUrl) {
-        return HttpResource.create(this, baseUrl);
-    }
     
     @Override
     public Promise<Unit> start() {

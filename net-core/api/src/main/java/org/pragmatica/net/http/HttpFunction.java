@@ -99,11 +99,26 @@ public interface HttpFunction {
         /// Send request with no body - specify request content type for Accept header
         HttpMethodBuilder0 send(ContentType requestContentType);
         
+        /// Send JSON request with no body - convenience method
+        default HttpMethodBuilder0 sendJson() {
+            return send(CommonContentTypes.APPLICATION_JSON);
+        }
+        
         /// Send request with body - specify request content type and body type
         <T> HttpMethodBuilderWithBody0<T> send(ContentType requestContentType, Class<T> bodyType);
         
+        /// Send JSON request with body - convenience method
+        default <T> HttpMethodBuilderWithBody0<T> sendJson(Class<T> bodyType) {
+            return send(CommonContentTypes.APPLICATION_JSON, bodyType);
+        }
+        
         /// Send request with body using TypeToken - specify request content type and body type
         <T> HttpMethodBuilderWithBody0<T> send(ContentType requestContentType, TypeToken<T> bodyType);
+        
+        /// Send JSON request with body using TypeToken - convenience method
+        default <T> HttpMethodBuilderWithBody0<T> sendJson(TypeToken<T> bodyType) {
+            return send(CommonContentTypes.APPLICATION_JSON, bodyType);
+        }
     }
     
     /// Function builder with one path variable - path building + content type bridge
@@ -404,6 +419,11 @@ public interface HttpFunction {
         
         /// Specify response content type and create final function
         Fn0<Promise<R>> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn0<Promise<R>> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
     }
     
     /// Response content type builder for one path variable
@@ -411,6 +431,11 @@ public interface HttpFunction {
         
         /// Specify response content type and create final function
         Fn1<Promise<R>, T1> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn1<Promise<R>, T1> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
     }
     
     /// Response content type builder for two path variables
@@ -418,6 +443,11 @@ public interface HttpFunction {
         
         /// Specify response content type and create final function
         Fn2<Promise<R>, T1, T2> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn2<Promise<R>, T1, T2> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
     }
     
     /// Response content type builder for three path variables
@@ -425,6 +455,11 @@ public interface HttpFunction {
         
         /// Specify response content type and create final function
         Fn3<Promise<R>, T1, T2, T3> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn3<Promise<R>, T1, T2, T3> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
     }
     
     // === Response Content Type Builders with Body ===
@@ -435,6 +470,11 @@ public interface HttpFunction {
         
         /// Specify response content type and create final function
         Fn1<Promise<R>, B> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn1<Promise<R>, B> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
     }
     
     /// Response content type builder for one path variable with body
@@ -442,6 +482,11 @@ public interface HttpFunction {
         
         /// Specify response content type and create final function
         Fn2<Promise<R>, T1, B> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn2<Promise<R>, T1, B> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
     }
     
     /// Response content type builder for two path variables with body
@@ -449,6 +494,11 @@ public interface HttpFunction {
         
         /// Specify response content type and create final function
         Fn3<Promise<R>, T1, T2, B> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn3<Promise<R>, T1, T2, B> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
     }
     
     /// Response content type builder for three path variables with body
@@ -456,5 +506,10 @@ public interface HttpFunction {
         
         /// Specify response content type and create final function
         Fn4<Promise<R>, T1, T2, T3, B> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn4<Promise<R>, T1, T2, T3, B> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
     }
 }
