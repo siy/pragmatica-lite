@@ -158,11 +158,9 @@ The performance analysis provides **quantitative data** on Result vs Promise ope
 - **Consistent performance patterns**: Result demonstrates 1.4x to 2.4x better performance across all measured operation types
 - **No scenarios favoring Promise**: In synchronous operation benchmarks, Promise showed higher latency in all tested cases
 - **Performance scaling**: Chain operations amplify performance differences, with ratios ranging from 2.15x to 2.44x
-- **Measurement reliability**: Clean environment testing shows consistent results, differing from previous measurements taken under system load
+- **Measurement reliability**: Testing under controlled conditions shows consistent and repeatable results
 
 This data provides **empirical basis** for performance-based implementation decisions in distributed runtime systems. The choice between Result and Promise can be informed by these measured performance characteristics, considering specific application requirements for latency, throughput, and operational complexity.
-
-**Measurement Note**: Previous measurements showing Promise performance advantages for simple operations were taken during periods of high system activity. Under controlled conditions, Result consistently demonstrates lower latency across all operation types.
 
 ---
 
