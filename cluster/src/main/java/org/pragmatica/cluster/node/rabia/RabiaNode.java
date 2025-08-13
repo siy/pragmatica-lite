@@ -66,10 +66,11 @@ public interface RabiaNode<C extends Command> extends ClusterNode<C> {
         var consensus = new RabiaEngine<>(topologyManager, network, stateMachine,
                                           config.protocol());
 
-        topologyManager.configure(router);
-        leaderManager.configure(router);
-        network.configure(router);
-        consensus.configure(router);
+        var mutableRouter = (MessageRouter.MutableRouter) router;
+        topologyManager.configure(mutableRouter);
+        leaderManager.configure(mutableRouter);
+        network.configure(mutableRouter);
+        consensus.configure(mutableRouter);
 
         return new rabiaNode<>(config, router, stateMachine, network, topologyManager, consensus, leaderManager);
     }

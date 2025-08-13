@@ -69,12 +69,12 @@ public interface TcpTopologyManager extends TopologyManager {
             }
 
             @Override
-            public void configure(MessageRouter router) {
-                router.addRoute(TopologyManagementMessage.AddNode.class, this::handleAddNodeMessage)
-                      .addRoute(TopologyManagementMessage.RemoveNode.class, this::handleRemoveNodeMessage)
-                      .addRoute(TopologyManagementMessage.DiscoverNodes.class, this::handleDiscoverNodesMessage)
-                      .addRoute(TopologyManagementMessage.DiscoveredNodes.class, this::handleMergeNodesMessage)
-                      .addRoute(NetworkManagementOperation.ConnectedNodesList.class, this::reconcile);
+            public void configure(MessageRouter.MutableRouter router) {
+                router.addRoute(TopologyManagementMessage.AddNode.class, this::handleAddNodeMessage);
+                router.addRoute(TopologyManagementMessage.RemoveNode.class, this::handleRemoveNodeMessage);
+                router.addRoute(TopologyManagementMessage.DiscoverNodes.class, this::handleDiscoverNodesMessage);
+                router.addRoute(TopologyManagementMessage.DiscoveredNodes.class, this::handleMergeNodesMessage);
+                router.addRoute(NetworkManagementOperation.ConnectedNodesList.class, this::reconcile);
             }
 
             private void initReconcile() {

@@ -4,6 +4,7 @@ import org.pragmatica.cluster.consensus.ProtocolMessage;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.message.MessageReceiver;
+import org.pragmatica.message.MessageRouter;
 
 /// Generalized Network API
 public interface ClusterNetwork {
@@ -35,4 +36,7 @@ public interface ClusterNetwork {
 
     /// Stop the network.
     Promise<Unit> stop();
+
+    /// Configure message routing
+    void configure(MessageRouter.MutableRouter router);
 }

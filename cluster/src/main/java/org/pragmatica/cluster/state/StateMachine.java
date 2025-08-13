@@ -2,6 +2,7 @@ package org.pragmatica.cluster.state;
 
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
+import org.pragmatica.message.MessageRouter;
 
 import java.util.List;
 
@@ -33,4 +34,7 @@ public interface StateMachine<T extends Command> {
 
     /// Reset state machine to its initial state
     void reset();
+
+    /// Configure message routing
+    void configure(MessageRouter.MutableRouter router);
 }

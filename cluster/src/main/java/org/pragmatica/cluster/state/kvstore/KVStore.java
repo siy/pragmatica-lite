@@ -15,7 +15,6 @@ import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.utils.Causes;
 import org.pragmatica.message.MessageReceiver;
 import org.pragmatica.message.MessageRouter;
-import org.pragmatica.message.RouterConfigurator;
 import org.pragmatica.net.serialization.Deserializer;
 import org.pragmatica.net.serialization.Serializer;
 
@@ -23,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class KVStore<K extends StructuredKey, V> implements StateMachine<KVCommand<K>>, RouterConfigurator {
+public final class KVStore<K extends StructuredKey, V> implements StateMachine<KVCommand<K>> {
     private final Map<K, V> storage = new ConcurrentHashMap<>();
     private final Serializer serializer;
     private final Deserializer deserializer;
@@ -38,7 +37,7 @@ public final class KVStore<K extends StructuredKey, V> implements StateMachine<K
     }
 
     @Override
-    public void configure(MessageRouter router) {
+    public void configure(MessageRouter.MutableRouter router) {
         router.addRoute(Find.class, this::find);
     }
 

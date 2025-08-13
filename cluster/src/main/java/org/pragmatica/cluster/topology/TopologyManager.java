@@ -4,13 +4,13 @@ import org.pragmatica.cluster.net.NodeId;
 import org.pragmatica.cluster.net.NodeInfo;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.io.TimeSpan;
-import org.pragmatica.message.RouterConfigurator;
+import org.pragmatica.message.MessageRouter;
 
 import java.net.SocketAddress;
 
 /// Representation of our knowledge about the cluster structure: known nodes and cluster/quorum size.
 /// Note that this is not a representation of the actual cluster topology.
-public interface TopologyManager extends RouterConfigurator {
+public interface TopologyManager {
     /// This node information
     NodeInfo self();
 
@@ -38,4 +38,6 @@ public interface TopologyManager extends RouterConfigurator {
     void stop();
 
     TimeSpan pingInterval();
+
+    void configure(MessageRouter.MutableRouter router);
 }
