@@ -166,4 +166,24 @@ This data provides **empirical basis** for performance-based implementation deci
 
 ---
 
-**Data Usage**: This performance data can inform implementation decisions for distributed system components, considering specific latency and throughput requirements.
+## Performance Context and Practical Considerations
+
+**Overhead Perspective**: While the measured performance differences are statistically significant in isolation, it is important to recognize that both Result and Promise monads introduce negligible overhead in realistic application scenarios where transformations perform actual computational work. The measured differences of nanoseconds per operation become insignificant when compared to typical business logic operations such as:
+
+- Database queries (microseconds to milliseconds)
+- Network I/O operations (milliseconds)  
+- File system operations (microseconds to milliseconds)
+- Complex business calculations (microseconds)
+- Serialization/deserialization (microseconds)
+
+**Practical Impact Assessment**: The performance characteristics documented here are most relevant in scenarios involving:
+- Extremely high-frequency operations (>100,000 ops/sec) with minimal computational content
+- Tight CPU-bound loops with extensive monad chaining
+- Systems with stringent sub-millisecond latency requirements
+- Embedded or resource-constrained environments
+
+**Design Decision Context**: The choice between Result and Promise should primarily be driven by semantic appropriateness, code clarity, and architectural requirements rather than performance considerations. The performance data provides additional context for optimization decisions in performance-critical scenarios, but should not override functional design principles.
+
+---
+
+**Data Usage**: This performance data can inform implementation decisions for distributed system components, considering specific latency and throughput requirements alongside semantic and architectural considerations.
