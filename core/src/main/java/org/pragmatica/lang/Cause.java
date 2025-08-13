@@ -55,7 +55,7 @@ public interface Cause {
         return source().fold(() -> value, src -> src.iterate(action));
     }
 
-    /// Stream of causes starting from this cause. For the single cause it will be a stream of one element. For composite cause, it will be a stream of all
+    /// Stream of causes starting from this cause. For the single Cause instance it will be a stream of one element. For composite cause, it will be a stream of all
     /// causes stored in this cause.
     ///
     /// @return stream of causes.

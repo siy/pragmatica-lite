@@ -390,12 +390,6 @@ public sealed interface Option<T> permits Some, None {
         return fold(() -> {throw new IllegalStateException("Option is empty!!!");}, Functions::id);
     }
 
-    /// Convenience method for wrapping functions/methods which may return `null`
-    ///
-    /// @param function function to wrap
-    /// @param inputValue inputValue to pass to function
-    ///
-    /// @return inputValue returned by the provided function wrapped into [Option]
     /// Convenience method for directly invoking a function that may return null and wrapping the result in an Option.
     /// This method provides immediate invocation rather than returning a function factory.
     ///
