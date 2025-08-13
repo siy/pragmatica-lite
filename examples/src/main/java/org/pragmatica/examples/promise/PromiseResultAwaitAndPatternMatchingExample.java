@@ -25,7 +25,6 @@ class PromiseResultAwaitAndPatternMatchingExample {
             System.err.println("Operation failed: " + cause.message());
         }
 
-        // Using pattern matching (Java 21+)
         switch (result) {
             case Result.Success<Integer> success -> System.out.println("Result: " + success.value());
             case Result.Failure<Integer> failure ->

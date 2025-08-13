@@ -6,7 +6,7 @@ A lightweight Java framework built on modern functional programming principles f
 
 ## Project Overview
 
-Pragmatica Lite is a Java framework that provides robust error handling, functional programming constructs, and distributed systems capabilities. Built on Java 21, it leverages modern language features to create reliable and maintainable applications.
+Pragmatica Lite is a Java framework that provides robust error handling, functional programming constructs, and distributed systems capabilities. Built on Java 24, it leverages modern language features to create reliable and maintainable applications.
 
 ## Modules
 
