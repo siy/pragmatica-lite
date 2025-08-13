@@ -19,7 +19,7 @@ import static org.pragmatica.cluster.topology.ip.TcpTopologyManager.tcpTopologyM
 import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 
 class TcpTopologyManagerTest {
-    private final MessageRouter router = MessageRouter.mutable();
+    private final MessageRouter.MutableRouter router = MessageRouter.mutable();
 
     private TopologyManager topologyManager;
     private NodeId nodeId1;

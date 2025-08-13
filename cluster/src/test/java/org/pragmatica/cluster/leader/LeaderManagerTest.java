@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.pragmatica.cluster.leader.LeaderNotification.leaderChange;
 import static org.pragmatica.cluster.topology.TopologyChangeNotification.nodeAdded;
 import static org.pragmatica.cluster.topology.TopologyChangeNotification.nodeRemoved;
-import static org.pragmatica.message.MessageRouter.messageRouter;
+import static org.pragmatica.message.MessageRouter.mutable;
 
 class LeaderManagerTest {
     record Watcher<T>(List<T> collected) {
@@ -30,7 +30,7 @@ class LeaderManagerTest {
     private final NodeId self = NodeId.randomNodeId();
     private final List<NodeId> nodes = List.of(NodeId.randomNodeId(), self, NodeId.randomNodeId());
 
-    private final MessageRouter router = MessageRouter.mutable();
+    private final MessageRouter.MutableRouter router = MessageRouter.mutable();
     private final Watcher<LeaderNotification> watcher = new Watcher<>(new ArrayList<>());
 
     @BeforeEach

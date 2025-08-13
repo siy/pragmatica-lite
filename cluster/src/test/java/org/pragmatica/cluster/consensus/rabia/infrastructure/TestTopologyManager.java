@@ -34,6 +34,6 @@ public record TestTopologyManager(int clusterSize, NodeInfo self) implements Top
     }
 
     @Override
-    public void configure(MessageRouter router) {
+    public void configure(MessageRouter.MutableRouter router) {
     }
 }

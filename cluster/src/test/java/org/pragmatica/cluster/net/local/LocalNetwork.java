@@ -250,4 +250,9 @@ public class LocalNetwork implements ClusterNetwork {
             messageDelay = TimeSpan.timeSpan(0).millis();
         }
     }
+
+    @Override
+    public void configure(MessageRouter.MutableRouter router) {
+        // No configuration needed for test network
+    }
 }

@@ -8,6 +8,7 @@ import org.pragmatica.cluster.state.kvstore.KVCommand;
 import org.pragmatica.cluster.state.kvstore.KVStore;
 import org.pragmatica.cluster.state.kvstore.KVStoreNotification;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.message.MessageRouter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -151,7 +152,7 @@ public class NominalOperationTest {
 
         cluster.routers()
                .forEach((nodeId, router) ->
-                                router.addRoute(KVStoreNotification.ValuePut.class,
+                                ((MessageRouter.MutableRouter) router).addRoute(KVStoreNotification.ValuePut.class,
                                                 _ -> counters.computeIfAbsent(nodeId,
                                                                               _ -> new CountDownLatch(REQUEST_COUNT))
                                                              .countDown()));
