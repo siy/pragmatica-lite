@@ -5,7 +5,7 @@ import org.pragmatica.lang.Result;
 public interface HttpResponse<T> {
     
     /// Returns the HTTP status code as enum
-    HttpStatusCode status();
+    HttpStatus status();
     
     HttpHeaders headers();
     

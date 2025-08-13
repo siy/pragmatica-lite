@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.Arrays;
 
-public enum HttpStatusCode {
+public enum HttpStatus {
     // 2xx Success
     OK(200, "OK") {
         @Override
@@ -293,11 +293,11 @@ public enum HttpStatusCode {
     private final int code;
     private final String defaultMessage;
     
-    private static final Map<Integer, HttpStatusCode> CODE_MAP = 
+    private static final Map<Integer, HttpStatus> CODE_MAP = 
         Arrays.stream(values())
-              .collect(Collectors.toMap(HttpStatusCode::code, status -> status));
+              .collect(Collectors.toMap(HttpStatus::code, status -> status));
     
-    HttpStatusCode(int code, String defaultMessage) {
+    HttpStatus(int code, String defaultMessage) {
         this.code = code;
         this.defaultMessage = defaultMessage;
     }
@@ -313,8 +313,8 @@ public enum HttpStatusCode {
     /// Abstract method that each enum constant implements to create specific HttpError
     public abstract HttpError asError(String statusText);
     
-    /// Returns Result<HttpStatusCode> for given integer status code
-    public static Result<HttpStatusCode> fromCode(int statusCode) {
+    /// Returns Result<HttpStatus> for given integer status code
+    public static Result<HttpStatus> fromCode(int statusCode) {
         return Option.option(CODE_MAP.get(statusCode))
                     .toResult(HttpError.UnknownStatusCode.create(statusCode));
     }

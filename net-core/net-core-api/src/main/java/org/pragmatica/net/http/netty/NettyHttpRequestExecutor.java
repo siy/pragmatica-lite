@@ -14,7 +14,7 @@ import org.pragmatica.net.http.HttpRequest;
 import org.pragmatica.net.http.HttpResponse;
 import org.pragmatica.net.http.HttpClientConfig;
 import org.pragmatica.net.http.impl.HttpResponseImpl;
-import org.pragmatica.net.http.HttpStatusCode;
+import org.pragmatica.net.http.HttpStatus;
 import org.pragmatica.net.http.HttpError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -169,7 +169,7 @@ public final class NettyHttpRequestExecutor {
                     bodyResult = Result.failure(new HttpError.ServerError.InternalServerError("Body deserialization failed: " + e.getMessage()));
                 }
                 
-                var statusCodeEnum = HttpStatusCode.fromCode(statusCode).orElse(HttpStatusCode.INTERNAL_SERVER_ERROR);
+                var statusCodeEnum = HttpStatus.fromCode(statusCode).recover(error -> HttpStatus.INTERNAL_SERVER_ERROR);
                 var httpResponse = new HttpResponseImpl<>(statusCodeEnum, headers, bodyResult);
                 future.complete(httpResponse);
                 

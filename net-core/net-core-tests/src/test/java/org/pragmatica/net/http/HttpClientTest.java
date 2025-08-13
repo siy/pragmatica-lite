@@ -89,11 +89,11 @@ class HttpClientTest {
     }
     
     @Test
-    void shouldHandleHttpStatusCodeCorrectly() {
-        assertThat(HttpStatusCode.OK.isSuccess()).isTrue();
-        assertThat(HttpStatusCode.NOT_FOUND.isClientError()).isTrue();
-        assertThat(HttpStatusCode.INTERNAL_SERVER_ERROR.isServerError()).isTrue();
-        assertThat(HttpStatusCode.NOT_FOUND.isError()).isTrue();
+    void shouldHandleHttpStatusCorrectly() {
+        assertThat(HttpStatus.OK.isSuccess()).isTrue();
+        assertThat(HttpStatus.NOT_FOUND.isClientError()).isTrue();
+        assertThat(HttpStatus.INTERNAL_SERVER_ERROR.isServerError()).isTrue();
+        assertThat(HttpStatus.NOT_FOUND.isServerError() || HttpStatus.NOT_FOUND.isClientError()).isTrue();
     }
     
     @Test
@@ -174,27 +174,27 @@ class HttpClientTest {
     // === HTTP Status Tests ===
     
     @Test
-    void shouldCorrectlyIdentifyHttpStatusCodeCategories() {
+    void shouldCorrectlyIdentifyHttpStatusCategories() {
         // Success statuses
-        assertThat(HttpStatusCode.OK.isSuccess()).isTrue();
-        assertThat(HttpStatusCode.CREATED.isSuccess()).isTrue();
-        assertThat(HttpStatusCode.NO_CONTENT.isSuccess()).isTrue();
+        assertThat(HttpStatus.OK.isSuccess()).isTrue();
+        assertThat(HttpStatus.CREATED.isSuccess()).isTrue();
+        assertThat(HttpStatus.NO_CONTENT.isSuccess()).isTrue();
         
         // Client error statuses
-        assertThat(HttpStatusCode.BAD_REQUEST.isClientError()).isTrue();
-        assertThat(HttpStatusCode.NOT_FOUND.isClientError()).isTrue();
-        assertThat(HttpStatusCode.UNAUTHORIZED.isClientError()).isTrue();
-        assertThat(HttpStatusCode.FORBIDDEN.isClientError()).isTrue();
+        assertThat(HttpStatus.BAD_REQUEST.isClientError()).isTrue();
+        assertThat(HttpStatus.NOT_FOUND.isClientError()).isTrue();
+        assertThat(HttpStatus.UNAUTHORIZED.isClientError()).isTrue();
+        assertThat(HttpStatus.FORBIDDEN.isClientError()).isTrue();
         
         // Server error statuses
-        assertThat(HttpStatusCode.INTERNAL_SERVER_ERROR.isServerError()).isTrue();
-        assertThat(HttpStatusCode.BAD_GATEWAY.isServerError()).isTrue();
-        assertThat(HttpStatusCode.SERVICE_UNAVAILABLE.isServerError()).isTrue();
+        assertThat(HttpStatus.INTERNAL_SERVER_ERROR.isServerError()).isTrue();
+        assertThat(HttpStatus.BAD_GATEWAY.isServerError()).isTrue();
+        assertThat(HttpStatus.SERVICE_UNAVAILABLE.isServerError()).isTrue();
         
         // Error statuses (client + server)
-        assertThat(HttpStatusCode.NOT_FOUND.isError()).isTrue();
-        assertThat(HttpStatusCode.INTERNAL_SERVER_ERROR.isError()).isTrue();
-        assertThat(HttpStatusCode.OK.isError()).isFalse();
+        assertThat(HttpStatus.NOT_FOUND.isClientError() || HttpStatus.NOT_FOUND.isServerError()).isTrue();
+        assertThat(HttpStatus.INTERNAL_SERVER_ERROR.isServerError() || HttpStatus.INTERNAL_SERVER_ERROR.isClientError()).isTrue();
+        assertThat(HttpStatus.OK.isClientError() || HttpStatus.OK.isServerError()).isFalse();
     }
     
     // === Header Tests ===

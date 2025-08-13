@@ -22,7 +22,7 @@ import org.pragmatica.lang.Cause;
 public sealed interface HttpError extends Cause {
     
     /// Returns the HTTP status code as enum
-    HttpStatusCode code();
+    HttpStatus code();
     
     /// Returns the status text
     String text();
@@ -34,7 +34,7 @@ public sealed interface HttpError extends Cause {
     
     /// Factory method to create HttpError from status code using functional chaining
     static HttpError fromCode(int statusCode, String statusText) {
-        return HttpStatusCode.fromCode(statusCode)
+        return HttpStatus.fromCode(statusCode)
                            .map(code -> code.asError(statusText))
                            .recover(error -> UnknownStatusCode.create(statusCode, statusText));
     }
@@ -51,32 +51,32 @@ public sealed interface HttpError extends Cause {
         
         record Ok(String text) implements Success {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.OK; }
+            public HttpStatus code() { return HttpStatus.OK; }
         }
         
         record Created(String text) implements Success {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.CREATED; }
+            public HttpStatus code() { return HttpStatus.CREATED; }
         }
         
         record Accepted(String text) implements Success {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.ACCEPTED; }
+            public HttpStatus code() { return HttpStatus.ACCEPTED; }
         }
         
         record NoContent(String text) implements Success {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.NO_CONTENT; }
+            public HttpStatus code() { return HttpStatus.NO_CONTENT; }
         }
         
         record ResetContent(String text) implements Success {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.RESET_CONTENT; }
+            public HttpStatus code() { return HttpStatus.RESET_CONTENT; }
         }
         
         record PartialContent(String text) implements Success {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.PARTIAL_CONTENT; }
+            public HttpStatus code() { return HttpStatus.PARTIAL_CONTENT; }
         }
     }
     
@@ -85,37 +85,37 @@ public sealed interface HttpError extends Cause {
         
         record MultipleChoices(String text) implements Redirection {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.MULTIPLE_CHOICES; }
+            public HttpStatus code() { return HttpStatus.MULTIPLE_CHOICES; }
         }
         
         record MovedPermanently(String text) implements Redirection {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.MOVED_PERMANENTLY; }
+            public HttpStatus code() { return HttpStatus.MOVED_PERMANENTLY; }
         }
         
         record Found(String text) implements Redirection {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.FOUND; }
+            public HttpStatus code() { return HttpStatus.FOUND; }
         }
         
         record SeeOther(String text) implements Redirection {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.SEE_OTHER; }
+            public HttpStatus code() { return HttpStatus.SEE_OTHER; }
         }
         
         record NotModified(String text) implements Redirection {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.NOT_MODIFIED; }
+            public HttpStatus code() { return HttpStatus.NOT_MODIFIED; }
         }
         
         record TemporaryRedirect(String text) implements Redirection {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.TEMPORARY_REDIRECT; }
+            public HttpStatus code() { return HttpStatus.TEMPORARY_REDIRECT; }
         }
         
         record PermanentRedirect(String text) implements Redirection {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.PERMANENT_REDIRECT; }
+            public HttpStatus code() { return HttpStatus.PERMANENT_REDIRECT; }
         }
     }
     
@@ -124,107 +124,107 @@ public sealed interface HttpError extends Cause {
         
         record BadRequest(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.BAD_REQUEST; }
+            public HttpStatus code() { return HttpStatus.BAD_REQUEST; }
         }
         
         record Unauthorized(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.UNAUTHORIZED; }
+            public HttpStatus code() { return HttpStatus.UNAUTHORIZED; }
         }
         
         record PaymentRequired(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.PAYMENT_REQUIRED; }
+            public HttpStatus code() { return HttpStatus.PAYMENT_REQUIRED; }
         }
         
         record Forbidden(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.FORBIDDEN; }
+            public HttpStatus code() { return HttpStatus.FORBIDDEN; }
         }
         
         record NotFound(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.NOT_FOUND; }
+            public HttpStatus code() { return HttpStatus.NOT_FOUND; }
         }
         
         record MethodNotAllowed(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.METHOD_NOT_ALLOWED; }
+            public HttpStatus code() { return HttpStatus.METHOD_NOT_ALLOWED; }
         }
         
         record NotAcceptable(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.NOT_ACCEPTABLE; }
+            public HttpStatus code() { return HttpStatus.NOT_ACCEPTABLE; }
         }
         
         record ProxyAuthenticationRequired(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.PROXY_AUTHENTICATION_REQUIRED; }
+            public HttpStatus code() { return HttpStatus.PROXY_AUTHENTICATION_REQUIRED; }
         }
         
         record RequestTimeout(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.REQUEST_TIMEOUT; }
+            public HttpStatus code() { return HttpStatus.REQUEST_TIMEOUT; }
         }
         
         record Conflict(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.CONFLICT; }
+            public HttpStatus code() { return HttpStatus.CONFLICT; }
         }
         
         record Gone(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.GONE; }
+            public HttpStatus code() { return HttpStatus.GONE; }
         }
         
         record LengthRequired(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.LENGTH_REQUIRED; }
+            public HttpStatus code() { return HttpStatus.LENGTH_REQUIRED; }
         }
         
         record PreconditionFailed(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.PRECONDITION_FAILED; }
+            public HttpStatus code() { return HttpStatus.PRECONDITION_FAILED; }
         }
         
         record PayloadTooLarge(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.PAYLOAD_TOO_LARGE; }
+            public HttpStatus code() { return HttpStatus.PAYLOAD_TOO_LARGE; }
         }
         
         record UriTooLong(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.URI_TOO_LONG; }
+            public HttpStatus code() { return HttpStatus.URI_TOO_LONG; }
         }
         
         record UnsupportedMediaType(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.UNSUPPORTED_MEDIA_TYPE; }
+            public HttpStatus code() { return HttpStatus.UNSUPPORTED_MEDIA_TYPE; }
         }
         
         record RangeNotSatisfiable(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.RANGE_NOT_SATISFIABLE; }
+            public HttpStatus code() { return HttpStatus.RANGE_NOT_SATISFIABLE; }
         }
         
         record ExpectationFailed(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.EXPECTATION_FAILED; }
+            public HttpStatus code() { return HttpStatus.EXPECTATION_FAILED; }
         }
         
         record ImATeapot(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.IM_A_TEAPOT; }
+            public HttpStatus code() { return HttpStatus.IM_A_TEAPOT; }
         }
         
         record UnprocessableEntity(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.UNPROCESSABLE_ENTITY; }
+            public HttpStatus code() { return HttpStatus.UNPROCESSABLE_ENTITY; }
         }
         
         record TooManyRequests(String text) implements ClientError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.TOO_MANY_REQUESTS; }
+            public HttpStatus code() { return HttpStatus.TOO_MANY_REQUESTS; }
         }
     }
     
@@ -233,56 +233,56 @@ public sealed interface HttpError extends Cause {
         
         record InternalServerError(String text) implements ServerError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.INTERNAL_SERVER_ERROR; }
+            public HttpStatus code() { return HttpStatus.INTERNAL_SERVER_ERROR; }
         }
         
         record NotImplemented(String text) implements ServerError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.NOT_IMPLEMENTED; }
+            public HttpStatus code() { return HttpStatus.NOT_IMPLEMENTED; }
         }
         
         record BadGateway(String text) implements ServerError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.BAD_GATEWAY; }
+            public HttpStatus code() { return HttpStatus.BAD_GATEWAY; }
         }
         
         record ServiceUnavailable(String text) implements ServerError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.SERVICE_UNAVAILABLE; }
+            public HttpStatus code() { return HttpStatus.SERVICE_UNAVAILABLE; }
         }
         
         record GatewayTimeout(String text) implements ServerError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.GATEWAY_TIMEOUT; }
+            public HttpStatus code() { return HttpStatus.GATEWAY_TIMEOUT; }
         }
         
         record HttpVersionNotSupported(String text) implements ServerError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.HTTP_VERSION_NOT_SUPPORTED; }
+            public HttpStatus code() { return HttpStatus.HTTP_VERSION_NOT_SUPPORTED; }
         }
         
         record InsufficientStorage(String text) implements ServerError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.INSUFFICIENT_STORAGE; }
+            public HttpStatus code() { return HttpStatus.INSUFFICIENT_STORAGE; }
         }
         
         record LoopDetected(String text) implements ServerError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.LOOP_DETECTED; }
+            public HttpStatus code() { return HttpStatus.LOOP_DETECTED; }
         }
         
         record NetworkAuthenticationRequired(String text) implements ServerError {
             @Override
-            public HttpStatusCode code() { return HttpStatusCode.NETWORK_AUTHENTICATION_REQUIRED; }
+            public HttpStatus code() { return HttpStatus.NETWORK_AUTHENTICATION_REQUIRED; }
         }
     }
     
     /// Unknown status code error
     record UnknownStatusCode(int statusCode, String text) implements HttpError {
         @Override
-        public HttpStatusCode code() {
+        public HttpStatus code() {
             // Use a default fallback since the code is unknown
-            return HttpStatusCode.INTERNAL_SERVER_ERROR;
+            return HttpStatus.INTERNAL_SERVER_ERROR;
         }
         
         @Override
