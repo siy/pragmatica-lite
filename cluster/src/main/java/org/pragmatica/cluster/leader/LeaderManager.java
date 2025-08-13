@@ -7,7 +7,6 @@ import org.pragmatica.cluster.topology.TopologyChangeNotification.NodeDown;
 import org.pragmatica.cluster.topology.TopologyChangeNotification.NodeRemoved;
 import org.pragmatica.message.MessageReceiver;
 import org.pragmatica.message.MessageRouter;
-import org.pragmatica.message.RouterConfigurator;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -18,7 +17,7 @@ import static org.pragmatica.lang.Option.option;
 /// Leader manager is responsible for choosing which node is the leader.
 /// Although consensus is leaderless, it is often necessary to have a single
 /// source of truth for the cluster management. The leader node can be used for this purpose.
-public interface LeaderManager extends RouterConfigurator {
+public interface LeaderManager {
     static LeaderManager leaderManager(NodeId self, MessageRouter router) {
         record leaderManager(NodeId self, MessageRouter router, AtomicBoolean active,
                              AtomicReference<NodeId> currentLeader) implements LeaderManager {
@@ -81,7 +80,7 @@ public interface LeaderManager extends RouterConfigurator {
             }
 
             @Override
-            public void configure(MessageRouter router) {
+            public void configure(MessageRouter.MutableRouter router) {
                 router.addRoute(NodeAdded.class, this::nodeAdded);
                 router.addRoute(NodeRemoved.class, this::nodeRemoved);
                 router.addRoute(NodeDown.class, this::nodeDown);
@@ -103,4 +102,6 @@ public interface LeaderManager extends RouterConfigurator {
 
     @MessageReceiver
     void watchQuorumState(QuorumStateNotification quorumState);
+
+    void configure(MessageRouter.MutableRouter router);
 }

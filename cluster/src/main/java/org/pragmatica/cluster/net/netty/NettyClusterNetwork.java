@@ -22,7 +22,6 @@ import org.pragmatica.lang.utils.Causes;
 import org.pragmatica.lang.utils.SharedScheduler;
 import org.pragmatica.message.Message;
 import org.pragmatica.message.MessageRouter;
-import org.pragmatica.message.RouterConfigurator;
 import org.pragmatica.net.Server;
 import org.pragmatica.net.serialization.Deserializer;
 import org.pragmatica.net.serialization.Serializer;
@@ -47,7 +46,7 @@ import static org.pragmatica.cluster.net.netty.NettyClusterNetwork.ViewChangeOpe
 /**
  * Manages network connections between nodes using Netty.
  */
-public class NettyClusterNetwork implements ClusterNetwork, RouterConfigurator {
+public class NettyClusterNetwork implements ClusterNetwork {
     private static final Logger log = LoggerFactory.getLogger(NettyClusterNetwork.class);
     private static final double SCALE = 0.3d;
 
@@ -88,7 +87,7 @@ public class NettyClusterNetwork implements ClusterNetwork, RouterConfigurator {
     }
 
     @Override
-    public void configure(MessageRouter router) {
+    public void configure(MessageRouter.MutableRouter router) {
         router.addRoute(ConnectNode.class, this::connect);
         router.addRoute(DisconnectNode.class, this::disconnect);
         router.addRoute(ListConnectedNodes.class, this::listNodes);

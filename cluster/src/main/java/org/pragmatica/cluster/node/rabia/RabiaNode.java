@@ -24,7 +24,7 @@ public interface RabiaNode<C extends Command> extends ClusterNode<C> {
     MessageRouter router();
 
     static <C extends Command> RabiaNode<C> rabiaNode(NodeConfig config,
-                                                      MessageRouter router,
+                                                      MessageRouter.MutableRouter router,
                                                       StateMachine<C> stateMachine,
                                                       Serializer serializer,
                                                       Deserializer deserializer) {

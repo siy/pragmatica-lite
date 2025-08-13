@@ -17,7 +17,6 @@ import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.utils.SharedScheduler;
 import org.pragmatica.message.MessageReceiver;
 import org.pragmatica.message.MessageRouter;
-import org.pragmatica.message.RouterConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +36,7 @@ import static org.pragmatica.cluster.consensus.rabia.RabiaPersistence.SavedState
 import static org.pragmatica.cluster.consensus.rabia.RabiaProtocolMessage.Asynchronous.SyncRequest;
 
 /// Implementation of the Rabia consensus protocol.
-public class RabiaEngine<C extends Command> implements RouterConfigurator {
+public class RabiaEngine<C extends Command> {
     private static final Logger log = LoggerFactory.getLogger(RabiaEngine.class);
     private static final double SCALE = 0.5d;
 
@@ -83,8 +82,7 @@ public class RabiaEngine<C extends Command> implements RouterConfigurator {
         SharedScheduler.schedule(this::synchronize, config.syncRetryInterval());
     }
 
-    @Override
-    public void configure(MessageRouter router) {
+    public void configure(MessageRouter.MutableRouter router) {
         // Subscribe to quorum events
         router.addRoute(QuorumStateNotification.class, this::quorumState);
 
