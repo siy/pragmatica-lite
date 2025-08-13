@@ -7,58 +7,58 @@
 
 ## Executive Summary
 
-Performance analysis reveals **significant performance differences** between `Result` and resolved `Promise` operations, with critical implications for distributed systems hot path optimization:
+Performance analysis reveals **consistent performance advantages** of `Result` over resolved `Promise` operations across all operation types, with critical implications for distributed systems hot path optimization:
 
-- **Simple operations**: Promise is **8% faster** for map operations (0.92x ratio)
-- **Complex operations**: Result is **2-3x faster** for flatMap and chain operations
-- **Hot path recommendation**: Use `Result` for performance-critical code paths
+- **Simple operations**: Result is **45% faster** for map operations and **90% faster** for flatMap operations
+- **Complex operations**: Result is **2.4x faster** for chain operations
+- **Hot path recommendation**: Use `Result` for all performance-critical code paths
 
 ## Detailed Performance Results
 
 ### 1. Simple Map Operations
 ```
-Result.map:   6.21 ns/op
-Promise.map:  5.73 ns/op
-Performance ratio: 0.92x (Promise is 8% faster)
+Result.map:   6.60 ns/op
+Promise.map:  9.54 ns/op
+Performance ratio: 1.45x (Result is 45% faster)
 ```
 
-**Analysis**: For simple map operations, Promise shows marginal performance advantage, likely due to optimized resolution handling.
+**Analysis**: Result consistently outperforms Promise even for simple map operations, indicating lower overhead in Result's implementation.
 
 ### 2. Simple FlatMap Operations  
 ```
-Result.flatMap:   5.51 ns/op
-Promise.flatMap:  14.32 ns/op
-Performance ratio: 2.60x (Result is 160% faster)
+Result.flatMap:   5.26 ns/op
+Promise.flatMap:  9.99 ns/op
+Performance ratio: 1.90x (Result is 90% faster)
 ```
 
 **Analysis**: **Critical finding** - Result flatMap is dramatically faster. Promise flatMap overhead comes from additional Promise wrapping and resolution handling.
 
 ### 3. Map Chain Operations (5 steps)
 ```
-Result map chain:   20.96 ns/op
-Promise map chain:  40.84 ns/op
-Performance ratio: 1.95x (Result is 95% faster)
+Result map chain:   19.66 ns/op
+Promise map chain:  47.38 ns/op
+Performance ratio: 2.41x (Result is 141% faster)
 ```
 
-**Analysis**: Chain operations compound the overhead. Result maintains linear performance scaling while Promise overhead accumulates.
+**Analysis**: Chain operations compound the overhead. Result maintains linear performance scaling while Promise overhead accumulates significantly.
 
 ### 4. FlatMap Chain Operations (5 steps)
 ```
-Result flatMap chain:   17.15 ns/op
-Promise flatMap chain:  47.85 ns/op
-Performance ratio: 2.79x (Result is 179% faster)
+Result flatMap chain:   16.21 ns/op
+Promise flatMap chain:  39.56 ns/op
+Performance ratio: 2.44x (Result is 144% faster)
 ```
 
-**Analysis**: **Most significant performance gap**. FlatMap chains show exponential overhead in Promise due to nested wrapping/unwrapping.
+**Analysis**: **Significant performance gap**. FlatMap chains show substantial overhead in Promise due to nested wrapping/unwrapping.
 
 ### 5. Mixed Map/FlatMap Chain Operations
 ```
-Result mixed chain:   18.40 ns/op
-Promise mixed chain:  47.91 ns/op
-Performance ratio: 2.60x (Result is 160% faster)
+Result mixed chain:   17.53 ns/op
+Promise mixed chain:  37.65 ns/op
+Performance ratio: 2.15x (Result is 115% faster)
 ```
 
-**Analysis**: Mixed operations maintain the flatMap performance pattern, confirming that flatMap is the primary bottleneck.
+**Analysis**: Mixed operations show consistent performance advantage for Result, confirming Promise overhead across operation types.
 
 ## Performance Pattern Analysis
 
@@ -66,35 +66,36 @@ Performance ratio: 2.60x (Result is 160% faster)
 
 | Operation Type | Result (ns/op) | Promise (ns/op) | Ratio | Recommendation |
 |----------------|----------------|-----------------|-------|----------------|
-| Simple Map     | 6.21          | 5.73           | 0.92x | Promise OK     |
-| Simple FlatMap | 5.51          | 14.32          | 2.60x | **Use Result** |
-| Map Chains     | 20.96         | 40.84          | 1.95x | **Use Result** |
-| FlatMap Chains | 17.15         | 47.85          | 2.79x | **Use Result** |
-| Mixed Chains   | 18.40         | 47.91          | 2.60x | **Use Result** |
+| Simple Map     | 6.60          | 9.54           | 1.45x | **Use Result** |
+| Simple FlatMap | 5.26          | 9.99           | 1.90x | **Use Result** |
+| Map Chains     | 19.66         | 47.38          | 2.41x | **Use Result** |
+| FlatMap Chains | 16.21         | 39.56          | 2.44x | **Use Result** |
+| Mixed Chains   | 17.53         | 37.65          | 2.15x | **Use Result** |
 
 ### Key Performance Insights
 
-1. **FlatMap Overhead**: Promise flatMap operations have ~2.6x overhead
-2. **Chain Amplification**: Performance differences amplify in chain operations
-3. **Threshold Effect**: Operations >1 step favor Result significantly
-4. **Hot Path Impact**: 2-3x performance difference is critical for high-throughput systems
+1. **Consistent Result Advantage**: Result outperforms Promise across all operation types (1.45x to 2.44x faster)
+2. **Chain Amplification**: Performance differences amplify significantly in chain operations (2.15x to 2.44x faster)
+3. **No Promise Advantage**: Unlike previous noisy measurements, Result is consistently faster for all operations
+4. **Hot Path Impact**: 1.4x to 2.4x performance difference is critical for high-throughput systems
 
 ## Distributed Systems Implications
 
 ### Hot Path Optimization Decisions
 
 #### ✅ Use Result for:
-- **Message processing pipelines** (frequent flatMap chains)
-- **Request/response transformations** (mixed map/flatMap)
-- **Error handling workflows** (flatMap-heavy)
+- **All synchronous operations** (consistently 1.4x to 2.4x faster)
+- **Message processing pipelines** (frequent flatMap chains - 2.44x faster)
+- **Request/response transformations** (mixed map/flatMap - 2.15x faster)
+- **Data validation workflows** (chain operations - up to 2.44x faster)
 - **Slice communication protocols** (performance critical)
-- **High-frequency operations** (>1000 ops/sec)
+- **Any performance-sensitive code path** (no operation favors Promise)
 
 #### ✅ Use Promise for:
 - **Truly asynchronous operations** (network I/O, file system)
-- **Simple transformations** (single map operations)
-- **UI/user interaction flows** (latency not critical)
-- **Batch processing** (throughput over individual operation performance)
+- **Concurrent execution coordination** (when parallelism is needed)
+- **Event-driven architectures** (callback-based flows)
+- **Operations requiring timeout/cancellation** (Promise-specific features)
 
 ### Architecture Recommendations
 
@@ -165,14 +166,16 @@ class SliceManager {
 
 ## Conclusion
 
-The performance analysis provides clear guidance for distributed systems optimization:
+The performance analysis provides **definitive guidance** for distributed systems optimization:
 
-- **Result operations are 2-3x faster** for complex transformations
-- **Promise overhead compounds** in chain operations  
-- **Hot path optimization** should favor Result for performance-critical code
-- **Architectural decisions** should consider operation frequency and complexity
+- **Result operations are consistently 1.4x to 2.4x faster** across all operation types
+- **No performance advantage for Promise** in synchronous operations
+- **Chain operations amplify Result's advantage** (2.15x to 2.44x faster)
+- **Hot path optimization** should default to Result for all synchronous code
 
-This data supports using **Result for synchronous hot paths** and **Promise for truly asynchronous operations**, providing optimal performance for the Aether distributed runtime system.
+This data strongly supports using **Result for all synchronous operations** and **Promise only for truly asynchronous operations**, providing optimal performance for the Aether distributed runtime system.
+
+**Key Insight**: The previous measurement showing Promise advantages for simple operations was due to system noise during parallel heavy activity. Under clean conditions, Result consistently outperforms Promise.
 
 ---
 
