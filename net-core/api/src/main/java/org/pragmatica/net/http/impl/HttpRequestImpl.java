@@ -8,18 +8,23 @@ import org.pragmatica.net.http.HttpMethod;
 import org.pragmatica.net.http.HttpRequest;
 import org.pragmatica.net.http.HttpResponse;
 
-public record HttpRequestImpl<T>(
+public record HttpRequestImpl<T, R>(
     String url,
     HttpMethod method,
     HttpHeaders headers,
-    Object body,
-    Class<T> responseType,
-    TypeToken<T> responseTypeToken,
+    T body,
+    TypeToken<R> expectedType,
     HttpClient client
-) implements HttpRequest<T> {
+) implements HttpRequest<T, R> {
+    
+    public HttpRequestImpl {
+        if (expectedType == null) {
+            throw new IllegalArgumentException("expectedType cannot be null");
+        }
+    }
     
     @Override
-    public Promise<HttpResponse<T>> send() {
-        return client.send(this);
+    public Promise<HttpResponse<R>> send() {
+        return client.exchange(this);
     }
 }

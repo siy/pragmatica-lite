@@ -27,14 +27,14 @@ import java.util.concurrent.TimeUnit;
 public final class NettyHttpRequestExecutor {
     private static final Logger log = LoggerFactory.getLogger(NettyHttpRequestExecutor.class);
     
-    public static <T> Promise<HttpResponse<T>> execute(Bootstrap bootstrap, HttpRequest<T> request, HttpClientConfig config) {
+    public static <T, R> Promise<HttpResponse<R>> execute(Bootstrap bootstrap, HttpRequest<T, R> request, HttpClientConfig config) {
         return Promise.promise(() -> {
             try {
                 var uri = URI.create(request.url());
                 var port = uri.getPort() == -1 ? (uri.getScheme().equals("https") ? 443 : 80) : uri.getPort();
                 var ssl = uri.getScheme().equals("https");
                 
-                var future = new CompletableFuture<HttpResponse<T>>();
+                var future = new CompletableFuture<HttpResponse<R>>();
                 
                 var channelFuture = bootstrap.clone()
                     .handler(createChannelInitializer(ssl, uri, port, config, request, future))
@@ -52,9 +52,9 @@ public final class NettyHttpRequestExecutor {
         });
     }
     
-    private static <T> ChannelInitializer<Channel> createChannelInitializer(
+    private static <T, R> ChannelInitializer<Channel> createChannelInitializer(
             boolean ssl, URI uri, int port, HttpClientConfig config, 
-            HttpRequest<T> request, CompletableFuture<HttpResponse<T>> future) {
+            HttpRequest<T, R> request, CompletableFuture<HttpResponse<R>> future) {
         return new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
@@ -75,8 +75,8 @@ public final class NettyHttpRequestExecutor {
         };
     }
     
-    private static <T> ChannelFutureListener createConnectionListener(
-            HttpRequest<T> request, URI uri, CompletableFuture<HttpResponse<T>> future) {
+    private static <T, R> ChannelFutureListener createConnectionListener(
+            HttpRequest<T, R> request, URI uri, CompletableFuture<HttpResponse<R>> future) {
         return connectFuture -> {
             if (connectFuture.isSuccess()) {
                 try {
@@ -91,7 +91,7 @@ public final class NettyHttpRequestExecutor {
         };
     }
     
-    private static FullHttpRequest createNettyRequest(HttpRequest<?> request, URI uri) throws Exception {
+    private static FullHttpRequest createNettyRequest(HttpRequest<?, ?> request, URI uri) throws Exception {
         var nettyRequest = new DefaultFullHttpRequest(
             HttpVersion.HTTP_1_1,
             io.netty.handler.codec.http.HttpMethod.valueOf(request.method().name()),
@@ -136,11 +136,11 @@ public final class NettyHttpRequestExecutor {
         };
     }
     
-    private static class HttpResponseHandler<T> extends SimpleChannelInboundHandler<FullHttpResponse> {
-        private final HttpRequest<T> request;
-        private final CompletableFuture<HttpResponse<T>> future;
+    private static class HttpResponseHandler<T, R> extends SimpleChannelInboundHandler<FullHttpResponse> {
+        private final HttpRequest<T, R> request;
+        private final CompletableFuture<HttpResponse<R>> future;
         
-        public HttpResponseHandler(HttpRequest<T> request, CompletableFuture<HttpResponse<T>> future) {
+        public HttpResponseHandler(HttpRequest<T, R> request, CompletableFuture<HttpResponse<R>> future) {
             this.request = request;
             this.future = future;
         }
@@ -161,7 +161,7 @@ public final class NettyHttpRequestExecutor {
                 var bodyBytes = new byte[response.content().readableBytes()];
                 response.content().readBytes(bodyBytes);
                 
-                Result<T> bodyResult;
+                Result<R> bodyResult;
                 try {
                     var body = deserializeBody(bodyBytes, request);
                     bodyResult = Result.success(body); // null is a valid success for empty bodies
@@ -187,29 +187,24 @@ public final class NettyHttpRequestExecutor {
         }
         
         @SuppressWarnings("unchecked")
-        private T deserializeBody(byte[] bodyBytes, HttpRequest<T> request) throws Exception {
+        private R deserializeBody(byte[] bodyBytes, HttpRequest<T, R> request) throws Exception {
             if (bodyBytes.length == 0) {
                 return null;
             }
             
             var bodyString = new String(bodyBytes, StandardCharsets.UTF_8);
             
-            // Handle different response types
-            if (request.responseType() != null) {
-                if (request.responseType() == String.class) {
-                    return (T) bodyString;
-                } else if (request.responseType() == byte[].class) {
-                    return (T) bodyBytes;
-                } else {
-                    // For now, just return the string - users can deserialize manually
-                    return (T) bodyString;
-                }
-            } else if (request.responseTypeToken() != null) {
-                // For now, just return the string - users can deserialize manually  
-                return (T) bodyString;
+            // Handle different response types using expectedType
+            var expectedType = request.expectedType();
+            var rawType = expectedType.getRawType();
+            
+            if (rawType == String.class) {
+                return (R) bodyString;
+            } else if (rawType == byte[].class) {
+                return (R) bodyBytes;
             } else {
-                // Default to String
-                return (T) bodyString;
+                // For now, just return the string - users can deserialize manually
+                return (R) bodyString;
             }
         }
     }

@@ -58,13 +58,13 @@ class HttpClientTest {
             .url("https://httpbin.org/get")
             .method(HttpMethod.GET)
             .header("Accept", "application/json")
-            .responseType(String.class);
+            .expectedType(String.class);
             
         assertThat(request).isNotNull();
         assertThat(request.url()).isEqualTo("https://httpbin.org/get");
         assertThat(request.method()).isEqualTo(HttpMethod.GET);
         assertThat(request.headers().first("Accept")).isPresent();
-        assertThat(request.responseType()).isEqualTo(String.class);
+        assertThat(request.expectedType().getRawType()).isEqualTo(String.class);
     }
     
     @Test
@@ -73,10 +73,10 @@ class HttpClientTest {
         
         var request = client.request()
             .url("https://httpbin.org/get")
-            .responseType(new TypeToken<Map<String, Object>>(){});
+            .expectedType(new TypeToken<Map<String, Object>>(){});
             
         assertThat(request).isNotNull();
-        assertThat(request.responseTypeToken()).isNotNull();
+        assertThat(request.expectedType()).isNotNull();
     }
     
     @Test
@@ -328,14 +328,14 @@ class HttpClientTest {
             .header("Authorization", "Bearer token")
             .header("Content-Type", "application/json")
             .body("{\"name\":\"John\"}")
-            .responseType(String.class);
+            .expectedType(String.class);
             
         assertThat(request.url()).isEqualTo("https://api.example.com/users");
         assertThat(request.method()).isEqualTo(HttpMethod.POST);
         assertThat(request.headers().first("Authorization")).contains("Bearer token");
         assertThat(request.headers().first("Content-Type")).contains("application/json");
         assertThat(request.body()).isEqualTo("{\"name\":\"John\"}");
-        assertThat(request.responseType()).isEqualTo(String.class);
+        assertThat(request.expectedType().getRawType()).isEqualTo(String.class);
     }
     
     record TestUser(String name, String email) {}

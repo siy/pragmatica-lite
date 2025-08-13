@@ -61,15 +61,6 @@ public final class HttpRequestBuilderImpl implements HttpRequestBuilder {
         return this;
     }
     
-    @Override
-    public HttpRequestBuilder json(String contentType) {
-        return header("Content-Type", contentType);
-    }
-    
-    @Override
-    public HttpRequestBuilder plainText(String contentType) {
-        return header("Content-Type", contentType);
-    }
     
     @Override
     public HttpRequestBuilder contentType(String contentType) {
@@ -77,12 +68,19 @@ public final class HttpRequestBuilderImpl implements HttpRequestBuilder {
     }
     
     @Override
-    public <T> HttpRequest<T> responseType(Class<T> responseType) {
-        return new HttpRequestImpl<>(url, method, headers, body, responseType, null, client);
+    @SuppressWarnings("unchecked")
+    public <T, R> HttpRequest<T, R> expectedType(Class<R> expectedType) {
+        return new HttpRequestImpl<>(url, method, headers, (T) body, TypeToken.of(expectedType), client);
     }
     
     @Override
-    public <T> HttpRequest<T> responseType(TypeToken<T> responseType) {
-        return new HttpRequestImpl<>(url, method, headers, body, null, responseType, client);
+    @SuppressWarnings("unchecked")
+    public <T, R> HttpRequest<T, R> expectedType(TypeToken<R> expectedType) {
+        return new HttpRequestImpl<>(url, method, headers, (T) body, expectedType, client);
+    }
+    
+    @Override
+    public <T, R> HttpRequest<T, R> send() {
+        throw new UnsupportedOperationException("Must specify expectedType before calling send()");
     }
 }

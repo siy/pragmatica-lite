@@ -67,6 +67,11 @@ public interface HttpClient {
         return new httpFunction(this, baseUrl, UrlBuilder.create());
     }
     
+    // === Core Methods ===
+    
+    /// Exchange (send and receive) an HTTP request
+    <T, R> Promise<HttpResponse<R>> exchange(HttpRequest<T, R> request);
+    
     // === Lifecycle ===
     
     /// Start the HTTP client

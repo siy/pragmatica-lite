@@ -41,7 +41,7 @@ public final class NettyHttpClient implements HttpClient {
     }
     
     @Override
-    public <T> Promise<HttpResponse<T>> send(HttpRequest<T> request) {
+    public <T, R> Promise<HttpResponse<R>> exchange(HttpRequest<T, R> request) {
         if (!started.get()) {
             return Promise.failure(HttpError.UnknownStatusCode.create(0, "Client not started"));
         }

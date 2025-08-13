@@ -5,7 +5,7 @@ import org.pragmatica.lang.type.TypeToken;
 
 import java.net.URI;
 
-public interface HttpRequest<T> {
+public interface HttpRequest<T, R> {
     
     String url();
     
@@ -13,13 +13,11 @@ public interface HttpRequest<T> {
     
     HttpHeaders headers();
     
-    Object body();
+    T body();
     
-    Class<T> responseType();
+    TypeToken<R> expectedType();
     
-    TypeToken<T> responseTypeToken();
-    
-    Promise<HttpResponse<T>> send();
+    Promise<HttpResponse<R>> send();
     
     static HttpRequestBuilder builder() {
         return HttpRequestBuilder.create();

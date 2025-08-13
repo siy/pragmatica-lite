@@ -30,7 +30,7 @@ class HttpClientUsageExample {
             .method(HttpMethod.GET)
             .header("Authorization", "Bearer your-token")
             .header("X-Custom-Header", "custom-value")
-            .responseType(new TypeToken<List<User>>(){});
+            .expectedType(new TypeToken<List<User>>(){});
             
         // 3. Resource-based DSL - Great for REST APIs
         var usersApi = client.resource("https://jsonplaceholder.typicode.com")
@@ -65,17 +65,17 @@ class HttpClientUsageExample {
         // String response
         var textResponse = client.request()
             .url("https://httpbin.org/html")
-            .responseType(String.class);
+            .expectedType(String.class);
             
         // JSON object response
         var jsonResponse = client.request()
             .url("https://httpbin.org/json")
-            .responseType(new TypeToken<Map<String, Object>>(){});
+            .expectedType(new TypeToken<Map<String, Object>>(){});
             
         // Binary response
         var binaryResponse = client.request()
             .url("https://httpbin.org/bytes/1024")
-            .responseType(byte[].class);
+            .expectedType(byte[].class);
         
         // 7. Error handling with Result pattern
         /*

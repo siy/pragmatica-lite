@@ -26,11 +26,11 @@ public interface HttpRequestBuilder {
         return contentType(contentType.headerText());
     }
     
-    <T> HttpRequest<T> responseType(Class<T> responseType);
+    <T, R> HttpRequest<T, R> expectedType(Class<R> expectedType);
     
-    <T> HttpRequest<T> responseType(TypeToken<T> responseType);
+    <T, R> HttpRequest<T, R> expectedType(TypeToken<R> expectedType);
     
-    <T> HttpRequest<T> send();
+    <T, R> HttpRequest<T, R> send();
     
     
     static HttpRequestBuilder create() {

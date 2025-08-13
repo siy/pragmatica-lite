@@ -33,14 +33,14 @@ class HttpClientIntegrationTest {
             .method(HttpMethod.GET)
             .header("Accept", "application/json")
             .header("X-Test-Header", "test-value")
-            .responseType(String.class);
+            .expectedType(String.class);
             
         // Verify request was built correctly
         assertThat(request.url()).isEqualTo("https://httpbin.org/get");
         assertThat(request.method()).isEqualTo(HttpMethod.GET);
         assertThat(request.headers().first("Accept")).contains("application/json");
         assertThat(request.headers().first("X-Test-Header")).contains("test-value");
-        assertThat(request.responseType()).isEqualTo(String.class);
+        assertThat(request.expectedType().getRawType()).isEqualTo(String.class);
     }
     
     @Test
@@ -62,9 +62,9 @@ class HttpClientIntegrationTest {
         // This demonstrates TypeToken support for generic types
         var request = client.request()
             .url("https://httpbin.org/json")
-            .responseType(new TypeToken<Map<String, Object>>(){});
+            .expectedType(new TypeToken<Map<String, Object>>(){});
             
-        assertThat(request.responseTypeToken()).isNotNull();
+        assertThat(request.expectedType()).isNotNull();
     }
     
     @Test

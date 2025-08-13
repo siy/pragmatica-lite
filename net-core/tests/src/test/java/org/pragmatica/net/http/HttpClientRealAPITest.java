@@ -256,7 +256,7 @@ class HttpClientRealAPITest {
             .method(HttpMethod.GET)
             .header("Accept", "application/json")
             .header("X-Test-Request-Builder", "true")
-            .responseType(new TypeToken<Map<String, Object>>(){})
+            .expectedType(new TypeToken<Map<String, Object>>(){})
             .send()
             .await();
             
