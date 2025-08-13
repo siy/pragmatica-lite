@@ -181,6 +181,12 @@ public interface HttpFunction {
         /// Add more path segments
         HttpFunctionBuilder3<T1, T2, T3> path(String pathSegments);
         
+        /// Add another typed path variable
+        <T4> HttpFunctionBuilder4<T1, T2, T3, T4> pathVar(Class<T4> type);
+        
+        /// Add another generic typed path variable
+        <T4> HttpFunctionBuilder4<T1, T2, T3, T4> pathVar(TypeToken<T4> type);
+        
         // === Content Type Bridge Methods ===
         
         /// Send request with no body - specify request content type for Accept header
@@ -191,6 +197,156 @@ public interface HttpFunction {
         
         /// Send request with body using TypeToken - specify request content type and body type
         <T> HttpMethodBuilderWithBody3<T1, T2, T3, T> send(ContentType requestContentType, TypeToken<T> bodyType);
+    }
+    
+    /// Function builder with four path variables - path building + content type bridge
+    interface HttpFunctionBuilder4<T1, T2, T3, T4> {
+        
+        // === Path Building ===
+        
+        /// Add more path segments
+        HttpFunctionBuilder4<T1, T2, T3, T4> path(String pathSegments);
+        
+        /// Add another typed path variable
+        <T5> HttpFunctionBuilder5<T1, T2, T3, T4, T5> pathVar(Class<T5> type);
+        
+        /// Add another generic typed path variable
+        <T5> HttpFunctionBuilder5<T1, T2, T3, T4, T5> pathVar(TypeToken<T5> type);
+        
+        // === Content Type Bridge Methods ===
+        
+        /// Send request with no body - specify request content type for Accept header
+        HttpMethodBuilder4<T1, T2, T3, T4> send(ContentType requestContentType);
+        
+        /// Send request with body - specify request content type and body type
+        <T> HttpMethodBuilderWithBody4<T1, T2, T3, T4, T> send(ContentType requestContentType, Class<T> bodyType);
+        
+        /// Send request with body using TypeToken - specify request content type and body type
+        <T> HttpMethodBuilderWithBody4<T1, T2, T3, T4, T> send(ContentType requestContentType, TypeToken<T> bodyType);
+    }
+    
+    /// Function builder with five path variables - path building + content type bridge
+    interface HttpFunctionBuilder5<T1, T2, T3, T4, T5> {
+        
+        // === Path Building ===
+        
+        /// Add more path segments
+        HttpFunctionBuilder5<T1, T2, T3, T4, T5> path(String pathSegments);
+        
+        /// Add another typed path variable
+        <T6> HttpFunctionBuilder6<T1, T2, T3, T4, T5, T6> pathVar(Class<T6> type);
+        
+        /// Add another generic typed path variable
+        <T6> HttpFunctionBuilder6<T1, T2, T3, T4, T5, T6> pathVar(TypeToken<T6> type);
+        
+        // === Content Type Bridge Methods ===
+        
+        /// Send request with no body - specify request content type for Accept header
+        HttpMethodBuilder5<T1, T2, T3, T4, T5> send(ContentType requestContentType);
+        
+        /// Send request with body - specify request content type and body type
+        <T> HttpMethodBuilderWithBody5<T1, T2, T3, T4, T5, T> send(ContentType requestContentType, Class<T> bodyType);
+        
+        /// Send request with body using TypeToken - specify request content type and body type
+        <T> HttpMethodBuilderWithBody5<T1, T2, T3, T4, T5, T> send(ContentType requestContentType, TypeToken<T> bodyType);
+    }
+    
+    /// Function builder with six path variables - path building + content type bridge
+    interface HttpFunctionBuilder6<T1, T2, T3, T4, T5, T6> {
+        
+        // === Path Building ===
+        
+        /// Add more path segments
+        HttpFunctionBuilder6<T1, T2, T3, T4, T5, T6> path(String pathSegments);
+        
+        /// Add another typed path variable
+        <T7> HttpFunctionBuilder7<T1, T2, T3, T4, T5, T6, T7> pathVar(Class<T7> type);
+        
+        /// Add another generic typed path variable
+        <T7> HttpFunctionBuilder7<T1, T2, T3, T4, T5, T6, T7> pathVar(TypeToken<T7> type);
+        
+        // === Content Type Bridge Methods ===
+        
+        /// Send request with no body - specify request content type for Accept header
+        HttpMethodBuilder6<T1, T2, T3, T4, T5, T6> send(ContentType requestContentType);
+        
+        /// Send request with body - specify request content type and body type
+        <T> HttpMethodBuilderWithBody6<T1, T2, T3, T4, T5, T6, T> send(ContentType requestContentType, Class<T> bodyType);
+        
+        /// Send request with body using TypeToken - specify request content type and body type
+        <T> HttpMethodBuilderWithBody6<T1, T2, T3, T4, T5, T6, T> send(ContentType requestContentType, TypeToken<T> bodyType);
+    }
+    
+    /// Function builder with seven path variables - path building + content type bridge
+    interface HttpFunctionBuilder7<T1, T2, T3, T4, T5, T6, T7> {
+        
+        // === Path Building ===
+        
+        /// Add more path segments
+        HttpFunctionBuilder7<T1, T2, T3, T4, T5, T6, T7> path(String pathSegments);
+        
+        /// Add another typed path variable
+        <T8> HttpFunctionBuilder8<T1, T2, T3, T4, T5, T6, T7, T8> pathVar(Class<T8> type);
+        
+        /// Add another generic typed path variable
+        <T8> HttpFunctionBuilder8<T1, T2, T3, T4, T5, T6, T7, T8> pathVar(TypeToken<T8> type);
+        
+        // === Content Type Bridge Methods ===
+        
+        /// Send request with no body - specify request content type for Accept header
+        HttpMethodBuilder7<T1, T2, T3, T4, T5, T6, T7> send(ContentType requestContentType);
+        
+        /// Send request with body - specify request content type and body type
+        <T> HttpMethodBuilderWithBody7<T1, T2, T3, T4, T5, T6, T7, T> send(ContentType requestContentType, Class<T> bodyType);
+        
+        /// Send request with body using TypeToken - specify request content type and body type
+        <T> HttpMethodBuilderWithBody7<T1, T2, T3, T4, T5, T6, T7, T> send(ContentType requestContentType, TypeToken<T> bodyType);
+    }
+    
+    /// Function builder with eight path variables - path building + content type bridge
+    interface HttpFunctionBuilder8<T1, T2, T3, T4, T5, T6, T7, T8> {
+        
+        // === Path Building ===
+        
+        /// Add more path segments
+        HttpFunctionBuilder8<T1, T2, T3, T4, T5, T6, T7, T8> path(String pathSegments);
+        
+        /// Add another typed path variable
+        <T9> HttpFunctionBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> pathVar(Class<T9> type);
+        
+        /// Add another generic typed path variable
+        <T9> HttpFunctionBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> pathVar(TypeToken<T9> type);
+        
+        // === Content Type Bridge Methods ===
+        
+        /// Send request with no body - specify request content type for Accept header
+        HttpMethodBuilder8<T1, T2, T3, T4, T5, T6, T7, T8> send(ContentType requestContentType);
+        
+        /// Send request with body - specify request content type and body type
+        <T> HttpMethodBuilderWithBody8<T1, T2, T3, T4, T5, T6, T7, T8, T> send(ContentType requestContentType, Class<T> bodyType);
+        
+        /// Send request with body using TypeToken - specify request content type and body type
+        <T> HttpMethodBuilderWithBody8<T1, T2, T3, T4, T5, T6, T7, T8, T> send(ContentType requestContentType, TypeToken<T> bodyType);
+    }
+    
+    /// Function builder with nine path variables - path building + content type bridge
+    interface HttpFunctionBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> {
+        
+        // === Path Building ===
+        
+        /// Add more path segments
+        HttpFunctionBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> path(String pathSegments);
+        
+        // === Content Type Bridge Methods ===
+        
+        /// Send request with no body - specify request content type for Accept header
+        HttpMethodBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> send(ContentType requestContentType);
+        
+        /// Send request with body - specify request content type and body type
+        <T> HttpMethodBuilderWithBody9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T> send(ContentType requestContentType, Class<T> bodyType);
+        
+        /// Send request with body using TypeToken - specify request content type and body type
+        <T> HttpMethodBuilderWithBody9<T1, T2, T3, T4, T5, T6, T7, T8, T9, T> send(ContentType requestContentType, TypeToken<T> bodyType);
     }
     
     // === HTTP Method Builders ===
@@ -282,6 +438,138 @@ public interface HttpFunction {
         
         /// Create DELETE method, no response body expected
         HttpResponseContentTypeBuilder3<T1, T2, T3, Unit> delete();
+    }
+    
+    /// HTTP method builder for four path variables, no-body requests
+    interface HttpMethodBuilder4<T1, T2, T3, T4> {
+        
+        /// Create GET method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder4<T1, T2, T3, T4, R> get(Class<R> responseType);
+        
+        /// Create GET method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilder4<T1, T2, T3, T4, R> get(TypeToken<R> responseType);
+        
+        /// Create GET method, no response body expected
+        HttpResponseContentTypeBuilder4<T1, T2, T3, T4, Unit> get();
+        
+        /// Create DELETE method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder4<T1, T2, T3, T4, R> delete(Class<R> responseType);
+        
+        /// Create DELETE method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilder4<T1, T2, T3, T4, R> delete(TypeToken<R> responseType);
+        
+        /// Create DELETE method, no response body expected
+        HttpResponseContentTypeBuilder4<T1, T2, T3, T4, Unit> delete();
+    }
+    
+    /// HTTP method builder for five path variables, no-body requests
+    interface HttpMethodBuilder5<T1, T2, T3, T4, T5> {
+        
+        /// Create GET method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder5<T1, T2, T3, T4, T5, R> get(Class<R> responseType);
+        
+        /// Create GET method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilder5<T1, T2, T3, T4, T5, R> get(TypeToken<R> responseType);
+        
+        /// Create GET method, no response body expected
+        HttpResponseContentTypeBuilder5<T1, T2, T3, T4, T5, Unit> get();
+        
+        /// Create DELETE method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder5<T1, T2, T3, T4, T5, R> delete(Class<R> responseType);
+        
+        /// Create DELETE method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilder5<T1, T2, T3, T4, T5, R> delete(TypeToken<R> responseType);
+        
+        /// Create DELETE method, no response body expected
+        HttpResponseContentTypeBuilder5<T1, T2, T3, T4, T5, Unit> delete();
+    }
+    
+    /// HTTP method builder for six path variables, no-body requests
+    interface HttpMethodBuilder6<T1, T2, T3, T4, T5, T6> {
+        
+        /// Create GET method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder6<T1, T2, T3, T4, T5, T6, R> get(Class<R> responseType);
+        
+        /// Create GET method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilder6<T1, T2, T3, T4, T5, T6, R> get(TypeToken<R> responseType);
+        
+        /// Create GET method, no response body expected
+        HttpResponseContentTypeBuilder6<T1, T2, T3, T4, T5, T6, Unit> get();
+        
+        /// Create DELETE method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder6<T1, T2, T3, T4, T5, T6, R> delete(Class<R> responseType);
+        
+        /// Create DELETE method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilder6<T1, T2, T3, T4, T5, T6, R> delete(TypeToken<R> responseType);
+        
+        /// Create DELETE method, no response body expected
+        HttpResponseContentTypeBuilder6<T1, T2, T3, T4, T5, T6, Unit> delete();
+    }
+    
+    /// HTTP method builder for seven path variables, no-body requests
+    interface HttpMethodBuilder7<T1, T2, T3, T4, T5, T6, T7> {
+        
+        /// Create GET method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder7<T1, T2, T3, T4, T5, T6, T7, R> get(Class<R> responseType);
+        
+        /// Create GET method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilder7<T1, T2, T3, T4, T5, T6, T7, R> get(TypeToken<R> responseType);
+        
+        /// Create GET method, no response body expected
+        HttpResponseContentTypeBuilder7<T1, T2, T3, T4, T5, T6, T7, Unit> get();
+        
+        /// Create DELETE method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder7<T1, T2, T3, T4, T5, T6, T7, R> delete(Class<R> responseType);
+        
+        /// Create DELETE method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilder7<T1, T2, T3, T4, T5, T6, T7, R> delete(TypeToken<R> responseType);
+        
+        /// Create DELETE method, no response body expected
+        HttpResponseContentTypeBuilder7<T1, T2, T3, T4, T5, T6, T7, Unit> delete();
+    }
+    
+    /// HTTP method builder for eight path variables, no-body requests
+    interface HttpMethodBuilder8<T1, T2, T3, T4, T5, T6, T7, T8> {
+        
+        /// Create GET method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder8<T1, T2, T3, T4, T5, T6, T7, T8, R> get(Class<R> responseType);
+        
+        /// Create GET method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilder8<T1, T2, T3, T4, T5, T6, T7, T8, R> get(TypeToken<R> responseType);
+        
+        /// Create GET method, no response body expected
+        HttpResponseContentTypeBuilder8<T1, T2, T3, T4, T5, T6, T7, T8, Unit> get();
+        
+        /// Create DELETE method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder8<T1, T2, T3, T4, T5, T6, T7, T8, R> delete(Class<R> responseType);
+        
+        /// Create DELETE method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilder8<T1, T2, T3, T4, T5, T6, T7, T8, R> delete(TypeToken<R> responseType);
+        
+        /// Create DELETE method, no response body expected
+        HttpResponseContentTypeBuilder8<T1, T2, T3, T4, T5, T6, T7, T8, Unit> delete();
+    }
+    
+    /// HTTP method builder for nine path variables, no-body requests
+    interface HttpMethodBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> {
+        
+        /// Create GET method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9, R> get(Class<R> responseType);
+        
+        /// Create GET method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9, R> get(TypeToken<R> responseType);
+        
+        /// Create GET method, no response body expected
+        HttpResponseContentTypeBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9, Unit> get();
+        
+        /// Create DELETE method - returns response content type builder
+        <R> HttpResponseContentTypeBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9, R> delete(Class<R> responseType);
+        
+        /// Create DELETE method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9, R> delete(TypeToken<R> responseType);
+        
+        /// Create DELETE method, no response body expected
+        HttpResponseContentTypeBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9, Unit> delete();
     }
     
     // === HTTP Method Builders with Body ===
@@ -411,6 +699,192 @@ public interface HttpFunction {
         HttpResponseContentTypeBuilderWithBody3<T1, T2, T3, B, Unit> patch();
     }
     
+    /// HTTP method builder for four path variables with body requests
+    interface HttpMethodBuilderWithBody4<T1, T2, T3, T4, B> {
+        
+        /// Create POST method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody4<T1, T2, T3, T4, B, R> post(Class<R> responseType);
+        
+        /// Create POST method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilderWithBody4<T1, T2, T3, T4, B, R> post(TypeToken<R> responseType);
+        
+        /// Create POST method, no response body expected
+        HttpResponseContentTypeBuilderWithBody4<T1, T2, T3, T4, B, Unit> post();
+        
+        /// Create PUT method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody4<T1, T2, T3, T4, B, R> put(Class<R> responseType);
+        
+        /// Create PUT method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody4<T1, T2, T3, T4, B, R> put(TypeToken<R> responseType);
+        
+        /// Create PUT method, no response body expected
+        HttpResponseContentTypeBuilderWithBody4<T1, T2, T3, T4, B, Unit> put();
+        
+        /// Create PATCH method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody4<T1, T2, T3, T4, B, R> patch(Class<R> responseType);
+        
+        /// Create PATCH method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody4<T1, T2, T3, T4, B, R> patch(TypeToken<R> responseType);
+        
+        /// Create PATCH method, no response body expected
+        HttpResponseContentTypeBuilderWithBody4<T1, T2, T3, T4, B, Unit> patch();
+    }
+    
+    /// HTTP method builder for five path variables with body requests
+    interface HttpMethodBuilderWithBody5<T1, T2, T3, T4, T5, B> {
+        
+        /// Create POST method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody5<T1, T2, T3, T4, T5, B, R> post(Class<R> responseType);
+        
+        /// Create POST method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilderWithBody5<T1, T2, T3, T4, T5, B, R> post(TypeToken<R> responseType);
+        
+        /// Create POST method, no response body expected
+        HttpResponseContentTypeBuilderWithBody5<T1, T2, T3, T4, T5, B, Unit> post();
+        
+        /// Create PUT method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody5<T1, T2, T3, T4, T5, B, R> put(Class<R> responseType);
+        
+        /// Create PUT method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody5<T1, T2, T3, T4, T5, B, R> put(TypeToken<R> responseType);
+        
+        /// Create PUT method, no response body expected
+        HttpResponseContentTypeBuilderWithBody5<T1, T2, T3, T4, T5, B, Unit> put();
+        
+        /// Create PATCH method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody5<T1, T2, T3, T4, T5, B, R> patch(Class<R> responseType);
+        
+        /// Create PATCH method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody5<T1, T2, T3, T4, T5, B, R> patch(TypeToken<R> responseType);
+        
+        /// Create PATCH method, no response body expected
+        HttpResponseContentTypeBuilderWithBody5<T1, T2, T3, T4, T5, B, Unit> patch();
+    }
+    
+    /// HTTP method builder for six path variables with body requests
+    interface HttpMethodBuilderWithBody6<T1, T2, T3, T4, T5, T6, B> {
+        
+        /// Create POST method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody6<T1, T2, T3, T4, T5, T6, B, R> post(Class<R> responseType);
+        
+        /// Create POST method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilderWithBody6<T1, T2, T3, T4, T5, T6, B, R> post(TypeToken<R> responseType);
+        
+        /// Create POST method, no response body expected
+        HttpResponseContentTypeBuilderWithBody6<T1, T2, T3, T4, T5, T6, B, Unit> post();
+        
+        /// Create PUT method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody6<T1, T2, T3, T4, T5, T6, B, R> put(Class<R> responseType);
+        
+        /// Create PUT method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody6<T1, T2, T3, T4, T5, T6, B, R> put(TypeToken<R> responseType);
+        
+        /// Create PUT method, no response body expected
+        HttpResponseContentTypeBuilderWithBody6<T1, T2, T3, T4, T5, T6, B, Unit> put();
+        
+        /// Create PATCH method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody6<T1, T2, T3, T4, T5, T6, B, R> patch(Class<R> responseType);
+        
+        /// Create PATCH method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody6<T1, T2, T3, T4, T5, T6, B, R> patch(TypeToken<R> responseType);
+        
+        /// Create PATCH method, no response body expected
+        HttpResponseContentTypeBuilderWithBody6<T1, T2, T3, T4, T5, T6, B, Unit> patch();
+    }
+    
+    /// HTTP method builder for seven path variables with body requests
+    interface HttpMethodBuilderWithBody7<T1, T2, T3, T4, T5, T6, T7, B> {
+        
+        /// Create POST method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody7<T1, T2, T3, T4, T5, T6, T7, B, R> post(Class<R> responseType);
+        
+        /// Create POST method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilderWithBody7<T1, T2, T3, T4, T5, T6, T7, B, R> post(TypeToken<R> responseType);
+        
+        /// Create POST method, no response body expected
+        HttpResponseContentTypeBuilderWithBody7<T1, T2, T3, T4, T5, T6, T7, B, Unit> post();
+        
+        /// Create PUT method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody7<T1, T2, T3, T4, T5, T6, T7, B, R> put(Class<R> responseType);
+        
+        /// Create PUT method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody7<T1, T2, T3, T4, T5, T6, T7, B, R> put(TypeToken<R> responseType);
+        
+        /// Create PUT method, no response body expected
+        HttpResponseContentTypeBuilderWithBody7<T1, T2, T3, T4, T5, T6, T7, B, Unit> put();
+        
+        /// Create PATCH method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody7<T1, T2, T3, T4, T5, T6, T7, B, R> patch(Class<R> responseType);
+        
+        /// Create PATCH method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody7<T1, T2, T3, T4, T5, T6, T7, B, R> patch(TypeToken<R> responseType);
+        
+        /// Create PATCH method, no response body expected
+        HttpResponseContentTypeBuilderWithBody7<T1, T2, T3, T4, T5, T6, T7, B, Unit> patch();
+    }
+    
+    /// HTTP method builder for eight path variables with body requests
+    interface HttpMethodBuilderWithBody8<T1, T2, T3, T4, T5, T6, T7, T8, B> {
+        
+        /// Create POST method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody8<T1, T2, T3, T4, T5, T6, T7, T8, B, R> post(Class<R> responseType);
+        
+        /// Create POST method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilderWithBody8<T1, T2, T3, T4, T5, T6, T7, T8, B, R> post(TypeToken<R> responseType);
+        
+        /// Create POST method, no response body expected
+        HttpResponseContentTypeBuilderWithBody8<T1, T2, T3, T4, T5, T6, T7, T8, B, Unit> post();
+        
+        /// Create PUT method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody8<T1, T2, T3, T4, T5, T6, T7, T8, B, R> put(Class<R> responseType);
+        
+        /// Create PUT method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody8<T1, T2, T3, T4, T5, T6, T7, T8, B, R> put(TypeToken<R> responseType);
+        
+        /// Create PUT method, no response body expected
+        HttpResponseContentTypeBuilderWithBody8<T1, T2, T3, T4, T5, T6, T7, T8, B, Unit> put();
+        
+        /// Create PATCH method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody8<T1, T2, T3, T4, T5, T6, T7, T8, B, R> patch(Class<R> responseType);
+        
+        /// Create PATCH method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody8<T1, T2, T3, T4, T5, T6, T7, T8, B, R> patch(TypeToken<R> responseType);
+        
+        /// Create PATCH method, no response body expected
+        HttpResponseContentTypeBuilderWithBody8<T1, T2, T3, T4, T5, T6, T7, T8, B, Unit> patch();
+    }
+    
+    /// HTTP method builder for nine path variables with body requests
+    interface HttpMethodBuilderWithBody9<T1, T2, T3, T4, T5, T6, T7, T8, T9, B> {
+        
+        /// Create POST method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody9<T1, T2, T3, T4, T5, T6, T7, T8, T9, B, R> post(Class<R> responseType);
+        
+        /// Create POST method with generic response type - returns response content type builder  
+        <R> HttpResponseContentTypeBuilderWithBody9<T1, T2, T3, T4, T5, T6, T7, T8, T9, B, R> post(TypeToken<R> responseType);
+        
+        /// Create POST method, no response body expected
+        HttpResponseContentTypeBuilderWithBody9<T1, T2, T3, T4, T5, T6, T7, T8, T9, B, Unit> post();
+        
+        /// Create PUT method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody9<T1, T2, T3, T4, T5, T6, T7, T8, T9, B, R> put(Class<R> responseType);
+        
+        /// Create PUT method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody9<T1, T2, T3, T4, T5, T6, T7, T8, T9, B, R> put(TypeToken<R> responseType);
+        
+        /// Create PUT method, no response body expected
+        HttpResponseContentTypeBuilderWithBody9<T1, T2, T3, T4, T5, T6, T7, T8, T9, B, Unit> put();
+        
+        /// Create PATCH method - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody9<T1, T2, T3, T4, T5, T6, T7, T8, T9, B, R> patch(Class<R> responseType);
+        
+        /// Create PATCH method with generic response type - returns response content type builder
+        <R> HttpResponseContentTypeBuilderWithBody9<T1, T2, T3, T4, T5, T6, T7, T8, T9, B, R> patch(TypeToken<R> responseType);
+        
+        /// Create PATCH method, no response body expected
+        HttpResponseContentTypeBuilderWithBody9<T1, T2, T3, T4, T5, T6, T7, T8, T9, B, Unit> patch();
+    }
+    
     // === Response Content Type Builders ===
     // These handle the final .as(ContentType) step and return the actual function
     
@@ -462,6 +936,78 @@ public interface HttpFunction {
         }
     }
     
+    /// Response content type builder for four path variables
+    interface HttpResponseContentTypeBuilder4<T1, T2, T3, T4, R> {
+        
+        /// Specify response content type and create final function
+        Fn4<Promise<R>, T1, T2, T3, T4> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn4<Promise<R>, T1, T2, T3, T4> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
+    }
+    
+    /// Response content type builder for five path variables
+    interface HttpResponseContentTypeBuilder5<T1, T2, T3, T4, T5, R> {
+        
+        /// Specify response content type and create final function
+        Fn5<Promise<R>, T1, T2, T3, T4, T5> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn5<Promise<R>, T1, T2, T3, T4, T5> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
+    }
+    
+    /// Response content type builder for six path variables
+    interface HttpResponseContentTypeBuilder6<T1, T2, T3, T4, T5, T6, R> {
+        
+        /// Specify response content type and create final function
+        Fn6<Promise<R>, T1, T2, T3, T4, T5, T6> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn6<Promise<R>, T1, T2, T3, T4, T5, T6> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
+    }
+    
+    /// Response content type builder for seven path variables
+    interface HttpResponseContentTypeBuilder7<T1, T2, T3, T4, T5, T6, T7, R> {
+        
+        /// Specify response content type and create final function
+        Fn7<Promise<R>, T1, T2, T3, T4, T5, T6, T7> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn7<Promise<R>, T1, T2, T3, T4, T5, T6, T7> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
+    }
+    
+    /// Response content type builder for eight path variables
+    interface HttpResponseContentTypeBuilder8<T1, T2, T3, T4, T5, T6, T7, T8, R> {
+        
+        /// Specify response content type and create final function
+        Fn8<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn8<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
+    }
+    
+    /// Response content type builder for nine path variables
+    interface HttpResponseContentTypeBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9, R> {
+        
+        /// Specify response content type and create final function
+        Fn9<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn9<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
+    }
+    
     // === Response Content Type Builders with Body ===
     // These handle the final .as(ContentType) step for requests with body and return the actual function
     
@@ -509,6 +1055,78 @@ public interface HttpFunction {
         
         /// JSON response convenience method
         default Fn4<Promise<R>, T1, T2, T3, B> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
+    }
+    
+    /// Response content type builder for four path variables with body
+    interface HttpResponseContentTypeBuilderWithBody4<T1, T2, T3, T4, B, R> {
+        
+        /// Specify response content type and create final function
+        Fn5<Promise<R>, T1, T2, T3, T4, B> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn5<Promise<R>, T1, T2, T3, T4, B> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
+    }
+    
+    /// Response content type builder for five path variables with body
+    interface HttpResponseContentTypeBuilderWithBody5<T1, T2, T3, T4, T5, B, R> {
+        
+        /// Specify response content type and create final function
+        Fn6<Promise<R>, T1, T2, T3, T4, T5, B> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn6<Promise<R>, T1, T2, T3, T4, T5, B> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
+    }
+    
+    /// Response content type builder for six path variables with body
+    interface HttpResponseContentTypeBuilderWithBody6<T1, T2, T3, T4, T5, T6, B, R> {
+        
+        /// Specify response content type and create final function
+        Fn7<Promise<R>, T1, T2, T3, T4, T5, T6, B> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn7<Promise<R>, T1, T2, T3, T4, T5, T6, B> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
+    }
+    
+    /// Response content type builder for seven path variables with body
+    interface HttpResponseContentTypeBuilderWithBody7<T1, T2, T3, T4, T5, T6, T7, B, R> {
+        
+        /// Specify response content type and create final function
+        Fn8<Promise<R>, T1, T2, T3, T4, T5, T6, T7, B> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn8<Promise<R>, T1, T2, T3, T4, T5, T6, T7, B> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
+    }
+    
+    /// Response content type builder for eight path variables with body
+    interface HttpResponseContentTypeBuilderWithBody8<T1, T2, T3, T4, T5, T6, T7, T8, B, R> {
+        
+        /// Specify response content type and create final function
+        Fn9<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, B> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn9<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, B> asJson() {
+            return as(CommonContentTypes.APPLICATION_JSON);
+        }
+    }
+    
+    /// Response content type builder for nine path variables with body
+    interface HttpResponseContentTypeBuilderWithBody9<T1, T2, T3, T4, T5, T6, T7, T8, T9, B, R> {
+        
+        /// Specify response content type and create final function
+        Fn10<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, B> as(ContentType responseContentType);
+        
+        /// JSON response convenience method
+        default Fn10<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, B> asJson() {
             return as(CommonContentTypes.APPLICATION_JSON);
         }
     }

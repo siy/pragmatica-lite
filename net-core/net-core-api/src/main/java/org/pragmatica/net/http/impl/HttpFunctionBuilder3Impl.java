@@ -49,36 +49,35 @@ public record HttpFunctionBuilder3Impl<T1, T2, T3>(HttpClient client, String bas
         return new HttpFunctionBuilder3Impl<>(client, baseUrl, newSegments, paramTypes, urlBuilder);
     }
     
+    @Override
+    public <T4> HttpFunction.HttpFunctionBuilder4<T1, T2, T3, T4> pathVar(Class<T4> type) {
+        var newParamTypes = new ArrayList<>(paramTypes);
+        newParamTypes.add(type);
+        return new HttpFunctionBuilder4Impl<>(client, baseUrl, pathSegments, newParamTypes, urlBuilder);
+    }
+    
+    @Override
+    public <T4> HttpFunction.HttpFunctionBuilder4<T1, T2, T3, T4> pathVar(TypeToken<T4> type) {
+        var newParamTypes = new ArrayList<>(paramTypes);
+        newParamTypes.add(type.rawType());
+        return new HttpFunctionBuilder4Impl<>(client, baseUrl, pathSegments, newParamTypes, urlBuilder);
+    }
+    
     // === Content Type Bridge Methods ===
     
     @Override
-    public HttpFunction.HttpMethodFunctionBuilder3<T1, T2, T3> json() {
-        return new HttpMethodFunctionBuilder3Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, CommonContentTypes.APPLICATION_JSON.headerText());
+    public HttpFunction.HttpMethodBuilder3<T1, T2, T3> send(ContentType requestContentType) {
+        return new HttpMethodBuilder3Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType);
     }
     
     @Override
-    public HttpFunction.HttpMethodFunctionBuilder3<T1, T2, T3> json(String contentType) {
-        return new HttpMethodFunctionBuilder3Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, contentType);
+    public <T> HttpFunction.HttpMethodBuilderWithBody3<T1, T2, T3, T> send(ContentType requestContentType, Class<T> bodyType) {
+        return new HttpMethodBuilderWithBody3Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType, bodyType);
     }
     
     @Override
-    public HttpFunction.HttpMethodFunctionBuilder3<T1, T2, T3> plainText() {
-        return new HttpMethodFunctionBuilder3Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, CommonContentTypes.TEXT_PLAIN.headerText());
-    }
-    
-    @Override
-    public HttpFunction.HttpMethodFunctionBuilder3<T1, T2, T3> plainText(String contentType) {
-        return new HttpMethodFunctionBuilder3Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, contentType);
-    }
-    
-    @Override
-    public HttpFunction.HttpMethodFunctionBuilder3<T1, T2, T3> contentType(String contentType) {
-        return new HttpMethodFunctionBuilder3Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, contentType);
-    }
-    
-    @Override
-    public HttpFunction.HttpMethodFunctionBuilder3<T1, T2, T3> contentType(ContentType contentType) {
-        return contentType(contentType.headerText());
+    public <T> HttpFunction.HttpMethodBuilderWithBody3<T1, T2, T3, T> send(ContentType requestContentType, TypeToken<T> bodyType) {
+        return new HttpMethodBuilderWithBody3Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType, bodyType);
     }
     
     // === Helper Methods ===
