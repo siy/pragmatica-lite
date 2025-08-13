@@ -14,6 +14,7 @@
     
     <modules>
         <module>net-core-api</module>
+        <module>net-core-http-client</module>
         <module>fury-serializer</module>
         <module>kryo-serializer</module>
         <module>jackson-json</module>

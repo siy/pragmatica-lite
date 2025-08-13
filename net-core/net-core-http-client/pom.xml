@@ -10,20 +10,24 @@
         <version>0.7.18</version>
     </parent>
     
-    <artifactId>net-core-api</artifactId>
-    <name>Pragmatica Lite Net Core - API</name>
-    <description>Net Core API interfaces and abstractions</description>
+    <artifactId>net-core-http-client</artifactId>
+    <name>Pragmatica Lite Net Core - HTTP Client</name>
+    <description>HTTP client implementation using Netty</description>
     
     <dependencies>
         <dependency>
             <groupId>org.pragmatica-lite</groupId>
-            <artifactId>core</artifactId>
+            <artifactId>net-core-api</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
         </dependency>
         
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
-        
     </dependencies>
 </project>
