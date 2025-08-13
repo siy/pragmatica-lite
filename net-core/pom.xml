@@ -13,11 +13,11 @@
     <packaging>pom</packaging>
     
     <modules>
-        <module>api</module>
+        <module>net-core-api</module>
         <module>fury-serializer</module>
         <module>kryo-serializer</module>
         <module>jackson-json</module>
-        <module>tests</module>
+        <module>net-core-tests</module>
     </modules>
 
 </project>
