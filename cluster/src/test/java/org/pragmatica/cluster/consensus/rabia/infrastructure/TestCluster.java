@@ -51,7 +51,7 @@ public class TestCluster {
     private final List<NodeId> ids = new ArrayList<>();
     private final Map<NodeId, RabiaEngine<KVCommand<StringKey>>> engines = new LinkedHashMap<>();
     private final Map<NodeId, KVStore<StringKey, String>> stores = new LinkedHashMap<>();
-    private final Map<NodeId, MessageRouter> routers = new LinkedHashMap<>();
+    private final Map<NodeId, MessageRouter.MutableRouter> routers = new LinkedHashMap<>();
     private final Serializer serializer = furySerializer(CustomClasses::configure, StringKey::register);
     private final Deserializer deserializer = furyDeserializer(CustomClasses::configure, StringKey::register);
     private final int size;
@@ -78,7 +78,7 @@ public class TestCluster {
         return stores;
     }
 
-    public Map<NodeId, MessageRouter> routers() {
+    public Map<NodeId, MessageRouter.MutableRouter> routers() {
         return routers;
     }
 

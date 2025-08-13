@@ -37,10 +37,10 @@ public class LocalNetwork implements ClusterNetwork {
     private final TopologyManager topologyManager;
     private final Map<NodeId, List<NodeId>> partitions = new ConcurrentHashMap<>();
     private final Executor executor = Executors.newFixedThreadPool(5);
-    private final Map<NodeId, MessageRouter> routers;
+    private final Map<NodeId, MessageRouter.MutableRouter> routers;
     private FaultInjector faultInjector;
 
-    public LocalNetwork(TopologyManager topologyManager, Map<NodeId, MessageRouter> routers, FaultInjector faultInjector) {
+    public LocalNetwork(TopologyManager topologyManager, Map<NodeId, MessageRouter.MutableRouter> routers, FaultInjector faultInjector) {
         this.topologyManager = topologyManager;
         this.routers = routers;
         this.faultInjector = faultInjector;

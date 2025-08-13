@@ -128,7 +128,7 @@ public class CrashStopFailuresTest {
         var crashLatch = new CountDownLatch(numCommands / 3);
 
         // Set an observer to crash the node after some commands
-        ((MessageRouter.MutableRouter) cluster.routers().get(nodeToFail)).addRoute(KVStoreNotification.ValuePut.class, _ -> {
+        cluster.routers().get(nodeToFail).addRoute(KVStoreNotification.ValuePut.class, _ -> {
             int count = counter.incrementAndGet();
             if (count == numCommands / 3) {
                 log.info("Crashing node {} after {} commands", nodeToFail, count);

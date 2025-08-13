@@ -152,7 +152,7 @@ public class NominalOperationTest {
 
         cluster.routers()
                .forEach((nodeId, router) ->
-                                ((MessageRouter.MutableRouter) router).addRoute(KVStoreNotification.ValuePut.class,
+                                router.addRoute(KVStoreNotification.ValuePut.class,
                                                 _ -> counters.computeIfAbsent(nodeId,
                                                                               _ -> new CountDownLatch(REQUEST_COUNT))
                                                              .countDown()));
