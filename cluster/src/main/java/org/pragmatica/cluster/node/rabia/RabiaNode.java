@@ -24,7 +24,7 @@ public interface RabiaNode<C extends Command> extends ClusterNode<C> {
     MessageRouter router();
 
     static <C extends Command> RabiaNode<C> rabiaNode(NodeConfig config,
-                                                      MessageRouter router,
+                                                      MessageRouter.MutableRouter router,
                                                       StateMachine<C> stateMachine,
                                                       Serializer serializer,
                                                       Deserializer deserializer) {
@@ -66,11 +66,10 @@ public interface RabiaNode<C extends Command> extends ClusterNode<C> {
         var consensus = new RabiaEngine<>(topologyManager, network, stateMachine,
                                           config.protocol());
 
-        var mutableRouter = (MessageRouter.MutableRouter) router;
-        topologyManager.configure(mutableRouter);
-        leaderManager.configure(mutableRouter);
-        network.configure(mutableRouter);
-        consensus.configure(mutableRouter);
+        topologyManager.configure(router);
+        leaderManager.configure(router);
+        network.configure(router);
+        consensus.configure(router);
 
         return new rabiaNode<>(config, router, stateMachine, network, topologyManager, consensus, leaderManager);
     }
