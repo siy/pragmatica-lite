@@ -16,6 +16,7 @@
 
 package org.pragmatica.lang.parse;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -28,135 +29,135 @@ class NumberParsersTest {
     @Test
     void testParseByteSuccess() {
         NumberParsers.parseByte("127")
-                     .onFailureRun(() -> fail("Expected successful parsing"))
+                     .onFailureRun(Assertions::fail)
                      .onSuccess(value -> assertEquals(Byte.valueOf((byte) 127), value));
     }
 
     @Test
     void testParseByteFailure() {
         NumberParsers.parseByte("128")
-                     .onSuccessRun(() -> fail("Expected parsing failure"))
-                     .onFailure(cause -> assertNotNull(cause));
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(Assertions::assertNotNull);
     }
 
     @Test
     void testParseByteWithRadix() {
         NumberParsers.parseByte("1111", 2)
-                     .onFailureRun(() -> fail("Expected successful parsing"))
+                     .onFailureRun(Assertions::fail)
                      .onSuccess(value -> assertEquals(Byte.valueOf((byte) 15), value));
     }
 
     @Test
     void testParseShortSuccess() {
         NumberParsers.parseShort("32767")
-                     .onFailureRun(() -> fail("Expected successful parsing"))
+                     .onFailureRun(Assertions::fail)
                      .onSuccess(value -> assertEquals(Short.valueOf((short) 32767), value));
     }
 
     @Test
     void testParseShortFailure() {
         NumberParsers.parseShort("32768")
-                     .onSuccessRun(() -> fail("Expected parsing failure"))
-                     .onFailure(cause -> assertNotNull(cause));
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(Assertions::assertNotNull);
     }
 
     @Test
     void testParseShortWithRadix() {
         NumberParsers.parseShort("ff", 16)
-                     .onFailureRun(() -> fail("Expected successful parsing"))
+                     .onFailureRun(Assertions::fail)
                      .onSuccess(value -> assertEquals(Short.valueOf((short) 255), value));
     }
 
     @Test
     void testParseIntSuccess() {
         NumberParsers.parseInt("2147483647")
-                     .onFailureRun(() -> fail("Expected successful parsing"))
+                     .onFailureRun(Assertions::fail)
                      .onSuccess(value -> assertEquals(Integer.valueOf(2147483647), value));
     }
 
     @Test
     void testParseIntFailure() {
         NumberParsers.parseInt("not_a_number")
-                     .onSuccessRun(() -> fail("Expected parsing failure"))
-                     .onFailure(cause -> assertNotNull(cause));
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(Assertions::assertNotNull);
     }
 
     @Test
     void testParseIntWithRadix() {
         NumberParsers.parseInt("ff", 16)
-                     .onFailureRun(() -> fail("Expected successful parsing"))
+                     .onFailureRun(Assertions::fail)
                      .onSuccess(value -> assertEquals(Integer.valueOf(255), value));
     }
 
     @Test
     void testParseLongSuccess() {
         NumberParsers.parseLong("9223372036854775807")
-                     .onFailureRun(() -> fail("Expected successful parsing"))
+                     .onFailureRun(Assertions::fail)
                      .onSuccess(value -> assertEquals(Long.valueOf(9223372036854775807L), value));
     }
 
     @Test
     void testParseLongFailure() {
         NumberParsers.parseLong("9223372036854775808")
-                     .onSuccessRun(() -> fail("Expected parsing failure"))
-                     .onFailure(cause -> assertNotNull(cause));
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(Assertions::assertNotNull);
     }
 
     @Test
     void testParseLongWithRadix() {
         NumberParsers.parseLong("ff", 16)
-                     .onFailureRun(() -> fail("Expected successful parsing"))
+                     .onFailureRun(Assertions::fail)
                      .onSuccess(value -> assertEquals(Long.valueOf(255L), value));
     }
 
     @Test
     void testParseFloatSuccess() {
         NumberParsers.parseFloat("3.14159")
-                     .onFailureRun(() -> fail("Expected successful parsing"))
+                     .onFailureRun(Assertions::fail)
                      .onSuccess(value -> assertEquals(3.14159f, value, 0.00001f));
     }
 
     @Test
     void testParseFloatFailure() {
         NumberParsers.parseFloat("not_a_float")
-                     .onSuccessRun(() -> fail("Expected parsing failure"))
-                     .onFailure(cause -> assertNotNull(cause));
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(Assertions::assertNotNull);
     }
 
     @Test
     void testParseDoubleSuccess() {
         NumberParsers.parseDouble("3.141592653589793")
-                     .onFailureRun(() -> fail("Expected successful parsing"))
+                     .onFailureRun(Assertions::fail)
                      .onSuccess(value -> assertEquals(3.141592653589793, value, 0.000000000000001));
     }
 
     @Test
     void testParseDoubleFailure() {
         NumberParsers.parseDouble("not_a_double")
-                     .onSuccessRun(() -> fail("Expected parsing failure"))
-                     .onFailure(cause -> assertNotNull(cause));
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(Assertions::assertNotNull);
     }
 
     @Test
     void testParseBigIntegerSuccess() {
         BigInteger expected = new BigInteger("12345678901234567890");
         NumberParsers.parseBigInteger("12345678901234567890")
-                     .onFailureRun(() -> fail("Expected successful parsing"))
+                     .onFailureRun(Assertions::fail)
                      .onSuccess(value -> assertEquals(expected, value));
     }
 
     @Test
     void testParseBigIntegerFailure() {
         NumberParsers.parseBigInteger("not_a_bigint")
-                     .onSuccessRun(() -> fail("Expected parsing failure"))
-                     .onFailure(cause -> assertNotNull(cause));
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(Assertions::assertNotNull);
     }
 
     @Test
     void testParseBigIntegerWithRadix() {
         BigInteger expected = new BigInteger("255");
         NumberParsers.parseBigInteger("ff", 16)
-                     .onFailureRun(() -> fail("Expected successful parsing"))
+                     .onFailureRun(Assertions::fail)
                      .onSuccess(value -> assertEquals(expected, value));
     }
 
@@ -164,60 +165,60 @@ class NumberParsersTest {
     void testParseBigDecimalSuccess() {
         BigDecimal expected = new BigDecimal("123.456789");
         NumberParsers.parseBigDecimal("123.456789")
-                     .onFailureRun(() -> fail("Expected successful parsing"))
+                     .onFailureRun(Assertions::fail)
                      .onSuccess(value -> assertEquals(expected, value));
     }
 
     @Test
     void testParseBigDecimalFailure() {
         NumberParsers.parseBigDecimal("not_a_bigdecimal")
-                     .onSuccessRun(() -> fail("Expected parsing failure"))
-                     .onFailure(cause -> assertNotNull(cause));
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(Assertions::assertNotNull);
     }
 
     @Test
     void testNullInputs() {
         NumberParsers.parseInt(null)
-                     .onSuccessRun(() -> fail("Expected parsing failure"))
-                     .onFailure(cause -> assertNotNull(cause));
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(Assertions::assertNotNull);
                      
         NumberParsers.parseLong(null)
-                     .onSuccessRun(() -> fail("Expected parsing failure"))
-                     .onFailure(cause -> assertNotNull(cause));
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(Assertions::assertNotNull);
                      
         NumberParsers.parseDouble(null)
-                     .onSuccessRun(() -> fail("Expected parsing failure"))
-                     .onFailure(cause -> assertNotNull(cause));
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(Assertions::assertNotNull);
                      
         NumberParsers.parseBigInteger(null)
-                     .onSuccessRun(() -> fail("Expected parsing failure"))
-                     .onFailure(cause -> assertNotNull(cause));
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(Assertions::assertNotNull);
                      
         NumberParsers.parseBigDecimal(null)
-                     .onSuccessRun(() -> fail("Expected parsing failure"))
-                     .onFailure(cause -> assertNotNull(cause));
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(Assertions::assertNotNull);
     }
 
     @Test
     void testEmptyStringInputs() {
         NumberParsers.parseInt("")
-                     .onSuccessRun(() -> fail("Expected parsing failure"))
-                     .onFailure(cause -> assertNotNull(cause));
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(Assertions::assertNotNull);
                      
         NumberParsers.parseLong("")
-                     .onSuccessRun(() -> fail("Expected parsing failure"))
-                     .onFailure(cause -> assertNotNull(cause));
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(Assertions::assertNotNull);
                      
         NumberParsers.parseDouble("")
-                     .onSuccessRun(() -> fail("Expected parsing failure"))
-                     .onFailure(cause -> assertNotNull(cause));
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(Assertions::assertNotNull);
                      
         NumberParsers.parseBigInteger("")
-                     .onSuccessRun(() -> fail("Expected parsing failure"))
-                     .onFailure(cause -> assertNotNull(cause));
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(Assertions::assertNotNull);
                      
         NumberParsers.parseBigDecimal("")
-                     .onSuccessRun(() -> fail("Expected parsing failure"))
-                     .onFailure(cause -> assertNotNull(cause));
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(Assertions::assertNotNull);
     }
 }
