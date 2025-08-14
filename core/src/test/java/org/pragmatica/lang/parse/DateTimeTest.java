@@ -24,19 +24,19 @@ import java.time.format.DateTimeFormatter;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class DateTimeParsersTest {
+class DateTimeTest {
 
     @Test
     void testParseLocalDateSuccess() {
         LocalDate expected = LocalDate.of(2023, 12, 25);
-        DateTimeParsers.parseLocalDate("2023-12-25")
+        DateTime.parseLocalDate("2023-12-25")
                        .onFailureRun(Assertions::fail)
                        .onSuccess(value -> assertEquals(expected, value));
     }
 
     @Test
     void testParseLocalDateFailure() {
-        DateTimeParsers.parseLocalDate("invalid-date")
+        DateTime.parseLocalDate("invalid-date")
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
     }
@@ -45,7 +45,7 @@ class DateTimeParsersTest {
     void testParseLocalDateWithFormatter() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         LocalDate expected = LocalDate.of(2023, 12, 25);
-        DateTimeParsers.parseLocalDate("25/12/2023", formatter)
+        DateTime.parseLocalDate("25/12/2023", formatter)
                        .onFailureRun(Assertions::fail)
                        .onSuccess(value -> assertEquals(expected, value));
     }
@@ -53,14 +53,14 @@ class DateTimeParsersTest {
     @Test
     void testParseLocalTimeSuccess() {
         LocalTime expected = LocalTime.of(14, 30, 15);
-        DateTimeParsers.parseLocalTime("14:30:15")
+        DateTime.parseLocalTime("14:30:15")
                        .onFailureRun(Assertions::fail)
                        .onSuccess(value -> assertEquals(expected, value));
     }
 
     @Test
     void testParseLocalTimeFailure() {
-        DateTimeParsers.parseLocalTime("invalid-time")
+        DateTime.parseLocalTime("invalid-time")
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
     }
@@ -69,7 +69,7 @@ class DateTimeParsersTest {
     void testParseLocalTimeWithFormatter() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
         LocalTime expected = LocalTime.of(14, 30);
-        DateTimeParsers.parseLocalTime("14:30", formatter)
+        DateTime.parseLocalTime("14:30", formatter)
                        .onFailureRun(Assertions::fail)
                        .onSuccess(value -> assertEquals(expected, value));
     }
@@ -77,14 +77,14 @@ class DateTimeParsersTest {
     @Test
     void testParseLocalDateTimeSuccess() {
         LocalDateTime expected = LocalDateTime.of(2023, 12, 25, 14, 30, 15);
-        DateTimeParsers.parseLocalDateTime("2023-12-25T14:30:15")
+        DateTime.parseLocalDateTime("2023-12-25T14:30:15")
                        .onFailureRun(Assertions::fail)
                        .onSuccess(value -> assertEquals(expected, value));
     }
 
     @Test
     void testParseLocalDateTimeFailure() {
-        DateTimeParsers.parseLocalDateTime("invalid-datetime")
+        DateTime.parseLocalDateTime("invalid-datetime")
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
     }
@@ -93,7 +93,7 @@ class DateTimeParsersTest {
     void testParseLocalDateTimeWithFormatter() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
         LocalDateTime expected = LocalDateTime.of(2023, 12, 25, 14, 30, 15);
-        DateTimeParsers.parseLocalDateTime("25/12/2023 14:30:15", formatter)
+        DateTime.parseLocalDateTime("25/12/2023 14:30:15", formatter)
                        .onFailureRun(Assertions::fail)
                        .onSuccess(value -> assertEquals(expected, value));
     }
@@ -101,14 +101,14 @@ class DateTimeParsersTest {
     @Test
     void testParseZonedDateTimeSuccess() {
         ZonedDateTime expected = ZonedDateTime.of(2023, 12, 25, 14, 30, 15, 0, ZoneId.of("Europe/Paris"));
-        DateTimeParsers.parseZonedDateTime("2023-12-25T14:30:15+01:00[Europe/Paris]")
+        DateTime.parseZonedDateTime("2023-12-25T14:30:15+01:00[Europe/Paris]")
                        .onFailureRun(Assertions::fail)
                        .onSuccess(value -> assertEquals(expected, value));
     }
 
     @Test
     void testParseZonedDateTimeFailure() {
-        DateTimeParsers.parseZonedDateTime("invalid-zoneddatetime")
+        DateTime.parseZonedDateTime("invalid-zoneddatetime")
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
     }
@@ -116,14 +116,14 @@ class DateTimeParsersTest {
     @Test
     void testParseOffsetDateTimeSuccess() {
         OffsetDateTime expected = OffsetDateTime.of(2023, 12, 25, 14, 30, 15, 0, ZoneOffset.ofHours(1));
-        DateTimeParsers.parseOffsetDateTime("2023-12-25T14:30:15+01:00")
+        DateTime.parseOffsetDateTime("2023-12-25T14:30:15+01:00")
                        .onFailureRun(Assertions::fail)
                        .onSuccess(value -> assertEquals(expected, value));
     }
 
     @Test
     void testParseOffsetDateTimeFailure() {
-        DateTimeParsers.parseOffsetDateTime("invalid-offsetdatetime")
+        DateTime.parseOffsetDateTime("invalid-offsetdatetime")
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
     }
@@ -131,14 +131,14 @@ class DateTimeParsersTest {
     @Test
     void testParseOffsetTimeSuccess() {
         OffsetTime expected = OffsetTime.of(14, 30, 15, 0, ZoneOffset.ofHours(1));
-        DateTimeParsers.parseOffsetTime("14:30:15+01:00")
+        DateTime.parseOffsetTime("14:30:15+01:00")
                        .onFailureRun(Assertions::fail)
                        .onSuccess(value -> assertEquals(expected, value));
     }
 
     @Test
     void testParseOffsetTimeFailure() {
-        DateTimeParsers.parseOffsetTime("invalid-offsettime")
+        DateTime.parseOffsetTime("invalid-offsettime")
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
     }
@@ -146,14 +146,14 @@ class DateTimeParsersTest {
     @Test
     void testParseInstantSuccess() {
         Instant expected = Instant.parse("2023-12-25T14:30:15.123Z");
-        DateTimeParsers.parseInstant("2023-12-25T14:30:15.123Z")
+        DateTime.parseInstant("2023-12-25T14:30:15.123Z")
                        .onFailureRun(Assertions::fail)
                        .onSuccess(value -> assertEquals(expected, value));
     }
 
     @Test
     void testParseInstantFailure() {
-        DateTimeParsers.parseInstant("invalid-instant")
+        DateTime.parseInstant("invalid-instant")
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
     }
@@ -161,14 +161,14 @@ class DateTimeParsersTest {
     @Test
     void testParseDurationSuccess() {
         Duration expected = Duration.ofHours(1).plusMinutes(30);
-        DateTimeParsers.parseDuration("PT1H30M")
+        DateTime.parseDuration("PT1H30M")
                        .onFailureRun(Assertions::fail)
                        .onSuccess(value -> assertEquals(expected, value));
     }
 
     @Test
     void testParseDurationFailure() {
-        DateTimeParsers.parseDuration("invalid-duration")
+        DateTime.parseDuration("invalid-duration")
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
     }
@@ -176,92 +176,92 @@ class DateTimeParsersTest {
     @Test
     void testParsePeriodSuccess() {
         Period expected = Period.of(1, 2, 3);
-        DateTimeParsers.parsePeriod("P1Y2M3D")
+        DateTime.parsePeriod("P1Y2M3D")
                        .onFailureRun(Assertions::fail)
                        .onSuccess(value -> assertEquals(expected, value));
     }
 
     @Test
     void testParsePeriodFailure() {
-        DateTimeParsers.parsePeriod("invalid-period")
+        DateTime.parsePeriod("invalid-period")
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
     }
 
     @Test
     void testNullInputs() {
-        DateTimeParsers.parseLocalDate(null)
+        DateTime.parseLocalDate(null)
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
                        
-        DateTimeParsers.parseLocalTime(null)
+        DateTime.parseLocalTime(null)
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
                        
-        DateTimeParsers.parseLocalDateTime(null)
+        DateTime.parseLocalDateTime(null)
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
                        
-        DateTimeParsers.parseZonedDateTime(null)
+        DateTime.parseZonedDateTime(null)
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
                        
-        DateTimeParsers.parseOffsetDateTime(null)
+        DateTime.parseOffsetDateTime(null)
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
                        
-        DateTimeParsers.parseOffsetTime(null)
+        DateTime.parseOffsetTime(null)
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
                        
-        DateTimeParsers.parseInstant(null)
+        DateTime.parseInstant(null)
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
                        
-        DateTimeParsers.parseDuration(null)
+        DateTime.parseDuration(null)
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
                        
-        DateTimeParsers.parsePeriod(null)
+        DateTime.parsePeriod(null)
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
     }
 
     @Test
     void testEmptyStringInputs() {
-        DateTimeParsers.parseLocalDate("")
+        DateTime.parseLocalDate("")
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
                        
-        DateTimeParsers.parseLocalTime("")
+        DateTime.parseLocalTime("")
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
                        
-        DateTimeParsers.parseLocalDateTime("")
+        DateTime.parseLocalDateTime("")
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
                        
-        DateTimeParsers.parseZonedDateTime("")
+        DateTime.parseZonedDateTime("")
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
                        
-        DateTimeParsers.parseOffsetDateTime("")
+        DateTime.parseOffsetDateTime("")
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
                        
-        DateTimeParsers.parseOffsetTime("")
+        DateTime.parseOffsetTime("")
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
                        
-        DateTimeParsers.parseInstant("")
+        DateTime.parseInstant("")
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
                        
-        DateTimeParsers.parseDuration("")
+        DateTime.parseDuration("")
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
                        
-        DateTimeParsers.parsePeriod("")
+        DateTime.parsePeriod("")
                        .onSuccessRun(Assertions::fail)
                        .onFailure(Assertions::assertNotNull);
     }
