@@ -5,7 +5,7 @@
     <parent>
         <artifactId>pragmatica-lite</artifactId>
         <groupId>org.pragmatica-lite</groupId>
-        <version>0.7.18</version>
+        <version>0.7.19</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
