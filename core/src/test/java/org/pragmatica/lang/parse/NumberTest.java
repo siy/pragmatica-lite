@@ -140,7 +140,7 @@ class NumberTest {
 
     @Test
     void testParseBigIntegerSuccess() {
-        BigInteger expected = new BigInteger("12345678901234567890");
+        var expected = new BigInteger("12345678901234567890");
         Number.parseBigInteger("12345678901234567890")
                      .onFailureRun(Assertions::fail)
                      .onSuccess(value -> assertEquals(expected, value));
@@ -155,7 +155,7 @@ class NumberTest {
 
     @Test
     void testParseBigIntegerWithRadix() {
-        BigInteger expected = new BigInteger("255");
+        var expected = new BigInteger("255");
         Number.parseBigInteger("ff", 16)
                      .onFailureRun(Assertions::fail)
                      .onSuccess(value -> assertEquals(expected, value));
@@ -163,7 +163,7 @@ class NumberTest {
 
     @Test
     void testParseBigDecimalSuccess() {
-        BigDecimal expected = new BigDecimal("123.456789");
+        var expected = new BigDecimal("123.456789");
         Number.parseBigDecimal("123.456789")
                      .onFailureRun(Assertions::fail)
                      .onSuccess(value -> assertEquals(expected, value));
