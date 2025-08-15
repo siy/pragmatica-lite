@@ -22,7 +22,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 
 /// Functional wrappers for Java Time API parsing methods that return Result<T> instead of throwing exceptions
-sealed interface DateTime {
+public sealed interface DateTime {
     /// Parse a string as a LocalDate value using ISO format
     /// - **text**: String to parse
     /// - **Returns**: Result containing parsed LocalDate or parsing error
