@@ -22,7 +22,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 /// Functional wrappers for JDK number parsing APIs that return Result<T> instead of throwing exceptions
-sealed interface Number {
+public sealed interface Number {
     /// Parse a string as a Byte value
     /// - **s**: String to parse
     /// - **Returns**: Result containing parsed Byte or parsing error
