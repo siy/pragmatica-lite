@@ -20,12 +20,15 @@ import org.pragmatica.message.MessageRouter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.function.Consumer;
+import java.util.Comparator;
 
 import static org.pragmatica.cluster.consensus.rabia.Batch.batch;
 import static org.pragmatica.cluster.consensus.rabia.Batch.emptyBatch;
@@ -35,19 +38,29 @@ import static org.pragmatica.cluster.consensus.rabia.RabiaProtocolMessage.Asynch
 public class RabiaEngine<C extends Command> {
     private static final Logger log = LoggerFactory.getLogger(RabiaEngine.class);
     private static final double SCALE = 0.5d;
+    private static final int MAX_PENDING_BATCHES = 10000;
+    private static final int MAX_CORRELATION_MAP = 10000;
 
     private final NodeId self;
     private final TopologyManager topologyManager;
     private final ProtocolConfig config;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private final Map<CorrelationId, Batch<C>> pendingBatches = new ConcurrentHashMap<>();
+    private final OptimizedConsensusExecutor consensusExecutor = new OptimizedConsensusExecutor();
+    
+    // Use bounded collections to prevent memory leaks
+    private final BoundedLRUMap<CorrelationId, Batch<C>> pendingBatches = new BoundedLRUMap<>(MAX_PENDING_BATCHES);
     @SuppressWarnings("rawtypes")
-    private final Map<CorrelationId, Promise> correlationMap = new ConcurrentHashMap<>();
+    private final BoundedLRUMap<CorrelationId, Promise> correlationMap = new BoundedLRUMap<>(MAX_CORRELATION_MAP);
+    
+    // Optimize batch selection with priority queue
+    private final PriorityBlockingQueue<Batch<C>> batchQueue = new PriorityBlockingQueue<>(100, Comparator.naturalOrder());
 
     // Extracted components
     private final RabiaConsensusManager<C> consensusManager = new RabiaConsensusManager<>();
     private final RabiaNetworkManager<C> networkManager;
     private final RabiaStateManager<C> stateManager;
+    
+    // Performance monitoring
+    private final RabiaPerformanceMetrics performanceMetrics = new RabiaPerformanceMetrics();
 
     /// Creates a new Rabia consensus engine.
     ///
@@ -68,6 +81,12 @@ public class RabiaEngine<C extends Command> {
         // Setup periodic tasks
         SharedScheduler.scheduleAtFixedRate(this::cleanupOldPhases, config.cleanupInterval());
         SharedScheduler.schedule(this::synchronize, config.syncRetryInterval());
+        
+        // Setup performance monitoring
+        SharedScheduler.scheduleAtFixedRate(
+            performanceMetrics::logPerformanceSummary, 
+            Duration.ofSeconds(30) // Log performance every 30 seconds
+        );
     }
 
     public void configure(MessageRouter.MutableRouter router) {
@@ -137,11 +156,17 @@ public class RabiaEngine<C extends Command> {
         log.trace("Node {}: client submitted {} command(s). Prepared batch: {}", self, commands.size(), batch);
 
         pendingBatches.put(batch.correlationId(), batch);
+        batchQueue.offer(batch); // Add to priority queue for efficient selection
         onBatchPrepared.accept(batch);
+        
+        // Record performance metrics
+        performanceMetrics.recordBatchSubmitted(batch.correlationId());
+        performanceMetrics.updateMemoryUsage(pendingBatches.size(), 0); // Active phase count would need to be tracked
+        
         networkManager.broadcastNewBatch(batch);
 
         if (!stateManager.isInPhase()) {
-            executor.execute(this::startPhase);
+            consensusExecutor.executeCritical(this::startPhase);
         }
 
         return Result.success(batch);
@@ -154,40 +179,42 @@ public class RabiaEngine<C extends Command> {
     public Promise<Unit> stop() {
         return Promise.promise(promise -> {
             clusterDisconnected();
-            executor.shutdown();
+            consensusExecutor.shutdown();
             promise.succeed(Unit.unit());
         });
     }
 
     @MessageReceiver
     public void processPropose(Propose<C> propose) {
-        executor.execute(() -> handlePropose(propose));
+        consensusExecutor.executeFastPath(() -> handlePropose(propose));
     }
 
     @MessageReceiver
     public void processVoteRound1(VoteRound1 voteRound1) {
-        executor.execute(() -> handleVoteRound1(voteRound1));
+        consensusExecutor.executeCritical(() -> handleVoteRound1(voteRound1));
     }
 
     @MessageReceiver
     public void processVoteRound2(VoteRound2 voteRound2) {
-        executor.execute(() -> handleVoteRound2(voteRound2));
+        consensusExecutor.executeCritical(() -> handleVoteRound2(voteRound2));
     }
 
     @MessageReceiver
     public void processDecision(Decision<C> decision) {
-        executor.execute(() -> handleDecision(decision));
+        consensusExecutor.executeCritical(() -> handleDecision(decision));
     }
 
     @MessageReceiver
     public void processSyncResponse(SyncResponse<C> syncResponse) {
-        executor.execute(() -> handleSyncResponse(syncResponse));
+        consensusExecutor.executeDeferred(() -> handleSyncResponse(syncResponse));
     }
 
     @SuppressWarnings("unchecked")
     @MessageReceiver
     public void handleNewBatch(NewBatch<?> newBatch) {
-        pendingBatches.put(newBatch.batch().correlationId(), (Batch<C>) newBatch.batch());
+        var batch = (Batch<C>) newBatch.batch();
+        pendingBatches.put(batch.correlationId(), batch);
+        batchQueue.offer(batch);
     }
 
     /// Starts a new phase with pending commands.
@@ -197,11 +224,11 @@ public class RabiaEngine<C extends Command> {
         }
 
         var phase = stateManager.getCurrentPhase();
-        var batch = pendingBatches.values()
-                                  .stream()
-                                  .sorted()
-                                  .findFirst()
-                                  .orElse(emptyBatch());
+        // Optimize: use priority queue instead of sorting all batches
+        var batch = batchQueue.poll();
+        if (batch == null) {
+            batch = emptyBatch();
+        }
 
         log.trace("Node {} starting phase {} with batch {}", self, phase, batch.id());
 
@@ -209,6 +236,9 @@ public class RabiaEngine<C extends Command> {
         phaseData.proposals.put(self, batch);
 
         stateManager.setInPhase(true);
+        
+        // Record phase start for metrics
+        performanceMetrics.recordPhaseStarted(phase);
 
         networkManager.broadcastProposal(phase, batch);
     }
@@ -263,7 +293,7 @@ public class RabiaEngine<C extends Command> {
     /// Activate node and adjust phase, if necessary.
     private void activate() {
         stateManager.activate();
-        executor.execute(this::startPhase);
+        consensusExecutor.executeCritical(this::startPhase);
     }
 
     /// Handles a synchronization request from another node.
@@ -357,8 +387,15 @@ public class RabiaEngine<C extends Command> {
         log.trace("Node {} applies decision {}", self, decision);
 
         var results = stateManager.commitChanges(decision.value(), decision.phase());
-        pendingBatches.remove(decision.value().correlationId());
-        correlationMap.computeIfPresent(decision.value().correlationId(), (_, promise) -> {
+        var correlationId = decision.value().correlationId();
+        pendingBatches.remove(correlationId);
+        batchQueue.removeIf(batch -> batch.correlationId().equals(correlationId)); // Keep queue in sync
+        
+        // Record performance metrics
+        performanceMetrics.recordBatchCompleted(correlationId, decision.value().commands().size());
+        performanceMetrics.recordPhaseCompleted(decision.phase());
+        
+        correlationMap.computeIfPresent(correlationId, (_, promise) -> {
             promise.succeed(results);
             return null;    // Remove mapping
         });
@@ -381,7 +418,7 @@ public class RabiaEngine<C extends Command> {
 
         // If we have more commands to process, start a new phase
         if (!pendingBatches.isEmpty()) {
-            executor.execute(this::startPhase);
+            consensusExecutor.executeCritical(this::startPhase);
         }
     }
 
