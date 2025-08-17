@@ -26,7 +26,7 @@ public class RabiaConsensusManager<C extends Command> {
             return existing;
         }
         
-        var newPhaseData = new PhaseData<>(phase);
+        var newPhaseData = new PhaseData<C>(phase);
         phases.put(phase, newPhaseData);
         return newPhaseData;
     }

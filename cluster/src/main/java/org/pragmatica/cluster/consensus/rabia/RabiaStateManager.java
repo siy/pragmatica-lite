@@ -78,7 +78,7 @@ public class RabiaStateManager<C extends Command> {
         log.info("Node {} activated in phase {}", self, currentPhase.get());
     }
     
-    public void deactivate(Map<CorrelationId, Batch<C>> pendingBatches) {
+    public void deactivate(BoundedLRUMap<CorrelationId, Batch<C>> pendingBatches) {
         if (!active.compareAndSet(true, false)) {
             return;
         }
@@ -118,13 +118,13 @@ public class RabiaStateManager<C extends Command> {
         syncResponses.clear();
     }
     
-    public Promise<Unit> restoreState(SavedState<C> state, Map<CorrelationId, Batch<C>> pendingBatches) {
+    public Promise<Unit> restoreState(SavedState<C> state, BoundedLRUMap<CorrelationId, Batch<C>> pendingBatches) {
         if (state.snapshot().length == 0) {
-            return Promise.succeed(Unit.unit());
+            return Promise.unitPromise();
         }
         
-        return stateMachine.restoreSnapshot(state.snapshot())
-                          .map(_ -> {
+        return Promise.resolved(stateMachine.restoreSnapshot(state.snapshot()))
+                        .map(_ -> {
                               currentPhase.set(state.lastCommittedPhase());
                               lastCommittedPhase.set(state.lastCommittedPhase());
                               state.pendingBatches().forEach(batch -> 
@@ -137,23 +137,26 @@ public class RabiaStateManager<C extends Command> {
                           });
     }
     
+    @SuppressWarnings("unchecked")
     public <R> List<R> commitChanges(Batch<C> batch, Phase phase) {
         log.trace("Node {} applying batch {}", self, batch);
         var results = stateMachine.process(batch.commands());
         lastCommittedPhase.set(phase);
-        return results;
+        return (List<R>) results;
     }
     
+    @SuppressWarnings("unchecked")
     public SavedState<C> createSyncResponse() {
         if (active.get()) {
-            return stateMachine.makeSnapshot()
-                              .map(snapshot -> SavedState.savedState(snapshot, lastCommittedPhase.get(), List.of()))
-                              .recover(cause -> {
-                                  log.error("Node {} failed to create snapshot: {}", self, cause);
-                                  return persistence.load().or(SavedState.empty());
-                              });
+            return stateMachine.makeSnapshot().fold(
+                cause -> {
+                    log.error("Node {} failed to create snapshot: {}", self, cause);
+                    return persistence.load().or((SavedState<C>) SavedState.empty());
+                },
+                snapshot -> SavedState.<C>savedState(snapshot, lastCommittedPhase.get(), List.of())
+            );
         } else {
-            return persistence.load().or(SavedState.empty());
+            return persistence.load().or((SavedState<C>) SavedState.empty());
         }
     }
 }

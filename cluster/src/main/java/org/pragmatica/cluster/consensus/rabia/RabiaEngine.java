@@ -85,7 +85,7 @@ public class RabiaEngine<C extends Command> {
         // Setup performance monitoring
         SharedScheduler.scheduleAtFixedRate(
             performanceMetrics::logPerformanceSummary, 
-            Duration.ofSeconds(30) // Log performance every 30 seconds
+            org.pragmatica.lang.io.TimeSpan.fromDuration(Duration.ofSeconds(30)) // Log performance every 30 seconds
         );
     }
 
@@ -309,7 +309,7 @@ public class RabiaEngine<C extends Command> {
             return;
         }
 
-        consensusManager.cleanupOldPhases(stateManager.getCurrentPhase(), config.removeOlderThanPhases());
+        consensusManager.cleanupOldPhases(stateManager.getCurrentPhase(), (int) config.removeOlderThanPhases());
     }
 
     /// Handles a Propose message from another node.

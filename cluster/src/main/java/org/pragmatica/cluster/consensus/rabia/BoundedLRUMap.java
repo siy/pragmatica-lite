@@ -95,4 +95,14 @@ public class BoundedLRUMap<K, V> {
             lock.readLock().unlock();
         }
     }
+    
+    public java.util.Collection<V> values() {
+        lock.readLock().lock();
+        try {
+            // Return a copy to avoid concurrent modification issues
+            return new java.util.ArrayList<>(map.values());
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
 }
