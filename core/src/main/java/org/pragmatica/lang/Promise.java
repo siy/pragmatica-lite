@@ -390,6 +390,12 @@ public interface Promise<T> {
         return async(promise -> promise.fail(supplier.get()));
     }
 
+    /// Set timeout for the promise. If promise will remain unresolved after timeout, it will
+    /// be forcefully resolved with the [CoreError.Timeout] failure.
+    default Promise<T> timeout(TimeSpan timeout) {
+        return async(timeout, promise -> promise.fail(new CoreError.Timeout("Promise timed out after " + timeout.millis() + "ms")));
+    }
+
     /// Cancel the promise.
     ///
     /// @return Current promise instance.
