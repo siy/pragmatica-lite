@@ -392,6 +392,33 @@ public interface Promise<T> {
 
     /// Set timeout for the promise. If promise will remain unresolved after timeout, it will
     /// be forcefully resolved with the [CoreError.Timeout] failure.
+    ///
+    /// **WARNING!!!**
+    /// Timeouts should be inserted as close to actual operations as possible.
+    /// Otherwise, they don't cancel the operation itself, but subsequent transformations.
+    /// This may result in incorrect handling of subsequent operations as they will
+    /// be executed only when the original operation is completed.
+    /// For example:
+    ///
+    /// Incorrect:
+    /// ```java
+    ///     return lowLevelCall()
+    ///             .map(this::transformationStep1)     // <-- This transformation will wait for lowLevelCall() to resolve
+    ///             .flatMap(this::transformationStep3) // <-- This transformation will see timeout error and will be skipped
+    ///             .timeout(timeSpan(10).seconds());
+    /// ```
+    /// If after timeout `lowLevelCall()` succeeds, the `transformationStep1()` will be executed. If it has side effects,
+    /// this may result in a subtle, hard to nail down bug. To avoid this, place `timeout()` call as early
+    /// as possible in the transformation chain.
+    ///
+    /// Correct:
+    /// ```java
+    ///     return lowLevelCall()
+    ///             .timeout(timeSpan(10).seconds())    // <-- The promise returned by lowLevelCall() will be cancelled by timeout
+    ///             .map(this::transformationStep1)     // <-- This transformation will see Timeout error and will be skipped
+    ///             .flatMap(this::transformationStep3);// <-- This transformation will see Timeout error and will be skipped
+    /// ```
+
     default Promise<T> timeout(TimeSpan timeout) {
         return async(timeout, promise -> promise.fail(new CoreError.Timeout("Promise timed out after " + timeout.millis() + "ms")));
     }
