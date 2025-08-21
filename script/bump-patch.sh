@@ -63,11 +63,7 @@ fi
 # Commit the changes
 echo -e "${BLUE}📝 Committing version bump...${NC}"
 git add .
-git commit -m "chore: bump version to ${NEW_VERSION}
-
-🤖 Generated with [Claude Code](https://claude.ai/code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
+git commit -m "chore: bump version to ${NEW_VERSION}"
 
 echo -e "${GREEN}✅ Successfully bumped version from ${CURRENT_VERSION} to ${NEW_VERSION}${NC}"
 echo -e "${BLUE}💡 Don't forget to push your changes: git push${NC}"
