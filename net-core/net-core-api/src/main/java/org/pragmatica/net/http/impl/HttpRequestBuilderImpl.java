@@ -16,6 +16,7 @@ public final class HttpRequestBuilderImpl implements HttpRequestBuilder {
     private Object body;
     private TimeSpan timeout;
     private HttpClient client;
+    private TypeToken<?> responseType;
     
     public HttpRequestBuilderImpl() {
         // Default constructor
@@ -69,18 +70,24 @@ public final class HttpRequestBuilderImpl implements HttpRequestBuilder {
     
     @Override
     @SuppressWarnings("unchecked")
-    public <T, R> HttpRequest<T, R> expectedType(Class<R> expectedType) {
-        return new HttpRequestImpl<>(url, method, headers, (T) body, TypeToken.of(expectedType), client);
+    public <T, R> HttpRequestBuilder responseType(Class<R> responseType) {
+        this.responseType = TypeToken.of(responseType);
+        return this;
     }
     
     @Override
     @SuppressWarnings("unchecked")
-    public <T, R> HttpRequest<T, R> expectedType(TypeToken<R> expectedType) {
-        return new HttpRequestImpl<>(url, method, headers, (T) body, expectedType, client);
+    public <T, R> HttpRequestBuilder responseType(TypeToken<R> responseType) {
+        this.responseType = responseType;
+        return this;
     }
     
     @Override
-    public <T, R> HttpRequest<T, R> send() {
-        throw new UnsupportedOperationException("Must specify expectedType before calling send()");
+    @SuppressWarnings("unchecked")
+    public <T, R> HttpRequest<T, R> build() {
+        if (responseType == null) {
+            throw new IllegalStateException("Must specify responseType before calling build()");
+        }
+        return new HttpRequestImpl<>(url, method, headers, (T) body, (TypeToken<R>) responseType, client);
     }
 }

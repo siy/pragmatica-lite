@@ -29,12 +29,12 @@ public record HttpMethodBuilder9Impl<T1, T2, T3, T4, T5, T6, T7, T8, T9>(HttpCli
 
     @Override
     public <R> HttpFunction.HttpResponseContentTypeBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9, R> get(Class<R> responseType) {
-        return new HttpResponseContentTypeBuilder9Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType, HttpMethod.GET, responseType);
+        return new HttpResponseContentTypeBuilder9Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType.headerText(), HttpMethod.GET, responseType);
     }
 
     @Override
     public <R> HttpFunction.HttpResponseContentTypeBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9, R> get(TypeToken<R> responseType) {
-        return new HttpResponseContentTypeBuilder9Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType, HttpMethod.GET, responseType);
+        return new HttpResponseContentTypeBuilder9Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType.headerText(), HttpMethod.GET, responseType);
     }
 
     @Override
@@ -44,12 +44,12 @@ public record HttpMethodBuilder9Impl<T1, T2, T3, T4, T5, T6, T7, T8, T9>(HttpCli
 
     @Override
     public <R> HttpFunction.HttpResponseContentTypeBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9, R> delete(Class<R> responseType) {
-        return new HttpResponseContentTypeBuilder9Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType, HttpMethod.DELETE, responseType);
+        return new HttpResponseContentTypeBuilder9Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType.headerText(), HttpMethod.DELETE, responseType);
     }
 
     @Override
     public <R> HttpFunction.HttpResponseContentTypeBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9, R> delete(TypeToken<R> responseType) {
-        return new HttpResponseContentTypeBuilder9Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType, HttpMethod.DELETE, responseType);
+        return new HttpResponseContentTypeBuilder9Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType.headerText(), HttpMethod.DELETE, responseType);
     }
 
     @Override

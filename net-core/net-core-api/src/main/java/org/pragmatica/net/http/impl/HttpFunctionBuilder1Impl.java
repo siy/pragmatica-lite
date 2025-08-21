@@ -29,7 +29,7 @@ import java.util.Map;
 
 /// Implementation of HttpFunctionBuilder1 for functions with one path variable
 public record HttpFunctionBuilder1Impl<T1>(HttpClient client, String baseUrl, List<String> pathSegments,
-                                          List<Class<?>> paramTypes, UrlBuilder urlBuilder) implements HttpFunction.HttpFunctionBuilder1<T1> {
+                                          List<Class<?>> paramTypes, UrlBuilder urlBuilder, HttpClientConfig.Builder configBuilder) implements HttpFunction.HttpFunctionBuilder1<T1> {
     
     public HttpFunctionBuilder1Impl {
         if (paramTypes.size() != 1) {
@@ -46,21 +46,23 @@ public record HttpFunctionBuilder1Impl<T1>(HttpClient client, String baseUrl, Li
                 newSegments.add(segment);
             }
         }
-        return new HttpFunctionBuilder1Impl<>(client, baseUrl, newSegments, paramTypes, urlBuilder);
+        return new HttpFunctionBuilder1Impl<>(client, baseUrl, newSegments, paramTypes, urlBuilder, configBuilder);
     }
     
     @Override
     public <T2> HttpFunction.HttpFunctionBuilder2<T1, T2> pathVar(Class<T2> type) {
         var newParamTypes = new ArrayList<>(paramTypes);
         newParamTypes.add(type);
-        return new HttpFunctionBuilder2Impl<>(client, baseUrl, pathSegments, newParamTypes, urlBuilder);
+        var customClient = getOrCreateCustomClient();
+        return new HttpFunctionBuilder2Impl<>(customClient, baseUrl, pathSegments, newParamTypes, urlBuilder);
     }
     
     @Override
     public <T2> HttpFunction.HttpFunctionBuilder2<T1, T2> pathVar(TypeToken<T2> type) {
         var newParamTypes = new ArrayList<>(paramTypes);
         newParamTypes.add(type.rawType());
-        return new HttpFunctionBuilder2Impl<>(client, baseUrl, pathSegments, newParamTypes, urlBuilder);
+        var customClient = getOrCreateCustomClient();
+        return new HttpFunctionBuilder2Impl<>(customClient, baseUrl, pathSegments, newParamTypes, urlBuilder);
     }
     
     // === Core Implementation Methods ===
@@ -69,17 +71,24 @@ public record HttpFunctionBuilder1Impl<T1>(HttpClient client, String baseUrl, Li
     
     @Override
     public HttpFunction.HttpMethodBuilder1<T1> send(ContentType requestContentType) {
-        return new HttpMethodBuilder1Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType.headerText());
+        var customClient = getOrCreateCustomClient();
+        return new HttpMethodBuilder1Impl<>(customClient, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType.headerText());
     }
     
     @Override
     public <T> HttpFunction.HttpMethodBuilderWithBody1<T1, T> send(ContentType requestContentType, Class<T> bodyType) {
-        return new HttpMethodBuilderWithBody1Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType.headerText(), bodyType);
+        var customClient = getOrCreateCustomClient();
+        return new HttpMethodBuilderWithBody1Impl<>(customClient, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType.headerText(), bodyType);
     }
     
     @Override
     public <T> HttpFunction.HttpMethodBuilderWithBody1<T1, T> send(ContentType requestContentType, TypeToken<T> bodyType) {
-        return new HttpMethodBuilderWithBody1Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType.headerText(), bodyType);
+        var customClient = getOrCreateCustomClient();
+        return new HttpMethodBuilderWithBody1Impl<>(customClient, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType.headerText(), bodyType);
+    }
+    
+    private HttpClient getOrCreateCustomClient() {
+        return configBuilder != null ? HttpClient.create(configBuilder.build()) : client;
     }
     
     

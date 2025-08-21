@@ -35,8 +35,8 @@ public sealed interface HttpError extends Cause {
     /// Factory method to create HttpError from status code using functional chaining
     static HttpError fromCode(int statusCode, String statusText) {
         return HttpStatus.fromCode(statusCode)
-                           .map(code -> code.asError(statusText))
-                           .recover(error -> UnknownStatusCode.create(statusCode, statusText));
+                           .fold(error -> UnknownStatusCode.create(statusCode, statusText),
+                                 code -> code.asError(statusText));
     }
     
     /// Factory method from response

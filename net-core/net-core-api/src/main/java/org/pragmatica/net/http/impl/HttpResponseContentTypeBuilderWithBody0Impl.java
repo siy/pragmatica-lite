@@ -42,14 +42,16 @@ public record HttpResponseContentTypeBuilderWithBody0Impl<B, R>(HttpClient clien
                 .body(body);
 
             return switch (responseTypeInfo) {
-                case Class<?> responseClass -> request.responseType((Class<R>) responseClass)
-                    .send()
-                    .map(HttpResponse::body)
-                    .flatMap(optionBody -> optionBody.async());
-                case TypeToken<?> responseToken -> request.responseType((TypeToken<R>) responseToken)
-                    .send()
-                    .map(HttpResponse::body)
-                    .flatMap(optionBody -> optionBody.async());
+                case Class<?> responseClass -> {
+                    var httpRequest = request.responseType((Class<R>) responseClass).build();
+                    yield client.exchange(httpRequest)
+                        .map(response -> response.result().unwrap());
+                }
+                case TypeToken<?> responseToken -> {
+                    var httpRequest = request.responseType((TypeToken<R>) responseToken).build();
+                    yield client.exchange(httpRequest)
+                        .map(response -> response.result().unwrap());
+                }
                 case null, default -> throw new IllegalStateException("Invalid response type info: " + responseTypeInfo);
             };
         };

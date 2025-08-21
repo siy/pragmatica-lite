@@ -17,6 +17,7 @@
 package org.pragmatica.net.http;
 
 import org.pragmatica.lang.Functions.*;
+import org.pragmatica.lang.Functions.Fn10;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.type.TypeToken;
@@ -374,6 +375,16 @@ public interface HttpFunction {
         HttpResponseContentTypeBuilder0<Unit> delete();
     }
     
+    /// HTTP method function builder for no path variables
+    interface HttpMethodFunctionBuilder0 {
+        
+        /// Create a function for the specified HTTP method with typed response and body
+        <R, U> Fn1<Promise<R>, U> methodWithBody(HttpMethod method, Class<R> responseType, Class<U> bodyType);
+        
+        /// Create a function for the specified HTTP method with typed response and body using TypeToken
+        <R, U> Fn1<Promise<R>, U> methodWithBody(HttpMethod method, TypeToken<R> responseType, TypeToken<U> bodyType);
+    }
+    
     /// HTTP method builder for one path variable, no-body requests
     interface HttpMethodBuilder1<T1> {
         
@@ -394,6 +405,16 @@ public interface HttpFunction {
         
         /// Create DELETE method, no response body expected
         HttpResponseContentTypeBuilder1<T1, Unit> delete();
+    }
+    
+    /// HTTP method function builder for one path variable
+    interface HttpMethodFunctionBuilder1<T1> {
+        
+        /// Create a function for the specified HTTP method with typed response and body
+        <R, U> Fn2<Promise<R>, T1, U> methodWithBody(HttpMethod method, Class<R> responseType, Class<U> bodyType);
+        
+        /// Create a function for the specified HTTP method with typed response and body using TypeToken
+        <R, U> Fn2<Promise<R>, T1, U> methodWithBody(HttpMethod method, TypeToken<R> responseType, TypeToken<U> bodyType);
     }
     
     /// HTTP method builder for two path variables, no-body requests
@@ -418,6 +439,16 @@ public interface HttpFunction {
         HttpResponseContentTypeBuilder2<T1, T2, Unit> delete();
     }
     
+    /// HTTP method function builder for two path variables
+    interface HttpMethodFunctionBuilder2<T1, T2> {
+        
+        /// Create a function for the specified HTTP method with typed response and body
+        <R, U> Fn3<Promise<R>, T1, T2, U> methodWithBody(HttpMethod method, Class<R> responseType, Class<U> bodyType);
+        
+        /// Create a function for the specified HTTP method with typed response and body using TypeToken
+        <R, U> Fn3<Promise<R>, T1, T2, U> methodWithBody(HttpMethod method, TypeToken<R> responseType, TypeToken<U> bodyType);
+    }
+    
     /// HTTP method builder for three path variables, no-body requests
     interface HttpMethodBuilder3<T1, T2, T3> {
         
@@ -438,6 +469,16 @@ public interface HttpFunction {
         
         /// Create DELETE method, no response body expected
         HttpResponseContentTypeBuilder3<T1, T2, T3, Unit> delete();
+    }
+    
+    /// HTTP method function builder for three path variables
+    interface HttpMethodFunctionBuilder3<T1, T2, T3> {
+        
+        /// Create a function for the specified HTTP method with typed response and body
+        <R, U> Fn4<Promise<R>, T1, T2, T3, U> methodWithBody(HttpMethod method, Class<R> responseType, Class<U> bodyType);
+        
+        /// Create a function for the specified HTTP method with typed response and body using TypeToken
+        <R, U> Fn4<Promise<R>, T1, T2, T3, U> methodWithBody(HttpMethod method, TypeToken<R> responseType, TypeToken<U> bodyType);
     }
     
     /// HTTP method builder for four path variables, no-body requests

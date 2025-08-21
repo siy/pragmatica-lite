@@ -1,19 +1,12 @@
 package org.pragmatica.net.serialization;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import java.nio.ByteBuffer;
 
 /// Basic deserialization interface
 public interface Deserializer {
     default <T> T decode(byte[] bytes) {
-        var byteBuf = Unpooled.wrappedBuffer(bytes);
-
-        try {
-            return read(byteBuf);
-        } finally {
-            byteBuf.release();
-        }
+        return read(ByteBuffer.wrap(bytes));
     }
 
-    <T> T read(ByteBuf byteBuf);
+    <T> T read(ByteBuffer buffer);
 }

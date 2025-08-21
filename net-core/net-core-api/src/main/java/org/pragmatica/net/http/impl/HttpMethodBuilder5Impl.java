@@ -29,12 +29,12 @@ public record HttpMethodBuilder5Impl<T1, T2, T3, T4, T5>(HttpClient client, Stri
 
     @Override
     public <R> HttpFunction.HttpResponseContentTypeBuilder5<T1, T2, T3, T4, T5, R> get(Class<R> responseType) {
-        return new HttpResponseContentTypeBuilder5Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType, HttpMethod.GET, responseType);
+        return new HttpResponseContentTypeBuilder5Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType.headerText(), HttpMethod.GET, responseType);
     }
 
     @Override
     public <R> HttpFunction.HttpResponseContentTypeBuilder5<T1, T2, T3, T4, T5, R> get(TypeToken<R> responseType) {
-        return new HttpResponseContentTypeBuilder5Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType, HttpMethod.GET, responseType);
+        return new HttpResponseContentTypeBuilder5Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType.headerText(), HttpMethod.GET, responseType);
     }
 
     @Override
@@ -44,12 +44,12 @@ public record HttpMethodBuilder5Impl<T1, T2, T3, T4, T5>(HttpClient client, Stri
 
     @Override
     public <R> HttpFunction.HttpResponseContentTypeBuilder5<T1, T2, T3, T4, T5, R> delete(Class<R> responseType) {
-        return new HttpResponseContentTypeBuilder5Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType, HttpMethod.DELETE, responseType);
+        return new HttpResponseContentTypeBuilder5Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType.headerText(), HttpMethod.DELETE, responseType);
     }
 
     @Override
     public <R> HttpFunction.HttpResponseContentTypeBuilder5<T1, T2, T3, T4, T5, R> delete(TypeToken<R> responseType) {
-        return new HttpResponseContentTypeBuilder5Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType, HttpMethod.DELETE, responseType);
+        return new HttpResponseContentTypeBuilder5Impl<>(client, baseUrl, pathSegments, paramTypes, urlBuilder, requestContentType.headerText(), HttpMethod.DELETE, responseType);
     }
 
     @Override

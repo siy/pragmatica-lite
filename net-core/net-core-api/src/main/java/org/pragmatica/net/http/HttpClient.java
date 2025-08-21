@@ -72,6 +72,9 @@ public interface HttpClient {
     /// Exchange (send and receive) an HTTP request
     <T, R> Promise<HttpResponse<R>> exchange(HttpRequest<T, R> request);
     
+    /// Create a request builder for fluent HTTP request construction
+    HttpRequestBuilder request();
+    
     // === Lifecycle ===
     
     /// Start the HTTP client
@@ -81,6 +84,7 @@ public interface HttpClient {
     Promise<Unit> stop();
     
     // === Factory Methods ===
+    // Note: Concrete implementations are provided by specific modules
     
     /// Create HTTP client with default configuration
     static HttpClient create() {
@@ -89,6 +93,14 @@ public interface HttpClient {
     
     /// Create HTTP client with custom configuration
     static HttpClient create(HttpClientConfig config) {
-        return new org.pragmatica.net.http.netty.NettyHttpClient(config);
+        // This will be loaded from the classpath via ServiceLoader or direct instantiation
+        // For now, we'll assume NettyHttpClient is the default implementation
+        try {
+            var clazz = Class.forName("org.pragmatica.net.http.netty.NettyHttpClient");
+            var constructor = clazz.getConstructor(HttpClientConfig.class);
+            return (HttpClient) constructor.newInstance(config);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create HttpClient instance", e);
+        }
     }
 }

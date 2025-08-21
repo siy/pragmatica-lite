@@ -21,38 +21,27 @@ import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.type.TypeToken;
 import org.pragmatica.net.http.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/// Implementation of HttpResponseContentTypeBuilder0 for no path variables
-public record HttpResponseContentTypeBuilder0Impl<R>(HttpClient client, String baseUrl, List<String> pathSegments,
-                                                    UrlBuilder urlBuilder, String requestContentType, 
-                                                    HttpMethod httpMethod, Object responseTypeInfo)
-    implements HttpFunction.HttpResponseContentTypeBuilder0<R> {
-
-    // Constructor for Class<R>
-    public HttpResponseContentTypeBuilder0Impl(HttpClient client, String baseUrl, List<String> pathSegments,
-                                              UrlBuilder urlBuilder, String requestContentType,
-                                              HttpMethod httpMethod, Class<R> responseType) {
-        this(client, baseUrl, pathSegments, urlBuilder, requestContentType, httpMethod, (Object) responseType);
-    }
-
-    // Constructor for TypeToken<R>
-    public HttpResponseContentTypeBuilder0Impl(HttpClient client, String baseUrl, List<String> pathSegments,
-                                              UrlBuilder urlBuilder, String requestContentType,
-                                              HttpMethod httpMethod, TypeToken<R> responseType) {
-        this(client, baseUrl, pathSegments, urlBuilder, requestContentType, httpMethod, (Object) responseType);
-    }
+/// Implementation of HttpResponseContentTypeBuilderWithBody1 for one path variable with body
+public record HttpResponseContentTypeBuilderWithBody1Impl<T1, B, R>(HttpClient client, String baseUrl, List<String> pathSegments,
+                                                                   List<Class<?>> paramTypes, UrlBuilder urlBuilder, String requestContentType, 
+                                                                   HttpMethod httpMethod, Object bodyTypeInfo, Object responseTypeInfo)
+    implements HttpFunction.HttpResponseContentTypeBuilderWithBody1<T1, B, R> {
 
     @Override
-    public Fn0<Promise<R>> as(ContentType responseContentType) {
-        return () -> {
-            var url = urlBuilder.buildUrl(baseUrl, pathSegments, Map.of());
+    public Fn2<Promise<R>, T1, B> as(ContentType responseContentType) {
+        return (param1, body) -> {
+            validateParameter(param1, 0);
+            var url = buildUrlWithParams(List.of(param1));
             var request = client.request()
                 .url(url)
                 .method(httpMethod)
                 .header("Content-Type", requestContentType)
-                .header("Accept", responseContentType.headerText());
+                .header("Accept", responseContentType.headerText())
+                .body(body);
 
             return switch (responseTypeInfo) {
                 case Class<?> responseClass -> {
@@ -68,5 +57,23 @@ public record HttpResponseContentTypeBuilder0Impl<R>(HttpClient client, String b
                 case null, default -> throw new IllegalStateException("Invalid response type info: " + responseTypeInfo);
             };
         };
+    }
+    
+    private void validateParameter(Object param, int index) {
+        var expectedType = paramTypes.get(index);
+        if (!expectedType.isInstance(param)) {
+            throw new IllegalArgumentException(
+                "Parameter " + (index + 1) + " expected type " + expectedType.getName() + 
+                ", but got " + param.getClass().getName()
+            );
+        }
+    }
+    
+    private String buildUrlWithParams(List<Object> params) {
+        var segments = new ArrayList<>(pathSegments);
+        for (var param : params) {
+            segments.add(param.toString());
+        }
+        return urlBuilder.buildUrl(baseUrl, segments, Map.of());
     }
 }

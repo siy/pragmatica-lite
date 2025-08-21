@@ -1,20 +1,15 @@
 package org.pragmatica.net.serialization;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 
 /// Basic serialization interface
 public interface Serializer {
     default <T> byte[] encode(T object) {
-        var byteBuf = Unpooled.buffer();
-
-        try {
-            write(byteBuf, object);
-            return byteBuf.array();
-        } finally {
-            byteBuf.release();
-        }
+        var outputStream = new ByteArrayOutputStream();
+        write(outputStream, object);
+        return outputStream.toByteArray();
     }
 
-    <T> void write(ByteBuf byteBuf, T object);
+    <T> void write(ByteArrayOutputStream outputStream, T object);
 }
