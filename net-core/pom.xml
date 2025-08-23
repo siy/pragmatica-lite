@@ -10,6 +10,12 @@
     </parent>
 
     <artifactId>net-core</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>api</module>
+        <module>http-client</module>
+    </modules>
 
     <dependencies>
         <!-- Internal -->
