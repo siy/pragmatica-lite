@@ -390,6 +390,13 @@ public sealed interface Option<T> permits Some, None {
         return fold(() -> {throw new IllegalStateException("Option is empty!!!");}, Functions::id);
     }
 
+    /// This method assumes that some previous code ensures that [Option] we're working with is not empty
+    /// and allows extracting value from monad. If this is not the case, the method throws [Error], which
+    /// most likely will cause application to crash.
+    default T expect(String message) {
+        return fold(() -> {throw new ExpectationMismatchError("Unexpected empty Option: " + message);}, Functions::id);
+    }
+
     /// Convenience method for wrapping functions/methods which may return `null`
     ///
     /// @param function function to wrap

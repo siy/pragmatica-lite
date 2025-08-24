@@ -293,6 +293,14 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(v -> {throw new IllegalStateException("Unwrap error: " + v.message());}, Functions::id);
     }
 
+    /// This method assumes that some previous code ensures that [Result] we're working with is successful
+    /// and allows extracting value from monad. If this is not the case, the method throws [Error], which
+    /// most likely will cause application to crash.
+    default T expect(String message) {
+        return fold(cause -> {throw new ExpectationMismatchError("Unexpected failure Result (" + cause.message() + "): " + message);},
+                    Functions::id);
+    }
+
     /// Handle both possible states (success/failure) and produce a single value from it.
     ///
     /// @param failureMapper function to transform failure into value
