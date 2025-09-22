@@ -283,7 +283,8 @@ class ResultTest {
               .onFailure(cause -> fail(cause.message()))
               .onSuccess(value -> assertEquals("Input:4", value));
 
-        Result.lift(Causes::fromThrowable, () -> {})
+        Result.lift(Causes::fromThrowable, () -> {
+              })
               .onFailure(cause -> fail(cause.message()))
               .onSuccess(value -> assertEquals(Unit.unit(), value));
 
@@ -317,7 +318,7 @@ class ResultTest {
 
         // Test flatMap2 with failure in mapper
         Result.success(10)
-              .flatMap2((value, multiplier) -> Result.failure(Causes.cause("Mapper failure")), 3)
+              .flatMap2((_, _) -> Result.failure(Causes.cause("Mapper failure")), 3)
               .onSuccessRun(() -> fail("Should fail"))
               .onFailure(cause -> assertEquals("Mapper failure", cause.message()));
     }
@@ -326,14 +327,16 @@ class ResultTest {
     void liftXMethodsWrapThrowingFunctions() {
         // Test liftFn1 with custom exception mapper
         var fn1WithMapper = Result.liftFn1(Causes::fromThrowable, (Integer input) -> {
-            if (input < 0) throw new IllegalArgumentException("Negative input");
+            if (input < 0) {
+                throw new IllegalArgumentException("Negative input");
+            }
             return "Value: " + input;
         });
-        
+
         fn1WithMapper.apply(5)
                      .onSuccess(result -> assertEquals("Value: 5", result))
                      .onFailureRun(() -> fail("Should succeed"));
-        
+
         fn1WithMapper.apply(-1)
                      .onFailure(cause -> assertTrue(cause.message().contains("IllegalArgumentException")))
                      .onSuccessRun(() -> fail("Should fail"));
@@ -355,28 +358,32 @@ class ResultTest {
 
         // Test liftFn2 function factory
         var fn2Factory = Result.liftFn2(Causes::fromThrowable, (Integer a, Integer b) -> {
-            if (a < 0 || b < 0) throw new IllegalArgumentException("Negative input");
+            if (a < 0 || b < 0) {
+                throw new IllegalArgumentException("Negative input");
+            }
             return a + b;
         });
-        
+
         fn2Factory.apply(3, 4)
                   .onSuccess(result -> assertEquals(7, result))
                   .onFailureRun(() -> fail("Should succeed"));
-        
+
         fn2Factory.apply(-1, 4)
                   .onFailure(cause -> assertTrue(cause.message().contains("IllegalArgumentException")))
                   .onSuccessRun(() -> fail("Should fail"));
 
         // Test liftFn3 function factory
         var fn3Factory = Result.liftFn3(Causes::fromThrowable, (Integer a, Integer b, Integer c) -> {
-            if (a < 0 || b < 0 || c < 0) throw new IllegalArgumentException("Negative input");
+            if (a < 0 || b < 0 || c < 0) {
+                throw new IllegalArgumentException("Negative input");
+            }
             return a + b + c;
         });
-        
+
         fn3Factory.apply(1, 2, 3)
                   .onSuccess(result -> assertEquals(6, result))
                   .onFailureRun(() -> fail("Should succeed"));
-        
+
         fn3Factory.apply(-1, 2, 3)
                   .onFailure(cause -> assertTrue(cause.message().contains("IllegalArgumentException")))
                   .onSuccessRun(() -> fail("Should fail"));
@@ -432,7 +439,7 @@ class ResultTest {
         var flag = new AtomicBoolean(false);
 
         var result = Result.success(321)
-              .onResultRun(() -> flag.set(true));
+                           .onResultRun(() -> flag.set(true));
 
         assertTrue(flag.get());
         assertEquals(321, result.unwrap());
@@ -1249,6 +1256,33 @@ class ResultTest {
                                    + value8
                                    + value9)
               .onSuccessRun(Assertions::fail);
+    }
+
+    @Test
+    void allReturnsCompositeCauseWithAllFailuresIncluded1() {
+        var failure = Result.all(Causes.cause("Cause 1").result())
+                            .map((_) -> Assertions.fail("Should not be called"));
+
+        failure.onFailure(cause -> {
+            assertInstanceOf(Causes.CompositeCause.class, cause);
+            assertTrue(cause.message().startsWith("Composite:"));
+            cause.stream().forEach(innerCause -> assertInstanceOf(Causes.SimpleCause.class, innerCause));
+            assertEquals(1L, cause.stream().count());
+        });
+    }
+
+    @Test
+    void allReturnsCompositeCauseWithAllFailuresIncluded2() {
+        var failure = Result.all(Causes.cause("Cause 1").result(),
+                                 Causes.cause("Cause 2").result())
+                            .map((_, _) -> Assertions.fail("Should not be called"));
+
+        failure.onFailure(cause -> {
+            assertInstanceOf(Causes.CompositeCause.class, cause);
+            assertTrue(cause.message().startsWith("Composite:"));
+            cause.stream().forEach(innerCause -> assertInstanceOf(Causes.SimpleCause.class, innerCause));
+            assertEquals(2L, cause.stream().count());
+        });
     }
 
     static String throwingFunction(int i) {
