@@ -186,7 +186,6 @@ Explore comprehensive examples in the [examples](examples/) directory:
 | Module | Description |
 |--------|-------------|
 | **core** | Core monadic types: Result, Option, Promise |
-| **common** | Shared utilities and message routing |
 | **examples** | Sample applications and usage patterns |
 
 ## Contributing
