@@ -23,7 +23,7 @@ fi
 
 # Verify tests pass
 echo "🧪 Running tests..."
-./mvnw clean test -q
+mvn clean test -q
 
 # Verify GPG setup
 echo "🔐 Checking GPG configuration..."
@@ -35,11 +35,11 @@ fi
 
 # Build and verify artifacts
 echo "📦 Building release artifacts..."
-./mvnw clean package -DperformRelease=true -q
+mvn clean package -DperformRelease=true -q
 
 # Deploy to staging repository
 echo "📤 Deploying to staging repository..."
-./mvnw deploy -DperformRelease=true
+mvn deploy -DperformRelease=true
 
 echo "✅ Release deployed to staging repository!"
 echo ""
