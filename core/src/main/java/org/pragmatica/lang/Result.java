@@ -94,6 +94,13 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(_ -> (Result<U>) this, _ -> mapper.get());
     }
 
+    /// Transform the current result into a result containing [Unit] value. This is useful when you need to discard the value but preserve the success/failure state.
+    ///
+    /// @return result instance with [Unit] value (in case of success) or current instance (in case of failure)
+    default Result<Unit> mapToUnit() {
+        return map(Unit::toUnit);
+    }
+
     /// Transform the cause of the failure.
     ///
     /// @param mapper Function to transform failure cause
@@ -181,37 +188,6 @@ public sealed interface Result<T> permits Success, Failure {
         return this;
     }
 
-    /// Convert an instance into [Option] of the same value type. Successful instance is converted into present [Option] and failure - into
-    /// empty [Option]. Note that during such a conversion error information is getting lost.
-    ///
-    /// @return [Option] instance which is present in case of success and missing in case of failure.
-    default Option<T> option() {
-        return fold(_ -> Option.empty(), Option::option);
-    }
-
-    /// Check if instance is success.
-    ///
-    /// @return `true` if instance is success and `false` otherwise
-    default boolean isSuccess() {
-        return fold(Functions::toFalse, Functions::toTrue);
-    }
-
-    /// Check if an instance is failure.
-    ///
-    /// @return `true` if instance is failure and `false` otherwise
-    default boolean isFailure() {
-        return fold(Functions::toTrue, Functions::toFalse);
-    }
-
-    /// Stream current instance. For failure instance, an empty stream is created. For success instance,
-    /// the stream with a single element is returned. The element is the value stored in
-    /// the current instance.
-    ///
-    /// @return created stream
-    default Stream<T> stream() {
-        return fold(_ -> Stream.empty(), Stream::of);
-    }
-
     /// Filter instance against provided predicate. If the predicate returns `true`, then the instance remains unchanged. If the predicate returns
     /// `false`, then a failure instance is created using given [Cause].
     ///
@@ -271,11 +247,59 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(_ -> supplier.get(), _ -> this);
     }
 
+    /// Convert an instance into [Option] of the same value type. Successful instance is converted into present [Option] and failure - into
+    /// empty [Option]. Note that during such a conversion error information is getting lost.
+    ///
+    /// @return [Option] instance which is present in case of success and missing in case of failure.
+    default Option<T> option() {
+        return fold(_ -> Option.empty(), Option::option);
+    }
+
+    /// Stream current instance. For failure instance, an empty stream is created. For success instance,
+    /// the stream with a single element is returned. The element is the value stored in
+    /// the current instance.
+    ///
+    /// @return created stream
+    default Stream<T> stream() {
+        return fold(_ -> Stream.empty(), Stream::of);
+    }
+
+    /// Convert the current instance into [Promise] instance resolved with the current instance.
+    ///
+    /// @return created promise
+    default Promise<T> async() {
+        return Promise.resolved(this);
+    }
+
+    /// Check if instance is success.
+    ///
+    /// @return `true` if instance is success and `false` otherwise
+    default boolean isSuccess() {
+        return fold(Functions::toFalse, Functions::toTrue);
+    }
+
+    /// Check if an instance is failure.
+    ///
+    /// @return `true` if instance is failure and `false` otherwise
+    default boolean isFailure() {
+        return fold(Functions::toTrue, Functions::toFalse);
+    }
+
+    /// Pass the entire result (success or failure) to the provided consumer. This allows handling both success and failure cases with a single consumer.
+    ///
+    /// @param consumer Consumer to process the result
+    ///
+    /// @return current instance for fluent call chaining
     default Result<T> onResult(Consumer<Result<T>> consumer) {
         consumer.accept(this);
         return this;
     }
 
+    /// Run the provided action regardless of whether the result is success or failure.
+    ///
+    /// @param runnable Action to execute
+    ///
+    /// @return current instance for fluent call chaining
     default Result<T> onResultRun(Runnable runnable) {
         return onResult(_ -> runnable.run());
     }
@@ -313,16 +337,6 @@ public sealed interface Result<T> permits Success, Failure {
     /// @return the result transformed by the one of the mappers.
     <U> U fold(Fn1<? extends U, ? super Cause> failureMapper, Fn1<? extends U, ? super T> successMapper);
 
-    default Result<Unit> mapToUnit() {
-        return map(Unit::toUnit);
-    }
-
-    /// Convert the current instance into [Promise] instance resolved with the current instance.
-    ///
-    /// @return created promise
-    default Promise<T> async() {
-        return Promise.resolved(this);
-    }
 
     Result<Unit> UNIT_RESULT = success(unit());
 
@@ -342,6 +356,11 @@ public sealed interface Result<T> permits Success, Failure {
         return new Success<>(value);
     }
 
+    /// Create an instance of a successful operation result. This is an alias for [#success(Object)].
+    ///
+    /// @param value Operation result value
+    ///
+    /// @return created success instance
     static <U> Result<U> ok(U value) {
         return success(value);
     }
@@ -372,6 +391,11 @@ public sealed interface Result<T> permits Success, Failure {
         return new Failure<>(value);
     }
 
+    /// Create an instance of a failure result. This is an alias for [#failure(Cause)].
+    ///
+    /// @param value Operation error cause
+    ///
+    /// @return created failure instance
     static <U> Result<U> err(Cause value) {
         return new Failure<>(value);
     }

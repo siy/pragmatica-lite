@@ -184,7 +184,12 @@ public interface Tuple {
         return new tuple2<>(param1, param2);
     }
 
-    static <T1, T2> Tuple2<T1, T2> fomEntry(Map.Entry<T1, T2> entry) {
+    /// Create a tuple from a Map.Entry. The key becomes the first parameter and the value becomes the second parameter.
+    ///
+    /// @param entry Map entry to convert
+    ///
+    /// @return tuple containing the key and value from the entry
+    static <T1, T2> Tuple2<T1, T2> fromEntry(Map.Entry<T1, T2> entry) {
         return tuple(entry.getKey(), entry.getValue());
     }
 
