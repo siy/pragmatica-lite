@@ -44,7 +44,7 @@ mvn deploy -DperformRelease=true
 echo "✅ Release deployed to staging repository!"
 echo ""
 echo "Next steps:"
-echo "1. Log into https://s01.oss.sonatype.org/"
+echo "1. Log into https://central.sonatype.com/"
 echo "2. Go to 'Staging Repositories'"
 echo "3. Find your staging repository"
 echo "4. Click 'Close' to validate the release"
