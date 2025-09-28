@@ -4,13 +4,13 @@
 ![Java](https://img.shields.io/badge/Java-25-orange.svg)
 ![Maven Central](https://img.shields.io/badge/Maven-0.8.0-blue.svg)
 
-**Modern Functional Programming for Java 25**
+## Modern Functional Programming for Java 25
 
 Pragmatica Lite brings the power of functional programming to Java with zero-dependency monadic types that eliminate null pointer exceptions, unchecked exceptions, and callback hell. Built on Java 25's latest features including sealed interfaces and pattern matching.
 
 ## Why Pragmatica Lite?
 
-**Before Pragmatica:**
+**Without Pragmatica:**
 ```java
 // Traditional Java - prone to NPE and unhandled exceptions
 public User getUser(String id) throws UserNotFoundException, DatabaseException {
@@ -62,8 +62,7 @@ Result<String> result = divide(10, 2)
 ```java
 Promise<UserProfile> getUserProfile(String userId) {
     return fetchUser(userId)
-        .flatMap(user -> fetchPreferences(user.id()).map(prefs ->
-            new UserProfile(user, prefs)))
+        .flatMap(user -> fetchPreferences(user.id()).map(prefs -> new UserProfile(user, prefs)))
         .onSuccess(profile -> cache.store(profile))
         .onFailure(error -> logger.error("Failed to load profile", error));
 }
@@ -89,7 +88,6 @@ Pragmatica Lite leverages cutting-edge Java 25 features:
 - **Sealed Interfaces**: Type-safe Result and Option hierarchies
 - **Pattern Matching**: Elegant switch expressions for monadic types
 - **Records**: Immutable data structures throughout
-- **Enhanced Performance**: Zero-allocation operations where possible
 
 ### Maven Configuration
 
@@ -118,12 +116,12 @@ public class Example {
     // Safe division that never throws
     public static Result<Double> safeDivide(double a, double b) {
         return b == 0.0
-            ? Result.err(new MathError("Division by zero"))
+            ? MathError.divisionByZero().result()
             : Result.ok(a / b);
     }
 
     // Chaining operations
-    public static void main(String[] args) {
+    static void main(String[] args) {
         safeDivide(10.0, 2.0)
             .map(result -> result * 2)  // Transform success value
             .fold(
@@ -175,7 +173,7 @@ Promise<String> response = httpClient.get(url)
 
 ## Examples and Documentation
 
-Explore comprehensive examples in the [examples](examples/) directory:
+Explore comprehensive examples in the [examples](examples) directory:
 - Asynchronous data processing with Promise
 - Error handling patterns with Result
 - Null-safe operations with Option
