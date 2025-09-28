@@ -5,7 +5,7 @@
     <parent>
         <artifactId>pragmatica-lite</artifactId>
         <groupId>org.pragmatica-lite</groupId>
-        <version>0.7.23</version>
+        <version>0.8.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -40,35 +40,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <profiles>
-        <profile>
-            <id>benchmark</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <version>3.1.0</version>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <executable>java</executable>
-                            <args>
-                                <arg>-classpath</arg>
-                                <classpath/>
-                                <arg>org.openjdk.jmh.Main</arg>
-                                <arg>.*</arg>
-                            </args>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

@@ -90,10 +90,6 @@ public interface Promise<T> {
     /// @return Current promise instance.
     Promise<T> onResult(Consumer<Result<T>> action);
 
-    default Promise<T> onResultAsync(Consumer<Result<T>> action) {
-        return onResult(action);
-    }
-
     /// Transform the success value of the promise once the promise is resolved.
     ///
     /// This method is a dependent action and executed in the order in which transformations are written in the code.
@@ -203,10 +199,24 @@ public interface Promise<T> {
     /// @param action Action to be executed once a promise is resolved.
     ///
     /// @return Current promise instance.
+    default Promise<T> onResultAsync(Consumer<Result<T>> action) {
+        return onResult(action);
+    }
+
+    /// Run the provided action once the promise is resolved, regardless of success or failure.
+    ///
+    /// @param action Action to execute when promise resolves
+    ///
+    /// @return current promise instance
     default Promise<T> onResultRun(Runnable action) {
         return onResult(_ -> action.run());
     }
 
+    /// Run the provided action asynchronously once the promise is resolved, regardless of success or failure.
+    ///
+    /// @param action Action to execute when promise resolves
+    ///
+    /// @return current promise instance
     default Promise<T> onResultRunAsync(Runnable action) {
         return onResult(_ -> action.run());
     }
@@ -232,6 +242,11 @@ public interface Promise<T> {
         return onResult(result -> result.onSuccess(action));
     }
 
+    /// Run an action asynchronously once the promise is resolved with success. This is an alias for [#onSuccess(Consumer)].
+    ///
+    /// @param action Action to be executed once the promise is resolved with success
+    ///
+    /// @return current promise instance
     default Promise<T> onSuccessAsync(Consumer<T> action) {
         return onSuccess(action);
     }
@@ -245,6 +260,11 @@ public interface Promise<T> {
         return onResult(result -> result.onSuccessRun(action));
     }
 
+    /// Run an action asynchronously once the promise is resolved with success. This is an alias for [#onSuccessRun(Runnable)].
+    ///
+    /// @param action Action to be executed once the promise is resolved with success
+    ///
+    /// @return current promise instance
     default Promise<T> onSuccessRunAsync(Runnable action) {
         return onSuccessRun(action);
     }
@@ -267,6 +287,11 @@ public interface Promise<T> {
         return onResult(result -> result.onFailure(action));
     }
 
+    /// Run an action asynchronously once the promise is resolved with failure. This is an alias for [#onFailure(Consumer)].
+    ///
+    /// @param action Action to be executed once the promise is resolved with failure
+    ///
+    /// @return current promise instance
     default Promise<T> onFailureAsync(Consumer<Cause> action) {
         return onFailure(action);
     }
@@ -278,6 +303,11 @@ public interface Promise<T> {
         return onResult(result -> result.onFailureRun(action));
     }
 
+    /// Run an action asynchronously once the promise is resolved with failure. This is an alias for [#onFailureRun(Runnable)].
+    ///
+    /// @param action Action to be executed once the promise is resolved with failure
+    ///
+    /// @return current promise instance
     default Promise<T> onFailureRunAsync(Runnable action) {
         return onFailureRun(action);
     }

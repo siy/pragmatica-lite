@@ -101,6 +101,11 @@ public sealed interface Option<T> permits Some, None {
         return this;
     }
 
+    /// Execute the provided action if the instance contains a value and do nothing otherwise.
+    ///
+    /// @param runnable Action to execute when instance is present
+    ///
+    /// @return this instance for fluent call chaining
     default Option<T> onPresentRun(Runnable runnable) {
         return onPresent(_ -> runnable.run());
     }
@@ -115,6 +120,11 @@ public sealed interface Option<T> permits Some, None {
         return this;
     }
 
+    /// Execute the provided action if the instance is empty and do nothing otherwise. This is an alias for [#onEmpty(Runnable)].
+    ///
+    /// @param action Action to execute when instance is empty
+    ///
+    /// @return this instance for fluent call chaining
     default Option<T> onEmptyRun(Runnable action) {
         return onEmpty(action);
     }
@@ -390,19 +400,17 @@ public sealed interface Option<T> permits Some, None {
         return fold(() -> {throw new IllegalStateException("Option is empty!!!");}, Functions::id);
     }
 
-    /// This method assumes that some previous code ensures that [Option] we're working with is not empty
-    /// and allows extracting value from monad. If this is not the case, the method throws [Error], which
+    /// This method assumes that some previous code ensures that [Option] we're working with is present
+    /// and allows extracting value from monad. If this is not the case, the method throws [ExpectationMismatchError], which
     /// most likely will cause application to crash.
+    ///
+    /// @param message Error message to include if option is empty
+    ///
+    /// @return value stored inside present instance
     default T expect(String message) {
         return fold(() -> {throw new ExpectationMismatchError("Unexpected empty Option: " + message);}, Functions::id);
     }
 
-    /// Convenience method for wrapping functions/methods which may return `null`
-    ///
-    /// @param function function to wrap
-    /// @param inputValue inputValue to pass to function
-    ///
-    /// @return inputValue returned by the provided function wrapped into [Option]
     /// Convenience method for directly invoking a function that may return null and wrapping the result in an Option.
     /// This method provides immediate invocation rather than returning a function factory.
     ///

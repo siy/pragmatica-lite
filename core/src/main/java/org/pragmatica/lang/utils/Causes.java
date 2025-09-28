@@ -20,6 +20,7 @@ package org.pragmatica.lang.utils;
 import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Option;
+import org.pragmatica.lang.Result;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -40,7 +41,7 @@ public sealed interface Causes {
     /// Simplest possible variant of the [Cause] which contains only the message describing the cause
     interface SimpleCause extends Cause {
         default String completeMessage() {
-            var builder = new StringBuilder("Cause: ").append(message());
+            var builder = new StringBuilder("Cause: ");
 
             iterate(issue -> builder.append("\n  ").append(issue.message()));
 
@@ -101,9 +102,11 @@ public sealed interface Causes {
         CompositeCause append(Cause cause);
 
         boolean isEmpty();
+
+        Cause replace(Cause input);
     }
 
-    static CompositeCause composite() {
+    static CompositeCause composite(Result<?> ... results) {
         record compositeCause(Option<Cause> source, List<Cause> causes) implements CompositeCause {
             @Override
             public CompositeCause append(Cause cause) {
@@ -134,8 +137,19 @@ public sealed interface Causes {
             public String toString() {
                 return message();
             }
+
+            @Override
+            public Cause replace(Cause input) {
+                return isEmpty() ? input : this;
+            }
         }
 
-        return new compositeCause(none(), new ArrayList<>());
+        var inner = new ArrayList<Cause>();
+
+        for (Result<?> result : results) {
+            result.onFailure(inner::add);
+        }
+
+        return new compositeCause(none(), inner);
     }
 }

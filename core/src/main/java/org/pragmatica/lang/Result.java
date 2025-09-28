@@ -94,6 +94,13 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(_ -> (Result<U>) this, _ -> mapper.get());
     }
 
+    /// Transform the current result into a result containing [Unit] value. This is useful when you need to discard the value but preserve the success/failure state.
+    ///
+    /// @return result instance with [Unit] value (in case of success) or current instance (in case of failure)
+    default Result<Unit> mapToUnit() {
+        return map(Unit::toUnit);
+    }
+
     /// Transform the cause of the failure.
     ///
     /// @param mapper Function to transform failure cause
@@ -181,37 +188,6 @@ public sealed interface Result<T> permits Success, Failure {
         return this;
     }
 
-    /// Convert an instance into [Option] of the same value type. Successful instance is converted into present [Option] and failure - into
-    /// empty [Option]. Note that during such a conversion error information is getting lost.
-    ///
-    /// @return [Option] instance which is present in case of success and missing in case of failure.
-    default Option<T> option() {
-        return fold(_ -> Option.empty(), Option::option);
-    }
-
-    /// Check if instance is success.
-    ///
-    /// @return `true` if instance is success and `false` otherwise
-    default boolean isSuccess() {
-        return fold(Functions::toFalse, Functions::toTrue);
-    }
-
-    /// Check if an instance is failure.
-    ///
-    /// @return `true` if instance is failure and `false` otherwise
-    default boolean isFailure() {
-        return fold(Functions::toTrue, Functions::toFalse);
-    }
-
-    /// Stream current instance. For failure instance, an empty stream is created. For success instance,
-    /// the stream with a single element is returned. The element is the value stored in
-    /// the current instance.
-    ///
-    /// @return created stream
-    default Stream<T> stream() {
-        return fold(_ -> Stream.empty(), Stream::of);
-    }
-
     /// Filter instance against provided predicate. If the predicate returns `true`, then the instance remains unchanged. If the predicate returns
     /// `false`, then a failure instance is created using given [Cause].
     ///
@@ -271,11 +247,59 @@ public sealed interface Result<T> permits Success, Failure {
         return fold(_ -> supplier.get(), _ -> this);
     }
 
+    /// Convert an instance into [Option] of the same value type. Successful instance is converted into present [Option] and failure - into
+    /// empty [Option]. Note that during such a conversion error information is getting lost.
+    ///
+    /// @return [Option] instance which is present in case of success and missing in case of failure.
+    default Option<T> option() {
+        return fold(_ -> Option.empty(), Option::option);
+    }
+
+    /// Stream current instance. For failure instance, an empty stream is created. For success instance,
+    /// the stream with a single element is returned. The element is the value stored in
+    /// the current instance.
+    ///
+    /// @return created stream
+    default Stream<T> stream() {
+        return fold(_ -> Stream.empty(), Stream::of);
+    }
+
+    /// Convert the current instance into [Promise] instance resolved with the current instance.
+    ///
+    /// @return created promise
+    default Promise<T> async() {
+        return Promise.resolved(this);
+    }
+
+    /// Check if instance is success.
+    ///
+    /// @return `true` if instance is success and `false` otherwise
+    default boolean isSuccess() {
+        return fold(Functions::toFalse, Functions::toTrue);
+    }
+
+    /// Check if an instance is failure.
+    ///
+    /// @return `true` if instance is failure and `false` otherwise
+    default boolean isFailure() {
+        return fold(Functions::toTrue, Functions::toFalse);
+    }
+
+    /// Pass the entire result (success or failure) to the provided consumer. This allows handling both success and failure cases with a single consumer.
+    ///
+    /// @param consumer Consumer to process the result
+    ///
+    /// @return current instance for fluent call chaining
     default Result<T> onResult(Consumer<Result<T>> consumer) {
         consumer.accept(this);
         return this;
     }
 
+    /// Run the provided action regardless of whether the result is success or failure.
+    ///
+    /// @param runnable Action to execute
+    ///
+    /// @return current instance for fluent call chaining
     default Result<T> onResultRun(Runnable runnable) {
         return onResult(_ -> runnable.run());
     }
@@ -290,14 +314,18 @@ public sealed interface Result<T> permits Success, Failure {
     @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     default T unwrap() {
-        return fold(v -> {throw new IllegalStateException("Unwrap error: " + v.message());}, Functions::id);
+        return fold(v -> {
+            throw new IllegalStateException("Unwrap error: " + v.message());
+        }, Functions::id);
     }
 
     /// This method assumes that some previous code ensures that [Result] we're working with is successful
     /// and allows extracting value from monad. If this is not the case, the method throws [Error], which
     /// most likely will cause application to crash.
     default T expect(String message) {
-        return fold(cause -> {throw new ExpectationMismatchError("Unexpected failure Result (" + cause.message() + "): " + message);},
+        return fold(cause -> {
+                        throw new ExpectationMismatchError("Unexpected failure Result (" + cause.message() + "): " + message);
+                    },
                     Functions::id);
     }
 
@@ -309,16 +337,6 @@ public sealed interface Result<T> permits Success, Failure {
     /// @return the result transformed by the one of the mappers.
     <U> U fold(Fn1<? extends U, ? super Cause> failureMapper, Fn1<? extends U, ? super T> successMapper);
 
-    default Result<Unit> mapToUnit() {
-        return map(Unit::toUnit);
-    }
-
-    /// Convert the current instance into [Promise] instance resolved with the current instance.
-    ///
-    /// @return created promise
-    default Promise<T> async() {
-        return Promise.resolved(this);
-    }
 
     Result<Unit> UNIT_RESULT = success(unit());
 
@@ -338,6 +356,11 @@ public sealed interface Result<T> permits Success, Failure {
         return new Success<>(value);
     }
 
+    /// Create an instance of a successful operation result. This is an alias for [#success(Object)].
+    ///
+    /// @param value Operation result value
+    ///
+    /// @return created success instance
     static <U> Result<U> ok(U value) {
         return success(value);
     }
@@ -368,6 +391,11 @@ public sealed interface Result<T> permits Success, Failure {
         return new Failure<>(value);
     }
 
+    /// Create an instance of a failure result. This is an alias for [#failure(Cause)].
+    ///
+    /// @param value Operation error cause
+    ///
+    /// @return created failure instance
     static <U> Result<U> err(Cause value) {
         return new Failure<>(value);
     }
@@ -425,7 +453,9 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param <T1>            The type of the parameter
     ///
     /// @return A Result that contains either the function result or failure
-    static <U, T1> Result<U> lift1(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn1<U, T1> function, T1 value1) {
+    static <U, T1> Result<U> lift1(Fn1<? extends Cause, ? super Throwable> exceptionMapper,
+                                   ThrowingFn1<U, T1> function,
+                                   T1 value1) {
         return lift(exceptionMapper, () -> function.apply(value1));
     }
 
@@ -453,18 +483,21 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param <T2>            The type of the second parameter
     ///
     /// @return A Result that contains either the function result or failure
-    static <U, T1, T2> Result<U> lift2(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn2<U, T1, T2> function, T1 value1, T2 value2) {
+    static <U, T1, T2> Result<U> lift2(Fn1<? extends Cause, ? super Throwable> exceptionMapper,
+                                       ThrowingFn2<U, T1, T2> function,
+                                       T1 value1,
+                                       T2 value2) {
         return lift(exceptionMapper, () -> function.apply(value1, value2));
     }
 
     /// Same as [#lift2(Fn1, ThrowingFn2, Object, Object)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
     ///
-    /// @param function     The throwing binary function to invoke
-    /// @param inputValue1  The first parameter value to pass to the function
-    /// @param inputValue2  The second parameter value to pass to the function
-    /// @param <R>          The return type of the function
-    /// @param <T1>         The type of the first parameter
-    /// @param <T2>         The type of the second parameter
+    /// @param function    The throwing binary function to invoke
+    /// @param inputValue1 The first parameter value to pass to the function
+    /// @param inputValue2 The second parameter value to pass to the function
+    /// @param <R>         The return type of the function
+    /// @param <T1>        The type of the first parameter
+    /// @param <T2>        The type of the second parameter
     ///
     /// @return A Result that contains either the function result or failure
     static <R, T1, T2> Result<R> lift2(ThrowingFn2<R, T1, T2> function, T1 inputValue1, T2 inputValue2) {
@@ -485,23 +518,30 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param <T3>            The type of the third parameter
     ///
     /// @return A Result that contains either the function result or failure
-    static <U, T1, T2, T3> Result<U> lift3(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn3<U, T1, T2, T3> function, T1 value1, T2 value2, T3 value3) {
+    static <U, T1, T2, T3> Result<U> lift3(Fn1<? extends Cause, ? super Throwable> exceptionMapper,
+                                           ThrowingFn3<U, T1, T2, T3> function,
+                                           T1 value1,
+                                           T2 value2,
+                                           T3 value3) {
         return lift(exceptionMapper, () -> function.apply(value1, value2, value3));
     }
 
     /// Same as [#lift3(Fn1, ThrowingFn3, Object, Object, Object)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
     ///
-    /// @param function     The throwing ternary function to invoke
-    /// @param inputValue1  The first parameter value to pass to the function
-    /// @param inputValue2  The second parameter value to pass to the function
-    /// @param inputValue3  The third parameter value to pass to the function
-    /// @param <R>          The return type of the function
-    /// @param <T1>         The type of the first parameter
-    /// @param <T2>         The type of the second parameter
-    /// @param <T3>         The type of the third parameter
+    /// @param function    The throwing ternary function to invoke
+    /// @param inputValue1 The first parameter value to pass to the function
+    /// @param inputValue2 The second parameter value to pass to the function
+    /// @param inputValue3 The third parameter value to pass to the function
+    /// @param <R>         The return type of the function
+    /// @param <T1>        The type of the first parameter
+    /// @param <T2>        The type of the second parameter
+    /// @param <T3>        The type of the third parameter
     ///
     /// @return A Result that contains either the function result or failure
-    static <R, T1, T2, T3> Result<R> lift3(ThrowingFn3<R, T1, T2, T3> function, T1 inputValue1, T2 inputValue2, T3 inputValue3) {
+    static <R, T1, T2, T3> Result<R> lift3(ThrowingFn3<R, T1, T2, T3> function,
+                                           T1 inputValue1,
+                                           T2 inputValue2,
+                                           T3 inputValue3) {
         return lift3(Causes::fromThrowable, function, inputValue1, inputValue2, inputValue3);
     }
 
@@ -562,18 +602,12 @@ public sealed interface Result<T> permits Success, Failure {
     ///
     /// @param exceptionMapper the function which will transform exception into instance of [Cause]
     /// @param function        the function to call
-    ///
-    /// @return invocation outcome wrapped into [Result]
-    /// Convenience method for creating a unary function that wraps a throwing function and returns a Result.
-    /// This is a function factory that creates reusable unary functions for result-based operations.
-    ///
-    /// @param exceptionMapper Function to convert exceptions to Cause instances
-    /// @param function        The throwing unary function to wrap
     /// @param <R>             The return type of the function
     /// @param <T1>            The type of the parameter
     ///
     /// @return A unary function that takes one parameter and returns a Result
-    static <R, T1> Fn1<Result<R>, T1> liftFn1(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn1<R, T1> function) {
+    static <R, T1> Fn1<Result<R>, T1> liftFn1(Fn1<? extends Cause, ? super Throwable> exceptionMapper,
+                                              ThrowingFn1<R, T1> function) {
         return input -> lift(exceptionMapper, () -> function.apply(input));
     }
 
@@ -587,7 +621,8 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param <T2>            The type of the second parameter
     ///
     /// @return A binary function that takes two parameters and returns a Result
-    static <R, T1, T2> Fn2<Result<R>, T1, T2> liftFn2(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn2<R, T1, T2> function) {
+    static <R, T1, T2> Fn2<Result<R>, T1, T2> liftFn2(Fn1<? extends Cause, ? super Throwable> exceptionMapper,
+                                                      ThrowingFn2<R, T1, T2> function) {
         return (inputValue1, inputValue2) -> lift(exceptionMapper, () -> function.apply(inputValue1, inputValue2));
     }
 
@@ -602,8 +637,12 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param <T3>            The type of the third parameter
     ///
     /// @return A ternary function that takes three parameters and returns a Result
-    static <R, T1, T2, T3> Fn3<Result<R>, T1, T2, T3> liftFn3(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn3<R, T1, T2, T3> function) {
-        return (inputValue1, inputValue2, inputValue3) -> lift(exceptionMapper, () -> function.apply(inputValue1, inputValue2, inputValue3));
+    static <R, T1, T2, T3> Fn3<Result<R>, T1, T2, T3> liftFn3(Fn1<? extends Cause, ? super Throwable> exceptionMapper,
+                                                              ThrowingFn3<R, T1, T2, T3> function) {
+        return (inputValue1, inputValue2, inputValue3) -> lift(exceptionMapper,
+                                                               () -> function.apply(inputValue1,
+                                                                                    inputValue2,
+                                                                                    inputValue3));
     }
 
     /// Same as [#liftFn2(Fn1, ThrowingFn2)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
@@ -726,10 +765,10 @@ public sealed interface Result<T> permits Success, Failure {
     ///
     /// @return [Mapper1] prepared for further transformation.
     static <T1> Mapper1<T1> all(Result<T1> value) {
-        var causes = Causes.composite();
+        var causes = Causes.composite(value);
 
         return () -> value.flatMap(vv1 -> success(tuple(vv1)))
-                          .mapError(causes::append);
+                          .mapError(causes::replace);
     }
 
     /// Transform provided results into the single result containing a tuple of values. The result is failure if any input result is failure. Otherwise,
@@ -737,13 +776,10 @@ public sealed interface Result<T> permits Success, Failure {
     ///
     /// @return [Mapper2] prepared for further transformation.
     static <T1, T2> Mapper2<T1, T2> all(Result<T1> value1, Result<T2> value2) {
-        var causes = Causes.composite();
+        var causes = Causes.composite(value1, value2);
 
-        return () -> value1.flatMap(
-                               vv1 -> value2.flatMap(
-                                                vv2 -> success(tuple(vv1, vv2)))
-                                            .mapError(causes::append))
-                           .mapError(causes::append);
+        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> success(tuple(vv1, vv2))))
+                           .mapError(causes::replace);
     }
 
     /// Transform provided results into the single result containing a tuple of values. The result is failure if any input result is failure. Otherwise,
@@ -751,15 +787,14 @@ public sealed interface Result<T> permits Success, Failure {
     ///
     /// @return [Mapper3] prepared for further transformation.
     static <T1, T2, T3> Mapper3<T1, T2, T3> all(Result<T1> value1, Result<T2> value2, Result<T3> value3) {
-        var causes = Causes.composite();
+        var causes = Causes.composite(value1, value2, value3);
 
-        return () -> value1.flatMap(
-                               vv1 -> value2.flatMap(
-                                                vv2 -> value3.flatMap(
-                                                                 vv3 -> success(tuple(vv1, vv2, vv3)))
-                                                             .mapError(causes::append))
-                                            .mapError(causes::append))
-                           .mapError(causes::append);
+        return () ->
+                value1.flatMap(
+                              vv1 -> value2.flatMap(
+                                      vv2 -> value3.flatMap(
+                                              vv3 -> success(tuple(vv1, vv2, vv3)))))
+                      .mapError(causes::replace);
     }
 
     /// Transform provided results into the single result containing a tuple of values. The result is failure if any input result is failure. Otherwise,
@@ -767,19 +802,17 @@ public sealed interface Result<T> permits Success, Failure {
     ///
     /// @return [Mapper4] prepared for further transformation.
     static <T1, T2, T3, T4> Mapper4<T1, T2, T3, T4> all(
-        Result<T1> value1, Result<T2> value2, Result<T3> value3, Result<T4> value4
+            Result<T1> value1, Result<T2> value2, Result<T3> value3, Result<T4> value4
     ) {
-        var causes = Causes.composite();
+        var causes = Causes.composite(value1, value2, value3, value4);
 
-        return () -> value1.flatMap(
-                               vv1 -> value2.flatMap(
-                                                vv2 -> value3.flatMap(
-                                                                 vv3 -> value4.flatMap(
-                                                                                  vv4 -> success(tuple(vv1, vv2, vv3, vv4)))
-                                                                              .mapError(causes::append))
-                                                             .mapError(causes::append))
-                                            .mapError(causes::append))
-                           .mapError(causes::append);
+        return () ->
+                value1.flatMap(
+                              vv1 -> value2.flatMap(
+                                      vv2 -> value3.flatMap(
+                                              vv3 -> value4.flatMap(
+                                                      vv4 -> success(tuple(vv1, vv2, vv3, vv4))))))
+                      .mapError(causes::replace);
     }
 
     /// Transform provided results into the single result containing a tuple of values. The result is failure if any input result is failure. Otherwise,
@@ -787,21 +820,17 @@ public sealed interface Result<T> permits Success, Failure {
     ///
     /// @return [Mapper5] prepared for further transformation.
     static <T1, T2, T3, T4, T5> Mapper5<T1, T2, T3, T4, T5> all(
-        Result<T1> value1, Result<T2> value2, Result<T3> value3, Result<T4> value4, Result<T5> value5
+            Result<T1> value1, Result<T2> value2, Result<T3> value3, Result<T4> value4, Result<T5> value5
     ) {
-        var causes = Causes.composite();
+        var causes = Causes.composite(value1, value2, value3, value4, value5);
 
         return () -> value1.flatMap(
-                               vv1 -> value2.flatMap(
-                                                vv2 -> value3.flatMap(
-                                                                 vv3 -> value4.flatMap(
-                                                                                  vv4 -> value5.flatMap(
-                                                                                                   vv5 -> success(tuple(vv1, vv2, vv3, vv4, vv5)))
-                                                                                               .mapError(causes::append))
-                                                                              .mapError(causes::append))
-                                                             .mapError(causes::append))
-                                            .mapError(causes::append))
-                           .mapError(causes::append);
+                                   vv1 -> value2.flatMap(
+                                           vv2 -> value3.flatMap(
+                                                   vv3 -> value4.flatMap(
+                                                           vv4 -> value5.flatMap(
+                                                                   vv5 -> success(tuple(vv1, vv2, vv3, vv4, vv5)))))))
+                           .mapError(causes::replace);
     }
 
     /// Transform provided results into the single result containing a tuple of values. The result is failure if any input result is failure. Otherwise,
@@ -809,24 +838,19 @@ public sealed interface Result<T> permits Success, Failure {
     ///
     /// @return [Mapper6] prepared for further transformation.
     static <T1, T2, T3, T4, T5, T6> Mapper6<T1, T2, T3, T4, T5, T6> all(
-        Result<T1> value1, Result<T2> value2, Result<T3> value3,
-        Result<T4> value4, Result<T5> value5, Result<T6> value6
+            Result<T1> value1, Result<T2> value2, Result<T3> value3,
+            Result<T4> value4, Result<T5> value5, Result<T6> value6
     ) {
-        var causes = Causes.composite();
+        var causes = Causes.composite(value1, value2, value3, value4, value5, value6);
 
         return () -> value1.flatMap(
-                               vv1 -> value2.flatMap(
-                                                vv2 -> value3.flatMap(
-                                                                 vv3 -> value4.flatMap(
-                                                                                  vv4 -> value5.flatMap(
-                                                                                                   vv5 -> value6.flatMap(
-                                                                                                                    vv6 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6)))
-                                                                                                                .mapError(causes::append))
-                                                                                               .mapError(causes::append))
-                                                                              .mapError(causes::append))
-                                                             .mapError(causes::append))
-                                            .mapError(causes::append))
-                           .mapError(causes::append);
+                                   vv1 -> value2.flatMap(
+                                           vv2 -> value3.flatMap(
+                                                   vv3 -> value4.flatMap(
+                                                           vv4 -> value5.flatMap(
+                                                                   vv5 -> value6.flatMap(
+                                                                           vv6 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6))))))))
+                           .mapError(causes::replace);
     }
 
     /// Transform provided results into the single result containing a tuple of values. The result is failure if any input result is failure. Otherwise,
@@ -834,27 +858,27 @@ public sealed interface Result<T> permits Success, Failure {
     ///
     /// @return [Mapper7] prepared for further transformation.
     static <T1, T2, T3, T4, T5, T6, T7> Mapper7<T1, T2, T3, T4, T5, T6, T7> all(
-        Result<T1> value1, Result<T2> value2, Result<T3> value3,
-        Result<T4> value4, Result<T5> value5, Result<T6> value6,
-        Result<T7> value7
+            Result<T1> value1, Result<T2> value2, Result<T3> value3,
+            Result<T4> value4, Result<T5> value5, Result<T6> value6,
+            Result<T7> value7
     ) {
-        var causes = Causes.composite();
+        var causes = Causes.composite(value1, value2, value3, value4, value5, value6, value7);
 
         return () -> value1.flatMap(
-                               vv1 -> value2.flatMap(
-                                                vv2 -> value3.flatMap(
-                                                                 vv3 -> value4.flatMap(
-                                                                                  vv4 -> value5.flatMap(
-                                                                                                   vv5 -> value6.flatMap(
-                                                                                                                    vv6 -> value7.flatMap(
-                                                                                                                                     vv7 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6, vv7)))
-                                                                                                                                 .mapError(causes::append))
-                                                                                                                .mapError(causes::append))
-                                                                                               .mapError(causes::append))
-                                                                              .mapError(causes::append))
-                                                             .mapError(causes::append))
-                                            .mapError(causes::append))
-                           .mapError(causes::append);
+                                   vv1 -> value2.flatMap(
+                                           vv2 -> value3.flatMap(
+                                                   vv3 -> value4.flatMap(
+                                                           vv4 -> value5.flatMap(
+                                                                   vv5 -> value6.flatMap(
+                                                                           vv6 -> value7.flatMap(
+                                                                                   vv7 -> success(tuple(vv1,
+                                                                                                        vv2,
+                                                                                                        vv3,
+                                                                                                        vv4,
+                                                                                                        vv5,
+                                                                                                        vv6,
+                                                                                                        vv7)))))))))
+                           .mapError(causes::replace);
     }
 
     /// Transform provided results into the single result containing a tuple of values. The result is failure if any input result is failure. Otherwise,
@@ -862,29 +886,29 @@ public sealed interface Result<T> permits Success, Failure {
     ///
     /// @return [Mapper8] prepared for further transformation.
     static <T1, T2, T3, T4, T5, T6, T7, T8> Mapper8<T1, T2, T3, T4, T5, T6, T7, T8> all(
-        Result<T1> value1, Result<T2> value2, Result<T3> value3,
-        Result<T4> value4, Result<T5> value5, Result<T6> value6,
-        Result<T7> value7, Result<T8> value8
+            Result<T1> value1, Result<T2> value2, Result<T3> value3,
+            Result<T4> value4, Result<T5> value5, Result<T6> value6,
+            Result<T7> value7, Result<T8> value8
     ) {
-        var causes = Causes.composite();
+        var causes = Causes.composite(value1, value2, value3, value4, value5, value6, value7, value8);
 
         return () -> value1.flatMap(
-                               vv1 -> value2.flatMap(
-                                                vv2 -> value3.flatMap(
-                                                                 vv3 -> value4.flatMap(
-                                                                                  vv4 -> value5.flatMap(
-                                                                                                   vv5 -> value6.flatMap(
-                                                                                                                    vv6 -> value7.flatMap(
-                                                                                                                                     vv7 -> value8.flatMap(
-                                                                                                                                                      vv8 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6, vv7, vv8)))
-                                                                                                                                                  .mapError(causes::append))
-                                                                                                                                 .mapError(causes::append))
-                                                                                                                .mapError(causes::append))
-                                                                                               .mapError(causes::append))
-                                                                              .mapError(causes::append))
-                                                             .mapError(causes::append))
-                                            .mapError(causes::append))
-                           .mapError(causes::append);
+                                   vv1 -> value2.flatMap(
+                                           vv2 -> value3.flatMap(
+                                                   vv3 -> value4.flatMap(
+                                                           vv4 -> value5.flatMap(
+                                                                   vv5 -> value6.flatMap(
+                                                                           vv6 -> value7.flatMap(
+                                                                                   vv7 -> value8.flatMap(
+                                                                                           vv8 -> success(tuple(vv1,
+                                                                                                                vv2,
+                                                                                                                vv3,
+                                                                                                                vv4,
+                                                                                                                vv5,
+                                                                                                                vv6,
+                                                                                                                vv7,
+                                                                                                                vv8))))))))))
+                           .mapError(causes::replace);
     }
 
     /// Transform provided results into the single result containing a tuple of values. The result is failure if any input result is failure. Otherwise,
@@ -892,31 +916,31 @@ public sealed interface Result<T> permits Success, Failure {
     ///
     /// @return [Mapper9] prepared for further transformation.
     static <T1, T2, T3, T4, T5, T6, T7, T8, T9> Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> all(
-        Result<T1> value1, Result<T2> value2, Result<T3> value3,
-        Result<T4> value4, Result<T5> value5, Result<T6> value6,
-        Result<T7> value7, Result<T8> value8, Result<T9> value9
+            Result<T1> value1, Result<T2> value2, Result<T3> value3,
+            Result<T4> value4, Result<T5> value5, Result<T6> value6,
+            Result<T7> value7, Result<T8> value8, Result<T9> value9
     ) {
-        var causes = Causes.composite();
+        var causes = Causes.composite(value1, value2, value3, value4, value5, value6, value7, value8, value9);
 
         return () -> value1.flatMap(
-                               vv1 -> value2.flatMap(
-                                                vv2 -> value3.flatMap(
-                                                                 vv3 -> value4.flatMap(
-                                                                                  vv4 -> value5.flatMap(
-                                                                                                   vv5 -> value6.flatMap(
-                                                                                                                    vv6 -> value7.flatMap(
-                                                                                                                                     vv7 -> value8.flatMap(
-                                                                                                                                                      vv8 -> value9.flatMap(
-                                                                                                                                                                       vv9 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6, vv7, vv8, vv9)))
-                                                                                                                                                                   .mapError(causes::append))
-                                                                                                                                                  .mapError(causes::append))
-                                                                                                                                 .mapError(causes::append))
-                                                                                                                .mapError(causes::append))
-                                                                                               .mapError(causes::append))
-                                                                              .mapError(causes::append))
-                                                             .mapError(causes::append))
-                                            .mapError(causes::append))
-                           .mapError(causes::append);
+                                   vv1 -> value2.flatMap(
+                                           vv2 -> value3.flatMap(
+                                                   vv3 -> value4.flatMap(
+                                                           vv4 -> value5.flatMap(
+                                                                   vv5 -> value6.flatMap(
+                                                                           vv6 -> value7.flatMap(
+                                                                                   vv7 -> value8.flatMap(
+                                                                                           vv8 -> value9.flatMap(
+                                                                                                   vv9 -> success(tuple(vv1,
+                                                                                                                        vv2,
+                                                                                                                        vv3,
+                                                                                                                        vv4,
+                                                                                                                        vv5,
+                                                                                                                        vv6,
+                                                                                                                        vv7,
+                                                                                                                        vv8,
+                                                                                                                        vv9)))))))))))
+                           .mapError(causes::replace);
     }
 
     /// Helper interface for convenient [Tuple1] transformation. In case if you need to return a tuple, it might be more convenient to return

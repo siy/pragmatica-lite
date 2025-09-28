@@ -30,14 +30,27 @@ public interface Functions {
     interface Fn1<R, T1> {
         R apply(T1 param1);
 
+        /// Compose this function with another function. The result function applies this function first, then the provided function.
+        ///
+        /// @param function Function to apply after this function
+        ///
+        /// @return composed function
         default <N> Fn1<N, T1> then(Fn1<N, R> function) {
             return v1 -> function.apply(apply(v1));
         }
 
+        /// Compose this function with another function. The result function applies the provided function first, then this function.
+        ///
+        /// @param function Function to apply before this function
+        ///
+        /// @return composed function
         default <N> Fn1<R, N> before(Fn1<T1, N> function) {
             return v1 -> apply(function.apply(v1));
         }
 
+        /// Create an identity function that returns its input unchanged.
+        ///
+        /// @return identity function
         static <T> Fn1<T, T> id() {
             return Functions::id;
         }
@@ -163,6 +176,9 @@ public interface Functions {
     static <T1> void unitFn() {
     }
 
+    /// No-operation function that accepts one parameter and returns nothing. Used when API requires a function, but there is no need to do anything with the received value.
+    ///
+    /// @param value Input value (ignored)
     static <T1> void unitFn(T1 value) {
     }
 
@@ -198,16 +214,31 @@ public interface Functions {
                                                             T9 param9) {
     }
 
+    /// Utility function that ignores input and always returns null. Used in functional contexts where a null value is needed.
+    ///
+    /// @param value Input value (ignored)
+    ///
+    /// @return null
     @SuppressWarnings("SameReturnValue")
     static <R, T1> R toNull(T1 value) {
         return null;
     }
 
+    /// Utility function that ignores input and always returns true. Used in functional contexts where a true value is needed.
+    ///
+    /// @param value Input value (ignored)
+    ///
+    /// @return true
     @SuppressWarnings("SameReturnValue")
     static <T1> boolean toTrue(T1 value) {
         return true;
     }
 
+    /// Utility function that ignores input and always returns false. Used in functional contexts where a false value is needed.
+    ///
+    /// @param value Input value (ignored)
+    ///
+    /// @return false
     @SuppressWarnings("SameReturnValue")
     static <T1> boolean toFalse(T1 value) {
         return false;
