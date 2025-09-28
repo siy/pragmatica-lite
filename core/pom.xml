@@ -12,6 +12,9 @@
     <artifactId>core</artifactId>
     <packaging>jar</packaging>
 
+    <name>Pragmatica Lite Core</name>
+    <description>Modern functional programming library for Java 25 featuring Result, Option, and Promise monads with zero dependencies</description>
+
     <dependencies>
         <dependency>
             <groupId>org.slf4j</groupId>

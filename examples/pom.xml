@@ -11,6 +11,9 @@
 
     <artifactId>examples</artifactId>
 
+    <name>Pragmatica Lite Examples</name>
+    <description>Examples for Pragmatica Lite</description>
+
     <dependencies>
         <!-- Internal -->
         <dependency>
@@ -34,4 +37,16 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <configuration>
+                    <publish>false</publish>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
