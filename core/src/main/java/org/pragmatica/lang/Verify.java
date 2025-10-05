@@ -214,10 +214,8 @@ public sealed interface Verify {
     /// A collection of predicate functions that can be used with the `ensure` methods.
     ///
     /// This interface provides a comprehensive set of predicate functions for common validation
-    /// scenarios, including:
-    /// - Option validation (some/none)
-    /// - Numeric comparisons (greater than, less than, etc.)
-    /// - String validation (empty, blank, contains, matches, etc.)
+    /// scenarios, including Option validation (some/none), numeric comparisons (greater than, less than, etc.),
+    /// and string validation (empty, blank, contains, matches, etc.).
     ///
     /// These predicates are designed to be used with the `ensure` methods of the `Verify` interface,
     /// but they can also be used independently as standard predicate functions.
