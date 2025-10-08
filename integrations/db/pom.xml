@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>integrations</artifactId>
+        <groupId>org.pragmatica-lite</groupId>
+        <version>0.8.2</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>db</artifactId>
+    <packaging>pom</packaging>
+
+    <name>Pragmatica Lite Database Integrations</name>
+    <description>Database access integrations</description>
+
+    <modules>
+        <module>jpa</module>
+        <module>jooq</module>
+    </modules>
+
+    <properties>
+        <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
+        <jooq.version>3.19.15</jooq.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>jakarta.persistence</groupId>
+                <artifactId>jakarta.persistence-api</artifactId>
+                <version>${jakarta.persistence.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jooq</groupId>
+                <artifactId>jooq</artifactId>
+                <version>${jooq.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>
