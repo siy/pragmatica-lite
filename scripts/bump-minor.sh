@@ -59,7 +59,7 @@ fi
 
 # Update version using Maven versions plugin
 echo -e "${BLUE}📦 Updating Maven version...${NC}"
-./mvnw versions:set -DnewVersion=$NEW_VERSION -DgenerateBackupPoms=false
+mvn versions:set -DnewVersion=$NEW_VERSION -DgenerateBackupPoms=false
 
 # Verify the change
 echo -e "${BLUE}🔍 Verifying version update...${NC}"
