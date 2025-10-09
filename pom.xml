@@ -58,7 +58,7 @@
         <fury-core.version>0.10.3</fury-core.version>
 
         <!-- Integration Dependencies -->
-        <jackson.version>2.18.2</jackson.version>
+        <jackson.version>3.0.0-rc9</jackson.version>
         <micrometer.version>1.14.2</micrometer.version>
         <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
         <jooq.version>3.19.15</jooq.version>
@@ -197,9 +197,14 @@
 
             <!-- Integration External Dependencies -->
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
+                <groupId>tools.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>3.0-rc5</version>
             </dependency>
             <dependency>
                 <groupId>io.micrometer</groupId>
