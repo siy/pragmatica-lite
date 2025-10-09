@@ -22,7 +22,7 @@ import org.pragmatica.lang.Cause;
 /// Cause implementation for errors deserialized from JSON.
 /// Used when deserializing Result<T> failures where the original Cause type is not available.
 public record DeserializedCause(String message) implements Cause {
-    public static DeserializedCause of(String message) {
+    public static DeserializedCause deserializedCause(String message) {
         return new DeserializedCause(message);
     }
 }

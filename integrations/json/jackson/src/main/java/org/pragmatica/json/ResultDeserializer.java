@@ -27,7 +27,6 @@ import tools.jackson.databind.ValueDeserializer;
 
 import java.util.Map;
 
-import static org.pragmatica.lang.Result.failure;
 import static org.pragmatica.lang.Result.success;
 
 /// Jackson deserializer for Result<T> types.
@@ -68,7 +67,7 @@ public class ResultDeserializer extends ValueDeserializer<Result<?>> {
                 throw new JacksonException("Missing 'error' field in failed Result JSON") {};
             }
             String message = error.get("message");
-            return failure(DeserializedCause.of(message != null ? message : "Unknown error"));
+            return DeserializedCause.deserializedCause(message != null ? message : "Unknown error").result();
         }
     }
 
