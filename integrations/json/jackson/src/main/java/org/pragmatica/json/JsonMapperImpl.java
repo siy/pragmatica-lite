@@ -18,10 +18,12 @@
 package org.pragmatica.json;
 
 import org.pragmatica.lang.Result;
+import org.pragmatica.lang.type.TypeToken;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JacksonModule;
 import tools.jackson.databind.json.JsonMapper.Builder;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -58,6 +60,26 @@ record JsonMapperImpl(tools.jackson.databind.json.JsonMapper mapper) implements 
     @Override
     public <T> Result<T> readBytes(byte[] json, TypeReference<T> typeRef) {
         return lift(JsonError::fromException, () -> mapper.readValue(json, typeRef));
+    }
+
+    @Override
+    public <T> Result<T> readString(String json, TypeToken<T> typeToken) {
+        return readString(json, toTypeReference(typeToken));
+    }
+
+    @Override
+    public <T> Result<T> readBytes(byte[] json, TypeToken<T> typeToken) {
+        return readBytes(json, toTypeReference(typeToken));
+    }
+
+    /// Converts TypeToken to Jackson TypeReference.
+    private static <T> TypeReference<T> toTypeReference(TypeToken<T> typeToken) {
+        return new TypeReference<>() {
+            @Override
+            public Type getType() {
+                return typeToken.token();
+            }
+        };
     }
 
     static final class BuilderImpl implements JsonMapperBuilder {

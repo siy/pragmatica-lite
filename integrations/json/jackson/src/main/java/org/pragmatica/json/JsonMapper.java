@@ -18,10 +18,12 @@
 package org.pragmatica.json;
 
 import org.pragmatica.lang.Result;
+import org.pragmatica.lang.type.TypeToken;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JacksonModule;
 import tools.jackson.databind.json.JsonMapper.Builder;
 
+import java.lang.reflect.Type;
 import java.util.function.Consumer;
 
 /// Functional wrapper around Jackson's JsonMapper providing Result-based API.
@@ -92,6 +94,24 @@ public interface JsonMapper {
     ///
     /// @return Result containing deserialized value or error
     <T> Result<T> readBytes(byte[] json, TypeReference<T> typeRef);
+
+    /// Deserialize from JSON string using TypeToken.
+    ///
+    /// @param json      JSON string
+    /// @param typeToken Type token for generic types
+    /// @param <T>       Target type
+    ///
+    /// @return Result containing deserialized value or error
+    <T> Result<T> readString(String json, TypeToken<T> typeToken);
+
+    /// Deserialize from JSON bytes using TypeToken.
+    ///
+    /// @param json      JSON bytes
+    /// @param typeToken Type token for generic types
+    /// @param <T>       Target type
+    ///
+    /// @return Result containing deserialized value or error
+    <T> Result<T> readBytes(byte[] json, TypeToken<T> typeToken);
 
     /// Creates a new JsonMapper builder.
     ///

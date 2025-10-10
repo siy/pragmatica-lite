@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
+import org.pragmatica.lang.type.TypeToken;
 import tools.jackson.core.type.TypeReference;
 
 import java.util.List;
@@ -284,6 +285,74 @@ class JsonMapperTest {
                     deserialized.onFailure(cause -> fail("Should be success"))
                                 .onSuccess(value -> assertEquals("test-value", value))
                 );
+        }
+    }
+
+    @Nested
+    class TypeTokenSupport {
+        record User(String name, int age) {}
+
+        @Test
+        void readString_succeeds_withTypeToken() {
+            var json = "[{\"name\":\"Alice\",\"age\":30},{\"name\":\"Bob\",\"age\":25}]";
+
+            mapper.readString(json, new TypeToken<List<User>>() {})
+                .onFailure(cause -> fail("Should not fail: " + cause))
+                .onSuccess(users -> {
+                    assertEquals(2, users.size());
+                    assertEquals("Alice", users.get(0).name());
+                    assertEquals("Bob", users.get(1).name());
+                });
+        }
+
+        @Test
+        void readBytes_succeeds_withTypeToken() {
+            var json = "[{\"name\":\"Charlie\",\"age\":35}]".getBytes();
+
+            mapper.readBytes(json, new TypeToken<List<User>>() {})
+                .onFailure(cause -> fail("Should not fail: " + cause))
+                .onSuccess(users -> {
+                    assertEquals(1, users.size());
+                    assertEquals("Charlie", users.get(0).name());
+                });
+        }
+
+        @Test
+        void readString_succeeds_forResultWithTypeToken() {
+            var json = "{\"success\":true,\"value\":\"test-value\"}";
+
+            mapper.readString(json, new TypeToken<Result<String>>() {})
+                .onFailure(cause -> fail("Should not fail: " + cause))
+                .onSuccess(result ->
+                    result.onFailure(cause -> fail("Result should be success"))
+                          .onSuccess(value -> assertEquals("test-value", value))
+                );
+        }
+
+        @Test
+        void readString_succeeds_forUserWithTypeToken() {
+            var json = "{\"name\":\"Dave\",\"age\":35}";
+
+            mapper.readString(json, new TypeToken<User>() {})
+                .onFailure(cause -> fail("Should not fail: " + cause))
+                .onSuccess(user -> {
+                    assertEquals("Dave", user.name());
+                    assertEquals(35, user.age());
+                });
+        }
+
+        @Test
+        void roundTrip_succeeds_withTypeToken() {
+            var original = List.of(new User("Alice", 30), new User("Bob", 25));
+
+            mapper.writeAsString(original)
+                .flatMap(json -> mapper.readString(json, new TypeToken<List<User>>() {}))
+                .onFailure(cause -> fail("Should not fail: " + cause))
+                .onSuccess(deserialized -> {
+                    assertEquals(2, deserialized.size());
+                    assertEquals("Alice", deserialized.get(0).name());
+                    assertEquals("Bob", deserialized.get(1).name());
+                });
         }
     }
 }
