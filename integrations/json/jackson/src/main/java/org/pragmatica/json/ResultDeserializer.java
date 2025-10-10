@@ -46,28 +46,50 @@ public class ResultDeserializer extends ValueDeserializer<Result<?>> {
 
     @Override
     public Result<?> deserialize(JsonParser p, DeserializationContext ctxt) {
-        Map<String, Object> map = p.readValueAs(Map.class);
+        if (p.currentToken() != tools.jackson.core.JsonToken.START_OBJECT) {
+            throw new JacksonException("Expected START_OBJECT token") {};
+        }
 
-        Boolean isSuccess = (Boolean) map.get("success");
+        Boolean isSuccess = null;
+        Object value = null;
+        String errorMessage = null;
+
+        while (p.nextToken() != tools.jackson.core.JsonToken.END_OBJECT) {
+            String fieldName = p.currentName();
+            p.nextToken();
+
+            switch (fieldName) {
+                case "success" -> isSuccess = p.getBooleanValue();
+                case "value" -> {
+                    if (valueDeserializer != null) {
+                        value = valueDeserializer.deserialize(p, ctxt);
+                    } else if (valueType != null) {
+                        value = ctxt.readValue(p, valueType);
+                    } else {
+                        value = p.readValueAs(Object.class);
+                    }
+                }
+                case "error" -> {
+                    p.nextToken(); // Skip to message field
+                    if ("message".equals(p.currentName())) {
+                        p.nextToken();
+                        errorMessage = p.getText();
+                    }
+                    while (p.nextToken() != tools.jackson.core.JsonToken.END_OBJECT) {
+                        // Skip remaining error fields
+                    }
+                }
+            }
+        }
+
         if (isSuccess == null) {
             throw new JacksonException("Missing 'success' field in Result JSON") {};
         }
 
         if (isSuccess) {
-            Object value = map.get("value");
-            if (valueType != null && valueDeserializer != null) {
-                // Convert value to proper type
-                value = ctxt.readTreeAsValue(ctxt.getNodeFactory().pojoNode(value), valueType);
-            }
             return success(value);
         } else {
-            @SuppressWarnings("unchecked")
-            Map<String, String> error = (Map<String, String>) map.get("error");
-            if (error == null) {
-                throw new JacksonException("Missing 'error' field in failed Result JSON") {};
-            }
-            String message = error.get("message");
-            return DeserializedCause.deserializedCause(message != null ? message : "Unknown error").result();
+            return DeserializedCause.deserializedCause(errorMessage != null ? errorMessage : "Unknown error").result();
         }
     }
 
