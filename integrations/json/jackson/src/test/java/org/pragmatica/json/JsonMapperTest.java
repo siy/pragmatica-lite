@@ -92,6 +92,7 @@ class JsonMapperTest {
         record User(String name, int age) {}
 
         @Test
+        @SuppressWarnings("deprecation")
         void readString_succeeds_forGenericList() {
             var json = "[{\"name\":\"Alice\",\"age\":30},{\"name\":\"Bob\",\"age\":25}]";
 
@@ -105,6 +106,7 @@ class JsonMapperTest {
         }
 
         @Test
+        @SuppressWarnings("deprecation")
         void readBytes_succeeds_forGenericList() {
             var json = "[{\"name\":\"Charlie\",\"age\":35}]".getBytes();
 
@@ -146,6 +148,7 @@ class JsonMapperTest {
         }
 
         @Test
+        @SuppressWarnings("deprecation")
         void readString_succeeds_forResultSuccessWithString() {
             var json = "{\"success\":true,\"value\":\"Bob\"}";
 
@@ -158,6 +161,7 @@ class JsonMapperTest {
         }
 
         @Test
+        @SuppressWarnings("deprecation")
         void readString_succeeds_forResultFailure() {
             var json = "{\"success\":false,\"error\":{\"message\":\"Something failed\",\"type\":\"TestError\"}}";
 
@@ -275,6 +279,7 @@ class JsonMapperTest {
         }
 
         @Test
+        @SuppressWarnings("deprecation")
         void roundTrip_succeeds_forResultWithString() {
             var original = Result.success("test-value");
 

@@ -63,11 +63,13 @@ record JsonMapperImpl(tools.jackson.databind.json.JsonMapper mapper) implements 
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public <T> Result<T> readString(String json, TypeToken<T> typeToken) {
         return readString(json, toTypeReference(typeToken));
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public <T> Result<T> readBytes(byte[] json, TypeToken<T> typeToken) {
         return readBytes(json, toTypeReference(typeToken));
     }

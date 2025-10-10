@@ -84,6 +84,9 @@ public interface JsonMapper {
     /// @param <T>     Target type
     ///
     /// @return Result containing deserialized value or error
+    ///
+    /// @deprecated Use {@link #readString(String, TypeToken)} instead for better Pragmatica integration
+    @Deprecated(since = "0.8.2", forRemoval = true)
     <T> Result<T> readString(String json, TypeReference<T> typeRef);
 
     /// Deserialize from JSON bytes with generic type.
@@ -93,6 +96,9 @@ public interface JsonMapper {
     /// @param <T>     Target type
     ///
     /// @return Result containing deserialized value or error
+    ///
+    /// @deprecated Use {@link #readBytes(byte[], TypeToken)} instead for better Pragmatica integration
+    @Deprecated(since = "0.8.2", forRemoval = true)
     <T> Result<T> readBytes(byte[] json, TypeReference<T> typeRef);
 
     /// Deserialize from JSON string using TypeToken.
