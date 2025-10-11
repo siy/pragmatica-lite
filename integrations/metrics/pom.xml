@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>integrations</artifactId>
+        <groupId>org.pragmatica-lite</groupId>
+        <version>0.8.2</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>metrics</artifactId>
+    <packaging>pom</packaging>
+
+    <name>Pragmatica Lite Metrics Integrations</name>
+    <description>Metrics and observability integrations</description>
+
+    <modules>
+        <module>micrometer</module>
+    </modules>
+
+    <properties>
+        <micrometer.version>1.14.2</micrometer.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

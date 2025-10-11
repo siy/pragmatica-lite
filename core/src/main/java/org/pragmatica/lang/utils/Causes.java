@@ -19,6 +19,8 @@ package org.pragmatica.lang.utils;
 
 import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Functions.Fn1;
+import org.pragmatica.lang.Functions.Fn2;
+import org.pragmatica.lang.Functions.Fn3;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
 
@@ -82,13 +84,43 @@ public sealed interface Causes {
     /// Create a mapper which will map a value into a formatted message. Main use case for this function - creation of mappers for
     /// [#filter(Fn1,Predicate)]:
     /// <blockquote><pre>
-    /// filter(Causes.forValue("Value {0} is below threshold"), value -> value > 321)
+    /// filter(Causes.forValue("Value %s is below threshold"), value -> value > 321)
     /// </pre></blockquote>
     ///
-    /// @param template the message template prepared for [MessageFormat]
+    /// @param template the message template prepared for [String.format]
     /// @return created mapping function
+    /// @deprecated Use [#forOneValue(String)] instead for consistent naming with forTwoValues and forThreeValues
+    @Deprecated(since = "0.8.2", forRemoval = true)
     static <T> Fn1<Cause, T> forValue(String template) {
+        return forOneValue(template);
+    }
+
+
+    /// Create a mapper which will map a single value into a formatted message.
+    ///
+    /// @param template the message template prepared for [String.format]
+    ///
+    /// @return created mapping function
+    static <T> Fn1<Cause, T> forOneValue(String template) {
         return (T input) -> cause(String.format(template, input));
+    }
+
+    /// Create a mapper which will map two values into a formatted message.
+    ///
+    /// @param template the message template prepared for [String.format]
+    ///
+    /// @return created mapping function
+    static <T1, T2> Fn2<Cause, T1, T2> forTwoValues(String template) {
+        return (T1 input1, T2 input2) -> cause(String.format(template, input1, input2));
+    }
+
+    /// Create a mapper which will map three values into a formatted message.
+    ///
+    /// @param template the message template prepared for [String.format]
+    ///
+    /// @return created mapping function
+    static <T1, T2, T3> Fn3<Cause, T1, T2, T3> forThreeValues(String template) {
+        return (T1 input1, T2 input2, T3 input3) -> cause(String.format(template, input1, input2, input3));
     }
 
     interface CompositeCause extends Cause {

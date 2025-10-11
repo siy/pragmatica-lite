@@ -4,10 +4,11 @@
 
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>pragmatica-lite</artifactId>
-    <version>0.8.1</version>
+    <version>0.8.2</version>
     <modules>
         <module>core</module>
         <module>examples</module>
+        <module>integrations</module>
     </modules>
 
     <packaging>pom</packaging>
@@ -50,11 +51,17 @@
         <slf4j.version>2.0.17</slf4j.version>
         <junit.version>5.13.4</junit.version>
         <assertj-core.version>3.27.3</assertj-core.version>
-        <mockito.version>5.18.0</mockito.version>
+        <mockito.version>5.20.0</mockito.version>
         <awaitility.version>4.3.0</awaitility.version>
         <tinylog.version>2.7.0</tinylog.version>
         <kryo.version>5.6.2</kryo.version>
         <fury-core.version>0.10.3</fury-core.version>
+
+        <!-- Integration Dependencies -->
+        <jackson.version>3.0.0-rc9</jackson.version>
+        <micrometer.version>1.14.2</micrometer.version>
+        <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
+        <jooq.version>3.19.15</jooq.version>
     </properties>
 
     <distributionManagement>
@@ -88,6 +95,28 @@
             <dependency>
                 <groupId>org.pragmatica-lite</groupId>
                 <artifactId>common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- Integration Modules -->
+            <dependency>
+                <groupId>org.pragmatica-lite</groupId>
+                <artifactId>jackson</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.pragmatica-lite</groupId>
+                <artifactId>micrometer</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.pragmatica-lite</groupId>
+                <artifactId>jpa</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.pragmatica-lite</groupId>
+                <artifactId>jooq</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -164,6 +193,33 @@
                 <groupId>org.apache.fury</groupId>
                 <artifactId>fury-core</artifactId>
                 <version>${fury-core.version}</version>
+            </dependency>
+
+            <!-- Integration External Dependencies -->
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>3.0-rc5</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.persistence</groupId>
+                <artifactId>jakarta.persistence-api</artifactId>
+                <version>${jakarta.persistence.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jooq</groupId>
+                <artifactId>jooq</artifactId>
+                <version>${jooq.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
