@@ -18,6 +18,7 @@
 package org.pragmatica.json;
 
 import org.pragmatica.lang.Cause;
+import org.pragmatica.lang.utils.Causes;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.exc.StreamReadException;
 import tools.jackson.databind.DatabindException;
@@ -42,13 +43,13 @@ public enum JsonError implements Cause {
         return message;
     }
 
-    /// Maps Jackson exceptions to JsonError causes using exception types for robustness.
+    /// Maps Jackson exceptions to typed JsonError causes, using generic Cause for unknown exceptions.
     /// Avoids brittle message parsing that can NPE.
     ///
     /// @param throwable Exception to map
     ///
-    /// @return Corresponding JsonError
-    public static JsonError fromException(Throwable throwable) {
+    /// @return Corresponding Cause (JsonError for known types, generic Cause otherwise)
+    public static Cause fromException(Throwable throwable) {
         return switch (throwable) {
             // Type mismatches during deserialization
             case MismatchedInputException _ -> TYPE_MISMATCH;
@@ -59,8 +60,8 @@ public enum JsonError implements Cause {
             case DatabindException _ -> DESERIALIZATION_FAILED;
             // Other Jackson exceptions
             case JacksonException _ -> DESERIALIZATION_FAILED;
-            // Non-Jackson exceptions (serialization context)
-            default -> SERIALIZATION_FAILED;
+            // Non-Jackson exceptions - use generic wrapper
+            default -> Causes.fromThrowable(throwable);
         };
     }
 }

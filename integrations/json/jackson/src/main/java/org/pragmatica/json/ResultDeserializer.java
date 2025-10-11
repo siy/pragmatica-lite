@@ -45,7 +45,7 @@ public class ResultDeserializer extends ValueDeserializer<Result<?>> {
     }
 
     @Override
-    public Result<?> deserialize(JsonParser p, DeserializationContext ctxt) {
+    public Result<?> deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
         if (p.currentToken() != tools.jackson.core.JsonToken.START_OBJECT) {
             throw new JacksonException("Expected START_OBJECT token") {};
         }

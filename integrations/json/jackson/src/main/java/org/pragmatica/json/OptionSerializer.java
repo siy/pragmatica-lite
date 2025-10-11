@@ -42,7 +42,7 @@ public class OptionSerializer extends ValueSerializer<Option<?>> {
     }
 
     @Override
-    public void serialize(Option<?> value, JsonGenerator gen, SerializationContext provider) {
+    public void serialize(Option<?> value, JsonGenerator gen, SerializationContext provider) throws JacksonException {
         switch (value) {
             case Option.Some<?> some -> {
                 if (valueSerializer != null) {
@@ -72,7 +72,7 @@ public class OptionSerializer extends ValueSerializer<Option<?>> {
     }
 
     @Override
-    public void serializeWithType(Option<?> value, JsonGenerator gen, SerializationContext provider, TypeSerializer typeSer) {
+    public void serializeWithType(Option<?> value, JsonGenerator gen, SerializationContext provider, TypeSerializer typeSer) throws JacksonException {
         serialize(value, gen, provider);
     }
 

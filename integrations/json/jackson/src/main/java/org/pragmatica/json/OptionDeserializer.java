@@ -45,7 +45,7 @@ public class OptionDeserializer extends ValueDeserializer<Option<?>> {
     }
 
     @Override
-    public Option<?> deserialize(JsonParser p, DeserializationContext ctxt) {
+    public Option<?> deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
         if (p.currentToken() == JsonToken.VALUE_NULL) {
             return none();
         }

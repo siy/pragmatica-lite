@@ -42,7 +42,7 @@ public class ResultSerializer extends ValueSerializer<Result<?>> {
     }
 
     @Override
-    public void serialize(Result<?> value, JsonGenerator gen, SerializationContext provider) {
+    public void serialize(Result<?> value, JsonGenerator gen, SerializationContext provider) throws JacksonException {
         gen.writeStartObject();
 
         switch (value) {
@@ -85,7 +85,7 @@ public class ResultSerializer extends ValueSerializer<Result<?>> {
     }
 
     @Override
-    public void serializeWithType(Result<?> value, JsonGenerator gen, SerializationContext provider, TypeSerializer typeSer) {
+    public void serializeWithType(Result<?> value, JsonGenerator gen, SerializationContext provider, TypeSerializer typeSer) throws JacksonException {
         serialize(value, gen, provider);
     }
 }
