@@ -69,10 +69,10 @@ public sealed interface JpaError extends Cause {
     }
 
     /// Entity already exists (duplicate insert).
-    record EntityExists(String entityType, Object id) implements JpaError {
+    record EntityExists(String details) implements JpaError {
         @Override
         public String message() {
-            return "Entity already exists: " + entityType + " with id=" + id;
+            return "Entity already exists: " + details;
         }
     }
 
@@ -96,22 +96,6 @@ public sealed interface JpaError extends Cause {
         }
     }
 
-    /// Extracts entity ID using reflection, handling common JPA ID patterns.
-    private static Object extractEntityId(Object entity) {
-        try {
-            // Try getId() method first (most common)
-            var method = entity.getClass().getMethod("getId");
-            return method.invoke(entity);
-        } catch (Exception _) {
-            // Try id() method (for records)
-            try {
-                var method = entity.getClass().getMethod("id");
-                return method.invoke(entity);
-            } catch (Exception __) {
-                return "Unknown";
-            }
-        }
-    }
 
     /// Maps JPA exceptions to typed JpaError causes.
     ///
@@ -127,19 +111,15 @@ public sealed interface JpaError extends Cause {
         return switch (throwable) {
             case EntityNotFoundException _ -> EntityNotFound.INSTANCE;
             case NoResultException _ -> EntityNotFound.INSTANCE;
-            case OptimisticLockException e -> {
-                var entity = e.getEntity();
-                var entityType = entity != null ? entity.getClass().getSimpleName() : "Unknown";
-                var entityId = entity != null ? extractEntityId(entity) : "Unknown";
-                yield new OptimisticLock(entityType, entityId);
-            }
+            case OptimisticLockException e -> new OptimisticLock(
+                e.getEntity() != null ? e.getEntity().getClass().getSimpleName() : "Unknown",
+                e.getEntity()
+            );
             case PessimisticLockException e -> new PessimisticLock(e.getMessage());
             case LockTimeoutException e -> new PessimisticLock("Lock timeout: " + e.getMessage());
-            case EntityExistsException e -> {
-                // EntityExistsException doesn't provide entity details, only message
-                var message = e.getMessage() != null ? e.getMessage() : "Unknown";
-                yield new EntityExists("Entity", message);
-            }
+            case EntityExistsException e -> new EntityExists(
+                e.getMessage() != null ? e.getMessage() : "Unknown entity"
+            );
             case QueryTimeoutException e -> new QueryTimeout(e.getMessage());
             case TransactionRequiredException _ -> TransactionRequired.INSTANCE;
             // Vendor-specific exceptions (Hibernate, EclipseLink) fall through to DatabaseFailure
