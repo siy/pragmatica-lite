@@ -21,6 +21,7 @@ import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.utils.Causes;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.exc.StreamReadException;
+import tools.jackson.core.exc.StreamWriteException;
 import tools.jackson.databind.DatabindException;
 import tools.jackson.databind.exc.InvalidDefinitionException;
 import tools.jackson.databind.exc.MismatchedInputException;
@@ -51,6 +52,8 @@ public enum JsonError implements Cause {
     /// @return Corresponding Cause (JsonError for known types, generic Cause otherwise)
     public static Cause fromException(Throwable throwable) {
         return switch (throwable) {
+            // Serialization failures (write-side)
+            case StreamWriteException _ -> SERIALIZATION_FAILED;
             // Type mismatches during deserialization
             case MismatchedInputException _ -> TYPE_MISMATCH;
             case InvalidDefinitionException _ -> TYPE_MISMATCH;

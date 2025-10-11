@@ -20,7 +20,7 @@
     </modules>
 
     <properties>
-        <jackson.version>3.0.0-rc9</jackson.version>
+        <jackson.version>3.0.0</jackson.version>
         <jackson.annotations.version>3.0-rc5</jackson.annotations.version>
     </properties>
 

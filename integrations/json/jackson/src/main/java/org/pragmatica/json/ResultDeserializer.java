@@ -70,13 +70,13 @@ public class ResultDeserializer extends ValueDeserializer<Result<?>> {
                     }
                 }
                 case "error" -> {
-                    p.nextToken(); // Skip to message field
-                    if ("message".equals(p.currentName())) {
-                        p.nextToken();
-                        errorMessage = p.getText();
-                    }
                     while (p.nextToken() != tools.jackson.core.JsonToken.END_OBJECT) {
-                        // Skip remaining error fields
+                        String errorField = p.currentName();
+                        p.nextToken();
+                        if ("message".equals(errorField)) {
+                            errorMessage = p.getText();
+                        }
+                        // Skip other error fields
                     }
                 }
             }

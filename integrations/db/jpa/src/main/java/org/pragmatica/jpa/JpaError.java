@@ -98,6 +98,11 @@ public sealed interface JpaError extends Cause {
 
     /// Maps JPA exceptions to typed JpaError causes.
     ///
+    /// Note: ConstraintViolation errors are vendor-specific. The JPA spec does not define
+    /// a ConstraintViolationException. Vendors like Hibernate throw implementation-specific
+    /// exceptions (org.hibernate.exception.ConstraintViolationException) that cannot be
+    /// caught without adding vendor dependencies. These fall through to DatabaseFailure.
+    ///
     /// @param throwable Exception to map
     ///
     /// @return Corresponding JpaError
@@ -117,7 +122,8 @@ public sealed interface JpaError extends Cause {
             );
             case QueryTimeoutException e -> new QueryTimeout(e.getMessage());
             case TransactionRequiredException _ -> TransactionRequired.INSTANCE;
-            // Catch vendor-specific exceptions (e.g., Hibernate's ConstraintViolationException)
+            // Vendor-specific exceptions (Hibernate, EclipseLink) fall through to DatabaseFailure
+            // Cannot catch without vendor dependencies, keeping JPA integration vendor-neutral
             case RuntimeException e -> DatabaseFailure.cause(e);
             default -> DatabaseFailure.cause(throwable);
         };
