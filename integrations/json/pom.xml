@@ -20,25 +20,27 @@
     </modules>
 
     <properties>
-        <jackson.version>2.18.2</jackson.version>
+        <jackson.version>3.0.0-rc9</jackson.version>
+        <jackson.annotations.version>2.18.2</jackson.annotations.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
+                <groupId>tools.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
+                <groupId>tools.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
+            <!-- jackson-annotations stays with com.fasterxml groupId and uses 2.x version -->
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>${jackson.version}</version>
+                <version>${jackson.annotations.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

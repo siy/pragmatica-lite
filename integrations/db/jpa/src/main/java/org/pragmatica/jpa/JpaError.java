@@ -117,6 +117,8 @@ public sealed interface JpaError extends Cause {
             );
             case QueryTimeoutException e -> new QueryTimeout(e.getMessage());
             case TransactionRequiredException _ -> TransactionRequired.INSTANCE;
+            // Catch vendor-specific exceptions (e.g., Hibernate's ConstraintViolationException)
+            case RuntimeException e -> DatabaseFailure.cause(e);
             default -> DatabaseFailure.cause(throwable);
         };
     }

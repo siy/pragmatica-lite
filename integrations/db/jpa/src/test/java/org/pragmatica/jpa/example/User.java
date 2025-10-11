@@ -67,12 +67,16 @@ public class User {
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (!(obj instanceof User user)) return false;
-        return Objects.equals(id, user.id);
+        // Use business key (email) for equality - safer for JPA entities
+        // Two transient entities with same email are considered equal
+        return Objects.equals(email, user.email);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        // Use business key (email) for stable hashCode across entity lifecycle
+        // Stable even for transient entities, maintains equals/hashCode contract
+        return Objects.hash(email);
     }
 
     @Override
