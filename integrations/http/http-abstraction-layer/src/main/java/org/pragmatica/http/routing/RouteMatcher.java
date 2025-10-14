@@ -22,23 +22,11 @@ import org.pragmatica.http.model.HttpResponse;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
 
-import java.util.List;
-
-final class CompositeRoute implements RouteMatcher {
-    private final String basePath;
-    private final List<RouteMatcher> children;
-
-    CompositeRoute(String basePath, List<RouteMatcher> children) {
-        this.basePath = basePath;
-        this.children = children;
-    }
-
-    String basePath() { return basePath; }
-    List<RouteMatcher> children() { return children; }
-
-
-    @Override
-    public Promise<Option<HttpResponse>> match(HttpRequest request) {
-        return Promise.success(Option.none());
-    }
+/// Base interface for route matching - implemented by concrete routes.
+public interface RouteMatcher {
+    /// Match this route against an HTTP request.
+    ///
+    /// @param request HTTP request to match
+    /// @return Option containing matched handler result, or None if no match
+    Promise<Option<HttpResponse>> match(HttpRequest request);
 }

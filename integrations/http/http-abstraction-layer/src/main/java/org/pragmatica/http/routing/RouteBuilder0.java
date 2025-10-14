@@ -59,67 +59,14 @@ final class RouteBuilder0 implements Route.PathStage0, Route.HandlerStage0 {
     }
 
     @Override
-    public Route subpath(Route... routes) {
+    public RouteMatcher subpath(RouteMatcher... routes) {
         return new CompositeRoute(String.join("/", pathSegments), List.of(routes));
     }
 
     @Override
-    public <T1> Route.PathStage1<T1> param(Class<T1> type) {
-        return param(TypeToken.of(type));
-    }
-
-    @Override
-    public <T1> Route.PathStage1<T1> param(TypeToken<T1> type) {
+    public <T1> Route.PathStage1<T1> addParam(ParameterType type, String name, TypeToken<T1> token) {
         var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.PATH, null, type));
-        return new RouteBuilder1<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T1> Route.PathStage1<T1> queryParam(String name, Class<T1> type) {
-        return queryParam(name, TypeToken.of(type));
-    }
-
-    @Override
-    public <T1> Route.PathStage1<T1> queryParam(String name, TypeToken<T1> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.QUERY, name, type));
-        return new RouteBuilder1<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T1> Route.PathStage1<T1> headerParam(HttpHeaderName name, Class<T1> type) {
-        return headerParam(name, TypeToken.of(type));
-    }
-
-    @Override
-    public <T1> Route.PathStage1<T1> headerParam(HttpHeaderName name, TypeToken<T1> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.HEADER, name.headerName(), type));
-        return new RouteBuilder1<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T1> Route.PathStage1<T1> cookieParam(String name, Class<T1> type) {
-        return cookieParam(name, TypeToken.of(type));
-    }
-
-    @Override
-    public <T1> Route.PathStage1<T1> cookieParam(String name, TypeToken<T1> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.COOKIE, name, type));
-        return new RouteBuilder1<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T1> Route.PathStage1<T1> body(Class<T1> type) {
-        return body(TypeToken.of(type));
-    }
-
-    @Override
-    public <T1> Route.PathStage1<T1> body(TypeToken<T1> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.BODY, null, type));
+        newParams.add(new ParameterSpec(type, name, token));
         return new RouteBuilder1<>(pathSegments, newParams);
     }
 
@@ -166,7 +113,7 @@ final class RouteBuilder0 implements Route.PathStage0, Route.HandlerStage0 {
     }
 
     @Override
-    public Route handler(Route.Handler0 handler) {
+    public RouteMatcher handler(Route.Handler0 handler) {
         this.handler = handler;
         return build();
     }
@@ -176,7 +123,7 @@ final class RouteBuilder0 implements Route.PathStage0, Route.HandlerStage0 {
         throw new UnsupportedOperationException("Builder cannot match requests");
     }
 
-    private Route build() {
+    private RouteMatcher build() {
         return new ConcreteRoute(
             String.join("/", pathSegments),
             method,

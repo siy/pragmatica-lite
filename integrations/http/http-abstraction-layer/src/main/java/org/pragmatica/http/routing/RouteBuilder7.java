@@ -152,7 +152,7 @@ final class RouteBuilder7<T1, T2, T3, T4, T5, T6, T7> implements Route.PathStage
     }
 
     @Override
-    public Route handler(Route.Handler7<T1, T2, T3, T4, T5, T6, T7> handler) {
+    public RouteMatcher handler(Route.Handler7<T1, T2, T3, T4, T5, T6, T7> handler) {
         this.handler = handler;
         return build();
     }
@@ -162,7 +162,7 @@ final class RouteBuilder7<T1, T2, T3, T4, T5, T6, T7> implements Route.PathStage
         throw new UnsupportedOperationException("Builder cannot match requests");
     }
 
-    private Route build() {
+    private RouteMatcher build() {
         return new ConcreteRoute(
             String.join("/", pathSegments),
             method,

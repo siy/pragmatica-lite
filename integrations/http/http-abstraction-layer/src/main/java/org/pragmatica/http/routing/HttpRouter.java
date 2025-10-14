@@ -40,7 +40,7 @@ public interface HttpRouter {
     ///
     /// @param routes routes to register
     /// @return HttpRouter instance
-    static HttpRouter router(Route... routes) {
+    static HttpRouter router(RouteMatcher... routes) {
         return new DefaultHttpRouter(Arrays.asList(routes));
     }
 
@@ -48,13 +48,13 @@ public interface HttpRouter {
     ///
     /// @param routes routes to register
     /// @return HttpRouter instance
-    static HttpRouter router(List<Route> routes) {
+    static HttpRouter router(List<RouteMatcher> routes) {
         return new DefaultHttpRouter(routes);
     }
 }
 
 /// Default router implementation
-record DefaultHttpRouter(List<Route> routes) implements HttpRouter {
+record DefaultHttpRouter(List<RouteMatcher> routes) implements HttpRouter {
     @Override
     public Promise<HttpResponse> route(HttpRequest request) {
         return tryRoutes(request, 0);
@@ -67,7 +67,7 @@ record DefaultHttpRouter(List<Route> routes) implements HttpRouter {
 
         return routes.get(index)
             .match(request)
-            .flatMap(optResponse -> optResponse
+            .flatMap(optResponse -> ((org.pragmatica.lang.Option<HttpResponse>) optResponse)
                 .map(Promise::success)
                 .or(() -> tryRoutes(request, index + 1))
             )

@@ -90,7 +90,7 @@ final class RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> implements Route.P
     }
 
     @Override
-    public Route handler(Route.Handler9<T1, T2, T3, T4, T5, T6, T7, T8, T9> handler) {
+    public RouteMatcher handler(Route.Handler9<T1, T2, T3, T4, T5, T6, T7, T8, T9> handler) {
         this.handler = handler;
         return build();
     }
@@ -100,7 +100,7 @@ final class RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> implements Route.P
         throw new UnsupportedOperationException("Builder cannot match requests");
     }
 
-    private Route build() {
+    private RouteMatcher build() {
         return new ConcreteRoute(
             String.join("/", pathSegments),
             method,

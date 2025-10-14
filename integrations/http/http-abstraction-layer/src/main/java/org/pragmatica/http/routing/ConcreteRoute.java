@@ -25,7 +25,7 @@ import org.pragmatica.lang.Promise;
 
 import java.util.List;
 
-final class ConcreteRoute implements Route {
+final class ConcreteRoute implements RouteMatcher {
     private final String path;
     private final String method;
     private final List<ParameterSpec> parameters;
