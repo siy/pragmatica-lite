@@ -45,7 +45,7 @@ public record HttpHeaders(Map<HttpHeaderName, String> headers) {
     public Option<String> get(String name) {
         HttpHeaderName headerName = CommonHttpHeaderName.fromString(name);
         if (headerName == null) {
-            headerName = HttpHeaderName.of(name);
+            headerName = HttpHeaderName.httpHeaderName(name);
         }
         return get(headerName);
     }
@@ -67,7 +67,7 @@ public record HttpHeaders(Map<HttpHeaderName, String> headers) {
         rawHeaders.forEach((name, value) -> {
             HttpHeaderName headerName = CommonHttpHeaderName.fromString(name);
             if (headerName == null) {
-                headerName = HttpHeaderName.of(name);
+                headerName = HttpHeaderName.httpHeaderName(name);
             }
             headers.put(headerName, value);
         });

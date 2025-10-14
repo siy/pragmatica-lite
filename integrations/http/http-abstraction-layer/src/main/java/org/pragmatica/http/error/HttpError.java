@@ -17,6 +17,7 @@
 
 package org.pragmatica.http.error;
 
+import org.pragmatica.http.model.CommonContentType;
 import org.pragmatica.http.model.HttpResponse;
 import org.pragmatica.http.model.ResponseBuilder;
 import org.pragmatica.lang.Result;
@@ -58,7 +59,7 @@ public enum HttpError implements HttpStatusCause {
     @Override
     public Result<ResponseBuilder> fillResponse(ResponseBuilder builder) {
         return builder.status(status)
-            .flatMap(b -> b.contentType("application/problem+json"))
+            .flatMap(b -> b.contentType(CommonContentType.APPLICATION_PROBLEM_JSON))
             .flatMap(b -> b.json(Map.of(
                 "type", type,
                 "title", title,

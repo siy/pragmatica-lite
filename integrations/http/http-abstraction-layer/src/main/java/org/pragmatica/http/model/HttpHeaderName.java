@@ -31,7 +31,7 @@ public interface HttpHeaderName {
     ///
     /// @param name header name
     /// @return HttpHeaderName instance
-    static HttpHeaderName of(String name) {
+    static HttpHeaderName httpHeaderName(String name) {
         return new CustomHeaderName(name.toLowerCase());
     }
 }

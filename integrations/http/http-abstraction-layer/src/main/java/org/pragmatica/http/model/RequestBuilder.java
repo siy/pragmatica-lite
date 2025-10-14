@@ -97,7 +97,7 @@ public final class RequestBuilder {
     public RequestBuilder header(String name, String value) {
         HttpHeaderName headerName = CommonHttpHeaderName.fromString(name);
         if (headerName == null) {
-            headerName = HttpHeaderName.of(name);
+            headerName = HttpHeaderName.httpHeaderName(name);
         }
         this.headers.put(headerName, value);
         return this;

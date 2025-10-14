@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.pragmatica.http.model.CommonContentType.APPLICATION_JSON;
+
 /// Fluent builder for constructing HttpResponse instances.
 /// All methods return Result for consistent error propagation.
 public final class ResponseBuilder {
@@ -76,10 +78,10 @@ public final class ResponseBuilder {
 
     /// Set the Content-Type header.
     ///
-    /// @param mimeType content type (e.g., "application/json")
+    /// @param contentType content type
     /// @return Result containing this builder
-    public Result<ResponseBuilder> contentType(String mimeType) {
-        return header("Content-Type", mimeType);
+    public Result<ResponseBuilder> contentType(ContentType contentType) {
+        return header("Content-Type", contentType.mimeType());
     }
 
     /// Serialize an object to JSON and set as response body.
@@ -93,7 +95,7 @@ public final class ResponseBuilder {
                 this.body = bytes;
                 return this;
             })
-            .flatMap(self -> contentType("application/json"));
+            .flatMap(self -> contentType(APPLICATION_JSON));
     }
 
     /// Set the response body from bytes.

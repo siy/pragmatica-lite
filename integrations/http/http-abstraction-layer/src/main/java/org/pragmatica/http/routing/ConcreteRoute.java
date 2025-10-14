@@ -17,6 +17,7 @@
 
 package org.pragmatica.http.routing;
 
+import org.pragmatica.http.model.ContentType;
 import org.pragmatica.http.model.HttpRequest;
 import org.pragmatica.http.model.HttpResponse;
 import org.pragmatica.lang.Option;
@@ -28,16 +29,16 @@ final class ConcreteRoute implements Route {
     private final String path;
     private final String method;
     private final List<ParameterSpec> parameters;
-    private final String requestContentType;
-    private final String responseContentType;
+    private final ContentType requestContentType;
+    private final ContentType responseContentType;
     private final Object handler;
 
     ConcreteRoute(
         String path,
         String method,
         List<ParameterSpec> parameters,
-        String requestContentType,
-        String responseContentType,
+        ContentType requestContentType,
+        ContentType responseContentType,
         Object handler
     ) {
         this.path = path;
@@ -51,8 +52,8 @@ final class ConcreteRoute implements Route {
     String path() { return path; }
     String method() { return method; }
     List<ParameterSpec> parameters() { return parameters; }
-    String requestContentType() { return requestContentType; }
-    String responseContentType() { return responseContentType; }
+    ContentType requestContentType() { return requestContentType; }
+    ContentType responseContentType() { return responseContentType; }
     Object handler() { return handler; }
 
 
