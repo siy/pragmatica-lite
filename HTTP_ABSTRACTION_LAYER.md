@@ -1115,6 +1115,74 @@ final class RouteBuilder2<T1, T2> implements Route.PathStage2<T1, T2> {
 
 ---
 
+### method() Delegation Pattern
+
+**Problem:** Each RouteBuilder (RouteBuilder0-9) implements 5 HTTP method setters (get/post/put/delete/patch) with identical logic: set the method field and return `this`. With 10 builders, this results in 50 duplicate method implementations.
+
+**Solution:** Add single `method(HttpMethod)` method to Route base interface. All HTTP method setters become default methods delegating to `method()`.
+
+**Interface Pattern:**
+```java
+public interface Route<T extends Route<?>> extends RouteMatcher {
+    /// Internal method - implementations must provide this
+    T method(HttpMethod httpMethod);
+
+    // All HTTP methods delegate to method()
+    default T get() {
+        return method(HttpMethod.GET);
+    }
+
+    default T post() {
+        return method(HttpMethod.POST);
+    }
+
+    default T put() {
+        return method(HttpMethod.PUT);
+    }
+
+    default T delete() {
+        return method(HttpMethod.DELETE);
+    }
+
+    default T patch() {
+        return method(HttpMethod.PATCH);
+    }
+}
+```
+
+**Implementation Pattern:**
+```java
+final class RouteBuilder2<T1, T2> implements Route.PathStage2<T1, T2> {
+    private HttpMethod method;
+
+    @Override
+    public RouteBuilder2<T1, T2> method(HttpMethod httpMethod) {
+        this.method = httpMethod;
+        return this;
+    }
+
+    // No other HTTP method implementations needed!
+    // All 5 methods inherited as defaults from Route
+}
+```
+
+**Benefits:**
+- **80% code reduction:** Each builder reduced by ~20 lines (5 methods × 4 lines each)
+- **Single implementation:** Each builder implements only `method()`, inherits 5 HTTP methods as defaults
+- **Type safety:** F-bounded polymorphism ensures correct return types
+- **Extensibility:** Adding new HTTP methods (HEAD, OPTIONS) requires updating only base interface
+
+**Impact:**
+- **Before refactoring:** 10 RouteBuilders × 5 methods × ~5 lines = ~250 lines
+- **After refactoring:** 10 RouteBuilders × 1 method × ~4 lines = ~40 lines
+- **Net reduction:** ~210 lines eliminated, 224 lines saved in commit
+
+**Combined with addParam pattern:**
+- RouteBuilder1-8 reduced from ~175 lines to ~98 lines each (~44% final size)
+- Total savings: ~490 lines (addParam) + ~224 lines (method) = ~714 lines eliminated
+
+---
+
 ## Open Questions
 
 1. **Authentication/Authorization** - Where do auth concerns live?
