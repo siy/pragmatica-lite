@@ -520,7 +520,7 @@ public interface Route<T extends Route<?>> extends RouteMatcher {
     interface HandlerStage<T extends HandlerStage<T, ?>, H extends Handler> extends Route<T> {
         T in(ContentType contentType);
         T out(ContentType contentType);
-        RouteMatcher handler(Handler handler);
+        RouteMatcher handler(H handler);
     }
 
     /// Handler stage 0: No parameters

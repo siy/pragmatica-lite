@@ -89,7 +89,7 @@ final class RouteBuilder0 implements Route.PathStage0, Route.HandlerStage0 {
     }
 
     @Override
-    public RouteMatcher handler(Route.Handler handler) {
+    public RouteMatcher handler(Route.Handler0 handler) {
         this.handler = handler;
         return build();
     }

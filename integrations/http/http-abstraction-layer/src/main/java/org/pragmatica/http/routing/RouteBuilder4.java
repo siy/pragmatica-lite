@@ -75,7 +75,7 @@ final class RouteBuilder4<T1, T2, T3, T4> implements Route.PathStage4<T1, T2, T3
     }
 
     @Override
-    public RouteMatcher handler(Route.Handler handler) {
+    public RouteMatcher handler(Route.Handler4<T1, T2, T3, T4> handler) {
         this.handler = handler;
         return build();
     }
