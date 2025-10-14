@@ -33,7 +33,7 @@ import java.util.List;
 final class RouteBuilder0 implements Route.PathStage0, Route.HandlerStage0 {
     private final List<String> pathSegments;
     private final List<ParameterSpec> parameters;
-    private String method;
+    private HttpMethod method;
     private ContentType requestContentType = CommonContentType.APPLICATION_JSON;
     private ContentType responseContentType = CommonContentType.APPLICATION_JSON;
     private Object handler;
@@ -72,31 +72,31 @@ final class RouteBuilder0 implements Route.PathStage0, Route.HandlerStage0 {
 
     @Override
     public RouteBuilder0 get() {
-        this.method = "GET";
+        this.method = HttpMethod.GET;
         return this;
     }
 
     @Override
     public RouteBuilder0 post() {
-        this.method = "POST";
+        this.method = HttpMethod.POST;
         return this;
     }
 
     @Override
     public RouteBuilder0 put() {
-        this.method = "PUT";
+        this.method = HttpMethod.PUT;
         return this;
     }
 
     @Override
     public RouteBuilder0 delete() {
-        this.method = "DELETE";
+        this.method = HttpMethod.DELETE;
         return this;
     }
 
     @Override
     public RouteBuilder0 patch() {
-        this.method = "PATCH";
+        this.method = HttpMethod.PATCH;
         return this;
     }
 

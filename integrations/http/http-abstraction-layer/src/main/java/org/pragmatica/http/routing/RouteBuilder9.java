@@ -31,7 +31,7 @@ import java.util.List;
 final class RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> implements Route.PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9>, Route.HandlerStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> {
     private final List<String> pathSegments;
     private final List<ParameterSpec> parameters;
-    private String method;
+    private HttpMethod method;
     private ContentType requestContentType = CommonContentType.APPLICATION_JSON;
     private ContentType responseContentType = CommonContentType.APPLICATION_JSON;
     private Object handler;
@@ -49,31 +49,31 @@ final class RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> implements Route.P
 
     @Override
     public RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> get() {
-        this.method = "GET";
+        this.method = HttpMethod.GET;
         return this;
     }
 
     @Override
     public RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> post() {
-        this.method = "POST";
+        this.method = HttpMethod.POST;
         return this;
     }
 
     @Override
     public RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> put() {
-        this.method = "PUT";
+        this.method = HttpMethod.PUT;
         return this;
     }
 
     @Override
     public RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> delete() {
-        this.method = "DELETE";
+        this.method = HttpMethod.DELETE;
         return this;
     }
 
     @Override
     public RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> patch() {
-        this.method = "PATCH";
+        this.method = HttpMethod.PATCH;
         return this;
     }
 

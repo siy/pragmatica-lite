@@ -27,7 +27,7 @@ import java.util.List;
 
 final class ConcreteRoute implements RouteMatcher {
     private final String path;
-    private final String method;
+    private final HttpMethod method;
     private final List<ParameterSpec> parameters;
     private final ContentType requestContentType;
     private final ContentType responseContentType;
@@ -35,7 +35,7 @@ final class ConcreteRoute implements RouteMatcher {
 
     ConcreteRoute(
         String path,
-        String method,
+        HttpMethod method,
         List<ParameterSpec> parameters,
         ContentType requestContentType,
         ContentType responseContentType,
@@ -50,7 +50,7 @@ final class ConcreteRoute implements RouteMatcher {
     }
 
     String path() { return path; }
-    String method() { return method; }
+    HttpMethod method() { return method; }
     List<ParameterSpec> parameters() { return parameters; }
     ContentType requestContentType() { return requestContentType; }
     ContentType responseContentType() { return responseContentType; }

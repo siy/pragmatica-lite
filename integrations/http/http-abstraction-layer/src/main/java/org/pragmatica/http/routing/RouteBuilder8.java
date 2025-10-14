@@ -33,7 +33,7 @@ import java.util.List;
 final class RouteBuilder8<T1, T2, T3, T4, T5, T6, T7, T8> implements Route.PathStage8<T1, T2, T3, T4, T5, T6, T7, T8>, Route.HandlerStage8<T1, T2, T3, T4, T5, T6, T7, T8> {
     private final List<String> pathSegments;
     private final List<ParameterSpec> parameters;
-    private String method;
+    private HttpMethod method;
     private ContentType requestContentType = CommonContentType.APPLICATION_JSON;
     private ContentType responseContentType = CommonContentType.APPLICATION_JSON;
     private Object handler;
@@ -50,92 +50,39 @@ final class RouteBuilder8<T1, T2, T3, T4, T5, T6, T7, T8> implements Route.PathS
     }
 
     @Override
-    public <T9> Route.PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> param(Class<T9> type) {
-        return param(TypeToken.of(type));
-    }
-
-    @Override
-    public <T9> Route.PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> param(TypeToken<T9> type) {
+    public <T9> Route.PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> addParam(ParameterType type, String name, TypeToken<T9> token) {
         var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.PATH, null, type));
-        return new RouteBuilder9<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T9> Route.PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> queryParam(String name, Class<T9> type) {
-        return queryParam(name, TypeToken.of(type));
-    }
-
-    @Override
-    public <T9> Route.PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> queryParam(String name, TypeToken<T9> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.QUERY, name, type));
-        return new RouteBuilder9<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T9> Route.PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> headerParam(HttpHeaderName name, Class<T9> type) {
-        return headerParam(name, TypeToken.of(type));
-    }
-
-    @Override
-    public <T9> Route.PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> headerParam(HttpHeaderName name, TypeToken<T9> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.HEADER, name.headerName(), type));
-        return new RouteBuilder9<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T9> Route.PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> cookieParam(String name, Class<T9> type) {
-        return cookieParam(name, TypeToken.of(type));
-    }
-
-    @Override
-    public <T9> Route.PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> cookieParam(String name, TypeToken<T9> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.COOKIE, name, type));
-        return new RouteBuilder9<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T9> Route.PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> body(Class<T9> type) {
-        return body(TypeToken.of(type));
-    }
-
-    @Override
-    public <T9> Route.PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> body(TypeToken<T9> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.BODY, null, type));
+        newParams.add(new ParameterSpec(type, name, token));
         return new RouteBuilder9<>(pathSegments, newParams);
     }
 
     @Override
     public RouteBuilder8<T1, T2, T3, T4, T5, T6, T7, T8> get() {
-        this.method = "GET";
+        this.method = HttpMethod.GET;
         return this;
     }
 
     @Override
     public RouteBuilder8<T1, T2, T3, T4, T5, T6, T7, T8> post() {
-        this.method = "POST";
+        this.method = HttpMethod.POST;
         return this;
     }
 
     @Override
     public RouteBuilder8<T1, T2, T3, T4, T5, T6, T7, T8> put() {
-        this.method = "PUT";
+        this.method = HttpMethod.PUT;
         return this;
     }
 
     @Override
     public RouteBuilder8<T1, T2, T3, T4, T5, T6, T7, T8> delete() {
-        this.method = "DELETE";
+        this.method = HttpMethod.DELETE;
         return this;
     }
 
     @Override
     public RouteBuilder8<T1, T2, T3, T4, T5, T6, T7, T8> patch() {
-        this.method = "PATCH";
+        this.method = HttpMethod.PATCH;
         return this;
     }
 

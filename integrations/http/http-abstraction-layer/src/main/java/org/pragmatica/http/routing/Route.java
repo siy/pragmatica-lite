@@ -161,11 +161,29 @@ public interface Route<T extends Route<?>> extends RouteMatcher {
     /// Stage 2: Two parameters accumulated
     interface PathStage2<T1, T2> extends Route<HandlerStage2<T1, T2>> {
         PathStage2<T1, T2> path(String segment);
-        <T3> PathStage3<T1, T2, T3> param(TypeToken<T3> type);
-        <T3> PathStage3<T1, T2, T3> queryParam(String name, TypeToken<T3> type);
-        <T3> PathStage3<T1, T2, T3> headerParam(HttpHeaderName name, TypeToken<T3> type);
-        <T3> PathStage3<T1, T2, T3> cookieParam(String name, TypeToken<T3> type);
-        <T3> PathStage3<T1, T2, T3> body(TypeToken<T3> type);
+
+        /// Internal method for adding parameters - implementations must provide this
+        <T3> PathStage3<T1, T2, T3> addParam(ParameterType type, String name, TypeToken<T3> token);
+
+        default <T3> PathStage3<T1, T2, T3> param(TypeToken<T3> type) {
+            return addParam(ParameterType.PATH, null, type);
+        }
+
+        default <T3> PathStage3<T1, T2, T3> queryParam(String name, TypeToken<T3> type) {
+            return addParam(ParameterType.QUERY, name, type);
+        }
+
+        default <T3> PathStage3<T1, T2, T3> headerParam(HttpHeaderName name, TypeToken<T3> type) {
+            return addParam(ParameterType.HEADER, name.headerName(), type);
+        }
+
+        default <T3> PathStage3<T1, T2, T3> cookieParam(String name, TypeToken<T3> type) {
+            return addParam(ParameterType.COOKIE, name, type);
+        }
+
+        default <T3> PathStage3<T1, T2, T3> body(TypeToken<T3> type) {
+            return addParam(ParameterType.BODY, null, type);
+        }
 
         default <T3> PathStage3<T1, T2, T3> param(Class<T3> type) {
             return param(TypeToken.of(type));
@@ -186,17 +204,34 @@ public interface Route<T extends Route<?>> extends RouteMatcher {
         default <T3> PathStage3<T1, T2, T3> body(Class<T3> type) {
             return body(TypeToken.of(type));
         }
-
     }
 
     /// Stage 3: Three parameters accumulated
     interface PathStage3<T1, T2, T3> extends Route<HandlerStage3<T1, T2, T3>> {
         PathStage3<T1, T2, T3> path(String segment);
-        <T4> PathStage4<T1, T2, T3, T4> param(TypeToken<T4> type);
-        <T4> PathStage4<T1, T2, T3, T4> queryParam(String name, TypeToken<T4> type);
-        <T4> PathStage4<T1, T2, T3, T4> headerParam(HttpHeaderName name, TypeToken<T4> type);
-        <T4> PathStage4<T1, T2, T3, T4> cookieParam(String name, TypeToken<T4> type);
-        <T4> PathStage4<T1, T2, T3, T4> body(TypeToken<T4> type);
+
+        /// Internal method for adding parameters - implementations must provide this
+        <T4> PathStage4<T1, T2, T3, T4> addParam(ParameterType type, String name, TypeToken<T4> token);
+
+        default <T4> PathStage4<T1, T2, T3, T4> param(TypeToken<T4> type) {
+            return addParam(ParameterType.PATH, null, type);
+        }
+
+        default <T4> PathStage4<T1, T2, T3, T4> queryParam(String name, TypeToken<T4> type) {
+            return addParam(ParameterType.QUERY, name, type);
+        }
+
+        default <T4> PathStage4<T1, T2, T3, T4> headerParam(HttpHeaderName name, TypeToken<T4> type) {
+            return addParam(ParameterType.HEADER, name.headerName(), type);
+        }
+
+        default <T4> PathStage4<T1, T2, T3, T4> cookieParam(String name, TypeToken<T4> type) {
+            return addParam(ParameterType.COOKIE, name, type);
+        }
+
+        default <T4> PathStage4<T1, T2, T3, T4> body(TypeToken<T4> type) {
+            return addParam(ParameterType.BODY, null, type);
+        }
 
         default <T4> PathStage4<T1, T2, T3, T4> param(Class<T4> type) {
             return param(TypeToken.of(type));
@@ -217,17 +252,34 @@ public interface Route<T extends Route<?>> extends RouteMatcher {
         default <T4> PathStage4<T1, T2, T3, T4> body(Class<T4> type) {
             return body(TypeToken.of(type));
         }
-
     }
 
     /// Stage 4: Four parameters accumulated
     interface PathStage4<T1, T2, T3, T4> extends Route<HandlerStage4<T1, T2, T3, T4>> {
         PathStage4<T1, T2, T3, T4> path(String segment);
-        <T5> PathStage5<T1, T2, T3, T4, T5> param(TypeToken<T5> type);
-        <T5> PathStage5<T1, T2, T3, T4, T5> queryParam(String name, TypeToken<T5> type);
-        <T5> PathStage5<T1, T2, T3, T4, T5> headerParam(HttpHeaderName name, TypeToken<T5> type);
-        <T5> PathStage5<T1, T2, T3, T4, T5> cookieParam(String name, TypeToken<T5> type);
-        <T5> PathStage5<T1, T2, T3, T4, T5> body(TypeToken<T5> type);
+
+        /// Internal method for adding parameters - implementations must provide this
+        <T5> PathStage5<T1, T2, T3, T4, T5> addParam(ParameterType type, String name, TypeToken<T5> token);
+
+        default <T5> PathStage5<T1, T2, T3, T4, T5> param(TypeToken<T5> type) {
+            return addParam(ParameterType.PATH, null, type);
+        }
+
+        default <T5> PathStage5<T1, T2, T3, T4, T5> queryParam(String name, TypeToken<T5> type) {
+            return addParam(ParameterType.QUERY, name, type);
+        }
+
+        default <T5> PathStage5<T1, T2, T3, T4, T5> headerParam(HttpHeaderName name, TypeToken<T5> type) {
+            return addParam(ParameterType.HEADER, name.headerName(), type);
+        }
+
+        default <T5> PathStage5<T1, T2, T3, T4, T5> cookieParam(String name, TypeToken<T5> type) {
+            return addParam(ParameterType.COOKIE, name, type);
+        }
+
+        default <T5> PathStage5<T1, T2, T3, T4, T5> body(TypeToken<T5> type) {
+            return addParam(ParameterType.BODY, null, type);
+        }
 
         default <T5> PathStage5<T1, T2, T3, T4, T5> param(Class<T5> type) {
             return param(TypeToken.of(type));
@@ -248,17 +300,34 @@ public interface Route<T extends Route<?>> extends RouteMatcher {
         default <T5> PathStage5<T1, T2, T3, T4, T5> body(Class<T5> type) {
             return body(TypeToken.of(type));
         }
-
     }
 
     /// Stage 5: Five parameters accumulated
     interface PathStage5<T1, T2, T3, T4, T5> extends Route<HandlerStage5<T1, T2, T3, T4, T5>> {
         PathStage5<T1, T2, T3, T4, T5> path(String segment);
-        <T6> PathStage6<T1, T2, T3, T4, T5, T6> param(TypeToken<T6> type);
-        <T6> PathStage6<T1, T2, T3, T4, T5, T6> queryParam(String name, TypeToken<T6> type);
-        <T6> PathStage6<T1, T2, T3, T4, T5, T6> headerParam(HttpHeaderName name, TypeToken<T6> type);
-        <T6> PathStage6<T1, T2, T3, T4, T5, T6> cookieParam(String name, TypeToken<T6> type);
-        <T6> PathStage6<T1, T2, T3, T4, T5, T6> body(TypeToken<T6> type);
+
+        /// Internal method for adding parameters - implementations must provide this
+        <T6> PathStage6<T1, T2, T3, T4, T5, T6> addParam(ParameterType type, String name, TypeToken<T6> token);
+
+        default <T6> PathStage6<T1, T2, T3, T4, T5, T6> param(TypeToken<T6> type) {
+            return addParam(ParameterType.PATH, null, type);
+        }
+
+        default <T6> PathStage6<T1, T2, T3, T4, T5, T6> queryParam(String name, TypeToken<T6> type) {
+            return addParam(ParameterType.QUERY, name, type);
+        }
+
+        default <T6> PathStage6<T1, T2, T3, T4, T5, T6> headerParam(HttpHeaderName name, TypeToken<T6> type) {
+            return addParam(ParameterType.HEADER, name.headerName(), type);
+        }
+
+        default <T6> PathStage6<T1, T2, T3, T4, T5, T6> cookieParam(String name, TypeToken<T6> type) {
+            return addParam(ParameterType.COOKIE, name, type);
+        }
+
+        default <T6> PathStage6<T1, T2, T3, T4, T5, T6> body(TypeToken<T6> type) {
+            return addParam(ParameterType.BODY, null, type);
+        }
 
         default <T6> PathStage6<T1, T2, T3, T4, T5, T6> param(Class<T6> type) {
             return param(TypeToken.of(type));
@@ -279,17 +348,34 @@ public interface Route<T extends Route<?>> extends RouteMatcher {
         default <T6> PathStage6<T1, T2, T3, T4, T5, T6> body(Class<T6> type) {
             return body(TypeToken.of(type));
         }
-
     }
 
     /// Stage 6: Six parameters accumulated
     interface PathStage6<T1, T2, T3, T4, T5, T6> extends Route<HandlerStage6<T1, T2, T3, T4, T5, T6>> {
         PathStage6<T1, T2, T3, T4, T5, T6> path(String segment);
-        <T7> PathStage7<T1, T2, T3, T4, T5, T6, T7> param(TypeToken<T7> type);
-        <T7> PathStage7<T1, T2, T3, T4, T5, T6, T7> queryParam(String name, TypeToken<T7> type);
-        <T7> PathStage7<T1, T2, T3, T4, T5, T6, T7> headerParam(HttpHeaderName name, TypeToken<T7> type);
-        <T7> PathStage7<T1, T2, T3, T4, T5, T6, T7> cookieParam(String name, TypeToken<T7> type);
-        <T7> PathStage7<T1, T2, T3, T4, T5, T6, T7> body(TypeToken<T7> type);
+
+        /// Internal method for adding parameters - implementations must provide this
+        <T7> PathStage7<T1, T2, T3, T4, T5, T6, T7> addParam(ParameterType type, String name, TypeToken<T7> token);
+
+        default <T7> PathStage7<T1, T2, T3, T4, T5, T6, T7> param(TypeToken<T7> type) {
+            return addParam(ParameterType.PATH, null, type);
+        }
+
+        default <T7> PathStage7<T1, T2, T3, T4, T5, T6, T7> queryParam(String name, TypeToken<T7> type) {
+            return addParam(ParameterType.QUERY, name, type);
+        }
+
+        default <T7> PathStage7<T1, T2, T3, T4, T5, T6, T7> headerParam(HttpHeaderName name, TypeToken<T7> type) {
+            return addParam(ParameterType.HEADER, name.headerName(), type);
+        }
+
+        default <T7> PathStage7<T1, T2, T3, T4, T5, T6, T7> cookieParam(String name, TypeToken<T7> type) {
+            return addParam(ParameterType.COOKIE, name, type);
+        }
+
+        default <T7> PathStage7<T1, T2, T3, T4, T5, T6, T7> body(TypeToken<T7> type) {
+            return addParam(ParameterType.BODY, null, type);
+        }
 
         default <T7> PathStage7<T1, T2, T3, T4, T5, T6, T7> param(Class<T7> type) {
             return param(TypeToken.of(type));
@@ -310,17 +396,34 @@ public interface Route<T extends Route<?>> extends RouteMatcher {
         default <T7> PathStage7<T1, T2, T3, T4, T5, T6, T7> body(Class<T7> type) {
             return body(TypeToken.of(type));
         }
-
     }
 
     /// Stage 7: Seven parameters accumulated
     interface PathStage7<T1, T2, T3, T4, T5, T6, T7> extends Route<HandlerStage7<T1, T2, T3, T4, T5, T6, T7>> {
         PathStage7<T1, T2, T3, T4, T5, T6, T7> path(String segment);
-        <T8> PathStage8<T1, T2, T3, T4, T5, T6, T7, T8> param(TypeToken<T8> type);
-        <T8> PathStage8<T1, T2, T3, T4, T5, T6, T7, T8> queryParam(String name, TypeToken<T8> type);
-        <T8> PathStage8<T1, T2, T3, T4, T5, T6, T7, T8> headerParam(HttpHeaderName name, TypeToken<T8> type);
-        <T8> PathStage8<T1, T2, T3, T4, T5, T6, T7, T8> cookieParam(String name, TypeToken<T8> type);
-        <T8> PathStage8<T1, T2, T3, T4, T5, T6, T7, T8> body(TypeToken<T8> type);
+
+        /// Internal method for adding parameters - implementations must provide this
+        <T8> PathStage8<T1, T2, T3, T4, T5, T6, T7, T8> addParam(ParameterType type, String name, TypeToken<T8> token);
+
+        default <T8> PathStage8<T1, T2, T3, T4, T5, T6, T7, T8> param(TypeToken<T8> type) {
+            return addParam(ParameterType.PATH, null, type);
+        }
+
+        default <T8> PathStage8<T1, T2, T3, T4, T5, T6, T7, T8> queryParam(String name, TypeToken<T8> type) {
+            return addParam(ParameterType.QUERY, name, type);
+        }
+
+        default <T8> PathStage8<T1, T2, T3, T4, T5, T6, T7, T8> headerParam(HttpHeaderName name, TypeToken<T8> type) {
+            return addParam(ParameterType.HEADER, name.headerName(), type);
+        }
+
+        default <T8> PathStage8<T1, T2, T3, T4, T5, T6, T7, T8> cookieParam(String name, TypeToken<T8> type) {
+            return addParam(ParameterType.COOKIE, name, type);
+        }
+
+        default <T8> PathStage8<T1, T2, T3, T4, T5, T6, T7, T8> body(TypeToken<T8> type) {
+            return addParam(ParameterType.BODY, null, type);
+        }
 
         default <T8> PathStage8<T1, T2, T3, T4, T5, T6, T7, T8> param(Class<T8> type) {
             return param(TypeToken.of(type));
@@ -341,17 +444,34 @@ public interface Route<T extends Route<?>> extends RouteMatcher {
         default <T8> PathStage8<T1, T2, T3, T4, T5, T6, T7, T8> body(Class<T8> type) {
             return body(TypeToken.of(type));
         }
-
     }
 
     /// Stage 8: Eight parameters accumulated
     interface PathStage8<T1, T2, T3, T4, T5, T6, T7, T8> extends Route<HandlerStage8<T1, T2, T3, T4, T5, T6, T7, T8>> {
         PathStage8<T1, T2, T3, T4, T5, T6, T7, T8> path(String segment);
-        <T9> PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> param(TypeToken<T9> type);
-        <T9> PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> queryParam(String name, TypeToken<T9> type);
-        <T9> PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> headerParam(HttpHeaderName name, TypeToken<T9> type);
-        <T9> PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> cookieParam(String name, TypeToken<T9> type);
-        <T9> PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> body(TypeToken<T9> type);
+
+        /// Internal method for adding parameters - implementations must provide this
+        <T9> PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> addParam(ParameterType type, String name, TypeToken<T9> token);
+
+        default <T9> PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> param(TypeToken<T9> type) {
+            return addParam(ParameterType.PATH, null, type);
+        }
+
+        default <T9> PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> queryParam(String name, TypeToken<T9> type) {
+            return addParam(ParameterType.QUERY, name, type);
+        }
+
+        default <T9> PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> headerParam(HttpHeaderName name, TypeToken<T9> type) {
+            return addParam(ParameterType.HEADER, name.headerName(), type);
+        }
+
+        default <T9> PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> cookieParam(String name, TypeToken<T9> type) {
+            return addParam(ParameterType.COOKIE, name, type);
+        }
+
+        default <T9> PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> body(TypeToken<T9> type) {
+            return addParam(ParameterType.BODY, null, type);
+        }
 
         default <T9> PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> param(Class<T9> type) {
             return param(TypeToken.of(type));
@@ -372,7 +492,6 @@ public interface Route<T extends Route<?>> extends RouteMatcher {
         default <T9> PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> body(Class<T9> type) {
             return body(TypeToken.of(type));
         }
-
     }
 
     /// Stage 9: Nine parameters accumulated (maximum)

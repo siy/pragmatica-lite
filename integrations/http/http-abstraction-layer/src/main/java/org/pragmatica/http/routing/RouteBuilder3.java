@@ -33,7 +33,7 @@ import java.util.List;
 final class RouteBuilder3<T1, T2, T3> implements Route.PathStage3<T1, T2, T3>, Route.HandlerStage3<T1, T2, T3> {
     private final List<String> pathSegments;
     private final List<ParameterSpec> parameters;
-    private String method;
+    private HttpMethod method;
     private ContentType requestContentType = CommonContentType.APPLICATION_JSON;
     private ContentType responseContentType = CommonContentType.APPLICATION_JSON;
     private Object handler;
@@ -50,92 +50,39 @@ final class RouteBuilder3<T1, T2, T3> implements Route.PathStage3<T1, T2, T3>, R
     }
 
     @Override
-    public <T4> Route.PathStage4<T1, T2, T3, T4> param(Class<T4> type) {
-        return param(TypeToken.of(type));
-    }
-
-    @Override
-    public <T4> Route.PathStage4<T1, T2, T3, T4> param(TypeToken<T4> type) {
+    public <T4> Route.PathStage4<T1, T2, T3, T4> addParam(ParameterType type, String name, TypeToken<T4> token) {
         var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.PATH, null, type));
-        return new RouteBuilder4<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T4> Route.PathStage4<T1, T2, T3, T4> queryParam(String name, Class<T4> type) {
-        return queryParam(name, TypeToken.of(type));
-    }
-
-    @Override
-    public <T4> Route.PathStage4<T1, T2, T3, T4> queryParam(String name, TypeToken<T4> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.QUERY, name, type));
-        return new RouteBuilder4<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T4> Route.PathStage4<T1, T2, T3, T4> headerParam(HttpHeaderName name, Class<T4> type) {
-        return headerParam(name, TypeToken.of(type));
-    }
-
-    @Override
-    public <T4> Route.PathStage4<T1, T2, T3, T4> headerParam(HttpHeaderName name, TypeToken<T4> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.HEADER, name.headerName(), type));
-        return new RouteBuilder4<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T4> Route.PathStage4<T1, T2, T3, T4> cookieParam(String name, Class<T4> type) {
-        return cookieParam(name, TypeToken.of(type));
-    }
-
-    @Override
-    public <T4> Route.PathStage4<T1, T2, T3, T4> cookieParam(String name, TypeToken<T4> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.COOKIE, name, type));
-        return new RouteBuilder4<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T4> Route.PathStage4<T1, T2, T3, T4> body(Class<T4> type) {
-        return body(TypeToken.of(type));
-    }
-
-    @Override
-    public <T4> Route.PathStage4<T1, T2, T3, T4> body(TypeToken<T4> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.BODY, null, type));
+        newParams.add(new ParameterSpec(type, name, token));
         return new RouteBuilder4<>(pathSegments, newParams);
     }
 
     @Override
     public RouteBuilder3<T1, T2, T3> get() {
-        this.method = "GET";
+        this.method = HttpMethod.GET;
         return this;
     }
 
     @Override
     public RouteBuilder3<T1, T2, T3> post() {
-        this.method = "POST";
+        this.method = HttpMethod.POST;
         return this;
     }
 
     @Override
     public RouteBuilder3<T1, T2, T3> put() {
-        this.method = "PUT";
+        this.method = HttpMethod.PUT;
         return this;
     }
 
     @Override
     public RouteBuilder3<T1, T2, T3> delete() {
-        this.method = "DELETE";
+        this.method = HttpMethod.DELETE;
         return this;
     }
 
     @Override
     public RouteBuilder3<T1, T2, T3> patch() {
-        this.method = "PATCH";
+        this.method = HttpMethod.PATCH;
         return this;
     }
 

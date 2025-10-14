@@ -33,7 +33,7 @@ import java.util.List;
 final class RouteBuilder6<T1, T2, T3, T4, T5, T6> implements Route.PathStage6<T1, T2, T3, T4, T5, T6>, Route.HandlerStage6<T1, T2, T3, T4, T5, T6> {
     private final List<String> pathSegments;
     private final List<ParameterSpec> parameters;
-    private String method;
+    private HttpMethod method;
     private ContentType requestContentType = CommonContentType.APPLICATION_JSON;
     private ContentType responseContentType = CommonContentType.APPLICATION_JSON;
     private Object handler;
@@ -50,92 +50,39 @@ final class RouteBuilder6<T1, T2, T3, T4, T5, T6> implements Route.PathStage6<T1
     }
 
     @Override
-    public <T7> Route.PathStage7<T1, T2, T3, T4, T5, T6, T7> param(Class<T7> type) {
-        return param(TypeToken.of(type));
-    }
-
-    @Override
-    public <T7> Route.PathStage7<T1, T2, T3, T4, T5, T6, T7> param(TypeToken<T7> type) {
+    public <T7> Route.PathStage7<T1, T2, T3, T4, T5, T6, T7> addParam(ParameterType type, String name, TypeToken<T7> token) {
         var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.PATH, null, type));
-        return new RouteBuilder7<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T7> Route.PathStage7<T1, T2, T3, T4, T5, T6, T7> queryParam(String name, Class<T7> type) {
-        return queryParam(name, TypeToken.of(type));
-    }
-
-    @Override
-    public <T7> Route.PathStage7<T1, T2, T3, T4, T5, T6, T7> queryParam(String name, TypeToken<T7> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.QUERY, name, type));
-        return new RouteBuilder7<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T7> Route.PathStage7<T1, T2, T3, T4, T5, T6, T7> headerParam(HttpHeaderName name, Class<T7> type) {
-        return headerParam(name, TypeToken.of(type));
-    }
-
-    @Override
-    public <T7> Route.PathStage7<T1, T2, T3, T4, T5, T6, T7> headerParam(HttpHeaderName name, TypeToken<T7> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.HEADER, name.headerName(), type));
-        return new RouteBuilder7<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T7> Route.PathStage7<T1, T2, T3, T4, T5, T6, T7> cookieParam(String name, Class<T7> type) {
-        return cookieParam(name, TypeToken.of(type));
-    }
-
-    @Override
-    public <T7> Route.PathStage7<T1, T2, T3, T4, T5, T6, T7> cookieParam(String name, TypeToken<T7> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.COOKIE, name, type));
-        return new RouteBuilder7<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T7> Route.PathStage7<T1, T2, T3, T4, T5, T6, T7> body(Class<T7> type) {
-        return body(TypeToken.of(type));
-    }
-
-    @Override
-    public <T7> Route.PathStage7<T1, T2, T3, T4, T5, T6, T7> body(TypeToken<T7> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.BODY, null, type));
+        newParams.add(new ParameterSpec(type, name, token));
         return new RouteBuilder7<>(pathSegments, newParams);
     }
 
     @Override
     public RouteBuilder6<T1, T2, T3, T4, T5, T6> get() {
-        this.method = "GET";
+        this.method = HttpMethod.GET;
         return this;
     }
 
     @Override
     public RouteBuilder6<T1, T2, T3, T4, T5, T6> post() {
-        this.method = "POST";
+        this.method = HttpMethod.POST;
         return this;
     }
 
     @Override
     public RouteBuilder6<T1, T2, T3, T4, T5, T6> put() {
-        this.method = "PUT";
+        this.method = HttpMethod.PUT;
         return this;
     }
 
     @Override
     public RouteBuilder6<T1, T2, T3, T4, T5, T6> delete() {
-        this.method = "DELETE";
+        this.method = HttpMethod.DELETE;
         return this;
     }
 
     @Override
     public RouteBuilder6<T1, T2, T3, T4, T5, T6> patch() {
-        this.method = "PATCH";
+        this.method = HttpMethod.PATCH;
         return this;
     }
 

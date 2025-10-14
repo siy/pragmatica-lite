@@ -33,7 +33,7 @@ import java.util.List;
 final class RouteBuilder5<T1, T2, T3, T4, T5> implements Route.PathStage5<T1, T2, T3, T4, T5>, Route.HandlerStage5<T1, T2, T3, T4, T5> {
     private final List<String> pathSegments;
     private final List<ParameterSpec> parameters;
-    private String method;
+    private HttpMethod method;
     private ContentType requestContentType = CommonContentType.APPLICATION_JSON;
     private ContentType responseContentType = CommonContentType.APPLICATION_JSON;
     private Object handler;
@@ -50,92 +50,39 @@ final class RouteBuilder5<T1, T2, T3, T4, T5> implements Route.PathStage5<T1, T2
     }
 
     @Override
-    public <T6> Route.PathStage6<T1, T2, T3, T4, T5, T6> param(Class<T6> type) {
-        return param(TypeToken.of(type));
-    }
-
-    @Override
-    public <T6> Route.PathStage6<T1, T2, T3, T4, T5, T6> param(TypeToken<T6> type) {
+    public <T6> Route.PathStage6<T1, T2, T3, T4, T5, T6> addParam(ParameterType type, String name, TypeToken<T6> token) {
         var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.PATH, null, type));
-        return new RouteBuilder6<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T6> Route.PathStage6<T1, T2, T3, T4, T5, T6> queryParam(String name, Class<T6> type) {
-        return queryParam(name, TypeToken.of(type));
-    }
-
-    @Override
-    public <T6> Route.PathStage6<T1, T2, T3, T4, T5, T6> queryParam(String name, TypeToken<T6> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.QUERY, name, type));
-        return new RouteBuilder6<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T6> Route.PathStage6<T1, T2, T3, T4, T5, T6> headerParam(HttpHeaderName name, Class<T6> type) {
-        return headerParam(name, TypeToken.of(type));
-    }
-
-    @Override
-    public <T6> Route.PathStage6<T1, T2, T3, T4, T5, T6> headerParam(HttpHeaderName name, TypeToken<T6> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.HEADER, name.headerName(), type));
-        return new RouteBuilder6<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T6> Route.PathStage6<T1, T2, T3, T4, T5, T6> cookieParam(String name, Class<T6> type) {
-        return cookieParam(name, TypeToken.of(type));
-    }
-
-    @Override
-    public <T6> Route.PathStage6<T1, T2, T3, T4, T5, T6> cookieParam(String name, TypeToken<T6> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.COOKIE, name, type));
-        return new RouteBuilder6<>(pathSegments, newParams);
-    }
-
-    @Override
-    public <T6> Route.PathStage6<T1, T2, T3, T4, T5, T6> body(Class<T6> type) {
-        return body(TypeToken.of(type));
-    }
-
-    @Override
-    public <T6> Route.PathStage6<T1, T2, T3, T4, T5, T6> body(TypeToken<T6> type) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(ParameterType.BODY, null, type));
+        newParams.add(new ParameterSpec(type, name, token));
         return new RouteBuilder6<>(pathSegments, newParams);
     }
 
     @Override
     public RouteBuilder5<T1, T2, T3, T4, T5> get() {
-        this.method = "GET";
+        this.method = HttpMethod.GET;
         return this;
     }
 
     @Override
     public RouteBuilder5<T1, T2, T3, T4, T5> post() {
-        this.method = "POST";
+        this.method = HttpMethod.POST;
         return this;
     }
 
     @Override
     public RouteBuilder5<T1, T2, T3, T4, T5> put() {
-        this.method = "PUT";
+        this.method = HttpMethod.PUT;
         return this;
     }
 
     @Override
     public RouteBuilder5<T1, T2, T3, T4, T5> delete() {
-        this.method = "DELETE";
+        this.method = HttpMethod.DELETE;
         return this;
     }
 
     @Override
     public RouteBuilder5<T1, T2, T3, T4, T5> patch() {
-        this.method = "PATCH";
+        this.method = HttpMethod.PATCH;
         return this;
     }
 
