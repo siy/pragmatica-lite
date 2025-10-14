@@ -37,7 +37,11 @@ public sealed interface Verify {
     /// @return a success result containing the value if the predicate is satisfied,
     ///         or a failure result if the predicate is not satisfied
     static <T> Result<T> ensure(T value, Predicate<T> predicate) {
-        return ensure(Causes.forValue("Value {0} does not satisfy the predicate"), value, predicate);
+        return ensure(Causes.forOneValue("Value {0} does not satisfy the predicate"), value, predicate);
+    }
+
+    static <T> Result<T> ensure(Cause cause, T value, Predicate<T> predicate) {
+        return ensure(_ -> cause, value, predicate);
     }
 
     /// Ensures that a value satisfies a given predicate.
@@ -72,6 +76,10 @@ public sealed interface Verify {
         return value -> ensure(causeProvider, value, predicate);
     }
 
+    static <T> Fn1<Result<T>, T> ensureFn(Cause cause, Predicate<T> predicate) {
+        return value -> ensure(_ -> cause, value, predicate);
+    }
+
     /// Ensures that a value satisfies a binary predicate with one additional parameter.
     ///
     /// This method is a convenience wrapper around the single-parameter `ensure` method,
@@ -87,6 +95,10 @@ public sealed interface Verify {
     ///         or a failure result if the predicate is not satisfied
     static <T, P1> Result<T> ensure(T value, Fn2<Boolean, T, P1> predicate, P1 param1) {
         return ensure(value, v -> predicate.apply(v, param1));
+    }
+
+    static <T, P1> Result<T> ensure(Cause cause, T value, Fn2<Boolean, T, P1> predicate, P1 param1) {
+        return ensure(_ -> cause, value, v -> predicate.apply(v, param1));
     }
 
     /// Create a function which will perform given check and return [Result]
@@ -145,6 +157,10 @@ public sealed interface Verify {
         return ensure(value, v -> predicate.apply(v, param1, param2));
     }
 
+    static <T, P1, P2> Result<T> ensure(Cause cause, T value, Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2) {
+        return ensure(_ -> cause, value, v -> predicate.apply(v, param1, param2));
+    }
+
     /// Create a function which will perform given check and return [Result]
     static <T, P1, P2> Fn1<Result<T>, T> ensureFn(Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2) {
         return value -> ensure(value, predicate, param1, param2);
@@ -185,7 +201,6 @@ public sealed interface Verify {
     static <T, P1, P2> Fn1<Result<T>, T> ensureFn(Fn1<Cause, T> causeProvider, Fn3<Boolean, T, P1, P2> predicate, P1 param1,  P2 param2) {
         return value -> ensure(causeProvider, value, predicate, param1, param2);
     }
-
 
     /// Combines multiple individual validation checks into a single validation function.
     /// The returned function will apply all checks in sequence, returning the first failure
