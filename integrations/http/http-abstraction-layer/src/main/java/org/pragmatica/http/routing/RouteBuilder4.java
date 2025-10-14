@@ -57,32 +57,8 @@ final class RouteBuilder4<T1, T2, T3, T4> implements Route.PathStage4<T1, T2, T3
     }
 
     @Override
-    public RouteBuilder4<T1, T2, T3, T4> get() {
-        this.method = HttpMethod.GET;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder4<T1, T2, T3, T4> post() {
-        this.method = HttpMethod.POST;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder4<T1, T2, T3, T4> put() {
-        this.method = HttpMethod.PUT;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder4<T1, T2, T3, T4> delete() {
-        this.method = HttpMethod.DELETE;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder4<T1, T2, T3, T4> patch() {
-        this.method = HttpMethod.PATCH;
+    public RouteBuilder4<T1, T2, T3, T4> method(HttpMethod httpMethod) {
+        this.method = httpMethod;
         return this;
     }
 

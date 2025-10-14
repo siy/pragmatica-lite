@@ -57,32 +57,8 @@ final class RouteBuilder1<T1> implements Route.PathStage1<T1>, Route.HandlerStag
     }
 
     @Override
-    public RouteBuilder1<T1> get() {
-        this.method = HttpMethod.GET;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder1<T1> post() {
-        this.method = HttpMethod.POST;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder1<T1> put() {
-        this.method = HttpMethod.PUT;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder1<T1> delete() {
-        this.method = HttpMethod.DELETE;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder1<T1> patch() {
-        this.method = HttpMethod.PATCH;
+    public RouteBuilder1<T1> method(HttpMethod httpMethod) {
+        this.method = httpMethod;
         return this;
     }
 

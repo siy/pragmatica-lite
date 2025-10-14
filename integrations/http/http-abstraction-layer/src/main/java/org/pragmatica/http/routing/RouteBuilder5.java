@@ -57,32 +57,8 @@ final class RouteBuilder5<T1, T2, T3, T4, T5> implements Route.PathStage5<T1, T2
     }
 
     @Override
-    public RouteBuilder5<T1, T2, T3, T4, T5> get() {
-        this.method = HttpMethod.GET;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder5<T1, T2, T3, T4, T5> post() {
-        this.method = HttpMethod.POST;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder5<T1, T2, T3, T4, T5> put() {
-        this.method = HttpMethod.PUT;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder5<T1, T2, T3, T4, T5> delete() {
-        this.method = HttpMethod.DELETE;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder5<T1, T2, T3, T4, T5> patch() {
-        this.method = HttpMethod.PATCH;
+    public RouteBuilder5<T1, T2, T3, T4, T5> method(HttpMethod httpMethod) {
+        this.method = httpMethod;
         return this;
     }
 

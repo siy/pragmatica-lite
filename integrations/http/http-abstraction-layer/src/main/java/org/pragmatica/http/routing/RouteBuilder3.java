@@ -57,32 +57,8 @@ final class RouteBuilder3<T1, T2, T3> implements Route.PathStage3<T1, T2, T3>, R
     }
 
     @Override
-    public RouteBuilder3<T1, T2, T3> get() {
-        this.method = HttpMethod.GET;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder3<T1, T2, T3> post() {
-        this.method = HttpMethod.POST;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder3<T1, T2, T3> put() {
-        this.method = HttpMethod.PUT;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder3<T1, T2, T3> delete() {
-        this.method = HttpMethod.DELETE;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder3<T1, T2, T3> patch() {
-        this.method = HttpMethod.PATCH;
+    public RouteBuilder3<T1, T2, T3> method(HttpMethod httpMethod) {
+        this.method = httpMethod;
         return this;
     }
 

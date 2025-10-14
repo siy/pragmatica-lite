@@ -57,32 +57,8 @@ final class RouteBuilder7<T1, T2, T3, T4, T5, T6, T7> implements Route.PathStage
     }
 
     @Override
-    public RouteBuilder7<T1, T2, T3, T4, T5, T6, T7> get() {
-        this.method = HttpMethod.GET;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder7<T1, T2, T3, T4, T5, T6, T7> post() {
-        this.method = HttpMethod.POST;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder7<T1, T2, T3, T4, T5, T6, T7> put() {
-        this.method = HttpMethod.PUT;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder7<T1, T2, T3, T4, T5, T6, T7> delete() {
-        this.method = HttpMethod.DELETE;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder7<T1, T2, T3, T4, T5, T6, T7> patch() {
-        this.method = HttpMethod.PATCH;
+    public RouteBuilder7<T1, T2, T3, T4, T5, T6, T7> method(HttpMethod httpMethod) {
+        this.method = httpMethod;
         return this;
     }
 

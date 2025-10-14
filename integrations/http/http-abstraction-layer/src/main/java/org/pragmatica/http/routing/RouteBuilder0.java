@@ -71,32 +71,8 @@ final class RouteBuilder0 implements Route.PathStage0, Route.HandlerStage0 {
     }
 
     @Override
-    public RouteBuilder0 get() {
-        this.method = HttpMethod.GET;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder0 post() {
-        this.method = HttpMethod.POST;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder0 put() {
-        this.method = HttpMethod.PUT;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder0 delete() {
-        this.method = HttpMethod.DELETE;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder0 patch() {
-        this.method = HttpMethod.PATCH;
+    public RouteBuilder0 method(HttpMethod httpMethod) {
+        this.method = httpMethod;
         return this;
     }
 

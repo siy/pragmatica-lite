@@ -57,32 +57,8 @@ final class RouteBuilder2<T1, T2> implements Route.PathStage2<T1, T2>, Route.Han
     }
 
     @Override
-    public RouteBuilder2<T1, T2> get() {
-        this.method = HttpMethod.GET;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder2<T1, T2> post() {
-        this.method = HttpMethod.POST;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder2<T1, T2> put() {
-        this.method = HttpMethod.PUT;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder2<T1, T2> delete() {
-        this.method = HttpMethod.DELETE;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder2<T1, T2> patch() {
-        this.method = HttpMethod.PATCH;
+    public RouteBuilder2<T1, T2> method(HttpMethod httpMethod) {
+        this.method = httpMethod;
         return this;
     }
 

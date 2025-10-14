@@ -36,30 +36,46 @@ import org.pragmatica.lang.type.TypeToken;
 /// with each stage specifying its transition target via the type parameter.
 public interface Route<T extends Route<?>> extends RouteMatcher {
 
+    /// Internal method for setting HTTP method - implementations must provide this.
+    ///
+    /// @param httpMethod the HTTP method to set
+    /// @return handler stage for this route
+    T method(HttpMethod httpMethod);
+
     /// Transition to handler stage with GET method.
     ///
     /// @return handler stage for this route
-    T get();
+    default T get() {
+        return method(HttpMethod.GET);
+    }
 
     /// Transition to handler stage with POST method.
     ///
     /// @return handler stage for this route
-    T post();
+    default T post() {
+        return method(HttpMethod.POST);
+    }
 
     /// Transition to handler stage with PUT method.
     ///
     /// @return handler stage for this route
-    T put();
+    default T put() {
+        return method(HttpMethod.PUT);
+    }
 
     /// Transition to handler stage with DELETE method.
     ///
     /// @return handler stage for this route
-    T delete();
+    default T delete() {
+        return method(HttpMethod.DELETE);
+    }
 
     /// Transition to handler stage with PATCH method.
     ///
     /// @return handler stage for this route
-    T patch();
+    default T patch() {
+        return method(HttpMethod.PATCH);
+    }
 
     /// Stage 0: No parameters yet
     interface PathStage0 extends Route<HandlerStage0> {

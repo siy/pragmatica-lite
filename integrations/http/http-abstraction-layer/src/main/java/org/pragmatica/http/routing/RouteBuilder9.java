@@ -48,32 +48,8 @@ final class RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> implements Route.P
     }
 
     @Override
-    public RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> get() {
-        this.method = HttpMethod.GET;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> post() {
-        this.method = HttpMethod.POST;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> put() {
-        this.method = HttpMethod.PUT;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> delete() {
-        this.method = HttpMethod.DELETE;
-        return this;
-    }
-
-    @Override
-    public RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> patch() {
-        this.method = HttpMethod.PATCH;
+    public RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> method(HttpMethod httpMethod) {
+        this.method = httpMethod;
         return this;
     }
 
