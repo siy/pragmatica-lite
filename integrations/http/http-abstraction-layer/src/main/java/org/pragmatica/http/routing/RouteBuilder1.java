@@ -75,7 +75,7 @@ final class RouteBuilder1<T1> implements Route.PathStage1<T1>, Route.HandlerStag
     }
 
     @Override
-    public RouteMatcher handler(Route.Handler1<T1> handler) {
+    public RouteMatcher handler(Route.Handler handler) {
         this.handler = handler;
         return build();
     }

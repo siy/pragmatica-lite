@@ -75,7 +75,7 @@ final class RouteBuilder2<T1, T2> implements Route.PathStage2<T1, T2>, Route.Han
     }
 
     @Override
-    public RouteMatcher handler(Route.Handler2<T1, T2> handler) {
+    public RouteMatcher handler(Route.Handler handler) {
         this.handler = handler;
         return build();
     }

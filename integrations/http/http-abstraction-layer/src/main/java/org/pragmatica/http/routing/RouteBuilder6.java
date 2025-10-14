@@ -75,7 +75,7 @@ final class RouteBuilder6<T1, T2, T3, T4, T5, T6> implements Route.PathStage6<T1
     }
 
     @Override
-    public RouteMatcher handler(Route.Handler6<T1, T2, T3, T4, T5, T6> handler) {
+    public RouteMatcher handler(Route.Handler handler) {
         this.handler = handler;
         return build();
     }

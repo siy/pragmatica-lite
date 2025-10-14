@@ -18,7 +18,7 @@
 package org.pragmatica.http.routing;
 
 /// Parameter type for route parameters.
-enum ParameterType {
+public enum ParameterType {
     /// Path parameter extracted from URL segments
     PATH,
 

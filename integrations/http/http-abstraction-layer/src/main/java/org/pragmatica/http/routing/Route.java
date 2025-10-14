@@ -25,6 +25,8 @@ import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.type.TypeToken;
 
+import java.util.logging.Handler;
+
 /// Type-safe route builder with compile-time parameter tracking.
 ///
 /// Each parameter declaration transitions to next generic stage (PathStage0 → PathStage1 → ...),
@@ -515,124 +517,103 @@ public interface Route<T extends Route<?>> extends RouteMatcher {
         PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> path(String segment);
     }
 
+    interface HandlerStage<T extends HandlerStage<T, ?>, H extends Handler> extends Route<T> {
+        T in(ContentType contentType);
+        T out(ContentType contentType);
+        RouteMatcher handler(Handler handler);
+    }
+
     /// Handler stage 0: No parameters
-    interface HandlerStage0 extends Route<HandlerStage0> {
-        HandlerStage0 in(ContentType contentType);
-        HandlerStage0 out(ContentType contentType);
-        RouteMatcher handler(Handler0 handler);
+    interface HandlerStage0 extends HandlerStage<HandlerStage0, Handler0> {
     }
 
     /// Handler stage 1: One parameter
-    interface HandlerStage1<T1> extends Route<HandlerStage1<T1>> {
-        HandlerStage1<T1> in(ContentType contentType);
-        HandlerStage1<T1> out(ContentType contentType);
-        RouteMatcher handler(Handler1<T1> handler);
+    interface HandlerStage1<T1> extends HandlerStage<HandlerStage1<T1>, Handler1<T1>> {
     }
 
     /// Handler stage 2: Two parameters
-    interface HandlerStage2<T1, T2> extends Route<HandlerStage2<T1, T2>> {
-        HandlerStage2<T1, T2> in(ContentType contentType);
-        HandlerStage2<T1, T2> out(ContentType contentType);
-        RouteMatcher handler(Handler2<T1, T2> handler);
+    interface HandlerStage2<T1, T2> extends HandlerStage<HandlerStage2<T1, T2>, Handler2<T1, T2>> {
     }
 
     /// Handler stage 3: Three parameters
-    interface HandlerStage3<T1, T2, T3> extends Route<HandlerStage3<T1, T2, T3>> {
-        HandlerStage3<T1, T2, T3> in(ContentType contentType);
-        HandlerStage3<T1, T2, T3> out(ContentType contentType);
-        RouteMatcher handler(Handler3<T1, T2, T3> handler);
+    interface HandlerStage3<T1, T2, T3> extends HandlerStage<HandlerStage3<T1, T2, T3>, Handler3<T1, T2, T3>> {
     }
 
     /// Handler stage 4: Four parameters
-    interface HandlerStage4<T1, T2, T3, T4> extends Route<HandlerStage4<T1, T2, T3, T4>> {
-        HandlerStage4<T1, T2, T3, T4> in(ContentType contentType);
-        HandlerStage4<T1, T2, T3, T4> out(ContentType contentType);
-        RouteMatcher handler(Handler4<T1, T2, T3, T4> handler);
+    interface HandlerStage4<T1, T2, T3, T4> extends HandlerStage<HandlerStage4<T1, T2, T3, T4>, Handler4<T1, T2, T3, T4>> {
     }
 
     /// Handler stage 5: Five parameters
-    interface HandlerStage5<T1, T2, T3, T4, T5> extends Route<HandlerStage5<T1, T2, T3, T4, T5>> {
-        HandlerStage5<T1, T2, T3, T4, T5> in(ContentType contentType);
-        HandlerStage5<T1, T2, T3, T4, T5> out(ContentType contentType);
-        RouteMatcher handler(Handler5<T1, T2, T3, T4, T5> handler);
+    interface HandlerStage5<T1, T2, T3, T4, T5> extends HandlerStage<HandlerStage5<T1, T2, T3, T4, T5>, Handler5<T1, T2, T3, T4, T5>> {
     }
 
     /// Handler stage 6: Six parameters
-    interface HandlerStage6<T1, T2, T3, T4, T5, T6> extends Route<HandlerStage6<T1, T2, T3, T4, T5, T6>> {
-        HandlerStage6<T1, T2, T3, T4, T5, T6> in(ContentType contentType);
-        HandlerStage6<T1, T2, T3, T4, T5, T6> out(ContentType contentType);
-        RouteMatcher handler(Handler6<T1, T2, T3, T4, T5, T6> handler);
+    interface HandlerStage6<T1, T2, T3, T4, T5, T6> extends HandlerStage<HandlerStage6<T1, T2, T3, T4, T5, T6>, Handler6<T1, T2, T3, T4, T5, T6>> {
     }
 
     /// Handler stage 7: Seven parameters
-    interface HandlerStage7<T1, T2, T3, T4, T5, T6, T7> extends Route<HandlerStage7<T1, T2, T3, T4, T5, T6, T7>> {
-        HandlerStage7<T1, T2, T3, T4, T5, T6, T7> in(ContentType contentType);
-        HandlerStage7<T1, T2, T3, T4, T5, T6, T7> out(ContentType contentType);
-        RouteMatcher handler(Handler7<T1, T2, T3, T4, T5, T6, T7> handler);
+    interface HandlerStage7<T1, T2, T3, T4, T5, T6, T7> extends HandlerStage<HandlerStage7<T1, T2, T3, T4, T5, T6, T7>, Handler7<T1, T2, T3, T4, T5, T6, T7>> {
     }
 
     /// Handler stage 8: Eight parameters
-    interface HandlerStage8<T1, T2, T3, T4, T5, T6, T7, T8> extends Route<HandlerStage8<T1, T2, T3, T4, T5, T6, T7, T8>> {
-        HandlerStage8<T1, T2, T3, T4, T5, T6, T7, T8> in(ContentType contentType);
-        HandlerStage8<T1, T2, T3, T4, T5, T6, T7, T8> out(ContentType contentType);
-        RouteMatcher handler(Handler8<T1, T2, T3, T4, T5, T6, T7, T8> handler);
+    interface HandlerStage8<T1, T2, T3, T4, T5, T6, T7, T8> extends HandlerStage<HandlerStage8<T1, T2, T3, T4, T5, T6, T7, T8>, Handler8<T1, T2, T3, T4, T5, T6, T7, T8>> {
     }
 
     /// Handler stage 9: Nine parameters (maximum)
-    interface HandlerStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> extends Route<HandlerStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> {
-        HandlerStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> in(ContentType contentType);
-        HandlerStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> out(ContentType contentType);
-        RouteMatcher handler(Handler9<T1, T2, T3, T4, T5, T6, T7, T8, T9> handler);
+    interface HandlerStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> extends HandlerStage<HandlerStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9>, Handler9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> {
+    }
+
+    interface Handler {
     }
 
     /// Handler function interfaces
     @FunctionalInterface
-    interface Handler0 {
+    interface Handler0 extends Handler {
         Promise<HttpResponse> handle();
     }
 
     @FunctionalInterface
-    interface Handler1<T1> {
+    interface Handler1<T1> extends Handler {
         Promise<HttpResponse> handle(Option<T1> p1);
     }
 
     @FunctionalInterface
-    interface Handler2<T1, T2> {
+    interface Handler2<T1, T2> extends Handler {
         Promise<HttpResponse> handle(Option<T1> p1, Option<T2> p2);
     }
 
     @FunctionalInterface
-    interface Handler3<T1, T2, T3> {
+    interface Handler3<T1, T2, T3> extends Handler {
         Promise<HttpResponse> handle(Option<T1> p1, Option<T2> p2, Option<T3> p3);
     }
 
     @FunctionalInterface
-    interface Handler4<T1, T2, T3, T4> {
+    interface Handler4<T1, T2, T3, T4> extends Handler {
         Promise<HttpResponse> handle(Option<T1> p1, Option<T2> p2, Option<T3> p3, Option<T4> p4);
     }
 
     @FunctionalInterface
-    interface Handler5<T1, T2, T3, T4, T5> {
+    interface Handler5<T1, T2, T3, T4, T5> extends Handler {
         Promise<HttpResponse> handle(Option<T1> p1, Option<T2> p2, Option<T3> p3, Option<T4> p4, Option<T5> p5);
     }
 
     @FunctionalInterface
-    interface Handler6<T1, T2, T3, T4, T5, T6> {
+    interface Handler6<T1, T2, T3, T4, T5, T6> extends Handler {
         Promise<HttpResponse> handle(Option<T1> p1, Option<T2> p2, Option<T3> p3, Option<T4> p4, Option<T5> p5, Option<T6> p6);
     }
 
     @FunctionalInterface
-    interface Handler7<T1, T2, T3, T4, T5, T6, T7> {
+    interface Handler7<T1, T2, T3, T4, T5, T6, T7> extends Handler {
         Promise<HttpResponse> handle(Option<T1> p1, Option<T2> p2, Option<T3> p3, Option<T4> p4, Option<T5> p5, Option<T6> p6, Option<T7> p7);
     }
 
     @FunctionalInterface
-    interface Handler8<T1, T2, T3, T4, T5, T6, T7, T8> {
+    interface Handler8<T1, T2, T3, T4, T5, T6, T7, T8> extends Handler {
         Promise<HttpResponse> handle(Option<T1> p1, Option<T2> p2, Option<T3> p3, Option<T4> p4, Option<T5> p5, Option<T6> p6, Option<T7> p7, Option<T8> p8);
     }
 
     @FunctionalInterface
-    interface Handler9<T1, T2, T3, T4, T5, T6, T7, T8, T9> {
+    interface Handler9<T1, T2, T3, T4, T5, T6, T7, T8, T9> extends Handler {
         Promise<HttpResponse> handle(Option<T1> p1, Option<T2> p2, Option<T3> p3, Option<T4> p4, Option<T5> p5, Option<T6> p6, Option<T7> p7, Option<T8> p8, Option<T9> p9);
     }
 
