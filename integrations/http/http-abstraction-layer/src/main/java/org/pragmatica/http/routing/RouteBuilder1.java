@@ -31,68 +31,47 @@ import java.util.List;
 
 /// Route builder for 1 parameter.
 final class RouteBuilder1<T1> implements Route.PathStage1<T1>, Route.HandlerStage1<T1> {
-    private final List<String> pathSegments;
-    private final List<ParameterSpec> parameters;
-    private HttpMethod method;
-    private ContentType requestContentType = CommonContentType.APPLICATION_JSON;
-    private ContentType responseContentType = CommonContentType.APPLICATION_JSON;
-    private Object handler;
-
-    RouteBuilder1(List<String> pathSegments, List<ParameterSpec> parameters) {
-        this.pathSegments = new ArrayList<>(pathSegments);
-        this.parameters = new ArrayList<>(parameters);
+    private final RouteBuilder builder;
+    RouteBuilder1(RouteBuilder builder) {
+        this.builder = builder;
     }
 
     @Override
     public RouteBuilder1<T1> path(String segment) {
-        pathSegments.add(segment);
+        builder.addSegment(segment);
         return this;
     }
 
     @Override
     public <T2> Route.PathStage2<T1, T2> addParam(ParameterType type, String name, TypeToken<T2> token) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(type, name, token));
-        return new RouteBuilder2<>(pathSegments, newParams);
+        return new RouteBuilder2<>(builder.withParameter(type, name, token));
     }
 
     @Override
     public RouteBuilder1<T1> method(HttpMethod httpMethod) {
-        this.method = httpMethod;
+        builder.method(httpMethod);
         return this;
     }
 
     @Override
     public RouteBuilder1<T1> in(ContentType contentType) {
-        this.requestContentType = contentType;
+        builder.in(contentType);
         return this;
     }
 
     @Override
     public RouteBuilder1<T1> out(ContentType contentType) {
-        this.responseContentType = contentType;
+        builder.out(contentType);
         return this;
     }
 
     @Override
     public RouteMatcher handler(Route.Handler1<T1> handler) {
-        this.handler = handler;
-        return build();
+        return builder.buildWithHandler(handler);
     }
 
     @Override
     public Promise<Option<HttpResponse>> match(HttpRequest request) {
         throw new UnsupportedOperationException("Builder cannot match requests");
-    }
-
-    private RouteMatcher build() {
-        return new ConcreteRoute(
-            String.join("/", pathSegments),
-            method,
-            parameters,
-            requestContentType,
-            responseContentType,
-            handler
-        );
     }
 }

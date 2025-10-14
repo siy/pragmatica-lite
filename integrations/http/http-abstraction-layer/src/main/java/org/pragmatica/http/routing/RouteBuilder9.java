@@ -17,73 +17,51 @@
 
 package org.pragmatica.http.routing;
 
-import org.pragmatica.http.model.CommonContentType;
 import org.pragmatica.http.model.ContentType;
 import org.pragmatica.http.model.HttpRequest;
 import org.pragmatica.http.model.HttpResponse;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /// Route builder for 9 parameters (maximum).
 final class RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> implements Route.PathStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9>, Route.HandlerStage9<T1, T2, T3, T4, T5, T6, T7, T8, T9> {
-    private final List<String> pathSegments;
-    private final List<ParameterSpec> parameters;
-    private HttpMethod method;
-    private ContentType requestContentType = CommonContentType.APPLICATION_JSON;
-    private ContentType responseContentType = CommonContentType.APPLICATION_JSON;
-    private Object handler;
+    private final RouteBuilder builder;
 
-    RouteBuilder9(List<String> pathSegments, List<ParameterSpec> parameters) {
-        this.pathSegments = new ArrayList<>(pathSegments);
-        this.parameters = new ArrayList<>(parameters);
+    RouteBuilder9(RouteBuilder builder) {
+        this.builder = builder;
     }
 
     @Override
     public RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> path(String segment) {
-        pathSegments.add(segment);
+        builder.addSegment(segment);
         return this;
     }
 
     @Override
     public RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> method(HttpMethod httpMethod) {
-        this.method = httpMethod;
+        builder.method(httpMethod);
         return this;
     }
 
     @Override
     public RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> in(ContentType contentType) {
-        this.requestContentType = contentType;
+        builder.in(contentType);
         return this;
     }
 
     @Override
     public RouteBuilder9<T1, T2, T3, T4, T5, T6, T7, T8, T9> out(ContentType contentType) {
-        this.responseContentType = contentType;
+        builder.out(contentType);
         return this;
     }
 
     @Override
     public RouteMatcher handler(Route.Handler9<T1, T2, T3, T4, T5, T6, T7, T8, T9> handler) {
-        this.handler = handler;
-        return build();
+        return builder.buildWithHandler(handler);
     }
 
     @Override
     public Promise<Option<HttpResponse>> match(HttpRequest request) {
         throw new UnsupportedOperationException("Builder cannot match requests");
-    }
-
-    private RouteMatcher build() {
-        return new ConcreteRoute(
-            String.join("/", pathSegments),
-            method,
-            parameters,
-            requestContentType,
-            responseContentType,
-            handler
-        );
     }
 }

@@ -31,7 +31,7 @@ final class ConcreteRoute implements RouteMatcher {
     private final List<ParameterSpec> parameters;
     private final ContentType requestContentType;
     private final ContentType responseContentType;
-    private final Object handler;
+    private final Route.Handler handler;
 
     ConcreteRoute(
         String path,
@@ -39,7 +39,7 @@ final class ConcreteRoute implements RouteMatcher {
         List<ParameterSpec> parameters,
         ContentType requestContentType,
         ContentType responseContentType,
-        Object handler
+        Route.Handler handler
     ) {
         this.path = path;
         this.method = method;

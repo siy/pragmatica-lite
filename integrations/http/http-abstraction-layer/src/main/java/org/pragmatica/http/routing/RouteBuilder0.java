@@ -17,35 +17,20 @@
 
 package org.pragmatica.http.routing;
 
-import org.pragmatica.http.model.CommonContentType;
 import org.pragmatica.http.model.ContentType;
-import org.pragmatica.http.model.HttpHeaderName;
 import org.pragmatica.http.model.HttpRequest;
 import org.pragmatica.http.model.HttpResponse;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.type.TypeToken;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /// Route builder for 0 parameters.
 final class RouteBuilder0 implements Route.PathStage0, Route.HandlerStage0 {
-    private final List<String> pathSegments;
-    private final List<ParameterSpec> parameters;
-    private HttpMethod method;
-    private ContentType requestContentType = CommonContentType.APPLICATION_JSON;
-    private ContentType responseContentType = CommonContentType.APPLICATION_JSON;
-    private Object handler;
+    private final RouteBuilder builder = new RouteBuilder();
 
     private RouteBuilder0() {
-        this.pathSegments = new ArrayList<>();
-        this.parameters = new ArrayList<>();
-    }
-
-    private RouteBuilder0(List<String> pathSegments, List<ParameterSpec> parameters) {
-        this.pathSegments = new ArrayList<>(pathSegments);
-        this.parameters = new ArrayList<>(parameters);
     }
 
     static RouteBuilder0 builder() {
@@ -54,59 +39,45 @@ final class RouteBuilder0 implements Route.PathStage0, Route.HandlerStage0 {
 
     @Override
     public RouteBuilder0 path(String segment) {
-        pathSegments.add(segment);
+        builder.addSegment(segment);
         return this;
     }
 
     @Override
     public RouteMatcher subpath(RouteMatcher... routes) {
-        return new CompositeRoute(String.join("/", pathSegments), List.of(routes));
+        return new CompositeRoute(builder.fullPath(), List.of(routes));
     }
 
     @Override
     public <T1> Route.PathStage1<T1> addParam(ParameterType type, String name, TypeToken<T1> token) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(type, name, token));
-        return new RouteBuilder1<>(pathSegments, newParams);
+        return new RouteBuilder1<>(builder.withParameter(type, name, token));
     }
 
     @Override
     public RouteBuilder0 method(HttpMethod httpMethod) {
-        this.method = httpMethod;
+        builder.method(httpMethod);
         return this;
     }
 
     @Override
     public RouteBuilder0 in(ContentType contentType) {
-        this.requestContentType = contentType;
+        builder.in(contentType);
         return this;
     }
 
     @Override
     public RouteBuilder0 out(ContentType contentType) {
-        this.responseContentType = contentType;
+        builder.out(contentType);
         return this;
     }
 
     @Override
     public RouteMatcher handler(Route.Handler0 handler) {
-        this.handler = handler;
-        return build();
+        return builder.buildWithHandler(handler);
     }
 
     @Override
     public Promise<Option<HttpResponse>> match(HttpRequest request) {
         throw new UnsupportedOperationException("Builder cannot match requests");
-    }
-
-    private RouteMatcher build() {
-        return new ConcreteRoute(
-            String.join("/", pathSegments),
-            method,
-            parameters,
-            requestContentType,
-            responseContentType,
-            handler
-        );
     }
 }

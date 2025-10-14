@@ -17,82 +17,57 @@
 
 package org.pragmatica.http.routing;
 
-import org.pragmatica.http.model.CommonContentType;
 import org.pragmatica.http.model.ContentType;
-import org.pragmatica.http.model.HttpHeaderName;
 import org.pragmatica.http.model.HttpRequest;
 import org.pragmatica.http.model.HttpResponse;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.type.TypeToken;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /// Route builder for 4 parameters.
 final class RouteBuilder4<T1, T2, T3, T4> implements Route.PathStage4<T1, T2, T3, T4>, Route.HandlerStage4<T1, T2, T3, T4> {
-    private final List<String> pathSegments;
-    private final List<ParameterSpec> parameters;
-    private HttpMethod method;
-    private ContentType requestContentType = CommonContentType.APPLICATION_JSON;
-    private ContentType responseContentType = CommonContentType.APPLICATION_JSON;
-    private Object handler;
+    private final RouteBuilder builder;
 
-    RouteBuilder4(List<String> pathSegments, List<ParameterSpec> parameters) {
-        this.pathSegments = new ArrayList<>(pathSegments);
-        this.parameters = new ArrayList<>(parameters);
+    RouteBuilder4(RouteBuilder builder) {
+        this.builder = builder;
     }
 
     @Override
     public RouteBuilder4<T1, T2, T3, T4> path(String segment) {
-        pathSegments.add(segment);
+        builder.addSegment(segment);
         return this;
     }
 
     @Override
     public <T5> Route.PathStage5<T1, T2, T3, T4, T5> addParam(ParameterType type, String name, TypeToken<T5> token) {
-        var newParams = new ArrayList<>(parameters);
-        newParams.add(new ParameterSpec(type, name, token));
-        return new RouteBuilder5<>(pathSegments, newParams);
+        return new RouteBuilder5<>(builder.withParameter(type, name, token));
     }
 
     @Override
     public RouteBuilder4<T1, T2, T3, T4> method(HttpMethod httpMethod) {
-        this.method = httpMethod;
+        builder.method(httpMethod);
         return this;
     }
 
     @Override
     public RouteBuilder4<T1, T2, T3, T4> in(ContentType contentType) {
-        this.requestContentType = contentType;
+        builder.in(contentType);
         return this;
     }
 
     @Override
     public RouteBuilder4<T1, T2, T3, T4> out(ContentType contentType) {
-        this.responseContentType = contentType;
+        builder.out(contentType);
         return this;
     }
 
     @Override
     public RouteMatcher handler(Route.Handler4<T1, T2, T3, T4> handler) {
-        this.handler = handler;
-        return build();
+        return builder.buildWithHandler(handler);
     }
 
     @Override
     public Promise<Option<HttpResponse>> match(HttpRequest request) {
         throw new UnsupportedOperationException("Builder cannot match requests");
-    }
-
-    private RouteMatcher build() {
-        return new ConcreteRoute(
-            String.join("/", pathSegments),
-            method,
-            parameters,
-            requestContentType,
-            responseContentType,
-            handler
-        );
     }
 }
