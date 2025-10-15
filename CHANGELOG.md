@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- `Verify.ensure(Cause, T, Predicate<T>)` - validation with fixed error cause
+- `Verify.ensure(Cause, T, Fn2<...>, P1)` - binary validation with fixed error cause
+- `Verify.ensure(Cause, T, Fn3<...>, P1, P2)` - ternary validation with fixed error cause
+- `Verify.ensureFn(Cause, Predicate<T>)` - reusable validation function with fixed error cause
+- `Verify.ensureFn(Cause, Fn2<...>, P1)` - reusable binary validation function with fixed error cause
+- `Verify.ensureFn(Cause, Fn3<...>, P1, P2)` - reusable ternary validation function with fixed error cause
+- Comprehensive JavaDoc for all `ensureFn` method variants
+- Test coverage for fixed Cause `ensureFn` variants (4 new tests)
+
+### Changed
+- `JsonMapper.builder()` → `JsonMapper.jsonMapper()` for JBCT naming consistency
+- `JsonMapper.create()` → `JsonMapper.defaultJsonMapper()` for JBCT naming consistency
+- `Verify.ensure()` now uses `Causes.forOneValue()` instead of deprecated `Causes.forValue()`
+
 ## [0.8.2] - 2025-10-11
 
 ### Added

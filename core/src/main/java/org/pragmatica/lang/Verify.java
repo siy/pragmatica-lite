@@ -76,6 +76,15 @@ public sealed interface Verify {
         return value -> ensure(causeProvider, value, predicate);
     }
 
+    /// Creates a reusable validation function with a fixed error cause.
+    /// This is useful when you want to create a validation function with a consistent
+    /// error message across all validation failures.
+    ///
+    /// @param cause     The Cause to use when validation fails
+    /// @param predicate The predicate to test values against
+    /// @param <T>       The type of the values being verified
+    ///
+    /// @return A function that takes a value and returns a Result containing the value or failure
     static <T> Fn1<Result<T>, T> ensureFn(Cause cause, Predicate<T> predicate) {
         return value -> ensure(_ -> cause, value, predicate);
     }
@@ -101,9 +110,30 @@ public sealed interface Verify {
         return ensure(_ -> cause, value, v -> predicate.apply(v, param1));
     }
 
-    /// Create a function which will perform given check and return [Result]
+    /// Creates a reusable validation function for binary predicates.
+    /// This is a function factory that creates validation functions with one additional parameter.
+    ///
+    /// @param predicate The binary predicate to test values against
+    /// @param param1    The additional parameter to pass to the predicate
+    /// @param <T>       The type of the values being verified
+    /// @param <P1>      The type of the additional parameter
+    ///
+    /// @return A function that takes a value and returns a Result containing the value or failure
     static <T, P1> Fn1<Result<T>, T> ensureFn(Fn2<Boolean, T, P1> predicate, P1 param1) {
         return value -> ensure(value, predicate, param1);
+    }
+
+    /// Creates a reusable validation function for binary predicates with a fixed error cause.
+    ///
+    /// @param cause     The Cause to use when validation fails
+    /// @param predicate The binary predicate to test values against
+    /// @param param1    The additional parameter to pass to the predicate
+    /// @param <T>       The type of the values being verified
+    /// @param <P1>      The type of the additional parameter
+    ///
+    /// @return A function that takes a value and returns a Result containing the value or failure
+    static <T, P1> Fn1<Result<T>, T> ensureFn(Cause cause, Fn2<Boolean, T, P1> predicate, P1 param1) {
+        return value -> ensure(_ -> cause, value, predicate, param1);
     }
 
     /// Ensures that a value satisfies a binary predicate with one additional parameter.
@@ -161,9 +191,34 @@ public sealed interface Verify {
         return ensure(_ -> cause, value, v -> predicate.apply(v, param1, param2));
     }
 
-    /// Create a function which will perform given check and return [Result]
+    /// Creates a reusable validation function for ternary predicates.
+    /// This is a function factory that creates validation functions with two additional parameters.
+    ///
+    /// @param predicate The ternary predicate to test values against
+    /// @param param1    The first additional parameter to pass to the predicate
+    /// @param param2    The second additional parameter to pass to the predicate
+    /// @param <T>       The type of the values being verified
+    /// @param <P1>      The type of the first additional parameter
+    /// @param <P2>      The type of the second additional parameter
+    ///
+    /// @return A function that takes a value and returns a Result containing the value or failure
     static <T, P1, P2> Fn1<Result<T>, T> ensureFn(Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2) {
         return value -> ensure(value, predicate, param1, param2);
+    }
+
+    /// Creates a reusable validation function for ternary predicates with a fixed error cause.
+    ///
+    /// @param cause     The Cause to use when validation fails
+    /// @param predicate The ternary predicate to test values against
+    /// @param param1    The first additional parameter to pass to the predicate
+    /// @param param2    The second additional parameter to pass to the predicate
+    /// @param <T>       The type of the values being verified
+    /// @param <P1>      The type of the first additional parameter
+    /// @param <P2>      The type of the second additional parameter
+    ///
+    /// @return A function that takes a value and returns a Result containing the value or failure
+    static <T, P1, P2> Fn1<Result<T>, T> ensureFn(Cause cause, Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2) {
+        return value -> ensure(_ -> cause, value, predicate, param1, param2);
     }
 
     /// Ensures that a value satisfies a ternary predicate with two additional parameters.
