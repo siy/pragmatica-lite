@@ -2,7 +2,7 @@
 
 ![License](https://img.shields.io/badge/license-Apache%202-blue.svg)
 ![Java](https://img.shields.io/badge/Java-25-orange.svg)
-![Maven Central](https://img.shields.io/badge/Maven-0.8.0-blue.svg)
+![Maven Central](https://img.shields.io/badge/Maven-0.8.3-blue.svg)
 
 ## Modern Functional Programming for Java 25
 
@@ -97,14 +97,14 @@ Pragmatica Lite is available on Maven Central. Simply add the dependency to your
 <dependency>
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>core</artifactId>
-    <version>0.8.0</version>
+    <version>0.8.3</version>
 </dependency>
 ```
 
 For Gradle users:
 
 ```gradle
-implementation 'org.pragmatica-lite:core:0.8.0'
+implementation 'org.pragmatica-lite:core:0.8.3'
 ```
 
 ### Your First Pragmatica Application
@@ -184,7 +184,101 @@ Explore comprehensive examples in the [examples](examples) directory:
 | Module | Description |
 |--------|-------------|
 | **core** | Core monadic types: Result, Option, Promise |
+| **integrations/json/jackson** | Jackson 3.0 integration for JSON serialization |
+| **integrations/db/jpa** | JPA integration with Promise-based operations |
+| **integrations/metrics/micrometer** | Micrometer metrics for Result/Option/Promise |
 | **examples** | Sample applications and usage patterns |
+
+## Integrations
+
+### Jackson JSON (3.0.0)
+
+Serialize and deserialize Result, Option, and Promise types:
+
+```xml
+<dependency>
+    <groupId>org.pragmatica-lite</groupId>
+    <artifactId>jackson</artifactId>
+    <version>0.8.3</version>
+</dependency>
+```
+
+```java
+var mapper = JsonMapper.jsonMapper()
+    .withPragmaticaTypes()
+    .build();
+
+// Result<T> serialization
+Result<User> result = fetchUser(id);
+mapper.writeAsString(result)  // Result<String>
+    .onSuccess(json -> sendResponse(json));
+
+// Type-safe deserialization
+mapper.readString(json, new TypeToken<List<User>>() {})
+    .onSuccess(users -> processUsers(users));
+```
+
+### JPA Database Integration
+
+Promise-based JPA operations with typed errors:
+
+```xml
+<dependency>
+    <groupId>org.pragmatica-lite</groupId>
+    <artifactId>jpa</artifactId>
+    <version>0.8.3</version>
+</dependency>
+```
+
+```java
+var ops = JpaOperations.create(entityManager, JpaError::fromException);
+
+// Transactional operations
+Promise<User> result = Transactional.withTransaction(
+    entityManager,
+    JpaError::fromException,
+    tx -> ops.persist(newUser)
+        .flatMap(saved -> ops.flush().map(_ -> saved))
+);
+
+// Typed errors: EntityNotFound, OptimisticLock, DatabaseFailure, etc.
+result.onFailure(error -> switch (error) {
+    case JpaError.EntityNotFound _ -> handleNotFound();
+    case JpaError.OptimisticLock lock -> handleConflict(lock.entityType());
+    case JpaError.DatabaseFailure db -> handleDatabaseError(db.cause());
+    default -> handleUnexpected(error);
+});
+```
+
+### Micrometer Metrics
+
+Monitor Result, Option, and Promise operations:
+
+```xml
+<dependency>
+    <groupId>org.pragmatica-lite</groupId>
+    <artifactId>micrometer</artifactId>
+    <version>0.8.3</version>
+</dependency>
+```
+
+```java
+// Wrap operations with metrics
+var wrappedOperation = ResultMetrics.timed(
+    registry,
+    "user.fetch",
+    Tags.of("service", "user-service"),
+    () -> fetchUser(userId)
+);
+
+// Automatic success/failure tracking
+Promise<Data> monitored = PromiseMetrics.counted(
+    registry,
+    "api.call",
+    Tags.of("endpoint", "/users"),
+    apiClient.fetchData()
+);
+```
 
 ## Contributing
 

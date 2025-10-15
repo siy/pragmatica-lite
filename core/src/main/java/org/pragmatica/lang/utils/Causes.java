@@ -95,7 +95,6 @@ public sealed interface Causes {
         return forOneValue(template);
     }
 
-
     /// Create a mapper which will map a single value into a formatted message.
     ///
     /// @param template the message template prepared for [String.format]

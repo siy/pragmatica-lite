@@ -34,7 +34,7 @@ class JsonMapperTest {
 
     @BeforeEach
     void setup() {
-        mapper = JsonMapper.create();
+        mapper = JsonMapper.defaultJsonMapper();
     }
 
     @Nested

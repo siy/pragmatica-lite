@@ -23,7 +23,6 @@ import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JacksonModule;
 import tools.jackson.databind.json.JsonMapper.Builder;
 
-import java.lang.reflect.Type;
 import java.util.function.Consumer;
 
 /// Functional wrapper around Jackson's JsonMapper providing Result-based API.
@@ -122,15 +121,15 @@ public interface JsonMapper {
     /// Creates a new JsonMapper builder.
     ///
     /// @return Builder instance
-    static JsonMapperBuilder builder() {
+    static JsonMapperBuilder jsonMapper() {
         return new JsonMapperImpl.BuilderImpl();
     }
 
     /// Creates a JsonMapper with Pragmatica types support enabled.
     ///
     /// @return JsonMapper instance
-    static JsonMapper create() {
-        return builder().withPragmaticaTypes().build();
+    static JsonMapper defaultJsonMapper() {
+        return jsonMapper().withPragmaticaTypes().build();
     }
 
     /// Builder interface for configuring JsonMapper.

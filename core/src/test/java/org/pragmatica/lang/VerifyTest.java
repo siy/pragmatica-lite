@@ -524,5 +524,89 @@ class VerifyTest {
                   .onSuccessRun(() -> fail("Should fail"))
                   .onFailure(cause -> assertEquals("Custom: 12 out of range", cause.message()));
         }
+
+        @Test
+        @DisplayName("ensureFn with fixed Cause for unary predicate should work")
+        void ensureFnWithFixedCauseForUnaryPredicateShouldWork() {
+            var fixedCause = Causes.cause("Fixed error: value is invalid");
+            var validationFn = Verify.<String>ensureFn(fixedCause, value -> Verify.Is.notBlank(value));
+
+            // Success case
+            validationFn.apply("valid")
+                        .onSuccess(value -> assertEquals("valid", value))
+                        .onFailureRun(() -> fail("Should succeed"));
+
+            // Failure case - should use fixed cause
+            validationFn.apply("   ")
+                        .onSuccessRun(() -> fail("Should fail"))
+                        .onFailure(cause -> assertEquals("Fixed error: value is invalid", cause.message()));
+        }
+
+        @Test
+        @DisplayName("ensureFn with fixed Cause for binary predicate should work")
+        void ensureFnWithFixedCauseForBinaryPredicateShouldWork() {
+            var fixedCause = Causes.cause("Fixed error: range check failed");
+            var rangeCheck = Verify.<Integer, Integer>ensureFn(fixedCause,
+                (value, boundary) -> Verify.Is.greaterThan(value, boundary), 10);
+
+            // Success case
+            rangeCheck.apply(15)
+                      .onSuccess(value -> assertEquals(15, value))
+                      .onFailureRun(() -> fail("Should succeed"));
+
+            // Failure case - should use fixed cause regardless of value
+            rangeCheck.apply(5)
+                      .onSuccessRun(() -> fail("Should fail"))
+                      .onFailure(cause -> assertEquals("Fixed error: range check failed", cause.message()));
+
+            // Another failure with different value - same fixed cause
+            rangeCheck.apply(0)
+                      .onSuccessRun(() -> fail("Should fail"))
+                      .onFailure(cause -> assertEquals("Fixed error: range check failed", cause.message()));
+        }
+
+        @Test
+        @DisplayName("ensureFn with fixed Cause for ternary predicate should work")
+        void ensureFnWithFixedCauseForTernaryPredicateShouldWork() {
+            var fixedCause = Causes.cause("Fixed error: value out of bounds");
+            var betweenCheck = Verify.<Integer, Integer, Integer>ensureFn(fixedCause,
+                (value, min, max) -> Verify.Is.between(value, min, max), 10, 20);
+
+            // Success case
+            betweenCheck.apply(15)
+                        .onSuccess(value -> assertEquals(15, value))
+                        .onFailureRun(() -> fail("Should succeed"));
+
+            // Failure case - below range
+            betweenCheck.apply(5)
+                        .onSuccessRun(() -> fail("Should fail"))
+                        .onFailure(cause -> assertEquals("Fixed error: value out of bounds", cause.message()));
+
+            // Failure case - above range, same fixed cause
+            betweenCheck.apply(25)
+                        .onSuccessRun(() -> fail("Should fail"))
+                        .onFailure(cause -> assertEquals("Fixed error: value out of bounds", cause.message()));
+        }
+
+        @Test
+        @DisplayName("ensureFn with fixed Cause should be reusable across different values")
+        void ensureFnWithFixedCauseShouldBeReusableAcrossDifferentValues() {
+            var fixedCause = Causes.cause("Password too short");
+            var passwordValidator = Verify.<String, Integer, Integer>ensureFn(fixedCause,
+                (value, min, max) -> Verify.Is.lenBetween(value, min, max), 8, 20);
+
+            // Multiple validations with same function
+            passwordValidator.apply("password123")
+                             .onSuccess(value -> assertEquals("password123", value))
+                             .onFailureRun(() -> fail("Should succeed"));
+
+            passwordValidator.apply("short")
+                             .onSuccessRun(() -> fail("Should fail"))
+                             .onFailure(cause -> assertEquals("Password too short", cause.message()));
+
+            passwordValidator.apply("pw")
+                             .onSuccessRun(() -> fail("Should fail"))
+                             .onFailure(cause -> assertEquals("Password too short", cause.message()));
+        }
     }
 }
