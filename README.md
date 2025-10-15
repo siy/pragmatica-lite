@@ -2,7 +2,7 @@
 
 ![License](https://img.shields.io/badge/license-Apache%202-blue.svg)
 ![Java](https://img.shields.io/badge/Java-25-orange.svg)
-![Maven Central](https://img.shields.io/badge/Maven-0.8.2-blue.svg)
+![Maven Central](https://img.shields.io/badge/Maven-0.8.3-blue.svg)
 
 ## Modern Functional Programming for Java 25
 
@@ -97,14 +97,14 @@ Pragmatica Lite is available on Maven Central. Simply add the dependency to your
 <dependency>
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>core</artifactId>
-    <version>0.8.2</version>
+    <version>0.8.3</version>
 </dependency>
 ```
 
 For Gradle users:
 
 ```gradle
-implementation 'org.pragmatica-lite:core:0.8.2'
+implementation 'org.pragmatica-lite:core:0.8.3'
 ```
 
 ### Your First Pragmatica Application
@@ -199,12 +199,12 @@ Serialize and deserialize Result, Option, and Promise types:
 <dependency>
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>jackson</artifactId>
-    <version>0.8.2</version>
+    <version>0.8.3</version>
 </dependency>
 ```
 
 ```java
-var mapper = JsonMapper.builder()
+var mapper = JsonMapper.jsonMapper()
     .withPragmaticaTypes()
     .build();
 
@@ -226,7 +226,7 @@ Promise-based JPA operations with typed errors:
 <dependency>
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>jpa</artifactId>
-    <version>0.8.2</version>
+    <version>0.8.3</version>
 </dependency>
 ```
 
@@ -258,7 +258,7 @@ Monitor Result, Option, and Promise operations:
 <dependency>
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>micrometer</artifactId>
-    <version>0.8.2</version>
+    <version>0.8.3</version>
 </dependency>
 ```
 
