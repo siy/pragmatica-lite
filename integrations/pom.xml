@@ -19,6 +19,5 @@
         <module>json</module>
         <module>metrics</module>
         <module>db</module>
-        <module>http</module>
     </modules>
 </project>
