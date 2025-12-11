@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.4] - 2025-12-11
+
 ### Added
 - `Verify.ensure(Cause, T, Predicate<T>)` - validation with fixed error cause
 - `Verify.ensure(Cause, T, Fn2<...>, P1)` - binary validation with fixed error cause
