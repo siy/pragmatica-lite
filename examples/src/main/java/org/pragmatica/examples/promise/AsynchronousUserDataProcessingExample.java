@@ -27,7 +27,8 @@ class AsynchronousUserDataProcessingExample {
 
     Promise<UserData> processUserAsync(String userId) {
         // Simulate processing
-        return Promise.promise(TimeSpan.timeSpan(100).millis(),
+        return Promise.promise(TimeSpan.timeSpan(100)
+                                       .millis(),
                                promise -> promise.succeed(new UserData(userId,
                                                                        "User " + userId,
                                                                        "user" + userId + "@example.com")));

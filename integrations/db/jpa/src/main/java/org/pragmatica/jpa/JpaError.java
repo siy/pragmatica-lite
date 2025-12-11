@@ -109,8 +109,7 @@ public sealed interface JpaError extends Cause {
     /// @return Corresponding JpaError
     static JpaError fromException(Throwable throwable) {
         return switch (throwable) {
-            case EntityNotFoundException _ -> EntityNotFound.INSTANCE;
-            case NoResultException _ -> EntityNotFound.INSTANCE;
+            case EntityNotFoundException _, NoResultException _ -> EntityNotFound.INSTANCE;
             case OptimisticLockException e -> new OptimisticLock(
                 e.getEntity() != null ? e.getEntity().getClass().getSimpleName() : "Unknown",
                 e.getEntity()

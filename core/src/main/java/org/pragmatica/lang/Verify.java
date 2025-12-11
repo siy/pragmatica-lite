@@ -37,7 +37,7 @@ public sealed interface Verify {
     /// @return a success result containing the value if the predicate is satisfied,
     ///         or a failure result if the predicate is not satisfied
     static <T> Result<T> ensure(T value, Predicate<T> predicate) {
-        return ensure(Causes.forOneValue("Value {0} does not satisfy the predicate"), value, predicate);
+        return ensure(Causes.forOneValue("Value %s does not satisfy the predicate"), value, predicate);
     }
 
     static <T> Result<T> ensure(Cause cause, T value, Predicate<T> predicate) {
