@@ -20,6 +20,7 @@
         <module>jooq</module>
         <module>jdbc</module>
         <module>r2dbc</module>
+        <module>jooq-r2dbc</module>
     </modules>
 
     <properties>

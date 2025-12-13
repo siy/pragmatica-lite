@@ -44,6 +44,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `R2dbcError` sealed interface with typed error causes:
   - ConnectionFailed, QueryFailed, ConstraintViolation, Timeout, NoResult, MultipleResults, DatabaseFailure
 
+#### JOOQ R2DBC Integration
+- New module `integrations/db/jooq-r2dbc` for Promise-based JOOQ with R2DBC
+- `JooqR2dbcOperations` interface for type-safe JOOQ queries (fetchOne, fetchOptional, fetch, execute)
+- `JooqR2dbcTransactional` transaction aspect for reactive transaction management
+- Builds on top of R2DBC module with JOOQ 3.19+ support
+
 #### Verify Extensions
 - `Verify.ensure(Cause, T, Predicate<T>)` - validation with fixed error cause
 - `Verify.ensure(Cause, T, Fn2<...>, P1)` - binary validation with fixed error cause
