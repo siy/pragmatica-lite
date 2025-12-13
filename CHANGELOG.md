@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.8.4] - 2025-12-11
+## [0.8.4] - 2025-12-13
 
 ### Added
 
@@ -49,6 +49,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `JooqR2dbcOperations` interface for type-safe JOOQ queries (fetchOne, fetchOptional, fetch, execute)
 - `JooqR2dbcTransactional` transaction aspect for reactive transaction management
 - Builds on top of R2DBC module with JOOQ 3.19+ support
+
+## [0.8.3] - 2025-10-15
+
+### Added
 
 #### Verify Extensions
 - `Verify.ensure(Cause, T, Predicate<T>)` - validation with fixed error cause
