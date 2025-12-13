@@ -1375,6 +1375,9 @@ public interface Promise<T> {
         }
     }
 
+    /// Helper interface for convenient tuple transformation.
+    ///
+    /// @see Result.Mapper10
     interface Mapper10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
         Promise<Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>> id();
 
@@ -1387,6 +1390,9 @@ public interface Promise<T> {
         }
     }
 
+    /// Helper interface for convenient tuple transformation.
+    ///
+    /// @see Result.Mapper11
     interface Mapper11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> {
         Promise<Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>> id();
 
@@ -1399,6 +1405,9 @@ public interface Promise<T> {
         }
     }
 
+    /// Helper interface for convenient tuple transformation.
+    ///
+    /// @see Result.Mapper12
     interface Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> {
         Promise<Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>> id();
 
@@ -1411,6 +1420,9 @@ public interface Promise<T> {
         }
     }
 
+    /// Helper interface for convenient tuple transformation.
+    ///
+    /// @see Result.Mapper13
     interface Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> {
         Promise<Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>> id();
 
@@ -1423,6 +1435,9 @@ public interface Promise<T> {
         }
     }
 
+    /// Helper interface for convenient tuple transformation.
+    ///
+    /// @see Result.Mapper14
     interface Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> {
         Promise<Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>> id();
 
@@ -1435,6 +1450,9 @@ public interface Promise<T> {
         }
     }
 
+    /// Helper interface for convenient tuple transformation.
+    ///
+    /// @see Result.Mapper15
     interface Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> {
         Promise<Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>> id();
 

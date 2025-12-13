@@ -21,7 +21,7 @@ import org.pragmatica.lang.io.CoreError;
 
 import java.util.Map;
 
-/// Tuples of various sizes (0-9).
+/// Tuples of various sizes (0-15).
 @SuppressWarnings("unused")
 public interface Tuple {
     int size();

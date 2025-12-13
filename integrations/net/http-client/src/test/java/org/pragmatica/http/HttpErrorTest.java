@@ -77,9 +77,9 @@ class HttpErrorTest {
     }
 
     @Test
-    void httpFailure_wrapsException() {
+    void failure_wrapsException() {
         var cause = new RuntimeException("Unexpected");
-        var error = HttpError.HttpFailure.of(cause);
+        var error = HttpError.Failure.of(cause);
 
         assertThat(error.message()).contains("Unexpected");
         assertThat(error.cause()).isSameAs(cause);
@@ -120,10 +120,10 @@ class HttpErrorTest {
     }
 
     @Test
-    void fromException_mapsUnknownToHttpFailure() {
+    void fromException_mapsUnknownToFailure() {
         var ex = new IllegalStateException("Unknown error");
         var error = HttpError.fromException(ex);
 
-        assertInstanceOf(HttpError.HttpFailure.class, error);
+        assertInstanceOf(HttpError.Failure.class, error);
     }
 }

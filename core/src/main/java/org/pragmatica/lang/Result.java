@@ -1240,6 +1240,15 @@ public sealed interface Result<T> permits Success, Failure {
         }
     }
 
+    /// Helper interface for convenient [Tuple10] transformation. In case if you need to return a tuple, it might be more convenient to return
+    /// this interface instead. For example, instead of this:
+    /// <blockquote><pre>
+    ///     return tuple(value, ...);
+    /// </pre></blockquote>
+    /// return this:
+    /// <blockquote><pre>
+    ///     return () -> tuple(value, ...);
+    /// </pre></blockquote>
     interface Mapper10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
         Result<Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>> id();
 
@@ -1256,6 +1265,15 @@ public sealed interface Result<T> permits Success, Failure {
         }
     }
 
+    /// Helper interface for convenient [Tuple11] transformation. In case if you need to return a tuple, it might be more convenient to return
+    /// this interface instead. For example, instead of this:
+    /// <blockquote><pre>
+    ///     return tuple(value, ...);
+    /// </pre></blockquote>
+    /// return this:
+    /// <blockquote><pre>
+    ///     return () -> tuple(value, ...);
+    /// </pre></blockquote>
     interface Mapper11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> {
         Result<Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>> id();
 
@@ -1272,6 +1290,15 @@ public sealed interface Result<T> permits Success, Failure {
         }
     }
 
+    /// Helper interface for convenient [Tuple12] transformation. In case if you need to return a tuple, it might be more convenient to return
+    /// this interface instead. For example, instead of this:
+    /// <blockquote><pre>
+    ///     return tuple(value, ...);
+    /// </pre></blockquote>
+    /// return this:
+    /// <blockquote><pre>
+    ///     return () -> tuple(value, ...);
+    /// </pre></blockquote>
     interface Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> {
         Result<Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>> id();
 
@@ -1288,6 +1315,15 @@ public sealed interface Result<T> permits Success, Failure {
         }
     }
 
+    /// Helper interface for convenient [Tuple13] transformation. In case if you need to return a tuple, it might be more convenient to return
+    /// this interface instead. For example, instead of this:
+    /// <blockquote><pre>
+    ///     return tuple(value, ...);
+    /// </pre></blockquote>
+    /// return this:
+    /// <blockquote><pre>
+    ///     return () -> tuple(value, ...);
+    /// </pre></blockquote>
     interface Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> {
         Result<Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>> id();
 
@@ -1304,6 +1340,15 @@ public sealed interface Result<T> permits Success, Failure {
         }
     }
 
+    /// Helper interface for convenient [Tuple14] transformation. In case if you need to return a tuple, it might be more convenient to return
+    /// this interface instead. For example, instead of this:
+    /// <blockquote><pre>
+    ///     return tuple(value, ...);
+    /// </pre></blockquote>
+    /// return this:
+    /// <blockquote><pre>
+    ///     return () -> tuple(value, ...);
+    /// </pre></blockquote>
     interface Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> {
         Result<Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>> id();
 
@@ -1320,6 +1365,15 @@ public sealed interface Result<T> permits Success, Failure {
         }
     }
 
+    /// Helper interface for convenient [Tuple15] transformation. In case if you need to return a tuple, it might be more convenient to return
+    /// this interface instead. For example, instead of this:
+    /// <blockquote><pre>
+    ///     return tuple(value, ...);
+    /// </pre></blockquote>
+    /// return this:
+    /// <blockquote><pre>
+    ///     return () -> tuple(value, ...);
+    /// </pre></blockquote>
     interface Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> {
         Result<Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>> id();
 

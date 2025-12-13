@@ -87,9 +87,9 @@ public sealed interface HttpError extends Cause {
     }
 
     /// General HTTP failure (catch-all for unexpected errors).
-    record HttpFailure(Throwable cause) implements HttpError {
-        public static HttpFailure of(Throwable cause) {
-            return new HttpFailure(cause);
+    record Failure(Throwable cause) implements HttpError {
+        public static Failure of(Throwable cause) {
+            return new Failure(cause);
         }
 
         @Override
@@ -105,15 +105,13 @@ public sealed interface HttpError extends Cause {
     /// @return Corresponding HttpError
     static HttpError fromException(Throwable throwable) {
         return switch (throwable) {
-            case HttpConnectTimeoutException e -> Timeout.of("Connection timeout", e.getCause() != null
-                ? Duration.ofMillis(0)
-                : null);
+            case HttpConnectTimeoutException _ -> Timeout.of("Connection timeout");
             case HttpTimeoutException e -> Timeout.of(e.getMessage());
             case java.net.ConnectException e -> ConnectionFailed.of(e.getMessage(), e);
             case java.net.UnknownHostException e -> ConnectionFailed.of("Unknown host: " + e.getMessage(), e);
             case java.io.IOException e -> ConnectionFailed.of(e.getMessage(), e);
             case InterruptedException _ -> Timeout.of("Request interrupted");
-            default -> HttpFailure.of(throwable);
+            default -> Failure.of(throwable);
         };
     }
 }
