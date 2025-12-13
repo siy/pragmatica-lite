@@ -19,12 +19,14 @@
         <module>jpa</module>
         <module>jooq</module>
         <module>jdbc</module>
+        <module>r2dbc</module>
     </modules>
 
     <properties>
         <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
         <jooq.version>3.19.15</jooq.version>
         <hikari.version>6.2.1</hikari.version>
+        <r2dbc.version>1.0.0.RELEASE</r2dbc.version>
     </properties>
 
     <dependencyManagement>
@@ -43,6 +45,11 @@
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
                 <version>${hikari.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.r2dbc</groupId>
+                <artifactId>r2dbc-spi</artifactId>
+                <version>${r2dbc.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -37,6 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ConnectionFailed, QueryFailed, ConstraintViolation, Timeout, TransactionRollback, TransactionRequired, DatabaseFailure
 - Optional HikariCP integration for connection pooling
 
+#### R2DBC Integration
+- New module `integrations/db/r2dbc` for Promise-based reactive database access
+- `ReactiveOperations` bridge for converting Reactive Streams Publisher to Promise
+- `R2dbcOperations` interface for reactive database operations (queryOne, queryOptional, queryList, update)
+- `R2dbcError` sealed interface with typed error causes:
+  - ConnectionFailed, QueryFailed, ConstraintViolation, Timeout, NoResult, MultipleResults, DatabaseFailure
+
 #### Verify Extensions
 - `Verify.ensure(Cause, T, Predicate<T>)` - validation with fixed error cause
 - `Verify.ensure(Cause, T, Fn2<...>, P1)` - binary validation with fixed error cause
