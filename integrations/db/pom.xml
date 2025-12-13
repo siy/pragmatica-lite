@@ -18,11 +18,13 @@
     <modules>
         <module>jpa</module>
         <module>jooq</module>
+        <module>jdbc</module>
     </modules>
 
     <properties>
         <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
         <jooq.version>3.19.15</jooq.version>
+        <hikari.version>6.2.1</hikari.version>
     </properties>
 
     <dependencyManagement>
@@ -36,6 +38,11 @@
                 <groupId>org.jooq</groupId>
                 <artifactId>jooq</artifactId>
                 <version>${jooq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${hikari.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -29,6 +29,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ConnectionFailed, Timeout, RequestFailed, InvalidResponse, HttpFailure
 - Zero external dependencies (JDK 11+ only)
 
+#### JDBC Integration
+- New module `integrations/db/jdbc` for Promise-based JDBC operations
+- `JdbcOperations` interface for common database operations (queryOne, queryOptional, queryList, update, batch)
+- `JdbcTransactional` transaction aspect with automatic commit/rollback
+- `JdbcError` sealed interface with typed error causes:
+  - ConnectionFailed, QueryFailed, ConstraintViolation, Timeout, TransactionRollback, TransactionRequired, DatabaseFailure
+- Optional HikariCP integration for connection pooling
+
 #### Verify Extensions
 - `Verify.ensure(Cause, T, Predicate<T>)` - validation with fixed error cause
 - `Verify.ensure(Cause, T, Fn2<...>, P1)` - binary validation with fixed error cause
