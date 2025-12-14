@@ -88,12 +88,11 @@ public interface JdbcTransactional {
     /// The returned function executes operations in a transaction.
     ///
     /// @param dataSource DataSource for connection acquisition
-    /// @param <T> Input type
     /// @param <R> Result type
     ///
     /// @return Function that wraps operations in transactions
-    static <T, R> Fn1<Promise<R>, Fn1<Promise<R>, T>> transactional(DataSource dataSource) {
-        return operation -> withTransaction(dataSource, _ -> operation.apply(null));
+    static <R> Fn1<Promise<R>, Fn1<Promise<R>, Connection>> transactional(DataSource dataSource) {
+        return operation -> withTransaction(dataSource, operation);
     }
 
     private static void rollback(Connection conn) {

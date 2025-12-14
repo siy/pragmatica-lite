@@ -103,7 +103,11 @@ final class DataSourceJdbcOperations implements JdbcOperations {
             e -> JdbcError.fromException(e, sql),
             () -> executeQuery(sql, params, rs -> {
                 if (rs.next()) {
-                    return mapper.apply(rs);
+                    var result = mapper.apply(rs);
+                    if (rs.next()) {
+                        throw new SQLException("Multiple results found");
+                    }
+                    return result;
                 }
                 throw new SQLException("No result found");
             })

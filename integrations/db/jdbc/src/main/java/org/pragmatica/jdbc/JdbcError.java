@@ -103,7 +103,8 @@ public sealed interface JdbcError extends Cause {
 
         @Override
         public String message() {
-            return "Database operation failed: " + cause.getMessage();
+            var msg = cause.getMessage();
+            return "Database operation failed: " + (msg != null ? msg : cause.getClass().getName());
         }
     }
 
