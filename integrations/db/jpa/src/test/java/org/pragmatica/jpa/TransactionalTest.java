@@ -494,7 +494,7 @@ class TransactionalTest {
 
             var operation = Transactional.withTransaction(
                 em,
-                JpaError.DatabaseFailure::cause,
+                JpaError.DatabaseFailure::databaseFailure,
                 (String _) -> Promise.success("result")
             );
 
@@ -530,7 +530,7 @@ class TransactionalTest {
                 em,
                 t -> t instanceof IllegalStateException
                     ? JpaError.TransactionRequired.INSTANCE
-                    : JpaError.DatabaseFailure.cause(t),
+                    : JpaError.DatabaseFailure.databaseFailure(t),
                 (String _) -> Promise.success("result")
             );
 

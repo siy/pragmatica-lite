@@ -86,13 +86,14 @@ public sealed interface JpaError extends Cause {
 
     /// General database failure (catch-all for unexpected errors).
     record DatabaseFailure(Throwable cause) implements JpaError {
-        public static DatabaseFailure cause(Throwable e) {
-            return new DatabaseFailure(e);
+        public static DatabaseFailure databaseFailure(Throwable cause) {
+            return new DatabaseFailure(cause);
         }
 
         @Override
         public String message() {
-            return "Database operation failed: " + cause.getMessage();
+            var msg = cause.getMessage();
+            return "Database operation failed: " + (msg != null ? msg : cause.getClass().getName());
         }
     }
 
@@ -109,8 +110,7 @@ public sealed interface JpaError extends Cause {
     /// @return Corresponding JpaError
     static JpaError fromException(Throwable throwable) {
         return switch (throwable) {
-            case EntityNotFoundException _ -> EntityNotFound.INSTANCE;
-            case NoResultException _ -> EntityNotFound.INSTANCE;
+            case EntityNotFoundException _, NoResultException _ -> EntityNotFound.INSTANCE;
             case OptimisticLockException e -> new OptimisticLock(
                 e.getEntity() != null ? e.getEntity().getClass().getSimpleName() : "Unknown",
                 e.getEntity()
@@ -124,8 +124,8 @@ public sealed interface JpaError extends Cause {
             case TransactionRequiredException _ -> TransactionRequired.INSTANCE;
             // Vendor-specific exceptions (Hibernate, EclipseLink) fall through to DatabaseFailure
             // Cannot catch without vendor dependencies, keeping JPA integration vendor-neutral
-            case RuntimeException e -> DatabaseFailure.cause(e);
-            default -> DatabaseFailure.cause(throwable);
+            case RuntimeException e -> DatabaseFailure.databaseFailure(e);
+            default -> DatabaseFailure.databaseFailure(throwable);
         };
     }
 }

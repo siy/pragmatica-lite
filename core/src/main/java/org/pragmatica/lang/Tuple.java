@@ -21,7 +21,7 @@ import org.pragmatica.lang.io.CoreError;
 
 import java.util.Map;
 
-/// Tuples of various sizes (0-9).
+/// Tuples of various sizes (0-15).
 @SuppressWarnings("unused")
 public interface Tuple {
     int size();
@@ -131,6 +131,66 @@ public interface Tuple {
 
         default int size() {
             return 9;
+        }
+    }
+
+    interface Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> extends Tuple {
+        <T> T map(Fn10<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper);
+
+        <T> Result<T> lift(ThrowingFn10<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper);
+
+        default int size() {
+            return 10;
+        }
+    }
+
+    interface Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> extends Tuple {
+        <T> T map(Fn11<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper);
+
+        <T> Result<T> lift(ThrowingFn11<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper);
+
+        default int size() {
+            return 11;
+        }
+    }
+
+    interface Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> extends Tuple {
+        <T> T map(Fn12<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper);
+
+        <T> Result<T> lift(ThrowingFn12<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper);
+
+        default int size() {
+            return 12;
+        }
+    }
+
+    interface Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> extends Tuple {
+        <T> T map(Fn13<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper);
+
+        <T> Result<T> lift(ThrowingFn13<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper);
+
+        default int size() {
+            return 13;
+        }
+    }
+
+    interface Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> extends Tuple {
+        <T> T map(Fn14<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper);
+
+        <T> Result<T> lift(ThrowingFn14<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper);
+
+        default int size() {
+            return 14;
+        }
+    }
+
+    interface Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> extends Tuple {
+        <T> T map(Fn15<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper);
+
+        <T> Result<T> lift(ThrowingFn15<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper);
+
+        default int size() {
+            return 15;
         }
     }
 
@@ -362,5 +422,161 @@ public interface Tuple {
         }
 
         return new tuple9<>(param1, param2, param3, param4, param5, param6, param7, param8, param9);
+    }
+
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> tuple(
+        T1 param1, T2 param2, T3 param3, T4 param4, T5 param5,
+        T6 param6, T7 param7, T8 param8, T9 param9, T10 param10
+    ) {
+        record tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(
+            T1 param1, T2 param2, T3 param3, T4 param4, T5 param5,
+            T6 param6, T7 param7, T8 param8, T9 param9, T10 param10
+        ) implements Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
+            @Override
+            public <T> T map(Fn10<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
+                return mapper.apply(param1(), param2(), param3(), param4(), param5(), param6(), param7(), param8(), param9(), param10());
+            }
+
+            @Override
+            public <T> Result<T> lift(ThrowingFn10<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
+                try {
+                    return Result.success(mapper.apply(param1(), param2(), param3(), param4(), param5(), param6(), param7(), param8(), param9(), param10()));
+                } catch (Throwable throwable) {
+                    return new CoreError.Exception(throwable).result();
+                }
+            }
+        }
+
+        return new tuple10<>(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
+    }
+
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> tuple(
+        T1 param1, T2 param2, T3 param3, T4 param4, T5 param5,
+        T6 param6, T7 param7, T8 param8, T9 param9, T10 param10, T11 param11
+    ) {
+        record tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(
+            T1 param1, T2 param2, T3 param3, T4 param4, T5 param5,
+            T6 param6, T7 param7, T8 param8, T9 param9, T10 param10, T11 param11
+        ) implements Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> {
+            @Override
+            public <T> T map(Fn11<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
+                return mapper.apply(param1(), param2(), param3(), param4(), param5(), param6(), param7(), param8(), param9(), param10(), param11());
+            }
+
+            @Override
+            public <T> Result<T> lift(ThrowingFn11<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
+                try {
+                    return Result.success(mapper.apply(param1(), param2(), param3(), param4(), param5(), param6(), param7(), param8(), param9(), param10(), param11()));
+                } catch (Throwable throwable) {
+                    return new CoreError.Exception(throwable).result();
+                }
+            }
+        }
+
+        return new tuple11<>(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11);
+    }
+
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> tuple(
+        T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6,
+        T7 param7, T8 param8, T9 param9, T10 param10, T11 param11, T12 param12
+    ) {
+        record tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(
+            T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6,
+            T7 param7, T8 param8, T9 param9, T10 param10, T11 param11, T12 param12
+        ) implements Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> {
+            @Override
+            public <T> T map(Fn12<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
+                return mapper.apply(param1(), param2(), param3(), param4(), param5(), param6(), param7(), param8(), param9(), param10(), param11(), param12());
+            }
+
+            @Override
+            public <T> Result<T> lift(ThrowingFn12<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
+                try {
+                    return Result.success(mapper.apply(param1(), param2(), param3(), param4(), param5(), param6(), param7(), param8(), param9(), param10(), param11(), param12()));
+                } catch (Throwable throwable) {
+                    return new CoreError.Exception(throwable).result();
+                }
+            }
+        }
+
+        return new tuple12<>(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12);
+    }
+
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> tuple(
+        T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6,
+        T7 param7, T8 param8, T9 param9, T10 param10, T11 param11, T12 param12, T13 param13
+    ) {
+        record tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(
+            T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6,
+            T7 param7, T8 param8, T9 param9, T10 param10, T11 param11, T12 param12, T13 param13
+        ) implements Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> {
+            @Override
+            public <T> T map(Fn13<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
+                return mapper.apply(param1(), param2(), param3(), param4(), param5(), param6(), param7(), param8(), param9(), param10(), param11(), param12(), param13());
+            }
+
+            @Override
+            public <T> Result<T> lift(ThrowingFn13<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
+                try {
+                    return Result.success(mapper.apply(param1(), param2(), param3(), param4(), param5(), param6(), param7(), param8(), param9(), param10(), param11(), param12(), param13()));
+                } catch (Throwable throwable) {
+                    return new CoreError.Exception(throwable).result();
+                }
+            }
+        }
+
+        return new tuple13<>(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13);
+    }
+
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> tuple(
+        T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7,
+        T8 param8, T9 param9, T10 param10, T11 param11, T12 param12, T13 param13, T14 param14
+    ) {
+        record tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(
+            T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7,
+            T8 param8, T9 param9, T10 param10, T11 param11, T12 param12, T13 param13, T14 param14
+        ) implements Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> {
+            @Override
+            public <T> T map(Fn14<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
+                return mapper.apply(param1(), param2(), param3(), param4(), param5(), param6(), param7(), param8(), param9(), param10(), param11(), param12(), param13(), param14());
+            }
+
+            @Override
+            public <T> Result<T> lift(ThrowingFn14<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
+                try {
+                    return Result.success(mapper.apply(param1(), param2(), param3(), param4(), param5(), param6(), param7(), param8(), param9(), param10(), param11(), param12(), param13(), param14()));
+                } catch (Throwable throwable) {
+                    return new CoreError.Exception(throwable).result();
+                }
+            }
+        }
+
+        return new tuple14<>(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14);
+    }
+
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> tuple(
+        T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7,
+        T8 param8, T9 param9, T10 param10, T11 param11, T12 param12, T13 param13, T14 param14, T15 param15
+    ) {
+        record tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(
+            T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7,
+            T8 param8, T9 param9, T10 param10, T11 param11, T12 param12, T13 param13, T14 param14, T15 param15
+        ) implements Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> {
+            @Override
+            public <T> T map(Fn15<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
+                return mapper.apply(param1(), param2(), param3(), param4(), param5(), param6(), param7(), param8(), param9(), param10(), param11(), param12(), param13(), param14(), param15());
+            }
+
+            @Override
+            public <T> Result<T> lift(ThrowingFn15<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
+                try {
+                    return Result.success(mapper.apply(param1(), param2(), param3(), param4(), param5(), param6(), param7(), param8(), param9(), param10(), param11(), param12(), param13(), param14(), param15()));
+                } catch (Throwable throwable) {
+                    return new CoreError.Exception(throwable).result();
+                }
+            }
+        }
+
+        return new tuple15<>(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11, param12, param13, param14, param15);
     }
 }

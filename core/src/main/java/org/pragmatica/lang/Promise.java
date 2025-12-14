@@ -1168,6 +1168,72 @@ public interface Promise<T> {
                                  promise9);
     }
 
+    @SuppressWarnings("unchecked")
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> Mapper10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> all(
+            Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4, Promise<T5> promise5,
+            Promise<T6> promise6, Promise<T7> promise7, Promise<T8> promise8, Promise<T9> promise9, Promise<T10> promise10) {
+
+        return () -> setupResult(values -> Result.all(
+                        (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2], (Result<T4>) values[3], (Result<T5>) values[4],
+                        (Result<T6>) values[5], (Result<T7>) values[6], (Result<T8>) values[7], (Result<T9>) values[8], (Result<T10>) values[9]).id(),
+                promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8, promise9, promise10);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> Mapper11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> all(
+            Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4, Promise<T5> promise5,
+            Promise<T6> promise6, Promise<T7> promise7, Promise<T8> promise8, Promise<T9> promise9, Promise<T10> promise10, Promise<T11> promise11) {
+
+        return () -> setupResult(values -> Result.all(
+                        (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2], (Result<T4>) values[3], (Result<T5>) values[4],
+                        (Result<T6>) values[5], (Result<T7>) values[6], (Result<T8>) values[7], (Result<T9>) values[8], (Result<T10>) values[9], (Result<T11>) values[10]).id(),
+                promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8, promise9, promise10, promise11);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(
+            Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4, Promise<T5> promise5, Promise<T6> promise6,
+            Promise<T7> promise7, Promise<T8> promise8, Promise<T9> promise9, Promise<T10> promise10, Promise<T11> promise11, Promise<T12> promise12) {
+
+        return () -> setupResult(values -> Result.all(
+                        (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2], (Result<T4>) values[3], (Result<T5>) values[4], (Result<T6>) values[5],
+                        (Result<T7>) values[6], (Result<T8>) values[7], (Result<T9>) values[8], (Result<T10>) values[9], (Result<T11>) values[10], (Result<T12>) values[11]).id(),
+                promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8, promise9, promise10, promise11, promise12);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(
+            Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4, Promise<T5> promise5, Promise<T6> promise6,
+            Promise<T7> promise7, Promise<T8> promise8, Promise<T9> promise9, Promise<T10> promise10, Promise<T11> promise11, Promise<T12> promise12, Promise<T13> promise13) {
+
+        return () -> setupResult(values -> Result.all(
+                        (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2], (Result<T4>) values[3], (Result<T5>) values[4], (Result<T6>) values[5],
+                        (Result<T7>) values[6], (Result<T8>) values[7], (Result<T9>) values[8], (Result<T10>) values[9], (Result<T11>) values[10], (Result<T12>) values[11], (Result<T13>) values[12]).id(),
+                promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8, promise9, promise10, promise11, promise12, promise13);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(
+            Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4, Promise<T5> promise5, Promise<T6> promise6, Promise<T7> promise7,
+            Promise<T8> promise8, Promise<T9> promise9, Promise<T10> promise10, Promise<T11> promise11, Promise<T12> promise12, Promise<T13> promise13, Promise<T14> promise14) {
+
+        return () -> setupResult(values -> Result.all(
+                        (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2], (Result<T4>) values[3], (Result<T5>) values[4], (Result<T6>) values[5], (Result<T7>) values[6],
+                        (Result<T8>) values[7], (Result<T9>) values[8], (Result<T10>) values[9], (Result<T11>) values[10], (Result<T12>) values[11], (Result<T13>) values[12], (Result<T14>) values[13]).id(),
+                promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8, promise9, promise10, promise11, promise12, promise13, promise14);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(
+            Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4, Promise<T5> promise5, Promise<T6> promise6, Promise<T7> promise7,
+            Promise<T8> promise8, Promise<T9> promise9, Promise<T10> promise10, Promise<T11> promise11, Promise<T12> promise12, Promise<T13> promise13, Promise<T14> promise14, Promise<T15> promise15) {
+
+        return () -> setupResult(values -> Result.all(
+                        (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2], (Result<T4>) values[3], (Result<T5>) values[4], (Result<T6>) values[5], (Result<T7>) values[6],
+                        (Result<T8>) values[7], (Result<T9>) values[8], (Result<T10>) values[9], (Result<T11>) values[10], (Result<T12>) values[11], (Result<T13>) values[12], (Result<T14>) values[13], (Result<T15>) values[14]).id(),
+                promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8, promise9, promise10, promise11, promise12, promise13, promise14, promise15);
+    }
+
     Promise<Unit> UNIT = Promise.resolved(unitResult());
 
     Result<?> OTHER_SUCCEEDED = new CoreError.Cancelled("Cancelled because other Promise instance succeeded").result();
@@ -1305,6 +1371,96 @@ public interface Promise<T> {
         }
 
         default <R> Promise<R> flatMap(Fn9<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9> mapper) {
+            return id().flatMap(tuple -> tuple.map(mapper));
+        }
+    }
+
+    /// Helper interface for convenient tuple transformation.
+    ///
+    /// @see Result.Mapper10
+    interface Mapper10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
+        Promise<Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>> id();
+
+        default <R> Promise<R> map(Fn10<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
+            return id().map(tuple -> tuple.map(mapper));
+        }
+
+        default <R> Promise<R> flatMap(Fn10<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
+            return id().flatMap(tuple -> tuple.map(mapper));
+        }
+    }
+
+    /// Helper interface for convenient tuple transformation.
+    ///
+    /// @see Result.Mapper11
+    interface Mapper11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> {
+        Promise<Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>> id();
+
+        default <R> Promise<R> map(Fn11<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
+            return id().map(tuple -> tuple.map(mapper));
+        }
+
+        default <R> Promise<R> flatMap(Fn11<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
+            return id().flatMap(tuple -> tuple.map(mapper));
+        }
+    }
+
+    /// Helper interface for convenient tuple transformation.
+    ///
+    /// @see Result.Mapper12
+    interface Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> {
+        Promise<Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>> id();
+
+        default <R> Promise<R> map(Fn12<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
+            return id().map(tuple -> tuple.map(mapper));
+        }
+
+        default <R> Promise<R> flatMap(Fn12<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
+            return id().flatMap(tuple -> tuple.map(mapper));
+        }
+    }
+
+    /// Helper interface for convenient tuple transformation.
+    ///
+    /// @see Result.Mapper13
+    interface Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> {
+        Promise<Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>> id();
+
+        default <R> Promise<R> map(Fn13<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
+            return id().map(tuple -> tuple.map(mapper));
+        }
+
+        default <R> Promise<R> flatMap(Fn13<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
+            return id().flatMap(tuple -> tuple.map(mapper));
+        }
+    }
+
+    /// Helper interface for convenient tuple transformation.
+    ///
+    /// @see Result.Mapper14
+    interface Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> {
+        Promise<Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>> id();
+
+        default <R> Promise<R> map(Fn14<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
+            return id().map(tuple -> tuple.map(mapper));
+        }
+
+        default <R> Promise<R> flatMap(Fn14<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
+            return id().flatMap(tuple -> tuple.map(mapper));
+        }
+    }
+
+    /// Helper interface for convenient tuple transformation.
+    ///
+    /// @see Result.Mapper15
+    interface Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> {
+        Promise<Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>> id();
+
+        default <R> Promise<R> map(Fn15<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
+            return id().map(tuple -> tuple.map(mapper));
+        }
+
+        default <R> Promise<R> flatMap(Fn15<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
     }

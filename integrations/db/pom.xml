@@ -5,7 +5,7 @@
     <parent>
         <artifactId>integrations</artifactId>
         <groupId>org.pragmatica-lite</groupId>
-        <version>0.8.3</version>
+        <version>0.8.4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -18,11 +18,16 @@
     <modules>
         <module>jpa</module>
         <module>jooq</module>
+        <module>jdbc</module>
+        <module>r2dbc</module>
+        <module>jooq-r2dbc</module>
     </modules>
 
     <properties>
         <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
         <jooq.version>3.19.15</jooq.version>
+        <hikari.version>6.2.1</hikari.version>
+        <r2dbc.version>1.0.0.RELEASE</r2dbc.version>
     </properties>
 
     <dependencyManagement>
@@ -36,6 +41,16 @@
                 <groupId>org.jooq</groupId>
                 <artifactId>jooq</artifactId>
                 <version>${jooq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${hikari.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.r2dbc</groupId>
+                <artifactId>r2dbc-spi</artifactId>
+                <version>${r2dbc.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

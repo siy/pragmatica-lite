@@ -30,8 +30,18 @@ class VerifyTest {
         @DisplayName("ensure with predicate should return failure for invalid value")
         void ensureWithPredicateReturnsFailureForInvalidValue() {
             var result = Verify.ensure(-5, value -> Verify.Is.greaterThan(value, 0));
-            
+
             assertTrue(result.isFailure());
+        }
+
+        @Test
+        @DisplayName("ensure with predicate should include value in error message")
+        void ensureWithPredicateShouldIncludeValueInErrorMessage() {
+            var result = Verify.ensure(-5, value -> Verify.Is.greaterThan(value, 0));
+
+            assertTrue(result.isFailure());
+            result.onFailure(cause -> assertTrue(cause.message().contains("-5"),
+                "Error message should contain the value, got: " + cause.message()));
         }
         
         @Test
