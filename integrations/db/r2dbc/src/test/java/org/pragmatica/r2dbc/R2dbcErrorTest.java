@@ -105,7 +105,7 @@ class R2dbcErrorTest {
     }
 
     @Test
-    void fromExceptionWithSql_includesSqlInError() {
+    void fromExceptionWithSql_mapsUnknownExceptionToDatabaseFailure() {
         var ex = new RuntimeException("Syntax error");
         var error = R2dbcError.fromException(ex, "SELECT * FROM invalid");
 
