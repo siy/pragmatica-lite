@@ -21,6 +21,10 @@ import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Option;
 
 import java.sql.SQLException;
+
+import static org.pragmatica.jdbc.JdbcError.ConnectionFailed.connectionFailed;
+import static org.pragmatica.jdbc.JdbcError.ConstraintViolation.constraintViolation;
+import static org.pragmatica.jdbc.JdbcError.DatabaseFailure.databaseFailure;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.SQLTimeoutException;
 import java.sql.SQLTransactionRollbackException;
@@ -31,11 +35,11 @@ public sealed interface JdbcError extends Cause {
 
     /// Connection to database failed.
     record ConnectionFailed(String message, Option<Throwable> cause) implements JdbcError {
-        public static ConnectionFailed of(String message) {
+        public static ConnectionFailed connectionFailed(String message) {
             return new ConnectionFailed(message, Option.none());
         }
 
-        public static ConnectionFailed of(String message, Throwable cause) {
+        public static ConnectionFailed connectionFailed(String message, Throwable cause) {
             return new ConnectionFailed(message, Option.option(cause));
         }
 
@@ -55,7 +59,7 @@ public sealed interface JdbcError extends Cause {
 
     /// Database constraint violation (unique, foreign key, etc).
     record ConstraintViolation(String constraint, String message) implements JdbcError {
-        public static ConstraintViolation of(String message) {
+        public static ConstraintViolation constraintViolation(String message) {
             return new ConstraintViolation("unknown", message);
         }
 
@@ -93,7 +97,7 @@ public sealed interface JdbcError extends Cause {
 
     /// General database failure (catch-all for unexpected errors).
     record DatabaseFailure(Throwable cause) implements JdbcError {
-        public static DatabaseFailure of(Throwable cause) {
+        public static DatabaseFailure databaseFailure(Throwable cause) {
             return new DatabaseFailure(cause);
         }
 
@@ -111,16 +115,16 @@ public sealed interface JdbcError extends Cause {
     static JdbcError fromException(Throwable throwable) {
         return switch (throwable) {
             case SQLTimeoutException e -> new Timeout(e.getMessage());
-            case SQLIntegrityConstraintViolationException e -> ConstraintViolation.of(e.getMessage());
+            case SQLIntegrityConstraintViolationException e -> constraintViolation(e.getMessage());
             case SQLTransactionRollbackException e -> new TransactionRollback(e.getMessage());
             case SQLException e -> {
                 var sqlState = e.getSQLState();
                 if (sqlState != null && sqlState.startsWith("08")) {
-                    yield ConnectionFailed.of(e.getMessage(), e);
+                    yield connectionFailed(e.getMessage(), e);
                 }
-                yield DatabaseFailure.of(e);
+                yield databaseFailure(e);
             }
-            default -> DatabaseFailure.of(throwable);
+            default -> databaseFailure(throwable);
         };
     }
 
@@ -133,16 +137,16 @@ public sealed interface JdbcError extends Cause {
     static JdbcError fromException(Throwable throwable, String sql) {
         return switch (throwable) {
             case SQLTimeoutException e -> new Timeout(e.getMessage());
-            case SQLIntegrityConstraintViolationException e -> ConstraintViolation.of(e.getMessage());
+            case SQLIntegrityConstraintViolationException e -> constraintViolation(e.getMessage());
             case SQLTransactionRollbackException e -> new TransactionRollback(e.getMessage());
             case SQLException e -> {
                 var sqlState = e.getSQLState();
                 if (sqlState != null && sqlState.startsWith("08")) {
-                    yield ConnectionFailed.of(e.getMessage(), e);
+                    yield connectionFailed(e.getMessage(), e);
                 }
                 yield new QueryFailed(sql, e.getMessage());
             }
-            default -> DatabaseFailure.of(throwable);
+            default -> databaseFailure(throwable);
         };
     }
 }

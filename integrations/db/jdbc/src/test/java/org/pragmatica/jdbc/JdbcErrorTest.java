@@ -26,12 +26,14 @@ import java.sql.SQLTransactionRollbackException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.pragmatica.jdbc.JdbcError.ConnectionFailed.connectionFailed;
+import static org.pragmatica.jdbc.JdbcError.DatabaseFailure.databaseFailure;
 
 class JdbcErrorTest {
 
     @Test
     void connectionFailed_containsMessage() {
-        var error = JdbcError.ConnectionFailed.of("Connection refused");
+        var error = connectionFailed("Connection refused");
 
         assertThat(error.message()).contains("Connection refused");
         assertThat(error.cause().isEmpty()).isTrue();
@@ -40,7 +42,7 @@ class JdbcErrorTest {
     @Test
     void connectionFailed_containsCause() {
         var cause = new RuntimeException("Network error");
-        var error = JdbcError.ConnectionFailed.of("Failed", cause);
+        var error = connectionFailed("Failed", cause);
 
         assertThat(error.message()).contains("Failed");
         assertThat(error.cause().isPresent()).isTrue();
@@ -86,7 +88,7 @@ class JdbcErrorTest {
     @Test
     void databaseFailure_wrapsException() {
         var cause = new RuntimeException("Unexpected");
-        var error = JdbcError.DatabaseFailure.of(cause);
+        var error = databaseFailure(cause);
 
         assertThat(error.message()).contains("Unexpected");
         assertThat(error.cause()).isSameAs(cause);

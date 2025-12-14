@@ -86,8 +86,8 @@ public sealed interface JpaError extends Cause {
 
     /// General database failure (catch-all for unexpected errors).
     record DatabaseFailure(Throwable cause) implements JpaError {
-        public static DatabaseFailure cause(Throwable e) {
-            return new DatabaseFailure(e);
+        public static DatabaseFailure databaseFailure(Throwable cause) {
+            return new DatabaseFailure(cause);
         }
 
         @Override
@@ -123,8 +123,8 @@ public sealed interface JpaError extends Cause {
             case TransactionRequiredException _ -> TransactionRequired.INSTANCE;
             // Vendor-specific exceptions (Hibernate, EclipseLink) fall through to DatabaseFailure
             // Cannot catch without vendor dependencies, keeping JPA integration vendor-neutral
-            case RuntimeException e -> DatabaseFailure.cause(e);
-            default -> DatabaseFailure.cause(throwable);
+            case RuntimeException e -> DatabaseFailure.databaseFailure(e);
+            default -> DatabaseFailure.databaseFailure(throwable);
         };
     }
 }

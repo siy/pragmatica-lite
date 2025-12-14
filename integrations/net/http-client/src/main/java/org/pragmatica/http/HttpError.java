@@ -24,17 +24,21 @@ import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 
+import static org.pragmatica.http.HttpError.ConnectionFailed.connectionFailed;
+import static org.pragmatica.http.HttpError.Failure.failure;
+import static org.pragmatica.http.HttpError.Timeout.timeout;
+
 /// Typed error causes for HTTP operations.
 /// Maps common HTTP exceptions to domain-friendly error types.
 public sealed interface HttpError extends Cause {
 
     /// Connection to server failed (network unreachable, DNS failure, connection refused).
     record ConnectionFailed(String message, Option<Throwable> cause) implements HttpError {
-        public static ConnectionFailed of(String message) {
+        public static ConnectionFailed connectionFailed(String message) {
             return new ConnectionFailed(message, Option.none());
         }
 
-        public static ConnectionFailed of(String message, Throwable cause) {
+        public static ConnectionFailed connectionFailed(String message, Throwable cause) {
             return new ConnectionFailed(message, Option.option(cause));
         }
 
@@ -46,11 +50,11 @@ public sealed interface HttpError extends Cause {
 
     /// Request or connection timeout exceeded.
     record Timeout(String message, Option<Duration> duration) implements HttpError {
-        public static Timeout of(String message) {
+        public static Timeout timeout(String message) {
             return new Timeout(message, Option.none());
         }
 
-        public static Timeout of(String message, Duration duration) {
+        public static Timeout timeout(String message, Duration duration) {
             return new Timeout(message, Option.option(duration));
         }
 
@@ -72,11 +76,11 @@ public sealed interface HttpError extends Cause {
 
     /// Response could not be parsed or is invalid.
     record InvalidResponse(String message, Option<Throwable> cause) implements HttpError {
-        public static InvalidResponse of(String message) {
+        public static InvalidResponse invalidResponse(String message) {
             return new InvalidResponse(message, Option.none());
         }
 
-        public static InvalidResponse of(String message, Throwable cause) {
+        public static InvalidResponse invalidResponse(String message, Throwable cause) {
             return new InvalidResponse(message, Option.option(cause));
         }
 
@@ -88,7 +92,7 @@ public sealed interface HttpError extends Cause {
 
     /// General HTTP failure (catch-all for unexpected errors).
     record Failure(Throwable cause) implements HttpError {
-        public static Failure of(Throwable cause) {
+        public static Failure failure(Throwable cause) {
             return new Failure(cause);
         }
 
@@ -105,13 +109,13 @@ public sealed interface HttpError extends Cause {
     /// @return Corresponding HttpError
     static HttpError fromException(Throwable throwable) {
         return switch (throwable) {
-            case HttpConnectTimeoutException _ -> Timeout.of("Connection timeout");
-            case HttpTimeoutException e -> Timeout.of(e.getMessage());
-            case java.net.ConnectException e -> ConnectionFailed.of(e.getMessage(), e);
-            case java.net.UnknownHostException e -> ConnectionFailed.of("Unknown host: " + e.getMessage(), e);
-            case java.io.IOException e -> ConnectionFailed.of(e.getMessage(), e);
-            case InterruptedException _ -> Timeout.of("Request interrupted");
-            default -> Failure.of(throwable);
+            case HttpConnectTimeoutException _ -> timeout("Connection timeout");
+            case HttpTimeoutException e -> timeout(e.getMessage());
+            case java.net.ConnectException e -> connectionFailed(e.getMessage(), e);
+            case java.net.UnknownHostException e -> connectionFailed("Unknown host: " + e.getMessage(), e);
+            case java.io.IOException e -> connectionFailed(e.getMessage(), e);
+            case InterruptedException _ -> timeout("Request interrupted");
+            default -> failure(throwable);
         };
     }
 }

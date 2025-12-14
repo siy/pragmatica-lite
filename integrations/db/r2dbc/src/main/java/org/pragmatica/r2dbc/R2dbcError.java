@@ -17,12 +17,13 @@
 
 package org.pragmatica.r2dbc;
 
-import io.r2dbc.spi.R2dbcException;
 import io.r2dbc.spi.R2dbcDataIntegrityViolationException;
+import io.r2dbc.spi.R2dbcException;
 import io.r2dbc.spi.R2dbcTimeoutException;
 import io.r2dbc.spi.R2dbcTransientException;
 import org.pragmatica.lang.Cause;
-import org.pragmatica.lang.Option;
+
+import static org.pragmatica.r2dbc.R2dbcError.DatabaseFailure.databaseFailure;
 
 /// Typed error causes for R2DBC operations.
 /// Maps common R2DBC exceptions to domain-friendly error types.
@@ -38,7 +39,7 @@ public sealed interface R2dbcError extends Cause {
 
     /// SQL query execution failed.
     record QueryFailed(String sql, String message) implements R2dbcError {
-        public static QueryFailed of(String message) {
+        public static QueryFailed queryFailed(String message) {
             return new QueryFailed("unknown", message);
         }
 
@@ -82,7 +83,7 @@ public sealed interface R2dbcError extends Cause {
 
     /// General database failure (catch-all for unexpected errors).
     record DatabaseFailure(Throwable cause) implements R2dbcError {
-        public static DatabaseFailure of(Throwable cause) {
+        public static DatabaseFailure databaseFailure(Throwable cause) {
             return new DatabaseFailure(cause);
         }
 
@@ -107,9 +108,9 @@ public sealed interface R2dbcError extends Cause {
                 if (sqlState != null && sqlState.startsWith("08")) {
                     yield new ConnectionFailed(e.getMessage());
                 }
-                yield DatabaseFailure.of(e);
+                yield databaseFailure(e);
             }
-            default -> DatabaseFailure.of(throwable);
+            default -> databaseFailure(throwable);
         };
     }
 
@@ -131,7 +132,7 @@ public sealed interface R2dbcError extends Cause {
                 }
                 yield new QueryFailed(sql, e.getMessage());
             }
-            default -> DatabaseFailure.of(throwable);
+            default -> databaseFailure(throwable);
         };
     }
 }

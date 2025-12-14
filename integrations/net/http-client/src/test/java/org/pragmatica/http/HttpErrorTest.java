@@ -27,12 +27,16 @@ import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.pragmatica.http.HttpError.ConnectionFailed.connectionFailed;
+import static org.pragmatica.http.HttpError.Failure.failure;
+import static org.pragmatica.http.HttpError.InvalidResponse.invalidResponse;
+import static org.pragmatica.http.HttpError.Timeout.timeout;
 
 class HttpErrorTest {
 
     @Test
     void connectionFailed_containsMessage() {
-        var error = HttpError.ConnectionFailed.of("Connection refused");
+        var error = connectionFailed("Connection refused");
 
         assertThat(error.message()).contains("Connection refused");
         assertThat(error.cause().isEmpty()).isTrue();
@@ -41,7 +45,7 @@ class HttpErrorTest {
     @Test
     void connectionFailed_containsCause() {
         var cause = new IOException("Network error");
-        var error = HttpError.ConnectionFailed.of("Failed", cause);
+        var error = connectionFailed("Failed", cause);
 
         assertThat(error.message()).contains("Failed");
         assertThat(error.cause().isPresent()).isTrue();
@@ -49,14 +53,14 @@ class HttpErrorTest {
 
     @Test
     void timeout_withoutDuration_displaysMessage() {
-        var error = HttpError.Timeout.of("Request timed out");
+        var error = timeout("Request timed out");
 
         assertThat(error.message()).isEqualTo("Timeout: Request timed out");
     }
 
     @Test
     void timeout_withDuration_displaysMillis() {
-        var error = HttpError.Timeout.of("Connect", Duration.ofSeconds(5));
+        var error = timeout("Connect", Duration.ofSeconds(5));
 
         assertThat(error.message()).contains("5000ms");
         assertThat(error.message()).contains("Connect");
@@ -71,7 +75,7 @@ class HttpErrorTest {
 
     @Test
     void invalidResponse_containsDetails() {
-        var error = HttpError.InvalidResponse.of("Malformed JSON");
+        var error = invalidResponse("Malformed JSON");
 
         assertThat(error.message()).contains("Malformed JSON");
     }
@@ -79,7 +83,7 @@ class HttpErrorTest {
     @Test
     void failure_wrapsException() {
         var cause = new RuntimeException("Unexpected");
-        var error = HttpError.Failure.of(cause);
+        var error = failure(cause);
 
         assertThat(error.message()).contains("Unexpected");
         assertThat(error.cause()).isSameAs(cause);

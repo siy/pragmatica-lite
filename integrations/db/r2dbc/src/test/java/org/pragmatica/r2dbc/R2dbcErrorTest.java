@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.pragmatica.r2dbc.R2dbcError.DatabaseFailure.databaseFailure;
 
 class R2dbcErrorTest {
 
@@ -73,7 +74,7 @@ class R2dbcErrorTest {
     @Test
     void databaseFailure_wrapsException() {
         var cause = new RuntimeException("Unexpected");
-        var error = R2dbcError.DatabaseFailure.of(cause);
+        var error = databaseFailure(cause);
 
         assertThat(error.message()).contains("Unexpected");
         assertThat(error.cause()).isSameAs(cause);
