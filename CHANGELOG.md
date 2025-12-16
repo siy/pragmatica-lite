@@ -10,13 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.8.5] - 2025-12-16
 
 ### Added
-- TBD
 
-### Changed
-- TBD
-
-### Fixed
-- TBD
+#### Core Utilities
+- `RateLimiter` - Token Bucket rate limiting utility
+  - Staged fluent builder with `rate()`, `period()`, `burst()`, `timeout()` configuration
+  - `execute()` - immediate rejection when rate limited
+  - `executeWithWait()` - waits for permit with configurable timeout
+  - `tryAcquire()` / `acquire()` - low-level permit API
+  - `RateLimiterError` sealed interface with `LimitExceeded` and `Timeout` variants
+  - `TimeSource` injection for testability (matches CircuitBreaker pattern)
+  - Thread-safe implementation suitable for concurrent access
 
 ## [0.8.4] - 2025-12-13
 
