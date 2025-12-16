@@ -19,6 +19,8 @@ package org.pragmatica.lang.utils;
 
 import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.io.TimeSpan;
 
 import java.util.function.Supplier;
@@ -33,6 +35,7 @@ public interface RateLimiter {
     ///
     /// @param operation The promise-returning operation to execute
     /// @param <T>       The return type of the operation
+    ///
     /// @return A promise containing the result or a rate limit exceeded failure
     <T> Promise<T> execute(Supplier<Promise<T>> operation);
 
@@ -49,12 +52,12 @@ public interface RateLimiter {
     ///
     /// @param rate   Number of permits per period
     /// @param period Time period for rate calculation
+    ///
     /// @return A new rate limiter
     static RateLimiter create(int rate, TimeSpan period) {
-        return builder()
-                .rate(rate)
-                .period(period)
-                .withDefaultTimeSource();
+        return builder().rate(rate)
+                        .period(period)
+                        .withDefaultTimeSource();
     }
 
     /// Create a rate limiter builder.
@@ -88,9 +91,9 @@ public interface RateLimiter {
     }
 
     private static RateLimiter createRateLimiter(int rate,
-                                                  TimeSpan period,
-                                                  int burst,
-                                                  TimeSource timeSource) {
+                                                 TimeSpan period,
+                                                 int burst,
+                                                 TimeSource timeSource) {
         record rateLimiter(int maxTokens,
                            int refillRate,
                            long refillPeriodNanos,
@@ -100,21 +103,19 @@ public interface RateLimiter {
 
             @Override
             public <T> Promise<T> execute(Supplier<Promise<T>> operation) {
-                return tryAcquire().fold(
-                        Cause::promise,
-                        _ -> operation.get()
-                );
+                return tryAcquire().async()
+                                   .flatMap(operation);
             }
 
-            private synchronized Result tryAcquire() {
+            private synchronized Result<Unit> tryAcquire() {
                 refill();
 
                 if (state[0] >= 1) {
                     state[0]--;
-                    return new Result(true, null);
+                    return Result.unitResult();
                 }
 
-                return new Result(false, calculateRetryAfter());
+                return new RateLimiterError.LimitExceeded(calculateRetryAfter()).result();
             }
 
             private void refill() {
@@ -136,16 +137,6 @@ public interface RateLimiter {
                 long remainingTimeInCurrentPeriod = refillPeriodNanos - timeSinceLastRefill;
 
                 return timeSpan(Math.max(1, remainingTimeInCurrentPeriod)).nanos();
-            }
-
-            private record Result(boolean success, TimeSpan retryAfter) {
-                <T> T fold(java.util.function.Function<RateLimiterError.LimitExceeded, T> onFailure,
-                           java.util.function.Function<Void, T> onSuccess) {
-                    if (success) {
-                        return onSuccess.apply(null);
-                    }
-                    return onFailure.apply(new RateLimiterError.LimitExceeded(retryAfter));
-                }
             }
         }
 
