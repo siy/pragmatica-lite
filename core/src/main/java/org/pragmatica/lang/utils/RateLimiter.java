@@ -19,8 +19,6 @@ package org.pragmatica.lang.utils;
 
 import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Promise;
-import org.pragmatica.lang.Result;
-import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.io.TimeSpan;
 
 import java.util.function.Supplier;
@@ -38,56 +36,11 @@ public interface RateLimiter {
     /// @return A promise containing the result or a rate limit exceeded failure
     <T> Promise<T> execute(Supplier<Promise<T>> operation);
 
-    /// Execute an operation, waiting for a permit if necessary.
-    ///
-    /// @param operation The promise-returning operation to execute
-    /// @param <T>       The return type of the operation
-    /// @return A promise containing the result or a timeout failure
-    <T> Promise<T> executeWithWait(Supplier<Promise<T>> operation);
-
-    /// Try to acquire a single permit without blocking.
-    ///
-    /// @return Success if permit acquired, failure with LimitExceeded otherwise
-    Result<Unit> tryAcquire();
-
-    /// Try to acquire multiple permits without blocking.
-    ///
-    /// @param permits Number of permits to acquire
-    /// @return Success if permits acquired, failure with LimitExceeded otherwise
-    Result<Unit> tryAcquire(int permits);
-
-    /// Acquire a single permit, waiting if necessary.
-    ///
-    /// @return A promise that resolves when permit is acquired or timeout occurs
-    Promise<Unit> acquire();
-
-    /// Acquire multiple permits, waiting if necessary.
-    ///
-    /// @param permits Number of permits to acquire
-    /// @return A promise that resolves when permits are acquired or timeout occurs
-    Promise<Unit> acquire(int permits);
-
-    /// Get the current number of available permits.
-    ///
-    /// @return Available permit count
-    int availablePermits();
-
-    interface TimeSource {
-        long nanoTime();
-    }
-
     sealed interface RateLimiterError extends Cause {
         record LimitExceeded(TimeSpan retryAfter) implements RateLimiterError {
             @Override
             public String message() {
                 return "Rate limit exceeded. Retry after " + retryAfter;
-            }
-        }
-
-        record Timeout(TimeSpan waited) implements RateLimiterError {
-            @Override
-            public String message() {
-                return "Timeout after waiting " + waited + " for rate limit permit";
             }
         }
     }
@@ -108,9 +61,7 @@ public interface RateLimiter {
     ///
     /// @return A new builder
     static StageRate builder() {
-        return rate ->
-                period ->
-                        new OptionalStage(rate, period, 0, null, null);
+        return rate -> period -> new OptionalStage(rate, period, 0, null);
     }
 
     interface StageRate {
@@ -121,149 +72,86 @@ public interface RateLimiter {
         OptionalStage period(TimeSpan period);
     }
 
-    record OptionalStage(int rate, TimeSpan period, int burst, TimeSpan timeout, TimeSource timeSource) {
+    record OptionalStage(int rate, TimeSpan period, int burst, TimeSource timeSource) {
 
         public OptionalStage burst(int extraPermits) {
-            return new OptionalStage(rate, period, extraPermits, timeout, timeSource);
-        }
-
-        public OptionalStage timeout(TimeSpan maxWait) {
-            return new OptionalStage(rate, period, burst, maxWait, timeSource);
+            return new OptionalStage(rate, period, extraPermits, timeSource);
         }
 
         public RateLimiter timeSource(TimeSource source) {
-            return createRateLimiter(rate, period, burst, timeout, source);
+            return createRateLimiter(rate, period, burst, source);
         }
 
         public RateLimiter withDefaultTimeSource() {
-            return timeSource(System::nanoTime);
+            return timeSource(TimeSource.system());
         }
     }
 
     private static RateLimiter createRateLimiter(int rate,
                                                   TimeSpan period,
                                                   int burst,
-                                                  TimeSpan timeout,
                                                   TimeSource timeSource) {
-        return new RateLimiterImpl(rate, period, burst, timeout, timeSource);
-    }
-}
+        record rateLimiter(int maxTokens,
+                           int refillRate,
+                           long refillPeriodNanos,
+                           TimeSource timeSource,
+                           long[] state // [0] = tokens, [1] = lastRefillTimeNanos
+        ) implements RateLimiter {
 
-final class RateLimiterImpl implements RateLimiter {
-    private final int maxTokens;
-    private final int refillRate;
-    private final long refillPeriodNanos;
-    private final TimeSpan timeout;
-    private final TimeSource timeSource;
+            @Override
+            public <T> Promise<T> execute(Supplier<Promise<T>> operation) {
+                return tryAcquire().fold(
+                        Cause::promise,
+                        _ -> operation.get()
+                );
+            }
 
-    private long tokens;
-    private long lastRefillTimeNanos;
+            private synchronized Result tryAcquire() {
+                refill();
 
-    RateLimiterImpl(int rate, TimeSpan period, int burst, TimeSpan timeout, TimeSource timeSource) {
-        this.refillRate = rate;
-        this.maxTokens = rate + burst;
-        this.refillPeriodNanos = period.nanos();
-        this.timeout = timeout;
-        this.timeSource = timeSource;
-        this.tokens = maxTokens;
-        this.lastRefillTimeNanos = timeSource.nanoTime();
-    }
+                if (state[0] >= 1) {
+                    state[0]--;
+                    return new Result(true, null);
+                }
 
-    @Override
-    public <T> Promise<T> execute(Supplier<Promise<T>> operation) {
-        return tryAcquire().fold(
-                Cause::promise,
-                _ -> operation.get()
-        );
-    }
+                return new Result(false, calculateRetryAfter());
+            }
 
-    @Override
-    public <T> Promise<T> executeWithWait(Supplier<Promise<T>> operation) {
-        return acquire().flatMap(_ -> operation.get());
-    }
+            private void refill() {
+                long now = timeSource.nanoTime();
+                long elapsed = now - state[1];
 
-    @Override
-    public synchronized Result<Unit> tryAcquire() {
-        return tryAcquire(1);
-    }
+                if (elapsed >= refillPeriodNanos) {
+                    long periods = elapsed / refillPeriodNanos;
+                    long tokensToAdd = periods * refillRate;
 
-    @Override
-    public synchronized Result<Unit> tryAcquire(int permits) {
-        refill();
+                    state[0] = Math.min(maxTokens, state[0] + tokensToAdd);
+                    state[1] += periods * refillPeriodNanos;
+                }
+            }
 
-        if (tokens >= permits) {
-            tokens -= permits;
-            return Result.success(Unit.unit());
-        }
+            private TimeSpan calculateRetryAfter() {
+                long now = timeSource.nanoTime();
+                long timeSinceLastRefill = now - state[1];
+                long remainingTimeInCurrentPeriod = refillPeriodNanos - timeSinceLastRefill;
 
-        return new RateLimiterError.LimitExceeded(calculateRetryAfter(permits)).result();
-    }
+                return timeSpan(Math.max(1, remainingTimeInCurrentPeriod)).nanos();
+            }
 
-    @Override
-    public Promise<Unit> acquire() {
-        return acquire(1);
-    }
-
-    @Override
-    public Promise<Unit> acquire(int permits) {
-        var result = tryAcquire(permits);
-
-        return result.fold(
-                cause -> {
-                    if (cause instanceof RateLimiterError.LimitExceeded limited) {
-                        var waitTime = limited.retryAfter();
-
-                        if (timeout != null && waitTime.compareTo(timeout) > 0) {
-                            return new RateLimiterError.Timeout(timeout).promise();
-                        }
-
-                        var promise = Promise.<Unit>promise();
-                        SharedScheduler.schedule(
-                                () -> acquire(permits)
-                                        .onSuccess(unit -> promise.resolve(Result.success(unit)))
-                                        .onFailure(c -> promise.resolve(Result.failure(c))),
-                                waitTime
-                        );
-                        return promise;
+            private record Result(boolean success, TimeSpan retryAfter) {
+                <T> T fold(java.util.function.Function<RateLimiterError.LimitExceeded, T> onFailure,
+                           java.util.function.Function<Void, T> onSuccess) {
+                    if (success) {
+                        return onSuccess.apply(null);
                     }
-                    return cause.promise();
-                },
-                _ -> Promise.success(Unit.unit())
-        );
-    }
-
-    @Override
-    public synchronized int availablePermits() {
-        refill();
-        return (int) tokens;
-    }
-
-    private void refill() {
-        long now = timeSource.nanoTime();
-        long elapsed = now - lastRefillTimeNanos;
-
-        if (elapsed >= refillPeriodNanos) {
-            long periods = elapsed / refillPeriodNanos;
-            long tokensToAdd = periods * refillRate;
-
-            tokens = Math.min(maxTokens, tokens + tokensToAdd);
-            lastRefillTimeNanos += periods * refillPeriodNanos;
-        }
-    }
-
-    private TimeSpan calculateRetryAfter(int permits) {
-        long tokensNeeded = permits - tokens;
-        long periodsNeeded = (tokensNeeded + refillRate - 1) / refillRate;
-        long nanosToWait = periodsNeeded * refillPeriodNanos;
-
-        long now = timeSource.nanoTime();
-        long timeSinceLastRefill = now - lastRefillTimeNanos;
-        long remainingTimeInCurrentPeriod = refillPeriodNanos - timeSinceLastRefill;
-
-        if (remainingTimeInCurrentPeriod > 0 && periodsNeeded > 0) {
-            nanosToWait = remainingTimeInCurrentPeriod + (periodsNeeded - 1) * refillPeriodNanos;
+                    return onFailure.apply(new RateLimiterError.LimitExceeded(retryAfter));
+                }
+            }
         }
 
-        return timeSpan(Math.max(1, nanosToWait)).nanos();
+        int maxTokens = rate + burst;
+        long[] state = {maxTokens, timeSource.nanoTime()};
+
+        return new rateLimiter(maxTokens, rate, period.nanos(), timeSource, state);
     }
 }
