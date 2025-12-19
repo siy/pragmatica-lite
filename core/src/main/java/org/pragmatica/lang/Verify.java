@@ -63,32 +63,6 @@ public sealed interface Verify {
         return causeProvider.apply(value).result();
     }
 
-    /// Creates a reusable validation function that performs a given check with custom cause provider.
-    /// This is a function factory that creates validation functions that can be reused across
-    /// different validation scenarios with consistent error messaging.
-    ///
-    /// @param causeProvider Function that creates a Cause based on the input value when validation fails
-    /// @param predicate     The predicate to test values against
-    /// @param <T>           The type of the values being verified
-    ///
-    /// @return A function that takes a value and returns a Result containing the value or failure
-    static <T> Fn1<Result<T>, T> ensureFn(Fn1<Cause, T> causeProvider, Predicate<T> predicate) {
-        return value -> ensure(causeProvider, value, predicate);
-    }
-
-    /// Creates a reusable validation function with a fixed error cause.
-    /// This is useful when you want to create a validation function with a consistent
-    /// error message across all validation failures.
-    ///
-    /// @param cause     The Cause to use when validation fails
-    /// @param predicate The predicate to test values against
-    /// @param <T>       The type of the values being verified
-    ///
-    /// @return A function that takes a value and returns a Result containing the value or failure
-    static <T> Fn1<Result<T>, T> ensureFn(Cause cause, Predicate<T> predicate) {
-        return value -> ensure(_ -> cause, value, predicate);
-    }
-
     /// Ensures that a value satisfies a binary predicate with one additional parameter.
     ///
     /// This method is a convenience wrapper around the single-parameter `ensure` method,
@@ -110,32 +84,6 @@ public sealed interface Verify {
         return ensure(_ -> cause, value, v -> predicate.apply(v, param1));
     }
 
-    /// Creates a reusable validation function for binary predicates.
-    /// This is a function factory that creates validation functions with one additional parameter.
-    ///
-    /// @param predicate The binary predicate to test values against
-    /// @param param1    The additional parameter to pass to the predicate
-    /// @param <T>       The type of the values being verified
-    /// @param <P1>      The type of the additional parameter
-    ///
-    /// @return A function that takes a value and returns a Result containing the value or failure
-    static <T, P1> Fn1<Result<T>, T> ensureFn(Fn2<Boolean, T, P1> predicate, P1 param1) {
-        return value -> ensure(value, predicate, param1);
-    }
-
-    /// Creates a reusable validation function for binary predicates with a fixed error cause.
-    ///
-    /// @param cause     The Cause to use when validation fails
-    /// @param predicate The binary predicate to test values against
-    /// @param param1    The additional parameter to pass to the predicate
-    /// @param <T>       The type of the values being verified
-    /// @param <P1>      The type of the additional parameter
-    ///
-    /// @return A function that takes a value and returns a Result containing the value or failure
-    static <T, P1> Fn1<Result<T>, T> ensureFn(Cause cause, Fn2<Boolean, T, P1> predicate, P1 param1) {
-        return value -> ensure(_ -> cause, value, predicate, param1);
-    }
-
     /// Ensures that a value satisfies a binary predicate with one additional parameter.
     ///
     /// This method allows specifying a custom function to generate error causes, providing more
@@ -151,21 +99,6 @@ public sealed interface Verify {
     /// @return Success result containing the value if predicate returns true, failure result otherwise
     static <T, P1> Result<T> ensure(Fn1<Cause, T> causeProvider, T value, Fn2<Boolean, T, P1> predicate, P1 param1) {
         return ensure(causeProvider, value, v -> predicate.apply(v, param1));
-    }
-
-    /// Creates a reusable validation function that performs a binary check with custom cause provider.
-    /// This is a function factory that creates validation functions with one additional parameter,
-    /// useful for creating reusable range checks, comparisons, etc.
-    ///
-    /// @param causeProvider Function that creates a Cause based on the input value when validation fails
-    /// @param predicate     The binary predicate to test values against
-    /// @param param1        The additional parameter to pass to the predicate
-    /// @param <T>           The type of the values being verified
-    /// @param <P1>          The type of the additional parameter
-    ///
-    /// @return A function that takes a value and returns a Result containing the value or failure
-    static <T, P1> Fn1<Result<T>, T> ensureFn(Fn1<Cause, T> causeProvider, Fn2<Boolean, T, P1> predicate, P1 param1) {
-        return value -> ensure(causeProvider, value, predicate, param1);
     }
 
     /// Ensures that a value satisfies a ternary predicate with two additional parameters.
@@ -191,36 +124,6 @@ public sealed interface Verify {
         return ensure(_ -> cause, value, v -> predicate.apply(v, param1, param2));
     }
 
-    /// Creates a reusable validation function for ternary predicates.
-    /// This is a function factory that creates validation functions with two additional parameters.
-    ///
-    /// @param predicate The ternary predicate to test values against
-    /// @param param1    The first additional parameter to pass to the predicate
-    /// @param param2    The second additional parameter to pass to the predicate
-    /// @param <T>       The type of the values being verified
-    /// @param <P1>      The type of the first additional parameter
-    /// @param <P2>      The type of the second additional parameter
-    ///
-    /// @return A function that takes a value and returns a Result containing the value or failure
-    static <T, P1, P2> Fn1<Result<T>, T> ensureFn(Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2) {
-        return value -> ensure(value, predicate, param1, param2);
-    }
-
-    /// Creates a reusable validation function for ternary predicates with a fixed error cause.
-    ///
-    /// @param cause     The Cause to use when validation fails
-    /// @param predicate The ternary predicate to test values against
-    /// @param param1    The first additional parameter to pass to the predicate
-    /// @param param2    The second additional parameter to pass to the predicate
-    /// @param <T>       The type of the values being verified
-    /// @param <P1>      The type of the first additional parameter
-    /// @param <P2>      The type of the second additional parameter
-    ///
-    /// @return A function that takes a value and returns a Result containing the value or failure
-    static <T, P1, P2> Fn1<Result<T>, T> ensureFn(Cause cause, Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2) {
-        return value -> ensure(_ -> cause, value, predicate, param1, param2);
-    }
-
     /// Ensures that a value satisfies a ternary predicate with two additional parameters.
     ///
     /// This method allows specifying a custom function to generate error causes, providing more
@@ -238,23 +141,6 @@ public sealed interface Verify {
     /// @return Success result containing the value if predicate returns true, failure result otherwise
     static <T, P1, P2> Result<T> ensure(Fn1<Cause, T> causeProvider, T value, Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2) {
         return ensure(causeProvider, value, v -> predicate.apply(v, param1, param2));
-    }
-
-    /// Creates a reusable validation function that performs a ternary check with custom cause provider.
-    /// This is a function factory that creates validation functions with two additional parameters,
-    /// useful for creating reusable range checks between bounds, pattern matching, etc.
-    ///
-    /// @param causeProvider Function that creates a Cause based on the input value when validation fails
-    /// @param predicate     The ternary predicate to test values against
-    /// @param param1        The first additional parameter to pass to the predicate
-    /// @param param2        The second additional parameter to pass to the predicate
-    /// @param <T>           The type of the values being verified
-    /// @param <P1>          The type of the first additional parameter
-    /// @param <P2>          The type of the second additional parameter
-    ///
-    /// @return A function that takes a value and returns a Result containing the value or failure
-    static <T, P1, P2> Fn1<Result<T>, T> ensureFn(Fn1<Cause, T> causeProvider, Fn3<Boolean, T, P1, P2> predicate, P1 param1,  P2 param2) {
-        return value -> ensure(causeProvider, value, predicate, param1, param2);
     }
 
     /// Combines multiple individual validation checks into a single validation function.
@@ -279,6 +165,40 @@ public sealed interface Verify {
             }
             return Result.success(value);
         };
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Aliases - ensure with Cause/causeProvider at end of parameter list
+    //------------------------------------------------------------------------------------------------------------------
+
+    /// Alias for {@link #ensure(Cause, Object, Predicate)} with reordered parameters.
+    static <T> Result<T> ensure(T value, Predicate<T> predicate, Cause cause) {
+        return ensure(cause, value, predicate);
+    }
+
+    /// Alias for {@link #ensure(Fn1, Object, Predicate)} with reordered parameters.
+    static <T> Result<T> ensure(T value, Predicate<T> predicate, Fn1<Cause, T> causeProvider) {
+        return ensure(causeProvider, value, predicate);
+    }
+
+    /// Alias for {@link #ensure(Cause, Object, Fn2, Object)} with reordered parameters.
+    static <T, P1> Result<T> ensure(T value, Fn2<Boolean, T, P1> predicate, P1 param1, Cause cause) {
+        return ensure(cause, value, predicate, param1);
+    }
+
+    /// Alias for {@link #ensure(Fn1, Object, Fn2, Object)} with reordered parameters.
+    static <T, P1> Result<T> ensure(T value, Fn2<Boolean, T, P1> predicate, P1 param1, Fn1<Cause, T> causeProvider) {
+        return ensure(causeProvider, value, predicate, param1);
+    }
+
+    /// Alias for {@link #ensure(Cause, Object, Fn3, Object, Object)} with reordered parameters.
+    static <T, P1, P2> Result<T> ensure(T value, Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2, Cause cause) {
+        return ensure(cause, value, predicate, param1, param2);
+    }
+
+    /// Alias for {@link #ensure(Fn1, Object, Fn3, Object, Object)} with reordered parameters.
+    static <T, P1, P2> Result<T> ensure(T value, Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2, Fn1<Cause, T> causeProvider) {
+        return ensure(causeProvider, value, predicate, param1, param2);
     }
 
     /// A collection of predicate functions that can be used with the `ensure` methods.

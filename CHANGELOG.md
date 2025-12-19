@@ -19,6 +19,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Thread-safe implementation suitable for concurrent access
 - `TimeSource` - shared time abstraction for testability (extracted from CircuitBreaker)
 
+#### Result Aliases (Issue #39, #43)
+- `Result.onErr(Consumer)` - alias for `onFailure()`
+- `Result.onOk(Consumer)` - alias for `onSuccess()`
+- `Result.run(failureConsumer, successConsumer)` - alias for `apply()`
+- `Result.tryOf(ThrowingFn0)` - alias for `lift()` with supplier-first signature
+- `Result.tryOf(ThrowingFn0, Cause)` - alias for `lift()` with supplier first, cause at end
+- `Result.tryOf(ThrowingFn0, Fn1)` - alias for `lift()` with supplier first, exception mapper at end
+
+#### Instance all() Methods (Issue #44)
+- `Result.all(Fn1...)` - instance method for for-comprehension style composition
+  - Chains 1-9 dependent operations with access to source Result value
+  - Returns Mapper1-Mapper9 for type-safe tuple transformation
+  - Enables cleaner code without nested flatMaps
+
+#### Verify Aliases (Issue #41)
+- `Verify.ensure(T, Predicate, Cause)` - alias with cause at end
+- `Verify.ensure(T, Predicate, Fn1<Cause, T>)` - alias with cause provider at end
+- `Verify.ensure(T, Fn2, P1, Cause)` - binary predicate alias with cause at end
+- `Verify.ensure(T, Fn2, P1, Fn1<Cause, T>)` - binary predicate alias with cause provider at end
+- `Verify.ensure(T, Fn3, P1, P2, Cause)` - ternary predicate alias with cause at end
+- `Verify.ensure(T, Fn3, P1, P2, Fn1<Cause, T>)` - ternary predicate alias with cause provider at end
+
+### Removed
+- `Verify.ensureFn()` methods - removed to simplify API surface (use `ensure()` aliases instead)
+
 ## [0.8.4] - 2025-12-13
 
 ### Added
