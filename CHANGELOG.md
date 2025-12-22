@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Core Utilities
-- `RateLimiter` - Token Bucket rate limiting utility
+- `RateLimiter` - Token Bucket rate-limiting utility
   - Staged fluent builder with `rate()`, `period()`, `burst()` configuration
   - `execute()` - immediate rejection when rate limited
   - `RateLimiterError.LimitExceeded` with `retryAfter` information
