@@ -304,6 +304,203 @@ public sealed interface Result<T> permits Success, Failure {
         return onResult(_ -> runnable.run());
     }
 
+    //------------------------------------------------------------------------------------------------------------------
+    // Instance method aliases
+    //------------------------------------------------------------------------------------------------------------------
+
+    /// Alias for {@link #onFailure(Consumer)}.
+    ///
+    /// @param consumer Consumer to pass failure cause to
+    ///
+    /// @return current instance for fluent call chaining
+    default Result<T> onErr(Consumer<? super Cause> consumer) {
+        return onFailure(consumer);
+    }
+
+    /// Alias for {@link #onSuccess(Consumer)}.
+    ///
+    /// @param consumer Consumer to pass value to
+    ///
+    /// @return current instance for fluent call chaining
+    default Result<T> onOk(Consumer<T> consumer) {
+        return onSuccess(consumer);
+    }
+
+    /// Alias for {@link #apply(Consumer, Consumer)}.
+    ///
+    /// @param failureConsumer Consumer for failure result
+    /// @param successConsumer Consumer for success result
+    default void run(Consumer<? super Cause> failureConsumer, Consumer<? super T> successConsumer) {
+        apply(failureConsumer, successConsumer);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Instance all() methods for for-comprehension style composition
+    //------------------------------------------------------------------------------------------------------------------
+
+    /// Chain a dependent operation with access to this Result's value.
+    /// Enables for-comprehension style composition without nested flatMaps.
+    ///
+    /// @param fn1 Function that takes the current value and returns a Result
+    /// @param <T1> Type of the result from fn1
+    ///
+    /// @return Mapper1 for further transformation
+    default <T1> Mapper1<T1> all(Fn1<Result<T1>, T> fn1) {
+        return () -> flatMap(v -> fn1.apply(v).map(Tuple::tuple));
+    }
+
+    /// Chain two dependent operations with access to this Result's value.
+    ///
+    /// @param fn1 First function that takes the current value and returns a Result
+    /// @param fn2 Second function that takes the current value and returns a Result
+    /// @param <T1> Type of the result from fn1
+    /// @param <T2> Type of the result from fn2
+    ///
+    /// @return Mapper2 for further transformation
+    default <T1, T2> Mapper2<T1, T2> all(
+            Fn1<Result<T1>, T> fn1,
+            Fn1<Result<T2>, T> fn2
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).map(v2 -> tuple(v1, v2))));
+    }
+
+    /// Chain three dependent operations with access to this Result's value.
+    ///
+    /// @param fn1 First function that takes the current value and returns a Result
+    /// @param fn2 Second function that takes the current value and returns a Result
+    /// @param fn3 Third function that takes the current value and returns a Result
+    /// @param <T1> Type of the result from fn1
+    /// @param <T2> Type of the result from fn2
+    /// @param <T3> Type of the result from fn3
+    ///
+    /// @return Mapper3 for further transformation
+    default <T1, T2, T3> Mapper3<T1, T2, T3> all(
+            Fn1<Result<T1>, T> fn1,
+            Fn1<Result<T2>, T> fn2,
+            Fn1<Result<T3>, T> fn3
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).map(v3 -> tuple(v1, v2, v3)))));
+    }
+
+    /// Chain four dependent operations with access to this Result's value.
+    default <T1, T2, T3, T4> Mapper4<T1, T2, T3, T4> all(
+            Fn1<Result<T1>, T> fn1,
+            Fn1<Result<T2>, T> fn2,
+            Fn1<Result<T3>, T> fn3,
+            Fn1<Result<T4>, T> fn4
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).flatMap(v3 ->
+                                        fn4.apply(v).map(v4 -> tuple(v1, v2, v3, v4))))));
+    }
+
+    /// Chain five dependent operations with access to this Result's value.
+    default <T1, T2, T3, T4, T5> Mapper5<T1, T2, T3, T4, T5> all(
+            Fn1<Result<T1>, T> fn1,
+            Fn1<Result<T2>, T> fn2,
+            Fn1<Result<T3>, T> fn3,
+            Fn1<Result<T4>, T> fn4,
+            Fn1<Result<T5>, T> fn5
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).flatMap(v3 ->
+                                        fn4.apply(v).flatMap(v4 ->
+                                                fn5.apply(v).map(v5 -> tuple(v1, v2, v3, v4, v5)))))));
+    }
+
+    /// Chain six dependent operations with access to this Result's value.
+    default <T1, T2, T3, T4, T5, T6> Mapper6<T1, T2, T3, T4, T5, T6> all(
+            Fn1<Result<T1>, T> fn1,
+            Fn1<Result<T2>, T> fn2,
+            Fn1<Result<T3>, T> fn3,
+            Fn1<Result<T4>, T> fn4,
+            Fn1<Result<T5>, T> fn5,
+            Fn1<Result<T6>, T> fn6
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).flatMap(v3 ->
+                                        fn4.apply(v).flatMap(v4 ->
+                                                fn5.apply(v).flatMap(v5 ->
+                                                        fn6.apply(v).map(v6 -> tuple(v1, v2, v3, v4, v5, v6))))))));
+    }
+
+    /// Chain seven dependent operations with access to this Result's value.
+    default <T1, T2, T3, T4, T5, T6, T7> Mapper7<T1, T2, T3, T4, T5, T6, T7> all(
+            Fn1<Result<T1>, T> fn1,
+            Fn1<Result<T2>, T> fn2,
+            Fn1<Result<T3>, T> fn3,
+            Fn1<Result<T4>, T> fn4,
+            Fn1<Result<T5>, T> fn5,
+            Fn1<Result<T6>, T> fn6,
+            Fn1<Result<T7>, T> fn7
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).flatMap(v3 ->
+                                        fn4.apply(v).flatMap(v4 ->
+                                                fn5.apply(v).flatMap(v5 ->
+                                                        fn6.apply(v).flatMap(v6 ->
+                                                                fn7.apply(v).map(v7 -> tuple(v1, v2, v3, v4, v5, v6, v7)))))))));
+    }
+
+    /// Chain eight dependent operations with access to this Result's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8> Mapper8<T1, T2, T3, T4, T5, T6, T7, T8> all(
+            Fn1<Result<T1>, T> fn1,
+            Fn1<Result<T2>, T> fn2,
+            Fn1<Result<T3>, T> fn3,
+            Fn1<Result<T4>, T> fn4,
+            Fn1<Result<T5>, T> fn5,
+            Fn1<Result<T6>, T> fn6,
+            Fn1<Result<T7>, T> fn7,
+            Fn1<Result<T8>, T> fn8
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).flatMap(v3 ->
+                                        fn4.apply(v).flatMap(v4 ->
+                                                fn5.apply(v).flatMap(v5 ->
+                                                        fn6.apply(v).flatMap(v6 ->
+                                                                fn7.apply(v).flatMap(v7 ->
+                                                                        fn8.apply(v).map(v8 -> tuple(v1, v2, v3, v4, v5, v6, v7, v8))))))))));
+    }
+
+    /// Chain nine dependent operations with access to this Result's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9> Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> all(
+            Fn1<Result<T1>, T> fn1,
+            Fn1<Result<T2>, T> fn2,
+            Fn1<Result<T3>, T> fn3,
+            Fn1<Result<T4>, T> fn4,
+            Fn1<Result<T5>, T> fn5,
+            Fn1<Result<T6>, T> fn6,
+            Fn1<Result<T7>, T> fn7,
+            Fn1<Result<T8>, T> fn8,
+            Fn1<Result<T9>, T> fn9
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).flatMap(v3 ->
+                                        fn4.apply(v).flatMap(v4 ->
+                                                fn5.apply(v).flatMap(v5 ->
+                                                        fn6.apply(v).flatMap(v6 ->
+                                                                fn7.apply(v).flatMap(v7 ->
+                                                                        fn8.apply(v).flatMap(v8 ->
+                                                                                fn9.apply(v).map(v9 -> tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9)))))))))));
+    }
+
     /// This method allows "unwrapping" the value stored inside the Result instance. If a value is missing, then [IllegalStateException] is thrown.
     ///
     /// WARNING!!!
@@ -596,6 +793,39 @@ public sealed interface Result<T> permits Success, Failure {
     /// @return Unit result which is success if no exceptions were thrown or failure otherwise
     static Result<Unit> lift(ThrowingRunnable runnable) {
         return lift(Causes::fromThrowable, runnable);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // tryOf aliases for lift (supplier first, cause/exceptionMapper at end)
+    //------------------------------------------------------------------------------------------------------------------
+
+    /// Alias for {@link #lift(ThrowingFn0)} with supplier as first parameter.
+    ///
+    /// @param supplier the call to wrap
+    ///
+    /// @return result transformed by the provided lambda and wrapped into [Result]
+    static <U> Result<U> tryOf(ThrowingFn0<U> supplier) {
+        return lift(supplier);
+    }
+
+    /// Alias for {@link #lift(Cause, ThrowingFn0)} with supplier first and cause at end.
+    ///
+    /// @param supplier the call to wrap
+    /// @param cause    the cause to use in case of failure
+    ///
+    /// @return result transformed by the provided lambda and wrapped into [Result]
+    static <U> Result<U> tryOf(ThrowingFn0<U> supplier, Cause cause) {
+        return lift(cause, supplier);
+    }
+
+    /// Alias for {@link #lift(Fn1, ThrowingFn0)} with supplier first and exceptionMapper at end.
+    ///
+    /// @param supplier        the call to wrap
+    /// @param exceptionMapper the function which will transform exception into instance of [Cause]
+    ///
+    /// @return result transformed by the provided lambda and wrapped into [Result]
+    static <U> Result<U> tryOf(ThrowingFn0<U> supplier, Fn1<? extends Cause, ? super Throwable> exceptionMapper) {
+        return lift(exceptionMapper, supplier);
     }
 
     /// Wrap the call to the provided function into success [Result] if the call succeeds of into failure [Result] if call throws exception.

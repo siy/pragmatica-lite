@@ -1292,4 +1292,184 @@ class ResultTest {
 
         return "Input:" + i;
     }
+
+    // Tests for Result aliases
+
+    @Test
+    void onErrIsAliasForOnFailure() {
+        var flag = new AtomicBoolean(false);
+        Result.failure(Causes.cause("error"))
+              .onErr(cause -> {
+                  assertEquals("error", cause.message());
+                  flag.set(true);
+              });
+        assertTrue(flag.get());
+    }
+
+    @Test
+    void onOkIsAliasForOnSuccess() {
+        var flag = new AtomicBoolean(false);
+        Result.success(123)
+              .onOk(value -> {
+                  assertEquals(123, value);
+                  flag.set(true);
+              });
+        assertTrue(flag.get());
+    }
+
+    @Test
+    void runIsAliasForApply() {
+        var successFlag = new AtomicBoolean(false);
+        var failureFlag = new AtomicBoolean(false);
+
+        Result.success(123).run(
+                _ -> failureFlag.set(true),
+                value -> {
+                    assertEquals(123, value);
+                    successFlag.set(true);
+                }
+        );
+        assertTrue(successFlag.get());
+        assertFalse(failureFlag.get());
+
+        successFlag.set(false);
+        Result.failure(Causes.cause("error")).run(
+                cause -> {
+                    assertEquals("error", cause.message());
+                    failureFlag.set(true);
+                },
+                _ -> successFlag.set(true)
+        );
+        assertTrue(failureFlag.get());
+        assertFalse(successFlag.get());
+    }
+
+    @Test
+    void tryOfWithNoExceptionMapperUsesDefault() {
+        Result.tryOf(() -> 123)
+              .onFailureRun(Assertions::fail)
+              .onSuccess(value -> assertEquals(123, value));
+
+        Result.tryOf(() -> {
+                  throw new RuntimeException("test error");
+              })
+              .onSuccessRun(Assertions::fail)
+              .onFailure(cause -> assertTrue(cause.message().contains("test error")));
+    }
+
+    @Test
+    void tryOfWithFixedCauseUsesProvidedCause() {
+        var fixedCause = Causes.cause("fixed error");
+
+        Result.tryOf(() -> 123, fixedCause)
+              .onFailureRun(Assertions::fail)
+              .onSuccess(value -> assertEquals(123, value));
+
+        Result.tryOf(() -> {
+                  throw new RuntimeException("original error");
+              }, fixedCause)
+              .onSuccessRun(Assertions::fail)
+              .onFailure(cause -> assertEquals("fixed error", cause.message()));
+    }
+
+    @Test
+    void tryOfWithExceptionMapperUsesMapper() {
+        Result.tryOf(() -> 123, Causes::fromThrowable)
+              .onFailureRun(Assertions::fail)
+              .onSuccess(value -> assertEquals(123, value));
+
+        Result.tryOf(
+                      () -> {
+                          throw new RuntimeException("mapped error");
+                      },
+                      ex -> Causes.cause("Custom: " + ex.getMessage()))
+              .onSuccessRun(Assertions::fail)
+              .onFailure(cause -> assertEquals("Custom: mapped error", cause.message()));
+    }
+
+    // Tests for instance all() methods
+
+    @Test
+    void instanceAllWith1FunctionChainsDependentOperation() {
+        Result.success("base")
+              .all(base -> Result.success(base + "-derived"))
+              .map(derived -> {
+                  assertEquals("base-derived", derived);
+                  return derived;
+              })
+              .onFailureRun(Assertions::fail);
+    }
+
+    @Test
+    void instanceAllWith2FunctionsChainsDependentOperations() {
+        Result.success("token")
+              .all(
+                      token -> Result.success(token + "-parsed"),
+                      token -> Result.success(token.length())
+              )
+              .map((parsed, length) -> {
+                  assertEquals("token-parsed", parsed);
+                  assertEquals(5, length);
+                  return parsed + ":" + length;
+              })
+              .onFailureRun(Assertions::fail);
+    }
+
+    @Test
+    void instanceAllWith3FunctionsChainsDependentOperations() {
+        Result.success(10)
+              .all(
+                      n -> Result.success(n * 2),
+                      n -> Result.success(n * 3),
+                      n -> Result.success(n * 4)
+              )
+              .map((r1, r2, r3) -> {
+                  assertEquals(20, r1);
+                  assertEquals(30, r2);
+                  assertEquals(40, r3);
+                  return r1 + r2 + r3;
+              })
+              .onSuccess(sum -> assertEquals(90, sum))
+              .onFailureRun(Assertions::fail);
+    }
+
+    @Test
+    void instanceAllReturnsFailureIfAnyFunctionFails() {
+        Result.success("base")
+              .all(
+                      base -> Result.success(base + "-first"),
+                      _ -> Result.failure(Causes.cause("second failed")),
+                      base -> Result.success(base + "-third")
+              )
+              .map((_, _, _) -> Assertions.fail("Should not be called"))
+              .onFailure(cause -> assertEquals("second failed", cause.message()));
+    }
+
+    @Test
+    void instanceAllReturnsFailureIfSourceResultIsFailed() {
+        Result.<String>failure(Causes.cause("source failed"))
+              .all(
+                      base -> Result.success(base + "-derived")
+              )
+              .map(_ -> Assertions.fail("Should not be called"))
+              .onFailure(cause -> assertEquals("source failed", cause.message()));
+    }
+
+    @Test
+    void instanceAllWithForComprehensionStyleUsage() {
+        // Simulates parsing a token and extracting components
+        Result.success("jwt-token-value")
+              .all(
+                      jwt -> Result.success(jwt), // pass through JWT
+                      jwt -> Result.success(jwt.split("-")[0]) // extract issuer part
+              )
+              .map((jwt, issuer) -> new TokenBearer(jwt, issuer))
+              .onFailureRun(Assertions::fail)
+              .onSuccess(bearer -> {
+                  assertEquals("jwt-token-value", bearer.jwt);
+                  assertEquals("jwt", bearer.issuer);
+              });
+    }
+
+    record TokenBearer(String jwt, String issuer) {}
 }

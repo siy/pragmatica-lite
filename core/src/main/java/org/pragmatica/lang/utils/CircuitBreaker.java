@@ -65,15 +65,15 @@ public interface CircuitBreaker {
         HALF_OPEN   // Circuit is testing if service is recovered
     }
 
-    interface TimeSource {
-        long nanoTime();
-    }
+    /// @deprecated Use {@link org.pragmatica.lang.utils.TimeSource} instead
+    @Deprecated(forRemoval = true)
+    interface TimeSource extends org.pragmatica.lang.utils.TimeSource {}
 
     static CircuitBreaker create(int failureThreshold,
                                  TimeSpan resetTimeout,
                                  int testAttempts,
                                  Predicate<Cause> shouldTrip,
-                                 TimeSource timeSource) {
+                                 org.pragmatica.lang.utils.TimeSource timeSource) {
         record circuitBreaker(int failureThreshold,
                               TimeSpan resetTimeout,
                               int testAttempts,
@@ -82,7 +82,7 @@ public interface CircuitBreaker {
                               AtomicLong failureCountRef,
                               AtomicLong lastStateChangeTimestamp,
                               AtomicLong testSuccessCount,
-                              TimeSource timeSource
+                              org.pragmatica.lang.utils.TimeSource timeSource
         ) implements CircuitBreaker {
             private static final Logger log = LoggerFactory.getLogger(CircuitBreaker.class);
 
@@ -239,10 +239,10 @@ public interface CircuitBreaker {
     }
 
     interface StateTimeSource {
-        CircuitBreaker timeSource(TimeSource value);
+        CircuitBreaker timeSource(org.pragmatica.lang.utils.TimeSource value);
 
         default CircuitBreaker withDefaultTimeSource() {
-            return timeSource(System::nanoTime);
+            return timeSource(org.pragmatica.lang.utils.TimeSource.system());
         }
     }
 }

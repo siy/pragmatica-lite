@@ -430,65 +430,18 @@ class VerifyTest {
         }
 
         @Test
-        @DisplayName("ensureFn should create reusable validation functions")
-        void ensureFnShouldCreateReusableValidationFunctions() {
-            Fn1<Cause, String> customCauseProvider = value -> Causes.cause("String '" + value + "' is invalid");
-            var validationFn = Verify.ensureFn(customCauseProvider, Verify.Is::notBlank);
-
-            // Test success case
-            validationFn.apply("hello")
-                        .onSuccess(value -> assertEquals("hello", value))
-                        .onFailureRun(() -> fail("Should succeed"));
-
-            // Test failure case
-            validationFn.apply("   ")
-                        .onSuccessRun(() -> fail("Should fail"))
-                        .onFailure(cause -> assertEquals("String '   ' is invalid", cause.message()));
-        }
-
-        @Test
-        @DisplayName("ensureFn with binary predicate should work correctly")
-        void ensureFnWithBinaryPredicateShouldWorkCorrectly() {
-            Fn1<Cause, Integer> causeProvider = value -> Causes.cause("Value " + value + " failed range check");
-            var rangeCheck = Verify.ensureFn(causeProvider, Verify.Is::greaterThan, 5);
-
-            rangeCheck.apply(10)
-                      .onSuccess(value -> assertEquals(10, value))
-                      .onFailureRun(() -> fail("Should succeed"));
-
-            rangeCheck.apply(3)
-                      .onSuccessRun(() -> fail("Should fail"))
-                      .onFailure(cause -> assertEquals("Value 3 failed range check", cause.message()));
-        }
-
-        @Test
-        @DisplayName("ensureFn with ternary predicate should work correctly")
-        void ensureFnWithTernaryPredicateShouldWorkCorrectly() {
-            Fn1<Cause, Integer> causeProvider = value -> Causes.cause("Value " + value + " is not in range");
-            var betweenCheck = Verify.ensureFn(causeProvider, Verify.Is::between, 5, 10);
-
-            betweenCheck.apply(7)
-                        .onSuccess(value -> assertEquals(7, value))
-                        .onFailureRun(() -> fail("Should succeed"));
-
-            betweenCheck.apply(12)
-                        .onSuccessRun(() -> fail("Should fail"))
-                        .onFailure(cause -> assertEquals("Value 12 is not in range", cause.message()));
-        }
-
-        @Test
         @DisplayName("combine should merge multiple validation functions")
         void combineShouldMergeMultipleValidationFunctions() {
-            Fn1<Result<String>, String> notNullCheck = Verify.ensureFn(value -> Causes.cause("Value is null"), Verify.Is::notNull);
-            Fn1<Result<String>, String> notBlankCheck = Verify.ensureFn(value -> Causes.cause("Value is blank"), Verify.Is::notBlank);
-            Fn1<Result<String>, String> lengthCheck = Verify.ensureFn(value -> Causes.cause("Value length is invalid"), 
-                                              Verify.Is::lenBetween, 3, 10);
+            Fn1<Result<String>, String> notNullCheck = value -> Verify.ensure(value, Verify.Is::notNull, Causes.cause("Value is null"));
+            Fn1<Result<String>, String> notBlankCheck = value -> Verify.ensure(value, Verify.Is::notBlank, Causes.cause("Value is blank"));
+            Fn1<Result<String>, String> lengthCheck = value -> Verify.ensure(value, Verify.Is::lenBetween, 3, 10,
+                                              Causes.cause("Value length is invalid"));
 
             var combinedCheck = Verify.combine(notNullCheck, notBlankCheck, lengthCheck);
 
             // Test success case - all validations pass
             combinedCheck.apply("hello")
-                         .onSuccess(value -> assertEquals("hello", value))
+                         .onSuccess(v -> assertEquals("hello", v))
                          .onFailureRun(() -> fail("Should succeed"));
 
             // Test failure on first check (null)
@@ -536,87 +489,99 @@ class VerifyTest {
         }
 
         @Test
-        @DisplayName("ensureFn with fixed Cause for unary predicate should work")
-        void ensureFnWithFixedCauseForUnaryPredicateShouldWork() {
-            var fixedCause = Causes.cause("Fixed error: value is invalid");
-            var validationFn = Verify.<String>ensureFn(fixedCause, value -> Verify.Is.notBlank(value));
+        @DisplayName("ensure with predicate and fixed cause at end should work")
+        void ensureWithPredicateAndFixedCauseAtEndShouldWork() {
+            var fixedCause = Causes.cause("Validation failed");
 
             // Success case
-            validationFn.apply("valid")
-                        .onSuccess(value -> assertEquals("valid", value))
-                        .onFailureRun(() -> fail("Should succeed"));
+            Verify.ensure("valid", Verify.Is::notBlank, fixedCause)
+                  .onSuccess(value -> assertEquals("valid", value))
+                  .onFailureRun(() -> fail("Should succeed"));
 
-            // Failure case - should use fixed cause
-            validationFn.apply("   ")
-                        .onSuccessRun(() -> fail("Should fail"))
-                        .onFailure(cause -> assertEquals("Fixed error: value is invalid", cause.message()));
+            // Failure case
+            Verify.ensure("   ", Verify.Is::notBlank, fixedCause)
+                  .onSuccessRun(() -> fail("Should fail"))
+                  .onFailure(cause -> assertEquals("Validation failed", cause.message()));
         }
 
         @Test
-        @DisplayName("ensureFn with fixed Cause for binary predicate should work")
-        void ensureFnWithFixedCauseForBinaryPredicateShouldWork() {
-            var fixedCause = Causes.cause("Fixed error: range check failed");
-            var rangeCheck = Verify.<Integer, Integer>ensureFn(fixedCause,
-                (value, boundary) -> Verify.Is.greaterThan(value, boundary), 10);
+        @DisplayName("ensure with predicate and cause provider at end should work")
+        void ensureWithPredicateAndCauseProviderAtEndShouldWork() {
+            Fn1<Cause, String> causeProvider = value -> Causes.cause("Bad value: " + value);
 
             // Success case
-            rangeCheck.apply(15)
-                      .onSuccess(value -> assertEquals(15, value))
-                      .onFailureRun(() -> fail("Should succeed"));
+            Verify.ensure("good", Verify.Is::notBlank, causeProvider)
+                  .onSuccess(value -> assertEquals("good", value))
+                  .onFailureRun(() -> fail("Should succeed"));
 
-            // Failure case - should use fixed cause regardless of value
-            rangeCheck.apply(5)
-                      .onSuccessRun(() -> fail("Should fail"))
-                      .onFailure(cause -> assertEquals("Fixed error: range check failed", cause.message()));
-
-            // Another failure with different value - same fixed cause
-            rangeCheck.apply(0)
-                      .onSuccessRun(() -> fail("Should fail"))
-                      .onFailure(cause -> assertEquals("Fixed error: range check failed", cause.message()));
+            // Failure case
+            Verify.ensure("   ", Verify.Is::notBlank, causeProvider)
+                  .onSuccessRun(() -> fail("Should fail"))
+                  .onFailure(cause -> assertEquals("Bad value:    ", cause.message()));
         }
 
         @Test
-        @DisplayName("ensureFn with fixed Cause for ternary predicate should work")
-        void ensureFnWithFixedCauseForTernaryPredicateShouldWork() {
-            var fixedCause = Causes.cause("Fixed error: value out of bounds");
-            var betweenCheck = Verify.<Integer, Integer, Integer>ensureFn(fixedCause,
-                (value, min, max) -> Verify.Is.between(value, min, max), 10, 20);
+        @DisplayName("ensure with binary predicate and fixed cause at end should work")
+        void ensureWithBinaryPredicateAndFixedCauseAtEndShouldWork() {
+            var fixedCause = Causes.cause("Number too small");
 
             // Success case
-            betweenCheck.apply(15)
-                        .onSuccess(value -> assertEquals(15, value))
-                        .onFailureRun(() -> fail("Should succeed"));
+            Verify.ensure(15, Verify.Is::greaterThan, 10, fixedCause)
+                  .onSuccess(value -> assertEquals(15, value))
+                  .onFailureRun(() -> fail("Should succeed"));
 
-            // Failure case - below range
-            betweenCheck.apply(5)
-                        .onSuccessRun(() -> fail("Should fail"))
-                        .onFailure(cause -> assertEquals("Fixed error: value out of bounds", cause.message()));
-
-            // Failure case - above range, same fixed cause
-            betweenCheck.apply(25)
-                        .onSuccessRun(() -> fail("Should fail"))
-                        .onFailure(cause -> assertEquals("Fixed error: value out of bounds", cause.message()));
+            // Failure case
+            Verify.ensure(5, Verify.Is::greaterThan, 10, fixedCause)
+                  .onSuccessRun(() -> fail("Should fail"))
+                  .onFailure(cause -> assertEquals("Number too small", cause.message()));
         }
 
         @Test
-        @DisplayName("ensureFn with fixed Cause should be reusable across different values")
-        void ensureFnWithFixedCauseShouldBeReusableAcrossDifferentValues() {
-            var fixedCause = Causes.cause("Password too short");
-            var passwordValidator = Verify.<String, Integer, Integer>ensureFn(fixedCause,
-                (value, min, max) -> Verify.Is.lenBetween(value, min, max), 8, 20);
+        @DisplayName("ensure with binary predicate and cause provider at end should work")
+        void ensureWithBinaryPredicateAndCauseProviderAtEndShouldWork() {
+            Fn1<Cause, Integer> causeProvider = value -> Causes.cause("Value " + value + " too small");
 
-            // Multiple validations with same function
-            passwordValidator.apply("password123")
-                             .onSuccess(value -> assertEquals("password123", value))
-                             .onFailureRun(() -> fail("Should succeed"));
+            // Success case
+            Verify.ensure(20, Verify.Is::greaterThan, 10, causeProvider)
+                  .onSuccess(value -> assertEquals(20, value))
+                  .onFailureRun(() -> fail("Should succeed"));
 
-            passwordValidator.apply("short")
-                             .onSuccessRun(() -> fail("Should fail"))
-                             .onFailure(cause -> assertEquals("Password too short", cause.message()));
+            // Failure case
+            Verify.ensure(5, Verify.Is::greaterThan, 10, causeProvider)
+                  .onSuccessRun(() -> fail("Should fail"))
+                  .onFailure(cause -> assertEquals("Value 5 too small", cause.message()));
+        }
 
-            passwordValidator.apply("pw")
-                             .onSuccessRun(() -> fail("Should fail"))
-                             .onFailure(cause -> assertEquals("Password too short", cause.message()));
+        @Test
+        @DisplayName("ensure with ternary predicate and fixed cause at end should work")
+        void ensureWithTernaryPredicateAndFixedCauseAtEndShouldWork() {
+            var fixedCause = Causes.cause("Out of range");
+
+            // Success case
+            Verify.ensure(15, Verify.Is::between, 10, 20, fixedCause)
+                  .onSuccess(value -> assertEquals(15, value))
+                  .onFailureRun(() -> fail("Should succeed"));
+
+            // Failure case
+            Verify.ensure(25, Verify.Is::between, 10, 20, fixedCause)
+                  .onSuccessRun(() -> fail("Should fail"))
+                  .onFailure(cause -> assertEquals("Out of range", cause.message()));
+        }
+
+        @Test
+        @DisplayName("ensure with ternary predicate and cause provider at end should work")
+        void ensureWithTernaryPredicateAndCauseProviderAtEndShouldWork() {
+            Fn1<Cause, Integer> causeProvider = value -> Causes.cause("Value " + value + " not in range");
+
+            // Success case
+            Verify.ensure(15, Verify.Is::between, 10, 20, causeProvider)
+                  .onSuccess(value -> assertEquals(15, value))
+                  .onFailureRun(() -> fail("Should succeed"));
+
+            // Failure case
+            Verify.ensure(25, Verify.Is::between, 10, 20, causeProvider)
+                  .onSuccessRun(() -> fail("Should fail"))
+                  .onFailure(cause -> assertEquals("Value 25 not in range", cause.message()));
         }
     }
 }
