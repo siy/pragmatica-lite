@@ -18,6 +18,7 @@
 package org.pragmatica.lang;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.lang.io.CoreError;
 import org.pragmatica.lang.utils.Causes;
@@ -501,6 +502,7 @@ public class PromiseTest {
     }
 
     @Test
+    @Tag("Slow")
     void asyncActionIsExecutedAfterTimeout() {
         var ref1 = new AtomicLong(System.nanoTime());
         var ref2 = new AtomicLong();
