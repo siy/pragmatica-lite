@@ -124,7 +124,8 @@ public interface RateLimiter {
 
                 if (elapsed >= refillPeriodNanos) {
                     long periods = elapsed / refillPeriodNanos;
-                    long tokensToAdd = periods * refillRate;
+                    // Cap periods to prevent overflow on extended idle periods
+                    long tokensToAdd = Math.min(periods, maxTokens) * refillRate;
 
                     state[0] = Math.min(maxTokens, state[0] + tokensToAdd);
                     state[1] += periods * refillPeriodNanos;
