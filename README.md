@@ -292,6 +292,10 @@ We welcome contributions! Please feel free to submit pull requests, report issue
 - Java 25 or higher
 - Maven 3.9+
 
+## Support
+
+If you find this useful, consider [sponsoring](https://github.com/sponsors/siy).
+
 ## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
