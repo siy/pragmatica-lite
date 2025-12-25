@@ -225,40 +225,28 @@ class RetryTest {
 
     @Test
     void shouldRespectMaxDelay() {
-        var attempts = new AtomicInteger(0);
-        var lastExecutionTime = new AtomicReference<>(System.currentTimeMillis());
-        var maxInterval = new AtomicReference<>(0L);
+        // Test strategy's capping behavior directly (not actual elapsed time which is system-dependent)
+        var initialDelay = timeSpan(10).millis();
+        var maxDelay = timeSpan(100).millis();
 
-        Supplier<Promise<String>> operation = () -> {
-            var attempt = attempts.incrementAndGet();
-            var now = System.currentTimeMillis();
-            var interval = now - lastExecutionTime.get();
+        var strategy = exponential()
+                .initialDelay(initialDelay)
+                .maxDelay(maxDelay)
+                .factor(10.0)
+                .withoutJitter();
 
-            lastExecutionTime.set(now);
+        // Attempt 1: 10ms
+        assertEquals(initialDelay, strategy.nextTimeout(1));
 
-            if (attempt > 1) {
-                if (interval > maxInterval.get()) {
-                    maxInterval.set(interval);
-                }
-            }
+        // Attempt 2: 10 * 10 = 100ms (at max)
+        assertEquals(maxDelay, strategy.nextTimeout(2));
 
-            return cause("Always fails").promise();
-        };
-
-        var initialDelay = 10L;
-        var maxDelay = 100L;
-
-        var retry = create().attempts(5)
-                            .strategy(exponential()
-                                              .initialDelay(timeSpan(initialDelay).millis())
-                                              .maxDelay(timeSpan(maxDelay).millis())
-                                              .factor(10.0)
-                                              .withoutJitter());
-        retry.execute(operation)
-             .await();
-
-        assertTrue(maxInterval.get() <= maxDelay * 1.2,
-                   "Expected max interval to be no more than " + maxDelay + "ms but was " + maxInterval.get() + "ms");
+        // Attempt 3+: would be 1000ms+ but capped at 100ms
+        for (int attempt = 3; attempt <= 10; attempt++) {
+            var delay = strategy.nextTimeout(attempt);
+            assertTrue(delay.compareTo(maxDelay) <= 0,
+                       "Expected delay for attempt " + attempt + " to be capped at " + maxDelay + " but was " + delay);
+        }
     }
 
     @Test
