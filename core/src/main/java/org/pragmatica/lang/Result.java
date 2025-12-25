@@ -606,19 +606,44 @@ public sealed interface Result<T> permits Success, Failure {
     @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     default T unwrap() {
-        return fold(v -> {
-            throw new IllegalStateException("Unwrap error: " + v.message());
-        }, Functions::id);
+        return getOrThrow("Unwrap error");
     }
 
     /// This method assumes that some previous code ensures that [Result] we're working with is successful
     /// and allows extracting value from monad. If this is not the case, the method throws [Error], which
     /// most likely will cause application to crash.
     default T expect(String message) {
+        return getOrThrow(message);
+    }
+
+    /// Extract the success value or throw a custom exception if this Result is a failure.
+    ///
+    /// This method is intended for cases where you need to convert a failure Result into
+    /// an exception, typically at API boundaries or in test code.
+    ///
+    /// @param exceptionFactory factory function that creates an exception from the error message
+    /// @param message context message to include in the exception
+    ///
+    /// @return the success value if this Result is successful
+    /// @throws RuntimeException created by the factory if this Result is a failure
+    default T getOrThrow(Fn1<RuntimeException, String> exceptionFactory, String message) {
         return fold(cause -> {
-                        throw new ExpectationMismatchError("Unexpected failure Result (" + cause.message() + "): " + message);
+                        throw exceptionFactory.apply(message + ": " + cause.message());
                     },
                     Functions::id);
+    }
+
+    /// Extract the success value or throw an [IllegalStateException] if this Result is a failure.
+    ///
+    /// This method is intended for cases where you are confident the Result is successful,
+    /// typically in test code or after explicit success checks.
+    ///
+    /// @param message context message to include in the exception
+    ///
+    /// @return the success value if this Result is successful
+    /// @throws IllegalStateException if this Result is a failure
+    default T getOrThrow(String message) {
+        return getOrThrow(IllegalStateException::new, message);
     }
 
     /// Handle both possible states (success/failure) and produce a single value from it.

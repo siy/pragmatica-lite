@@ -468,6 +468,37 @@ class ResultTest {
     }
 
     @Test
+    void getOrThrowReturnsValueForSuccess() {
+        assertEquals(321, Result.success(321).getOrThrow("Should not throw"));
+    }
+
+    @Test
+    void getOrThrowThrowsIllegalStateExceptionForFailure() {
+        var exception = assertThrows(
+                IllegalStateException.class,
+                () -> Result.failure(Causes.cause("Some error")).getOrThrow("Context message")
+        );
+        assertTrue(exception.getMessage().contains("Context message"));
+        assertTrue(exception.getMessage().contains("Some error"));
+    }
+
+    @Test
+    void getOrThrowWithCustomFactoryReturnsValueForSuccess() {
+        assertEquals(321, Result.success(321).getOrThrow(IllegalArgumentException::new, "Should not throw"));
+    }
+
+    @Test
+    void getOrThrowWithCustomFactoryThrowsCustomExceptionForFailure() {
+        var exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> Result.failure(Causes.cause("Some error"))
+                            .getOrThrow(IllegalArgumentException::new, "Context message")
+        );
+        assertTrue(exception.getMessage().contains("Context message"));
+        assertTrue(exception.getMessage().contains("Some error"));
+    }
+
+    @Test
     void resultCanBeMappedToUnit() {
         Result.success(321)
               .mapToUnit()
