@@ -519,6 +519,268 @@ public interface Promise<T> {
         return map(Unit::toUnit);
     }
 
+    //------------------------------------------------------------------------------------------------------------------
+    // Instance all() methods - for-comprehension style composition
+    //------------------------------------------------------------------------------------------------------------------
+
+    /// Chain a dependent operation with access to this Promise's value.
+    /// Enables for-comprehension style composition without nested flatMaps.
+    ///
+    /// @param fn1 Function that takes the current value and returns a Promise
+    /// @param <T1> Type of the result from fn1
+    ///
+    /// @return Mapper1 for further transformation
+    default <T1> Mapper1<T1> all(Fn1<Promise<T1>, T> fn1) {
+        return () -> flatMap(v -> fn1.apply(v).map(Tuple::tuple));
+    }
+
+    /// Chain two dependent operations with access to this Promise's value.
+    ///
+    /// @param fn1 First function that takes the current value and returns a Promise
+    /// @param fn2 Second function that takes the current value and returns a Promise
+    /// @param <T1> Type of the result from fn1
+    /// @param <T2> Type of the result from fn2
+    ///
+    /// @return Mapper2 for further transformation
+    default <T1, T2> Mapper2<T1, T2> all(
+            Fn1<Promise<T1>, T> fn1,
+            Fn1<Promise<T2>, T> fn2
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).map(v2 -> Tuple.tuple(v1, v2))));
+    }
+
+    /// Chain three dependent operations with access to this Promise's value.
+    ///
+    /// @param fn1 First function that takes the current value and returns a Promise
+    /// @param fn2 Second function that takes the current value and returns a Promise
+    /// @param fn3 Third function that takes the current value and returns a Promise
+    /// @param <T1> Type of the result from fn1
+    /// @param <T2> Type of the result from fn2
+    /// @param <T3> Type of the result from fn3
+    ///
+    /// @return Mapper3 for further transformation
+    default <T1, T2, T3> Mapper3<T1, T2, T3> all(
+            Fn1<Promise<T1>, T> fn1,
+            Fn1<Promise<T2>, T> fn2,
+            Fn1<Promise<T3>, T> fn3
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).map(v3 -> Tuple.tuple(v1, v2, v3)))));
+    }
+
+    /// Chain four dependent operations with access to this Promise's value.
+    default <T1, T2, T3, T4> Mapper4<T1, T2, T3, T4> all(
+            Fn1<Promise<T1>, T> fn1,
+            Fn1<Promise<T2>, T> fn2,
+            Fn1<Promise<T3>, T> fn3,
+            Fn1<Promise<T4>, T> fn4
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).flatMap(v3 ->
+                                        fn4.apply(v).map(v4 -> Tuple.tuple(v1, v2, v3, v4))))));
+    }
+
+    /// Chain five dependent operations with access to this Promise's value.
+    default <T1, T2, T3, T4, T5> Mapper5<T1, T2, T3, T4, T5> all(
+            Fn1<Promise<T1>, T> fn1,
+            Fn1<Promise<T2>, T> fn2,
+            Fn1<Promise<T3>, T> fn3,
+            Fn1<Promise<T4>, T> fn4,
+            Fn1<Promise<T5>, T> fn5
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).flatMap(v3 ->
+                                        fn4.apply(v).flatMap(v4 ->
+                                                fn5.apply(v).map(v5 -> Tuple.tuple(v1, v2, v3, v4, v5)))))));
+    }
+
+    /// Chain six dependent operations with access to this Promise's value.
+    default <T1, T2, T3, T4, T5, T6> Mapper6<T1, T2, T3, T4, T5, T6> all(
+            Fn1<Promise<T1>, T> fn1,
+            Fn1<Promise<T2>, T> fn2,
+            Fn1<Promise<T3>, T> fn3,
+            Fn1<Promise<T4>, T> fn4,
+            Fn1<Promise<T5>, T> fn5,
+            Fn1<Promise<T6>, T> fn6
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).flatMap(v3 ->
+                                        fn4.apply(v).flatMap(v4 ->
+                                                fn5.apply(v).flatMap(v5 ->
+                                                        fn6.apply(v).map(v6 -> Tuple.tuple(v1, v2, v3, v4, v5, v6))))))));
+    }
+
+    /// Chain seven dependent operations with access to this Promise's value.
+    default <T1, T2, T3, T4, T5, T6, T7> Mapper7<T1, T2, T3, T4, T5, T6, T7> all(
+            Fn1<Promise<T1>, T> fn1,
+            Fn1<Promise<T2>, T> fn2,
+            Fn1<Promise<T3>, T> fn3,
+            Fn1<Promise<T4>, T> fn4,
+            Fn1<Promise<T5>, T> fn5,
+            Fn1<Promise<T6>, T> fn6,
+            Fn1<Promise<T7>, T> fn7
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).flatMap(v3 ->
+                                        fn4.apply(v).flatMap(v4 ->
+                                                fn5.apply(v).flatMap(v5 ->
+                                                        fn6.apply(v).flatMap(v6 ->
+                                                                fn7.apply(v).map(v7 -> Tuple.tuple(v1, v2, v3, v4, v5, v6, v7)))))))));
+    }
+
+    /// Chain eight dependent operations with access to this Promise's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8> Mapper8<T1, T2, T3, T4, T5, T6, T7, T8> all(
+            Fn1<Promise<T1>, T> fn1,
+            Fn1<Promise<T2>, T> fn2,
+            Fn1<Promise<T3>, T> fn3,
+            Fn1<Promise<T4>, T> fn4,
+            Fn1<Promise<T5>, T> fn5,
+            Fn1<Promise<T6>, T> fn6,
+            Fn1<Promise<T7>, T> fn7,
+            Fn1<Promise<T8>, T> fn8
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).flatMap(v3 ->
+                                        fn4.apply(v).flatMap(v4 ->
+                                                fn5.apply(v).flatMap(v5 ->
+                                                        fn6.apply(v).flatMap(v6 ->
+                                                                fn7.apply(v).flatMap(v7 ->
+                                                                        fn8.apply(v).map(v8 -> Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8))))))))));
+    }
+
+    /// Chain nine dependent operations with access to this Promise's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9> Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> all(
+            Fn1<Promise<T1>, T> fn1,
+            Fn1<Promise<T2>, T> fn2,
+            Fn1<Promise<T3>, T> fn3,
+            Fn1<Promise<T4>, T> fn4,
+            Fn1<Promise<T5>, T> fn5,
+            Fn1<Promise<T6>, T> fn6,
+            Fn1<Promise<T7>, T> fn7,
+            Fn1<Promise<T8>, T> fn8,
+            Fn1<Promise<T9>, T> fn9
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).flatMap(v3 ->
+                                        fn4.apply(v).flatMap(v4 ->
+                                                fn5.apply(v).flatMap(v5 ->
+                                                        fn6.apply(v).flatMap(v6 ->
+                                                                fn7.apply(v).flatMap(v7 ->
+                                                                        fn8.apply(v).flatMap(v8 ->
+                                                                                fn9.apply(v).map(v9 -> Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9)))))))))));
+    }
+
+    /// Chain ten dependent operations with access to this Promise's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> Mapper10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> all(
+            Fn1<Promise<T1>, T> fn1, Fn1<Promise<T2>, T> fn2, Fn1<Promise<T3>, T> fn3,
+            Fn1<Promise<T4>, T> fn4, Fn1<Promise<T5>, T> fn5, Fn1<Promise<T6>, T> fn6,
+            Fn1<Promise<T7>, T> fn7, Fn1<Promise<T8>, T> fn8, Fn1<Promise<T9>, T> fn9,
+            Fn1<Promise<T10>, T> fn10
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
+                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
+                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
+                fn10.apply(v).map(v10 -> Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10))))))))))));
+    }
+
+    /// Chain eleven dependent operations with access to this Promise's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> Mapper11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> all(
+            Fn1<Promise<T1>, T> fn1, Fn1<Promise<T2>, T> fn2, Fn1<Promise<T3>, T> fn3,
+            Fn1<Promise<T4>, T> fn4, Fn1<Promise<T5>, T> fn5, Fn1<Promise<T6>, T> fn6,
+            Fn1<Promise<T7>, T> fn7, Fn1<Promise<T8>, T> fn8, Fn1<Promise<T9>, T> fn9,
+            Fn1<Promise<T10>, T> fn10, Fn1<Promise<T11>, T> fn11
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
+                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
+                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
+                fn10.apply(v).flatMap(v10 -> fn11.apply(v).map(v11 ->
+                        Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11)))))))))))));
+    }
+
+    /// Chain twelve dependent operations with access to this Promise's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(
+            Fn1<Promise<T1>, T> fn1, Fn1<Promise<T2>, T> fn2, Fn1<Promise<T3>, T> fn3,
+            Fn1<Promise<T4>, T> fn4, Fn1<Promise<T5>, T> fn5, Fn1<Promise<T6>, T> fn6,
+            Fn1<Promise<T7>, T> fn7, Fn1<Promise<T8>, T> fn8, Fn1<Promise<T9>, T> fn9,
+            Fn1<Promise<T10>, T> fn10, Fn1<Promise<T11>, T> fn11, Fn1<Promise<T12>, T> fn12
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
+                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
+                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
+                fn10.apply(v).flatMap(v10 -> fn11.apply(v).flatMap(v11 -> fn12.apply(v).map(v12 ->
+                        Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12))))))))))))));
+    }
+
+    /// Chain thirteen dependent operations with access to this Promise's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(
+            Fn1<Promise<T1>, T> fn1, Fn1<Promise<T2>, T> fn2, Fn1<Promise<T3>, T> fn3,
+            Fn1<Promise<T4>, T> fn4, Fn1<Promise<T5>, T> fn5, Fn1<Promise<T6>, T> fn6,
+            Fn1<Promise<T7>, T> fn7, Fn1<Promise<T8>, T> fn8, Fn1<Promise<T9>, T> fn9,
+            Fn1<Promise<T10>, T> fn10, Fn1<Promise<T11>, T> fn11, Fn1<Promise<T12>, T> fn12,
+            Fn1<Promise<T13>, T> fn13
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
+                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
+                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
+                fn10.apply(v).flatMap(v10 -> fn11.apply(v).flatMap(v11 -> fn12.apply(v).flatMap(v12 ->
+                fn13.apply(v).map(v13 ->
+                        Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13)))))))))))))));
+    }
+
+    /// Chain fourteen dependent operations with access to this Promise's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(
+            Fn1<Promise<T1>, T> fn1, Fn1<Promise<T2>, T> fn2, Fn1<Promise<T3>, T> fn3,
+            Fn1<Promise<T4>, T> fn4, Fn1<Promise<T5>, T> fn5, Fn1<Promise<T6>, T> fn6,
+            Fn1<Promise<T7>, T> fn7, Fn1<Promise<T8>, T> fn8, Fn1<Promise<T9>, T> fn9,
+            Fn1<Promise<T10>, T> fn10, Fn1<Promise<T11>, T> fn11, Fn1<Promise<T12>, T> fn12,
+            Fn1<Promise<T13>, T> fn13, Fn1<Promise<T14>, T> fn14
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
+                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
+                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
+                fn10.apply(v).flatMap(v10 -> fn11.apply(v).flatMap(v11 -> fn12.apply(v).flatMap(v12 ->
+                fn13.apply(v).flatMap(v13 -> fn14.apply(v).map(v14 ->
+                        Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14))))))))))))))));
+    }
+
+    /// Chain fifteen dependent operations with access to this Promise's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(
+            Fn1<Promise<T1>, T> fn1, Fn1<Promise<T2>, T> fn2, Fn1<Promise<T3>, T> fn3,
+            Fn1<Promise<T4>, T> fn4, Fn1<Promise<T5>, T> fn5, Fn1<Promise<T6>, T> fn6,
+            Fn1<Promise<T7>, T> fn7, Fn1<Promise<T8>, T> fn8, Fn1<Promise<T9>, T> fn9,
+            Fn1<Promise<T10>, T> fn10, Fn1<Promise<T11>, T> fn11, Fn1<Promise<T12>, T> fn12,
+            Fn1<Promise<T13>, T> fn13, Fn1<Promise<T14>, T> fn14, Fn1<Promise<T15>, T> fn15
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
+                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
+                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
+                fn10.apply(v).flatMap(v10 -> fn11.apply(v).flatMap(v11 -> fn12.apply(v).flatMap(v12 ->
+                fn13.apply(v).flatMap(v13 -> fn14.apply(v).flatMap(v14 -> fn15.apply(v).map(v15 ->
+                        Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15)))))))))))))))));
+    }
+
     /// Create a new unresolved promise instance.
     ///
     /// @return New promise instance.

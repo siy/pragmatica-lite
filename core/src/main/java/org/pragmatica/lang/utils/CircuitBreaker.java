@@ -65,10 +65,6 @@ public interface CircuitBreaker {
         HALF_OPEN   // Circuit is testing if service is recovered
     }
 
-    /// @deprecated Use {@link org.pragmatica.lang.utils.TimeSource} instead
-    @Deprecated(forRemoval = true)
-    interface TimeSource extends org.pragmatica.lang.utils.TimeSource {}
-
     static CircuitBreaker create(int failureThreshold,
                                  TimeSpan resetTimeout,
                                  int testAttempts,

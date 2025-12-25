@@ -901,4 +901,131 @@ class OptionTest {
                  Option.present(1),
                  Option.empty()).id().onPresentRun(Assertions::fail);
     }
+
+    // ==================== Option instance all() tests ====================
+
+    @Test
+    void instanceAllWithSingleFunctionReturnsPresentWhenOptionIsPresent() {
+        var result = Option.present("source")
+                .all(v -> Option.present(v.length()))
+                .map(len -> len);
+
+        assertTrue(result.isPresent());
+        result.onPresent(v -> assertEquals(6, v));
+    }
+
+    @Test
+    void instanceAllWithSingleFunctionReturnsEmptyWhenSourceIsEmpty() {
+        var result = Option.<String>empty()
+                .all(v -> Option.present(v.length()))
+                .map(len -> len);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void instanceAllWithTwoFunctionsReturnsPresentWhenAllPresent() {
+        var result = Option.present("hello")
+                .all(
+                        v -> Option.present(v.toUpperCase()),
+                        v -> Option.present(v.length())
+                )
+                .map((upper, len) -> upper + "-" + len);
+
+        assertTrue(result.isPresent());
+        result.onPresent(v -> assertEquals("HELLO-5", v));
+    }
+
+    @Test
+    void instanceAllWithTwoFunctionsReturnsEmptyWhenFirstFunctionReturnsEmpty() {
+        var result = Option.present("hello")
+                .all(
+                        v -> Option.<String>empty(),
+                        v -> Option.present(v.length())
+                )
+                .map((upper, len) -> upper + "-" + len);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void instanceAllWithThreeFunctionsReturnsPresentWhenAllPresent() {
+        var result = Option.present(10)
+                .all(
+                        v -> Option.present(v * 2),
+                        v -> Option.present(v + 5),
+                        v -> Option.present(v.toString())
+                )
+                .map((doubled, plusFive, str) -> doubled + "-" + plusFive + "-" + str);
+
+        assertTrue(result.isPresent());
+        result.onPresent(v -> assertEquals("20-15-10", v));
+    }
+
+    @Test
+    void instanceAllPreservesSourceValueForAllFunctions() {
+        // Each function receives the same source value
+        var result = Option.present(100)
+                .all(
+                        v -> Option.present(v + 1),   // 101
+                        v -> Option.present(v + 2),   // 102
+                        v -> Option.present(v + 3)    // 103
+                )
+                .map((v1, v2, v3) -> v1 + v2 + v3);
+
+        assertTrue(result.isPresent());
+        result.onPresent(v -> assertEquals(306, v)); // 101 + 102 + 103 = 306
+    }
+
+    @Test
+    void instanceAllWithNineFunctionsReturnsCorrectTuple() {
+        var result = Option.present(1)
+                .all(
+                        v -> Option.present(v + 1),
+                        v -> Option.present(v + 2),
+                        v -> Option.present(v + 3),
+                        v -> Option.present(v + 4),
+                        v -> Option.present(v + 5),
+                        v -> Option.present(v + 6),
+                        v -> Option.present(v + 7),
+                        v -> Option.present(v + 8),
+                        v -> Option.present(v + 9)
+                )
+                .map((v1, v2, v3, v4, v5, v6, v7, v8, v9) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9);
+
+        assertTrue(result.isPresent());
+        // v1=2, v2=3, v3=4, v4=5, v5=6, v6=7, v7=8, v8=9, v9=10
+        // Sum = 2+3+4+5+6+7+8+9+10 = 54
+        result.onPresent(v -> assertEquals(54, v));
+    }
+
+    @Test
+    void instanceAllWithEmptyInMiddleFunctionReturnsEmpty() {
+        var result = Option.present("test")
+                .all(
+                        v -> Option.present(1),
+                        v -> Option.present(2),
+                        v -> Option.<Integer>empty(),
+                        v -> Option.present(4),
+                        v -> Option.present(5)
+                )
+                .map((v1, v2, v3, v4, v5) -> v1 + v2 + v3 + v4 + v5);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void instanceAllReturnsEmptyWhenSourceIsEmpty() {
+        var functionCalled = new AtomicBoolean(false);
+
+        var result = Option.<String>empty()
+                .all(v -> {
+                    functionCalled.set(true);
+                    return Option.present(v.length());
+                })
+                .map(len -> len);
+
+        assertTrue(result.isEmpty());
+        assertFalse(functionCalled.get(), "Function should not be called when source is empty");
+    }
 }

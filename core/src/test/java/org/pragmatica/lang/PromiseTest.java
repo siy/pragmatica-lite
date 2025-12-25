@@ -1160,4 +1160,124 @@ public class PromiseTest {
             default -> fail("Unexpected cause");
         }
     }
+
+    // ==================== Promise instance all() tests ====================
+
+    @Test
+    void instanceAllWithSingleFunctionReturnsSuccessWhenPromiseSucceeds() {
+        var result = Promise.success("source")
+                .all(v -> Promise.success(v.length()))
+                .map(len -> len)
+                .await();
+
+        assertTrue(result.isSuccess());
+        result.onSuccess(v -> assertEquals(6, v));
+    }
+
+    @Test
+    void instanceAllWithSingleFunctionReturnsFailureWhenSourceFails() {
+        var result = Promise.<String>failure(Causes.cause("source error"))
+                .all(v -> Promise.success(v.length()))
+                .map(len -> len)
+                .await();
+
+        assertTrue(result.isFailure());
+    }
+
+    @Test
+    void instanceAllWithTwoFunctionsReturnsSuccessWhenAllSucceed() {
+        var result = Promise.success("hello")
+                .all(
+                        v -> Promise.success(v.toUpperCase()),
+                        v -> Promise.success(v.length())
+                )
+                .map((upper, len) -> upper + "-" + len)
+                .await();
+
+        assertTrue(result.isSuccess());
+        result.onSuccess(v -> assertEquals("HELLO-5", v));
+    }
+
+    @Test
+    void instanceAllWithTwoFunctionsReturnsFailureWhenFirstFunctionFails() {
+        var result = Promise.success("hello")
+                .all(
+                        v -> Promise.<String>failure(Causes.cause("fn1 error")),
+                        v -> Promise.success(v.length())
+                )
+                .map((upper, len) -> upper + "-" + len)
+                .await();
+
+        assertTrue(result.isFailure());
+    }
+
+    @Test
+    void instanceAllWithThreeFunctionsReturnsSuccessWhenAllSucceed() {
+        var result = Promise.success(10)
+                .all(
+                        v -> Promise.success(v * 2),
+                        v -> Promise.success(v + 5),
+                        v -> Promise.success(v.toString())
+                )
+                .map((doubled, plusFive, str) -> doubled + "-" + plusFive + "-" + str)
+                .await();
+
+        assertTrue(result.isSuccess());
+        result.onSuccess(v -> assertEquals("20-15-10", v));
+    }
+
+    @Test
+    void instanceAllPreservesSourceValueForAllFunctions() {
+        // Each function receives the same source value
+        var result = Promise.success(100)
+                .all(
+                        v -> Promise.success(v + 1),   // 101
+                        v -> Promise.success(v + 2),   // 102
+                        v -> Promise.success(v + 3)    // 103
+                )
+                .map((v1, v2, v3) -> v1 + v2 + v3)
+                .await();
+
+        assertTrue(result.isSuccess());
+        result.onSuccess(v -> assertEquals(306, v)); // 101 + 102 + 103 = 306
+    }
+
+    @Test
+    void instanceAllWithNineFunctionsReturnsCorrectTuple() {
+        var result = Promise.success(1)
+                .all(
+                        v -> Promise.success(v + 1),
+                        v -> Promise.success(v + 2),
+                        v -> Promise.success(v + 3),
+                        v -> Promise.success(v + 4),
+                        v -> Promise.success(v + 5),
+                        v -> Promise.success(v + 6),
+                        v -> Promise.success(v + 7),
+                        v -> Promise.success(v + 8),
+                        v -> Promise.success(v + 9)
+                )
+                .map((v1, v2, v3, v4, v5, v6, v7, v8, v9) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9)
+                .await();
+
+        assertTrue(result.isSuccess());
+        // v1=2, v2=3, v3=4, v4=5, v5=6, v6=7, v7=8, v8=9, v9=10
+        // Sum = 2+3+4+5+6+7+8+9+10 = 54
+        result.onSuccess(v -> assertEquals(54, v));
+    }
+
+    @Test
+    void instanceAllWithFailureInMiddleFunctionStopsChain() {
+        var result = Promise.success("test")
+                .all(
+                        v -> Promise.success(1),
+                        v -> Promise.success(2),
+                        v -> Promise.<Integer>failure(Causes.cause("middle error")),
+                        v -> Promise.success(4),
+                        v -> Promise.success(5)
+                )
+                .map((v1, v2, v3, v4, v5) -> v1 + v2 + v3 + v4 + v5)
+                .await();
+
+        assertTrue(result.isFailure());
+    }
 }

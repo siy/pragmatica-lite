@@ -76,30 +76,6 @@ public interface JsonMapper {
     /// @return Result containing deserialized value or error
     <T> Result<T> readBytes(byte[] json, Class<T> type);
 
-    /// Deserialize from JSON string with generic type.
-    ///
-    /// @param json    JSON string
-    /// @param typeRef Type reference for generic types
-    /// @param <T>     Target type
-    ///
-    /// @return Result containing deserialized value or error
-    ///
-    /// @deprecated Use {@link #readString(String, TypeToken)} instead for better Pragmatica integration
-    @Deprecated(since = "0.8.2", forRemoval = true)
-    <T> Result<T> readString(String json, TypeReference<T> typeRef);
-
-    /// Deserialize from JSON bytes with generic type.
-    ///
-    /// @param json    JSON bytes
-    /// @param typeRef Type reference for generic types
-    /// @param <T>     Target type
-    ///
-    /// @return Result containing deserialized value or error
-    ///
-    /// @deprecated Use {@link #readBytes(byte[], TypeToken)} instead for better Pragmatica integration
-    @Deprecated(since = "0.8.2", forRemoval = true)
-    <T> Result<T> readBytes(byte[] json, TypeReference<T> typeRef);
-
     /// Deserialize from JSON string using TypeToken.
     ///
     /// @param json      JSON string

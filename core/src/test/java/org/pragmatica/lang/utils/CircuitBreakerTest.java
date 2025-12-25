@@ -24,7 +24,7 @@ class CircuitBreakerTest {
     private CircuitBreaker circuitBreaker;
     private TestTimeSource timeSource;
 
-    private static class TestTimeSource implements CircuitBreaker.TimeSource {
+    private static class TestTimeSource implements TimeSource {
         private TimeSpan currentTime = timeSpan(0).nanos();
 
         @Override
