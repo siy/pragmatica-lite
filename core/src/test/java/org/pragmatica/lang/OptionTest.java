@@ -393,6 +393,34 @@ class OptionTest {
     }
 
     @Test
+    void getOrThrowReturnsValueIfPresent() {
+        assertEquals(123, Option.present(123).getOrThrow("Should not throw"));
+    }
+
+    @Test
+    void getOrThrowThrowsIllegalStateExceptionIfEmpty() {
+        var exception = Assertions.assertThrows(
+                IllegalStateException.class,
+                () -> Option.<Integer>empty().getOrThrow("Context message")
+        );
+        assertTrue(exception.getMessage().contains("Context message"));
+    }
+
+    @Test
+    void getOrThrowWithCustomFactoryReturnsValueIfPresent() {
+        assertEquals(123, Option.present(123).getOrThrow(IllegalArgumentException::new, "Should not throw"));
+    }
+
+    @Test
+    void getOrThrowWithCustomFactoryThrowsCustomExceptionIfEmpty() {
+        var exception = Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> Option.<Integer>empty().getOrThrow(IllegalArgumentException::new, "Context message")
+        );
+        assertTrue(exception.getMessage().contains("Context message"));
+    }
+
+    @Test
     void allOfReturnsEmptyOneValueIsMissing() {
         Option.allOf(Option.present(1), Option.empty(), Option.present(3))
               .onPresentRun(Assertions::fail);

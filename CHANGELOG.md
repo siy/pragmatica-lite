@@ -34,10 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Binary predicate: `ensureOption(Option<T>, Fn2, P1)` and variants with Cause/CauseProvider
   - Ternary predicate: `ensureOption(Option<T>, Fn3, P1, P2)` and variants with Cause/CauseProvider
 
-#### Result Value Extraction (Issue #40)
+#### Value Extraction (Issue #40)
 - `Result.getOrThrow(String)` - extract value or throw `IllegalStateException` with context message
 - `Result.getOrThrow(Fn1, String)` - extract value or throw custom exception
-- Existing `unwrap()` and `expect()` now delegate to `getOrThrow()`
+- `Option.getOrThrow(String)` - extract value or throw `IllegalStateException` with context message
+- `Option.getOrThrow(Fn1, String)` - extract value or throw custom exception
+- Existing `unwrap()` and `expect()` now delegate to `getOrThrow()` in both types
 
 ### Removed
 - `CircuitBreaker.TimeSource` inner interface - use `org.pragmatica.lang.utils.TimeSource` instead

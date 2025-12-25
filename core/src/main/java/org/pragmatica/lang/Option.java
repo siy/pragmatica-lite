@@ -662,7 +662,7 @@ public sealed interface Option<T> permits Some, None {
     @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     default T unwrap() {
-        return fold(() -> {throw new IllegalStateException("Option is empty!!!");}, Functions::id);
+        return getOrThrow("Option is empty");
     }
 
     /// This method assumes that some previous code ensures that [Option] we're working with is present
@@ -673,7 +673,34 @@ public sealed interface Option<T> permits Some, None {
     ///
     /// @return value stored inside present instance
     default T expect(String message) {
-        return fold(() -> {throw new ExpectationMismatchError("Unexpected empty Option: " + message);}, Functions::id);
+        return getOrThrow(message);
+    }
+
+    /// Extract the value or throw a custom exception if this Option is empty.
+    ///
+    /// This method is intended for cases where you need to convert an empty Option into
+    /// an exception, typically at API boundaries or in test code.
+    ///
+    /// @param exceptionFactory factory function that creates an exception from the error message
+    /// @param message context message to include in the exception
+    ///
+    /// @return the value if this Option is present
+    /// @throws RuntimeException created by the factory if this Option is empty
+    default T getOrThrow(Fn1<RuntimeException, String> exceptionFactory, String message) {
+        return fold(() -> { throw exceptionFactory.apply(message); }, Functions::id);
+    }
+
+    /// Extract the value or throw an [IllegalStateException] if this Option is empty.
+    ///
+    /// This method is intended for cases where you are confident the Option is present,
+    /// typically in test code or after explicit presence checks.
+    ///
+    /// @param message context message to include in the exception
+    ///
+    /// @return the value if this Option is present
+    /// @throws IllegalStateException if this Option is empty
+    default T getOrThrow(String message) {
+        return getOrThrow(IllegalStateException::new, message);
     }
 
     /// Convenience method for directly invoking a function that may return null and wrapping the result in an Option.
