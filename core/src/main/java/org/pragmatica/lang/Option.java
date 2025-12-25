@@ -306,6 +306,271 @@ public sealed interface Option<T> permits Some, None {
     /// @return the output of one of the mappers.
     <U> U fold(Supplier<? extends U> emptyMapper, Fn1<? extends U, ? super T> presentMapper);
 
+    //------------------------------------------------------------------------------------------------------------------
+    // Instance all() methods - for-comprehension style composition
+    //------------------------------------------------------------------------------------------------------------------
+
+    /// Chain a dependent operation with access to this Option's value.
+    /// Enables for-comprehension style composition without nested flatMaps.
+    /// Returns empty Option if this instance is empty.
+    ///
+    /// @param fn1 Function that takes the current value and returns an Option
+    /// @param <T1> Type of the result from fn1
+    ///
+    /// @return Mapper1 for further transformation
+    default <T1> Mapper1<T1> all(Fn1<Option<T1>, T> fn1) {
+        return () -> flatMap(v -> fn1.apply(v).map(Tuple::tuple));
+    }
+
+    /// Chain two dependent operations with access to this Option's value.
+    /// Returns empty Option if this instance is empty or any function returns empty.
+    ///
+    /// @param fn1 First function that takes the current value and returns an Option
+    /// @param fn2 Second function that takes the current value and returns an Option
+    /// @param <T1> Type of the result from fn1
+    /// @param <T2> Type of the result from fn2
+    ///
+    /// @return Mapper2 for further transformation
+    default <T1, T2> Mapper2<T1, T2> all(
+            Fn1<Option<T1>, T> fn1,
+            Fn1<Option<T2>, T> fn2
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).map(v2 -> Tuple.tuple(v1, v2))));
+    }
+
+    /// Chain three dependent operations with access to this Option's value.
+    /// Returns empty Option if this instance is empty or any function returns empty.
+    ///
+    /// @param fn1 First function that takes the current value and returns an Option
+    /// @param fn2 Second function that takes the current value and returns an Option
+    /// @param fn3 Third function that takes the current value and returns an Option
+    /// @param <T1> Type of the result from fn1
+    /// @param <T2> Type of the result from fn2
+    /// @param <T3> Type of the result from fn3
+    ///
+    /// @return Mapper3 for further transformation
+    default <T1, T2, T3> Mapper3<T1, T2, T3> all(
+            Fn1<Option<T1>, T> fn1,
+            Fn1<Option<T2>, T> fn2,
+            Fn1<Option<T3>, T> fn3
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).map(v3 -> Tuple.tuple(v1, v2, v3)))));
+    }
+
+    /// Chain four dependent operations with access to this Option's value.
+    default <T1, T2, T3, T4> Mapper4<T1, T2, T3, T4> all(
+            Fn1<Option<T1>, T> fn1,
+            Fn1<Option<T2>, T> fn2,
+            Fn1<Option<T3>, T> fn3,
+            Fn1<Option<T4>, T> fn4
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).flatMap(v3 ->
+                                        fn4.apply(v).map(v4 -> Tuple.tuple(v1, v2, v3, v4))))));
+    }
+
+    /// Chain five dependent operations with access to this Option's value.
+    default <T1, T2, T3, T4, T5> Mapper5<T1, T2, T3, T4, T5> all(
+            Fn1<Option<T1>, T> fn1,
+            Fn1<Option<T2>, T> fn2,
+            Fn1<Option<T3>, T> fn3,
+            Fn1<Option<T4>, T> fn4,
+            Fn1<Option<T5>, T> fn5
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).flatMap(v3 ->
+                                        fn4.apply(v).flatMap(v4 ->
+                                                fn5.apply(v).map(v5 -> Tuple.tuple(v1, v2, v3, v4, v5)))))));
+    }
+
+    /// Chain six dependent operations with access to this Option's value.
+    default <T1, T2, T3, T4, T5, T6> Mapper6<T1, T2, T3, T4, T5, T6> all(
+            Fn1<Option<T1>, T> fn1,
+            Fn1<Option<T2>, T> fn2,
+            Fn1<Option<T3>, T> fn3,
+            Fn1<Option<T4>, T> fn4,
+            Fn1<Option<T5>, T> fn5,
+            Fn1<Option<T6>, T> fn6
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).flatMap(v3 ->
+                                        fn4.apply(v).flatMap(v4 ->
+                                                fn5.apply(v).flatMap(v5 ->
+                                                        fn6.apply(v).map(v6 -> Tuple.tuple(v1, v2, v3, v4, v5, v6))))))));
+    }
+
+    /// Chain seven dependent operations with access to this Option's value.
+    default <T1, T2, T3, T4, T5, T6, T7> Mapper7<T1, T2, T3, T4, T5, T6, T7> all(
+            Fn1<Option<T1>, T> fn1,
+            Fn1<Option<T2>, T> fn2,
+            Fn1<Option<T3>, T> fn3,
+            Fn1<Option<T4>, T> fn4,
+            Fn1<Option<T5>, T> fn5,
+            Fn1<Option<T6>, T> fn6,
+            Fn1<Option<T7>, T> fn7
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).flatMap(v3 ->
+                                        fn4.apply(v).flatMap(v4 ->
+                                                fn5.apply(v).flatMap(v5 ->
+                                                        fn6.apply(v).flatMap(v6 ->
+                                                                fn7.apply(v).map(v7 -> Tuple.tuple(v1, v2, v3, v4, v5, v6, v7)))))))));
+    }
+
+    /// Chain eight dependent operations with access to this Option's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8> Mapper8<T1, T2, T3, T4, T5, T6, T7, T8> all(
+            Fn1<Option<T1>, T> fn1,
+            Fn1<Option<T2>, T> fn2,
+            Fn1<Option<T3>, T> fn3,
+            Fn1<Option<T4>, T> fn4,
+            Fn1<Option<T5>, T> fn5,
+            Fn1<Option<T6>, T> fn6,
+            Fn1<Option<T7>, T> fn7,
+            Fn1<Option<T8>, T> fn8
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).flatMap(v3 ->
+                                        fn4.apply(v).flatMap(v4 ->
+                                                fn5.apply(v).flatMap(v5 ->
+                                                        fn6.apply(v).flatMap(v6 ->
+                                                                fn7.apply(v).flatMap(v7 ->
+                                                                        fn8.apply(v).map(v8 -> Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8))))))))));
+    }
+
+    /// Chain nine dependent operations with access to this Option's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9> Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> all(
+            Fn1<Option<T1>, T> fn1,
+            Fn1<Option<T2>, T> fn2,
+            Fn1<Option<T3>, T> fn3,
+            Fn1<Option<T4>, T> fn4,
+            Fn1<Option<T5>, T> fn5,
+            Fn1<Option<T6>, T> fn6,
+            Fn1<Option<T7>, T> fn7,
+            Fn1<Option<T8>, T> fn8,
+            Fn1<Option<T9>, T> fn9
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 ->
+                        fn2.apply(v).flatMap(v2 ->
+                                fn3.apply(v).flatMap(v3 ->
+                                        fn4.apply(v).flatMap(v4 ->
+                                                fn5.apply(v).flatMap(v5 ->
+                                                        fn6.apply(v).flatMap(v6 ->
+                                                                fn7.apply(v).flatMap(v7 ->
+                                                                        fn8.apply(v).flatMap(v8 ->
+                                                                                fn9.apply(v).map(v9 -> Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9)))))))))));
+    }
+
+    /// Chain ten dependent operations with access to this Option's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> Mapper10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> all(
+            Fn1<Option<T1>, T> fn1, Fn1<Option<T2>, T> fn2, Fn1<Option<T3>, T> fn3,
+            Fn1<Option<T4>, T> fn4, Fn1<Option<T5>, T> fn5, Fn1<Option<T6>, T> fn6,
+            Fn1<Option<T7>, T> fn7, Fn1<Option<T8>, T> fn8, Fn1<Option<T9>, T> fn9,
+            Fn1<Option<T10>, T> fn10
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
+                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
+                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
+                fn10.apply(v).map(v10 -> Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10))))))))))));
+    }
+
+    /// Chain eleven dependent operations with access to this Option's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> Mapper11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> all(
+            Fn1<Option<T1>, T> fn1, Fn1<Option<T2>, T> fn2, Fn1<Option<T3>, T> fn3,
+            Fn1<Option<T4>, T> fn4, Fn1<Option<T5>, T> fn5, Fn1<Option<T6>, T> fn6,
+            Fn1<Option<T7>, T> fn7, Fn1<Option<T8>, T> fn8, Fn1<Option<T9>, T> fn9,
+            Fn1<Option<T10>, T> fn10, Fn1<Option<T11>, T> fn11
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
+                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
+                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
+                fn10.apply(v).flatMap(v10 -> fn11.apply(v).map(v11 ->
+                        Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11)))))))))))));
+    }
+
+    /// Chain twelve dependent operations with access to this Option's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(
+            Fn1<Option<T1>, T> fn1, Fn1<Option<T2>, T> fn2, Fn1<Option<T3>, T> fn3,
+            Fn1<Option<T4>, T> fn4, Fn1<Option<T5>, T> fn5, Fn1<Option<T6>, T> fn6,
+            Fn1<Option<T7>, T> fn7, Fn1<Option<T8>, T> fn8, Fn1<Option<T9>, T> fn9,
+            Fn1<Option<T10>, T> fn10, Fn1<Option<T11>, T> fn11, Fn1<Option<T12>, T> fn12
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
+                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
+                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
+                fn10.apply(v).flatMap(v10 -> fn11.apply(v).flatMap(v11 -> fn12.apply(v).map(v12 ->
+                        Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12))))))))))))));
+    }
+
+    /// Chain thirteen dependent operations with access to this Option's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(
+            Fn1<Option<T1>, T> fn1, Fn1<Option<T2>, T> fn2, Fn1<Option<T3>, T> fn3,
+            Fn1<Option<T4>, T> fn4, Fn1<Option<T5>, T> fn5, Fn1<Option<T6>, T> fn6,
+            Fn1<Option<T7>, T> fn7, Fn1<Option<T8>, T> fn8, Fn1<Option<T9>, T> fn9,
+            Fn1<Option<T10>, T> fn10, Fn1<Option<T11>, T> fn11, Fn1<Option<T12>, T> fn12,
+            Fn1<Option<T13>, T> fn13
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
+                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
+                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
+                fn10.apply(v).flatMap(v10 -> fn11.apply(v).flatMap(v11 -> fn12.apply(v).flatMap(v12 ->
+                fn13.apply(v).map(v13 ->
+                        Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13)))))))))))))));
+    }
+
+    /// Chain fourteen dependent operations with access to this Option's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(
+            Fn1<Option<T1>, T> fn1, Fn1<Option<T2>, T> fn2, Fn1<Option<T3>, T> fn3,
+            Fn1<Option<T4>, T> fn4, Fn1<Option<T5>, T> fn5, Fn1<Option<T6>, T> fn6,
+            Fn1<Option<T7>, T> fn7, Fn1<Option<T8>, T> fn8, Fn1<Option<T9>, T> fn9,
+            Fn1<Option<T10>, T> fn10, Fn1<Option<T11>, T> fn11, Fn1<Option<T12>, T> fn12,
+            Fn1<Option<T13>, T> fn13, Fn1<Option<T14>, T> fn14
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
+                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
+                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
+                fn10.apply(v).flatMap(v10 -> fn11.apply(v).flatMap(v11 -> fn12.apply(v).flatMap(v12 ->
+                fn13.apply(v).flatMap(v13 -> fn14.apply(v).map(v14 ->
+                        Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14))))))))))))))));
+    }
+
+    /// Chain fifteen dependent operations with access to this Option's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(
+            Fn1<Option<T1>, T> fn1, Fn1<Option<T2>, T> fn2, Fn1<Option<T3>, T> fn3,
+            Fn1<Option<T4>, T> fn4, Fn1<Option<T5>, T> fn5, Fn1<Option<T6>, T> fn6,
+            Fn1<Option<T7>, T> fn7, Fn1<Option<T8>, T> fn8, Fn1<Option<T9>, T> fn9,
+            Fn1<Option<T10>, T> fn10, Fn1<Option<T11>, T> fn11, Fn1<Option<T12>, T> fn12,
+            Fn1<Option<T13>, T> fn13, Fn1<Option<T14>, T> fn14, Fn1<Option<T15>, T> fn15
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
+                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
+                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
+                fn10.apply(v).flatMap(v10 -> fn11.apply(v).flatMap(v11 -> fn12.apply(v).flatMap(v12 ->
+                fn13.apply(v).flatMap(v13 -> fn14.apply(v).flatMap(v14 -> fn15.apply(v).map(v15 ->
+                        Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15)))))))))))))))));
+    }
+
     /// Convert nullable value into instance of [Option]. This method converts `null` to the empty instance and any other value into the present
     /// instance.
     ///
@@ -397,7 +662,7 @@ public sealed interface Option<T> permits Some, None {
     @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     default T unwrap() {
-        return fold(() -> {throw new IllegalStateException("Option is empty!!!");}, Functions::id);
+        return getOrThrow("Option is empty");
     }
 
     /// This method assumes that some previous code ensures that [Option] we're working with is present
@@ -408,7 +673,34 @@ public sealed interface Option<T> permits Some, None {
     ///
     /// @return value stored inside present instance
     default T expect(String message) {
-        return fold(() -> {throw new ExpectationMismatchError("Unexpected empty Option: " + message);}, Functions::id);
+        return getOrThrow(message);
+    }
+
+    /// Extract the value or throw a custom exception if this Option is empty.
+    ///
+    /// This method is intended for cases where you need to convert an empty Option into
+    /// an exception, typically at API boundaries or in test code.
+    ///
+    /// @param exceptionFactory factory function that creates an exception from the error message
+    /// @param message context message to include in the exception
+    ///
+    /// @return the value if this Option is present
+    /// @throws RuntimeException created by the factory if this Option is empty
+    default T getOrThrow(Fn1<RuntimeException, String> exceptionFactory, String message) {
+        return fold(() -> { throw exceptionFactory.apply(message); }, Functions::id);
+    }
+
+    /// Extract the value or throw an [IllegalStateException] if this Option is empty.
+    ///
+    /// This method is intended for cases where you are confident the Option is present,
+    /// typically in test code or after explicit presence checks.
+    ///
+    /// @param message context message to include in the exception
+    ///
+    /// @return the value if this Option is present
+    /// @throws IllegalStateException if this Option is empty
+    default T getOrThrow(String message) {
+        return getOrThrow(IllegalStateException::new, message);
     }
 
     /// Convenience method for directly invoking a function that may return null and wrapping the result in an Option.
@@ -654,6 +946,67 @@ public sealed interface Option<T> permits Some, None {
                                             v9 -> some(tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9)))))))))));
     }
 
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> Mapper10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> all(
+        Option<T1> op1, Option<T2> op2, Option<T3> op3, Option<T4> op4, Option<T5> op5,
+        Option<T6> op6, Option<T7> op7, Option<T8> op8, Option<T9> op9, Option<T10> op10
+    ) {
+        return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> op3.flatMap(v3 -> op4.flatMap(v4 -> op5.flatMap(v5 ->
+            op6.flatMap(v6 -> op7.flatMap(v7 -> op8.flatMap(v8 -> op9.flatMap(v9 -> op10.flatMap(v10 ->
+                some(tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10))))))))))));
+    }
+
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> Mapper11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> all(
+        Option<T1> op1, Option<T2> op2, Option<T3> op3, Option<T4> op4, Option<T5> op5,
+        Option<T6> op6, Option<T7> op7, Option<T8> op8, Option<T9> op9, Option<T10> op10, Option<T11> op11
+    ) {
+        return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> op3.flatMap(v3 -> op4.flatMap(v4 -> op5.flatMap(v5 ->
+            op6.flatMap(v6 -> op7.flatMap(v7 -> op8.flatMap(v8 -> op9.flatMap(v9 -> op10.flatMap(v10 ->
+                op11.flatMap(v11 -> some(tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11)))))))))))));
+    }
+
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(
+        Option<T1> op1, Option<T2> op2, Option<T3> op3, Option<T4> op4, Option<T5> op5, Option<T6> op6,
+        Option<T7> op7, Option<T8> op8, Option<T9> op9, Option<T10> op10, Option<T11> op11, Option<T12> op12
+    ) {
+        return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> op3.flatMap(v3 -> op4.flatMap(v4 -> op5.flatMap(v5 ->
+            op6.flatMap(v6 -> op7.flatMap(v7 -> op8.flatMap(v8 -> op9.flatMap(v9 -> op10.flatMap(v10 ->
+                op11.flatMap(v11 -> op12.flatMap(v12 ->
+                    some(tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12))))))))))))));
+    }
+
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(
+        Option<T1> op1, Option<T2> op2, Option<T3> op3, Option<T4> op4, Option<T5> op5, Option<T6> op6,
+        Option<T7> op7, Option<T8> op8, Option<T9> op9, Option<T10> op10, Option<T11> op11, Option<T12> op12,
+        Option<T13> op13
+    ) {
+        return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> op3.flatMap(v3 -> op4.flatMap(v4 -> op5.flatMap(v5 ->
+            op6.flatMap(v6 -> op7.flatMap(v7 -> op8.flatMap(v8 -> op9.flatMap(v9 -> op10.flatMap(v10 ->
+                op11.flatMap(v11 -> op12.flatMap(v12 -> op13.flatMap(v13 ->
+                    some(tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13)))))))))))))));
+    }
+
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(
+        Option<T1> op1, Option<T2> op2, Option<T3> op3, Option<T4> op4, Option<T5> op5, Option<T6> op6,
+        Option<T7> op7, Option<T8> op8, Option<T9> op9, Option<T10> op10, Option<T11> op11, Option<T12> op12,
+        Option<T13> op13, Option<T14> op14
+    ) {
+        return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> op3.flatMap(v3 -> op4.flatMap(v4 -> op5.flatMap(v5 ->
+            op6.flatMap(v6 -> op7.flatMap(v7 -> op8.flatMap(v8 -> op9.flatMap(v9 -> op10.flatMap(v10 ->
+                op11.flatMap(v11 -> op12.flatMap(v12 -> op13.flatMap(v13 -> op14.flatMap(v14 ->
+                    some(tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14))))))))))))))));
+    }
+
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(
+        Option<T1> op1, Option<T2> op2, Option<T3> op3, Option<T4> op4, Option<T5> op5, Option<T6> op6,
+        Option<T7> op7, Option<T8> op8, Option<T9> op9, Option<T10> op10, Option<T11> op11, Option<T12> op12,
+        Option<T13> op13, Option<T14> op14, Option<T15> op15
+    ) {
+        return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> op3.flatMap(v3 -> op4.flatMap(v4 -> op5.flatMap(v5 ->
+            op6.flatMap(v6 -> op7.flatMap(v7 -> op8.flatMap(v8 -> op9.flatMap(v9 -> op10.flatMap(v10 ->
+                op11.flatMap(v11 -> op12.flatMap(v12 -> op13.flatMap(v13 -> op14.flatMap(v14 -> op15.flatMap(v15 ->
+                    some(tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15)))))))))))))))));
+    }
+
     /// Helper interface for convenient [Tuple.Tuple1] transformation. In case if you need to return a tuple, it might be more convenient to
     /// return this interface instead. For example, instead of this:
     /// <blockquote><pre>
@@ -848,6 +1201,78 @@ public sealed interface Option<T> permits Some, None {
         }
 
         default <R> Option<R> flatMap(Fn9<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9> mapper) {
+            return id().flatMap(tuple -> tuple.map(mapper));
+        }
+    }
+
+    interface Mapper10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
+        Option<Tuple.Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>> id();
+
+        default <R> Option<R> map(Fn10<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
+            return id().map(tuple -> tuple.map(mapper));
+        }
+
+        default <R> Option<R> flatMap(Fn10<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
+            return id().flatMap(tuple -> tuple.map(mapper));
+        }
+    }
+
+    interface Mapper11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> {
+        Option<Tuple.Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>> id();
+
+        default <R> Option<R> map(Fn11<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
+            return id().map(tuple -> tuple.map(mapper));
+        }
+
+        default <R> Option<R> flatMap(Fn11<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
+            return id().flatMap(tuple -> tuple.map(mapper));
+        }
+    }
+
+    interface Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> {
+        Option<Tuple.Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>> id();
+
+        default <R> Option<R> map(Fn12<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
+            return id().map(tuple -> tuple.map(mapper));
+        }
+
+        default <R> Option<R> flatMap(Fn12<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
+            return id().flatMap(tuple -> tuple.map(mapper));
+        }
+    }
+
+    interface Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> {
+        Option<Tuple.Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>> id();
+
+        default <R> Option<R> map(Fn13<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
+            return id().map(tuple -> tuple.map(mapper));
+        }
+
+        default <R> Option<R> flatMap(Fn13<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
+            return id().flatMap(tuple -> tuple.map(mapper));
+        }
+    }
+
+    interface Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> {
+        Option<Tuple.Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>> id();
+
+        default <R> Option<R> map(Fn14<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
+            return id().map(tuple -> tuple.map(mapper));
+        }
+
+        default <R> Option<R> flatMap(Fn14<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
+            return id().flatMap(tuple -> tuple.map(mapper));
+        }
+    }
+
+    interface Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> {
+        Option<Tuple.Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>> id();
+
+        default <R> Option<R> map(Fn15<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
+            return id().map(tuple -> tuple.map(mapper));
+        }
+
+        default <R> Option<R> flatMap(Fn15<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
             return id().flatMap(tuple -> tuple.map(mapper));
         }
     }

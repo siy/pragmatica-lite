@@ -53,25 +53,13 @@ record JsonMapperImpl(tools.jackson.databind.json.JsonMapper mapper) implements 
     }
 
     @Override
-    public <T> Result<T> readString(String json, TypeReference<T> typeRef) {
-        return lift(JsonError::fromException, () -> mapper.readValue(json, typeRef));
-    }
-
-    @Override
-    public <T> Result<T> readBytes(byte[] json, TypeReference<T> typeRef) {
-        return lift(JsonError::fromException, () -> mapper.readValue(json, typeRef));
-    }
-
-    @Override
-    @SuppressWarnings("deprecation")
     public <T> Result<T> readString(String json, TypeToken<T> typeToken) {
-        return readString(json, toTypeReference(typeToken));
+        return lift(JsonError::fromException, () -> mapper.readValue(json, toTypeReference(typeToken)));
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public <T> Result<T> readBytes(byte[] json, TypeToken<T> typeToken) {
-        return readBytes(json, toTypeReference(typeToken));
+        return lift(JsonError::fromException, () -> mapper.readValue(json, toTypeReference(typeToken)));
     }
 
     /// Converts TypeToken to Jackson TypeReference.

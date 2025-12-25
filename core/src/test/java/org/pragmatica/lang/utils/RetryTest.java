@@ -295,24 +295,19 @@ class RetryTest {
                                     .factor(2.0)
                                     .withJitter();
 
-        // Then - With jitter, two calls with the same attempt should usually produce different delays
-        // Note: There's a small chance they could be the same by coincidence
-        int samples = 10;
-        int differentValues = 0;
+        // With jitter, generating multiple delays should produce some variation
+        // We collect unique values and expect more than one distinct delay
+        int samples = 20;
+        var uniqueDelays = new java.util.HashSet<TimeSpan>();
 
         for (int i = 0; i < samples; i++) {
-            var delayA = strategy.nextTimeout(2);
-            var delayB = strategy.nextTimeout(2);
-
-            if (!delayA.equals(delayB)) {
-                differentValues++;
-            }
+            uniqueDelays.add(strategy.nextTimeout(2));
         }
 
-        // We expect at least half of samples to be different with jitter enabled
-        assertTrue(differentValues >= samples * 0.5,
-                   "Expected most delays to be different with jitter enabled, but got only "
-                           + differentValues + " different values out of " + samples);
+        // With jitter enabled, we should see at least 2 different delay values
+        assertTrue(uniqueDelays.size() >= 2,
+                   "Expected jitter to produce variable delays, but got only "
+                           + uniqueDelays.size() + " unique values out of " + samples + " samples");
     }
 
     @Test

@@ -468,6 +468,37 @@ class ResultTest {
     }
 
     @Test
+    void getOrThrowReturnsValueForSuccess() {
+        assertEquals(321, Result.success(321).getOrThrow("Should not throw"));
+    }
+
+    @Test
+    void getOrThrowThrowsIllegalStateExceptionForFailure() {
+        var exception = assertThrows(
+                IllegalStateException.class,
+                () -> Result.failure(Causes.cause("Some error")).getOrThrow("Context message")
+        );
+        assertTrue(exception.getMessage().contains("Context message"));
+        assertTrue(exception.getMessage().contains("Some error"));
+    }
+
+    @Test
+    void getOrThrowWithCustomFactoryReturnsValueForSuccess() {
+        assertEquals(321, Result.success(321).getOrThrow(IllegalArgumentException::new, "Should not throw"));
+    }
+
+    @Test
+    void getOrThrowWithCustomFactoryThrowsCustomExceptionForFailure() {
+        var exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> Result.failure(Causes.cause("Some error"))
+                            .getOrThrow(IllegalArgumentException::new, "Context message")
+        );
+        assertTrue(exception.getMessage().contains("Context message"));
+        assertTrue(exception.getMessage().contains("Some error"));
+    }
+
+    @Test
     void resultCanBeMappedToUnit() {
         Result.success(321)
               .mapToUnit()
@@ -1472,4 +1503,156 @@ class ResultTest {
     }
 
     record TokenBearer(String jwt, String issuer) {}
+
+    // ==================== Result.sequence() tests ====================
+
+    @Test
+    void sequenceWithSingleSupplierReturnsSuccessWhenSupplierSucceeds() {
+        var result = Result.sequence(
+                () -> Result.success("value1")
+        ).map(v1 -> v1);
+
+        assertTrue(result.isSuccess());
+        result.onSuccess(v -> assertEquals("value1", v));
+    }
+
+    @Test
+    void sequenceWithSingleSupplierReturnsFailureWhenSupplierFails() {
+        var result = Result.sequence(
+                () -> Result.<String>failure(Causes.cause("error1"))
+        ).map(v1 -> v1);
+
+        assertTrue(result.isFailure());
+    }
+
+    @Test
+    void sequenceWithTwoSuppliersShortCircuitsOnFirstFailure() {
+        var secondSupplierCalled = new AtomicBoolean(false);
+
+        var result = Result.sequence(
+                () -> Result.<String>failure(Causes.cause("error1")),
+                () -> {
+                    secondSupplierCalled.set(true);
+                    return Result.success(42);
+                }
+        ).map((v1, v2) -> v1 + v2);
+
+        assertTrue(result.isFailure());
+        assertFalse(secondSupplierCalled.get(), "Second supplier should not be called when first fails");
+    }
+
+    @Test
+    void sequenceWithTwoSuppliersReturnsSuccessWhenBothSucceed() {
+        var result = Result.sequence(
+                () -> Result.success("hello"),
+                () -> Result.success(42)
+        ).map((v1, v2) -> v1 + "-" + v2);
+
+        assertTrue(result.isSuccess());
+        result.onSuccess(v -> assertEquals("hello-42", v));
+    }
+
+    @Test
+    void sequenceWithThreeSuppliersShortCircuitsOnSecondFailure() {
+        var thirdSupplierCalled = new AtomicBoolean(false);
+
+        var result = Result.sequence(
+                () -> Result.success("first"),
+                () -> Result.<Integer>failure(Causes.cause("error2")),
+                () -> {
+                    thirdSupplierCalled.set(true);
+                    return Result.success(true);
+                }
+        ).map((v1, v2, v3) -> v1 + v2 + v3);
+
+        assertTrue(result.isFailure());
+        assertFalse(thirdSupplierCalled.get(), "Third supplier should not be called when second fails");
+    }
+
+    @Test
+    void sequenceWithThreeSuppliersReturnsSuccessWhenAllSucceed() {
+        var result = Result.sequence(
+                () -> Result.success("a"),
+                () -> Result.success("b"),
+                () -> Result.success("c")
+        ).map((v1, v2, v3) -> v1 + v2 + v3);
+
+        assertTrue(result.isSuccess());
+        result.onSuccess(v -> assertEquals("abc", v));
+    }
+
+    @Test
+    void sequenceIsLazyAndDoesNotEvaluateSuppliersUntilTerminalOperation() {
+        var suppliersCalled = new AtomicBoolean(false);
+
+        // Just creating the mapper should not call suppliers
+        var mapper = Result.sequence(
+                () -> {
+                    suppliersCalled.set(true);
+                    return Result.success("value");
+                }
+        );
+
+        assertFalse(suppliersCalled.get(), "Suppliers should not be called until terminal operation");
+
+        // Terminal operation triggers evaluation
+        mapper.map(v -> v);
+
+        assertTrue(suppliersCalled.get(), "Suppliers should be called after terminal operation");
+    }
+
+    @Test
+    void sequenceWithFiveSuppliersReturnsCorrectTuple() {
+        var result = Result.sequence(
+                () -> Result.success(1),
+                () -> Result.success(2),
+                () -> Result.success(3),
+                () -> Result.success(4),
+                () -> Result.success(5)
+        ).map((v1, v2, v3, v4, v5) -> v1 + v2 + v3 + v4 + v5);
+
+        assertTrue(result.isSuccess());
+        result.onSuccess(v -> assertEquals(15, v));
+    }
+
+    @Test
+    void sequenceWithNineSuppliersReturnsCorrectTuple() {
+        var result = Result.sequence(
+                () -> Result.success(1),
+                () -> Result.success(2),
+                () -> Result.success(3),
+                () -> Result.success(4),
+                () -> Result.success(5),
+                () -> Result.success(6),
+                () -> Result.success(7),
+                () -> Result.success(8),
+                () -> Result.success(9)
+        ).map((v1, v2, v3, v4, v5, v6, v7, v8, v9) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9);
+
+        assertTrue(result.isSuccess());
+        result.onSuccess(v -> assertEquals(45, v));
+    }
+
+    @Test
+    void sequenceShortCircuitsAtEighthSupplier() {
+        var ninthSupplierCalled = new AtomicBoolean(false);
+
+        var result = Result.sequence(
+                () -> Result.success(1),
+                () -> Result.success(2),
+                () -> Result.success(3),
+                () -> Result.success(4),
+                () -> Result.success(5),
+                () -> Result.success(6),
+                () -> Result.success(7),
+                () -> Result.<Integer>failure(Causes.cause("error8")),
+                () -> {
+                    ninthSupplierCalled.set(true);
+                    return Result.success(9);
+                }
+        ).map((v1, v2, v3, v4, v5, v6, v7, v8, v9) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9);
+
+        assertTrue(result.isFailure());
+        assertFalse(ninthSupplierCalled.get(), "Ninth supplier should not be called when eighth fails");
+    }
 }

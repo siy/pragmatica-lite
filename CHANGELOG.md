@@ -5,7 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.8.6] - 2025-12-25 (Christmas 2025 Release 🎄)
+
+### Added
+
+#### Result Lazy Sequential Evaluation (Issue #42)
+- `Result.sequence(Supplier...)` - lazy/sequential variant of `all()` with short-circuit behavior
+  - Evaluates suppliers sequentially, stopping on first failure
+  - Returns Mapper1-Mapper15 for type-safe tuple transformation
+  - Suppliers are only invoked when terminal operation (map/flatMap) is called
+  - Perfect for dependent operations that should fail fast
+
+#### Instance all() Methods for Result, Promise and Option
+- Extended existing `Result.all(Fn1...)` from Mapper9 to Mapper15
+- `Promise.all(Fn1...)` - instance method for for-comprehension style composition
+  - Chains 1-15 dependent operations with access to source Promise value
+  - Returns Mapper1-Mapper15 for type-safe tuple transformation
+- `Option.all(Fn1...)` - instance method for for-comprehension style composition
+  - Chains 1-15 dependent operations with access to source Option value
+  - Returns Mapper1-Mapper15 for type-safe tuple transformation
+  - Functions not invoked when source Option is empty
+- Added `Option.Mapper10`-`Option.Mapper15` interfaces
+- Extended `Option.all(Option...)` static methods from 9 to 15 parameters
+
+#### Verify Optional Validation
+- `Verify.ensureOption()` methods - validate optional values, succeeding with `Option.none()` if absent
+  - Unary predicate: `ensureOption(Option<T>, Predicate<T>)` and variants with Cause/CauseProvider
+  - Binary predicate: `ensureOption(Option<T>, Fn2, P1)` and variants with Cause/CauseProvider
+  - Ternary predicate: `ensureOption(Option<T>, Fn3, P1, P2)` and variants with Cause/CauseProvider
+
+#### Value Extraction (Issue #40)
+- `Result.getOrThrow(String)` - extract value or throw `IllegalStateException` with context message
+- `Result.getOrThrow(Fn1, String)` - extract value or throw custom exception
+- `Option.getOrThrow(String)` - extract value or throw `IllegalStateException` with context message
+- `Option.getOrThrow(Fn1, String)` - extract value or throw custom exception
+- Existing `unwrap()` and `expect()` now delegate to `getOrThrow()` in both types
+
+### Removed
+- `CircuitBreaker.TimeSource` inner interface - use `org.pragmatica.lang.utils.TimeSource` instead
+- `Causes.forValue(String)` - use `forOneValue(String)` instead
+- `JsonMapper.readString(String, TypeReference)` - use `readString(String, TypeToken)` instead
+- `JsonMapper.readBytes(byte[], TypeReference)` - use `readBytes(byte[], TypeToken)` instead
+
+### Deprecated
+- `Verify.ensure(Cause, T, Predicate)` - use `ensure(T, Predicate, Cause)` instead
+- `Verify.ensure(Fn1<Cause,T>, T, Predicate)` - use `ensure(T, Predicate, Fn1)` instead
+- `Verify.ensure(Cause, T, Fn2, P1)` - use `ensure(T, Fn2, P1, Cause)` instead
+- `Verify.ensure(Fn1<Cause,T>, T, Fn2, P1)` - use `ensure(T, Fn2, P1, Fn1)` instead
+- `Verify.ensure(Cause, T, Fn3, P1, P2)` - use `ensure(T, Fn3, P1, P2, Cause)` instead
+- `Verify.ensure(Fn1<Cause,T>, T, Fn3, P1, P2)` - use `ensure(T, Fn3, P1, P2, Fn1)` instead
 
 ## [0.8.5] - 2025-12-16
 

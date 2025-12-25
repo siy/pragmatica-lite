@@ -501,6 +501,101 @@ public sealed interface Result<T> permits Success, Failure {
                                                                                 fn9.apply(v).map(v9 -> tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9)))))))))));
     }
 
+    /// Chain ten dependent operations with access to this Result's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> Mapper10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> all(
+            Fn1<Result<T1>, T> fn1, Fn1<Result<T2>, T> fn2, Fn1<Result<T3>, T> fn3,
+            Fn1<Result<T4>, T> fn4, Fn1<Result<T5>, T> fn5, Fn1<Result<T6>, T> fn6,
+            Fn1<Result<T7>, T> fn7, Fn1<Result<T8>, T> fn8, Fn1<Result<T9>, T> fn9,
+            Fn1<Result<T10>, T> fn10
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
+                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
+                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
+                fn10.apply(v).map(v10 -> tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10))))))))))));
+    }
+
+    /// Chain eleven dependent operations with access to this Result's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> Mapper11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> all(
+            Fn1<Result<T1>, T> fn1, Fn1<Result<T2>, T> fn2, Fn1<Result<T3>, T> fn3,
+            Fn1<Result<T4>, T> fn4, Fn1<Result<T5>, T> fn5, Fn1<Result<T6>, T> fn6,
+            Fn1<Result<T7>, T> fn7, Fn1<Result<T8>, T> fn8, Fn1<Result<T9>, T> fn9,
+            Fn1<Result<T10>, T> fn10, Fn1<Result<T11>, T> fn11
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
+                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
+                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
+                fn10.apply(v).flatMap(v10 -> fn11.apply(v).map(v11 ->
+                        tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11)))))))))))));
+    }
+
+    /// Chain twelve dependent operations with access to this Result's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(
+            Fn1<Result<T1>, T> fn1, Fn1<Result<T2>, T> fn2, Fn1<Result<T3>, T> fn3,
+            Fn1<Result<T4>, T> fn4, Fn1<Result<T5>, T> fn5, Fn1<Result<T6>, T> fn6,
+            Fn1<Result<T7>, T> fn7, Fn1<Result<T8>, T> fn8, Fn1<Result<T9>, T> fn9,
+            Fn1<Result<T10>, T> fn10, Fn1<Result<T11>, T> fn11, Fn1<Result<T12>, T> fn12
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
+                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
+                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
+                fn10.apply(v).flatMap(v10 -> fn11.apply(v).flatMap(v11 -> fn12.apply(v).map(v12 ->
+                        tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12))))))))))))));
+    }
+
+    /// Chain thirteen dependent operations with access to this Result's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(
+            Fn1<Result<T1>, T> fn1, Fn1<Result<T2>, T> fn2, Fn1<Result<T3>, T> fn3,
+            Fn1<Result<T4>, T> fn4, Fn1<Result<T5>, T> fn5, Fn1<Result<T6>, T> fn6,
+            Fn1<Result<T7>, T> fn7, Fn1<Result<T8>, T> fn8, Fn1<Result<T9>, T> fn9,
+            Fn1<Result<T10>, T> fn10, Fn1<Result<T11>, T> fn11, Fn1<Result<T12>, T> fn12,
+            Fn1<Result<T13>, T> fn13
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
+                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
+                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
+                fn10.apply(v).flatMap(v10 -> fn11.apply(v).flatMap(v11 -> fn12.apply(v).flatMap(v12 ->
+                fn13.apply(v).map(v13 ->
+                        tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13)))))))))))))));
+    }
+
+    /// Chain fourteen dependent operations with access to this Result's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(
+            Fn1<Result<T1>, T> fn1, Fn1<Result<T2>, T> fn2, Fn1<Result<T3>, T> fn3,
+            Fn1<Result<T4>, T> fn4, Fn1<Result<T5>, T> fn5, Fn1<Result<T6>, T> fn6,
+            Fn1<Result<T7>, T> fn7, Fn1<Result<T8>, T> fn8, Fn1<Result<T9>, T> fn9,
+            Fn1<Result<T10>, T> fn10, Fn1<Result<T11>, T> fn11, Fn1<Result<T12>, T> fn12,
+            Fn1<Result<T13>, T> fn13, Fn1<Result<T14>, T> fn14
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
+                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
+                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
+                fn10.apply(v).flatMap(v10 -> fn11.apply(v).flatMap(v11 -> fn12.apply(v).flatMap(v12 ->
+                fn13.apply(v).flatMap(v13 -> fn14.apply(v).map(v14 ->
+                        tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14))))))))))))))));
+    }
+
+    /// Chain fifteen dependent operations with access to this Result's value.
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(
+            Fn1<Result<T1>, T> fn1, Fn1<Result<T2>, T> fn2, Fn1<Result<T3>, T> fn3,
+            Fn1<Result<T4>, T> fn4, Fn1<Result<T5>, T> fn5, Fn1<Result<T6>, T> fn6,
+            Fn1<Result<T7>, T> fn7, Fn1<Result<T8>, T> fn8, Fn1<Result<T9>, T> fn9,
+            Fn1<Result<T10>, T> fn10, Fn1<Result<T11>, T> fn11, Fn1<Result<T12>, T> fn12,
+            Fn1<Result<T13>, T> fn13, Fn1<Result<T14>, T> fn14, Fn1<Result<T15>, T> fn15
+    ) {
+        return () -> flatMap(v ->
+                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
+                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
+                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
+                fn10.apply(v).flatMap(v10 -> fn11.apply(v).flatMap(v11 -> fn12.apply(v).flatMap(v12 ->
+                fn13.apply(v).flatMap(v13 -> fn14.apply(v).flatMap(v14 -> fn15.apply(v).map(v15 ->
+                        tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15)))))))))))))))));
+    }
+
     /// This method allows "unwrapping" the value stored inside the Result instance. If a value is missing, then [IllegalStateException] is thrown.
     ///
     /// WARNING!!!
@@ -511,19 +606,44 @@ public sealed interface Result<T> permits Success, Failure {
     @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     default T unwrap() {
-        return fold(v -> {
-            throw new IllegalStateException("Unwrap error: " + v.message());
-        }, Functions::id);
+        return getOrThrow("Unwrap error");
     }
 
     /// This method assumes that some previous code ensures that [Result] we're working with is successful
     /// and allows extracting value from monad. If this is not the case, the method throws [Error], which
     /// most likely will cause application to crash.
     default T expect(String message) {
+        return getOrThrow(message);
+    }
+
+    /// Extract the success value or throw a custom exception if this Result is a failure.
+    ///
+    /// This method is intended for cases where you need to convert a failure Result into
+    /// an exception, typically at API boundaries or in test code.
+    ///
+    /// @param exceptionFactory factory function that creates an exception from the error message
+    /// @param message context message to include in the exception
+    ///
+    /// @return the success value if this Result is successful
+    /// @throws RuntimeException created by the factory if this Result is a failure
+    default T getOrThrow(Fn1<RuntimeException, String> exceptionFactory, String message) {
         return fold(cause -> {
-                        throw new ExpectationMismatchError("Unexpected failure Result (" + cause.message() + "): " + message);
+                        throw exceptionFactory.apply(message + ": " + cause.message());
                     },
                     Functions::id);
+    }
+
+    /// Extract the success value or throw an [IllegalStateException] if this Result is a failure.
+    ///
+    /// This method is intended for cases where you are confident the Result is successful,
+    /// typically in test code or after explicit success checks.
+    ///
+    /// @param message context message to include in the exception
+    ///
+    /// @return the success value if this Result is successful
+    /// @throws IllegalStateException if this Result is a failure
+    default T getOrThrow(String message) {
+        return getOrThrow(IllegalStateException::new, message);
     }
 
     /// Handle both possible states (success/failure) and produce a single value from it.
@@ -1243,6 +1363,299 @@ public sealed interface Result<T> permits Success, Failure {
                 vv5 -> value6.flatMap(vv6 -> value7.flatMap(vv7 -> value8.flatMap(vv8 -> value9.flatMap(vv9 -> value10.flatMap(
                         vv10 -> value11.flatMap(vv11 -> value12.flatMap(vv12 -> value13.flatMap(vv13 -> value14.flatMap(vv14 -> value15.flatMap(vv15 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6, vv7, vv8, vv9, vv10, vv11, vv12, vv13, vv14, vv15)))))))))))))))))
                            .mapError(causes::replace);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Lazy/sequential aggregation (sequence) - evaluates suppliers in order, short-circuits on first failure
+    //------------------------------------------------------------------------------------------------------------------
+
+    /// Lazily evaluate a single Result supplier.
+    /// The supplier is only invoked when the Mapper's terminal operation is called.
+    ///
+    /// @param supplier1 Supplier that produces the first Result
+    /// @param <T1> Type of the first value
+    ///
+    /// @return Mapper1 for further transformation
+    static <T1> Mapper1<T1> sequence(Supplier<Result<T1>> supplier1) {
+        return () -> supplier1.get().map(Tuple::tuple);
+    }
+
+    /// Lazily evaluate two Result suppliers in sequence.
+    /// Each supplier is only invoked if the previous one succeeded.
+    /// Short-circuits on first failure.
+    ///
+    /// @param supplier1 Supplier that produces the first Result
+    /// @param supplier2 Supplier that produces the second Result
+    /// @param <T1> Type of the first value
+    /// @param <T2> Type of the second value
+    ///
+    /// @return Mapper2 for further transformation
+    static <T1, T2> Mapper2<T1, T2> sequence(
+            Supplier<Result<T1>> supplier1,
+            Supplier<Result<T2>> supplier2
+    ) {
+        return () -> supplier1.get().flatMap(v1 ->
+                supplier2.get().map(v2 -> tuple(v1, v2)));
+    }
+
+    /// Lazily evaluate three Result suppliers in sequence.
+    /// Each supplier is only invoked if all previous ones succeeded.
+    /// Short-circuits on first failure.
+    ///
+    /// @return Mapper3 for further transformation
+    static <T1, T2, T3> Mapper3<T1, T2, T3> sequence(
+            Supplier<Result<T1>> supplier1,
+            Supplier<Result<T2>> supplier2,
+            Supplier<Result<T3>> supplier3
+    ) {
+        return () -> supplier1.get().flatMap(v1 ->
+                supplier2.get().flatMap(v2 ->
+                        supplier3.get().map(v3 -> tuple(v1, v2, v3))));
+    }
+
+    /// Lazily evaluate four Result suppliers in sequence.
+    /// Each supplier is only invoked if all previous ones succeeded.
+    /// Short-circuits on first failure.
+    ///
+    /// @return Mapper4 for further transformation
+    static <T1, T2, T3, T4> Mapper4<T1, T2, T3, T4> sequence(
+            Supplier<Result<T1>> supplier1,
+            Supplier<Result<T2>> supplier2,
+            Supplier<Result<T3>> supplier3,
+            Supplier<Result<T4>> supplier4
+    ) {
+        return () -> supplier1.get().flatMap(v1 ->
+                supplier2.get().flatMap(v2 ->
+                        supplier3.get().flatMap(v3 ->
+                                supplier4.get().map(v4 -> tuple(v1, v2, v3, v4)))));
+    }
+
+    /// Lazily evaluate five Result suppliers in sequence.
+    /// Each supplier is only invoked if all previous ones succeeded.
+    /// Short-circuits on first failure.
+    ///
+    /// @return Mapper5 for further transformation
+    static <T1, T2, T3, T4, T5> Mapper5<T1, T2, T3, T4, T5> sequence(
+            Supplier<Result<T1>> supplier1,
+            Supplier<Result<T2>> supplier2,
+            Supplier<Result<T3>> supplier3,
+            Supplier<Result<T4>> supplier4,
+            Supplier<Result<T5>> supplier5
+    ) {
+        return () -> supplier1.get().flatMap(v1 ->
+                supplier2.get().flatMap(v2 ->
+                        supplier3.get().flatMap(v3 ->
+                                supplier4.get().flatMap(v4 ->
+                                        supplier5.get().map(v5 -> tuple(v1, v2, v3, v4, v5))))));
+    }
+
+    /// Lazily evaluate six Result suppliers in sequence.
+    /// Each supplier is only invoked if all previous ones succeeded.
+    /// Short-circuits on first failure.
+    ///
+    /// @return Mapper6 for further transformation
+    static <T1, T2, T3, T4, T5, T6> Mapper6<T1, T2, T3, T4, T5, T6> sequence(
+            Supplier<Result<T1>> supplier1,
+            Supplier<Result<T2>> supplier2,
+            Supplier<Result<T3>> supplier3,
+            Supplier<Result<T4>> supplier4,
+            Supplier<Result<T5>> supplier5,
+            Supplier<Result<T6>> supplier6
+    ) {
+        return () -> supplier1.get().flatMap(v1 ->
+                supplier2.get().flatMap(v2 ->
+                        supplier3.get().flatMap(v3 ->
+                                supplier4.get().flatMap(v4 ->
+                                        supplier5.get().flatMap(v5 ->
+                                                supplier6.get().map(v6 -> tuple(v1, v2, v3, v4, v5, v6)))))));
+    }
+
+    /// Lazily evaluate seven Result suppliers in sequence.
+    /// Each supplier is only invoked if all previous ones succeeded.
+    /// Short-circuits on first failure.
+    ///
+    /// @return Mapper7 for further transformation
+    static <T1, T2, T3, T4, T5, T6, T7> Mapper7<T1, T2, T3, T4, T5, T6, T7> sequence(
+            Supplier<Result<T1>> supplier1,
+            Supplier<Result<T2>> supplier2,
+            Supplier<Result<T3>> supplier3,
+            Supplier<Result<T4>> supplier4,
+            Supplier<Result<T5>> supplier5,
+            Supplier<Result<T6>> supplier6,
+            Supplier<Result<T7>> supplier7
+    ) {
+        return () -> supplier1.get().flatMap(v1 ->
+                supplier2.get().flatMap(v2 ->
+                        supplier3.get().flatMap(v3 ->
+                                supplier4.get().flatMap(v4 ->
+                                        supplier5.get().flatMap(v5 ->
+                                                supplier6.get().flatMap(v6 ->
+                                                        supplier7.get().map(v7 -> tuple(v1, v2, v3, v4, v5, v6, v7))))))));
+    }
+
+    /// Lazily evaluate eight Result suppliers in sequence.
+    /// Each supplier is only invoked if all previous ones succeeded.
+    /// Short-circuits on first failure.
+    ///
+    /// @return Mapper8 for further transformation
+    static <T1, T2, T3, T4, T5, T6, T7, T8> Mapper8<T1, T2, T3, T4, T5, T6, T7, T8> sequence(
+            Supplier<Result<T1>> supplier1,
+            Supplier<Result<T2>> supplier2,
+            Supplier<Result<T3>> supplier3,
+            Supplier<Result<T4>> supplier4,
+            Supplier<Result<T5>> supplier5,
+            Supplier<Result<T6>> supplier6,
+            Supplier<Result<T7>> supplier7,
+            Supplier<Result<T8>> supplier8
+    ) {
+        return () -> supplier1.get().flatMap(v1 ->
+                supplier2.get().flatMap(v2 ->
+                        supplier3.get().flatMap(v3 ->
+                                supplier4.get().flatMap(v4 ->
+                                        supplier5.get().flatMap(v5 ->
+                                                supplier6.get().flatMap(v6 ->
+                                                        supplier7.get().flatMap(v7 ->
+                                                                supplier8.get().map(v8 -> tuple(v1, v2, v3, v4, v5, v6, v7, v8)))))))));
+    }
+
+    /// Lazily evaluate nine Result suppliers in sequence.
+    /// Each supplier is only invoked if all previous ones succeeded.
+    /// Short-circuits on first failure.
+    ///
+    /// @return Mapper9 for further transformation
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9> Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> sequence(
+            Supplier<Result<T1>> supplier1,
+            Supplier<Result<T2>> supplier2,
+            Supplier<Result<T3>> supplier3,
+            Supplier<Result<T4>> supplier4,
+            Supplier<Result<T5>> supplier5,
+            Supplier<Result<T6>> supplier6,
+            Supplier<Result<T7>> supplier7,
+            Supplier<Result<T8>> supplier8,
+            Supplier<Result<T9>> supplier9
+    ) {
+        return () -> supplier1.get().flatMap(v1 ->
+                supplier2.get().flatMap(v2 ->
+                        supplier3.get().flatMap(v3 ->
+                                supplier4.get().flatMap(v4 ->
+                                        supplier5.get().flatMap(v5 ->
+                                                supplier6.get().flatMap(v6 ->
+                                                        supplier7.get().flatMap(v7 ->
+                                                                supplier8.get().flatMap(v8 ->
+                                                                        supplier9.get().map(v9 -> tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9))))))))));
+    }
+
+    /// Lazily evaluate ten Result suppliers in sequence.
+    /// Each supplier is only invoked if all previous ones succeeded.
+    /// Short-circuits on first failure.
+    ///
+    /// @return Mapper10 for further transformation
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> Mapper10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> sequence(
+            Supplier<Result<T1>> supplier1, Supplier<Result<T2>> supplier2, Supplier<Result<T3>> supplier3,
+            Supplier<Result<T4>> supplier4, Supplier<Result<T5>> supplier5, Supplier<Result<T6>> supplier6,
+            Supplier<Result<T7>> supplier7, Supplier<Result<T8>> supplier8, Supplier<Result<T9>> supplier9,
+            Supplier<Result<T10>> supplier10
+    ) {
+        return () -> supplier1.get().flatMap(v1 -> supplier2.get().flatMap(v2 -> supplier3.get().flatMap(v3 ->
+                supplier4.get().flatMap(v4 -> supplier5.get().flatMap(v5 -> supplier6.get().flatMap(v6 ->
+                supplier7.get().flatMap(v7 -> supplier8.get().flatMap(v8 -> supplier9.get().flatMap(v9 ->
+                supplier10.get().map(v10 -> tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10)))))))))));
+    }
+
+    /// Lazily evaluate eleven Result suppliers in sequence.
+    /// Each supplier is only invoked if all previous ones succeeded.
+    /// Short-circuits on first failure.
+    ///
+    /// @return Mapper11 for further transformation
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> Mapper11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> sequence(
+            Supplier<Result<T1>> supplier1, Supplier<Result<T2>> supplier2, Supplier<Result<T3>> supplier3,
+            Supplier<Result<T4>> supplier4, Supplier<Result<T5>> supplier5, Supplier<Result<T6>> supplier6,
+            Supplier<Result<T7>> supplier7, Supplier<Result<T8>> supplier8, Supplier<Result<T9>> supplier9,
+            Supplier<Result<T10>> supplier10, Supplier<Result<T11>> supplier11
+    ) {
+        return () -> supplier1.get().flatMap(v1 -> supplier2.get().flatMap(v2 -> supplier3.get().flatMap(v3 ->
+                supplier4.get().flatMap(v4 -> supplier5.get().flatMap(v5 -> supplier6.get().flatMap(v6 ->
+                supplier7.get().flatMap(v7 -> supplier8.get().flatMap(v8 -> supplier9.get().flatMap(v9 ->
+                supplier10.get().flatMap(v10 -> supplier11.get().map(v11 ->
+                        tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11))))))))))));
+    }
+
+    /// Lazily evaluate twelve Result suppliers in sequence.
+    /// Each supplier is only invoked if all previous ones succeeded.
+    /// Short-circuits on first failure.
+    ///
+    /// @return Mapper12 for further transformation
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> sequence(
+            Supplier<Result<T1>> supplier1, Supplier<Result<T2>> supplier2, Supplier<Result<T3>> supplier3,
+            Supplier<Result<T4>> supplier4, Supplier<Result<T5>> supplier5, Supplier<Result<T6>> supplier6,
+            Supplier<Result<T7>> supplier7, Supplier<Result<T8>> supplier8, Supplier<Result<T9>> supplier9,
+            Supplier<Result<T10>> supplier10, Supplier<Result<T11>> supplier11, Supplier<Result<T12>> supplier12
+    ) {
+        return () -> supplier1.get().flatMap(v1 -> supplier2.get().flatMap(v2 -> supplier3.get().flatMap(v3 ->
+                supplier4.get().flatMap(v4 -> supplier5.get().flatMap(v5 -> supplier6.get().flatMap(v6 ->
+                supplier7.get().flatMap(v7 -> supplier8.get().flatMap(v8 -> supplier9.get().flatMap(v9 ->
+                supplier10.get().flatMap(v10 -> supplier11.get().flatMap(v11 -> supplier12.get().map(v12 ->
+                        tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12)))))))))))));
+    }
+
+    /// Lazily evaluate thirteen Result suppliers in sequence.
+    /// Each supplier is only invoked if all previous ones succeeded.
+    /// Short-circuits on first failure.
+    ///
+    /// @return Mapper13 for further transformation
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> sequence(
+            Supplier<Result<T1>> supplier1, Supplier<Result<T2>> supplier2, Supplier<Result<T3>> supplier3,
+            Supplier<Result<T4>> supplier4, Supplier<Result<T5>> supplier5, Supplier<Result<T6>> supplier6,
+            Supplier<Result<T7>> supplier7, Supplier<Result<T8>> supplier8, Supplier<Result<T9>> supplier9,
+            Supplier<Result<T10>> supplier10, Supplier<Result<T11>> supplier11, Supplier<Result<T12>> supplier12,
+            Supplier<Result<T13>> supplier13
+    ) {
+        return () -> supplier1.get().flatMap(v1 -> supplier2.get().flatMap(v2 -> supplier3.get().flatMap(v3 ->
+                supplier4.get().flatMap(v4 -> supplier5.get().flatMap(v5 -> supplier6.get().flatMap(v6 ->
+                supplier7.get().flatMap(v7 -> supplier8.get().flatMap(v8 -> supplier9.get().flatMap(v9 ->
+                supplier10.get().flatMap(v10 -> supplier11.get().flatMap(v11 -> supplier12.get().flatMap(v12 ->
+                supplier13.get().map(v13 ->
+                        tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13))))))))))))));
+    }
+
+    /// Lazily evaluate fourteen Result suppliers in sequence.
+    /// Each supplier is only invoked if all previous ones succeeded.
+    /// Short-circuits on first failure.
+    ///
+    /// @return Mapper14 for further transformation
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> sequence(
+            Supplier<Result<T1>> supplier1, Supplier<Result<T2>> supplier2, Supplier<Result<T3>> supplier3,
+            Supplier<Result<T4>> supplier4, Supplier<Result<T5>> supplier5, Supplier<Result<T6>> supplier6,
+            Supplier<Result<T7>> supplier7, Supplier<Result<T8>> supplier8, Supplier<Result<T9>> supplier9,
+            Supplier<Result<T10>> supplier10, Supplier<Result<T11>> supplier11, Supplier<Result<T12>> supplier12,
+            Supplier<Result<T13>> supplier13, Supplier<Result<T14>> supplier14
+    ) {
+        return () -> supplier1.get().flatMap(v1 -> supplier2.get().flatMap(v2 -> supplier3.get().flatMap(v3 ->
+                supplier4.get().flatMap(v4 -> supplier5.get().flatMap(v5 -> supplier6.get().flatMap(v6 ->
+                supplier7.get().flatMap(v7 -> supplier8.get().flatMap(v8 -> supplier9.get().flatMap(v9 ->
+                supplier10.get().flatMap(v10 -> supplier11.get().flatMap(v11 -> supplier12.get().flatMap(v12 ->
+                supplier13.get().flatMap(v13 -> supplier14.get().map(v14 ->
+                        tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14)))))))))))))));
+    }
+
+    /// Lazily evaluate fifteen Result suppliers in sequence.
+    /// Each supplier is only invoked if all previous ones succeeded.
+    /// Short-circuits on first failure.
+    ///
+    /// @return Mapper15 for further transformation
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> sequence(
+            Supplier<Result<T1>> supplier1, Supplier<Result<T2>> supplier2, Supplier<Result<T3>> supplier3,
+            Supplier<Result<T4>> supplier4, Supplier<Result<T5>> supplier5, Supplier<Result<T6>> supplier6,
+            Supplier<Result<T7>> supplier7, Supplier<Result<T8>> supplier8, Supplier<Result<T9>> supplier9,
+            Supplier<Result<T10>> supplier10, Supplier<Result<T11>> supplier11, Supplier<Result<T12>> supplier12,
+            Supplier<Result<T13>> supplier13, Supplier<Result<T14>> supplier14, Supplier<Result<T15>> supplier15
+    ) {
+        return () -> supplier1.get().flatMap(v1 -> supplier2.get().flatMap(v2 -> supplier3.get().flatMap(v3 ->
+                supplier4.get().flatMap(v4 -> supplier5.get().flatMap(v5 -> supplier6.get().flatMap(v6 ->
+                supplier7.get().flatMap(v7 -> supplier8.get().flatMap(v8 -> supplier9.get().flatMap(v9 ->
+                supplier10.get().flatMap(v10 -> supplier11.get().flatMap(v11 -> supplier12.get().flatMap(v12 ->
+                supplier13.get().flatMap(v13 -> supplier14.get().flatMap(v14 -> supplier15.get().map(v15 ->
+                        tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15))))))))))))))));
     }
 
     /// Helper interface for convenient [Tuple1] transformation. In case if you need to return a tuple, it might be more convenient to return

@@ -81,20 +81,6 @@ public sealed interface Causes {
         return cause(sw.toString());
     }
 
-    /// Create a mapper which will map a value into a formatted message. Main use case for this function - creation of mappers for
-    /// [#filter(Fn1,Predicate)]:
-    /// <blockquote><pre>
-    /// filter(Causes.forValue("Value %s is below threshold"), value -> value > 321)
-    /// </pre></blockquote>
-    ///
-    /// @param template the message template prepared for [String.format]
-    /// @return created mapping function
-    /// @deprecated Use [#forOneValue(String)] instead for consistent naming with forTwoValues and forThreeValues
-    @Deprecated(since = "0.8.2", forRemoval = true)
-    static <T> Fn1<Cause, T> forValue(String template) {
-        return forOneValue(template);
-    }
-
     /// Create a mapper which will map a single value into a formatted message.
     ///
     /// @param template the message template prepared for [String.format]

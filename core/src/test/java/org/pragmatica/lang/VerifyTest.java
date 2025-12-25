@@ -584,4 +584,114 @@ class VerifyTest {
                   .onFailure(cause -> assertEquals("Value 25 not in range", cause.message()));
         }
     }
+
+    @Nested
+    class VerifyEnsureOptionMethodsTest {
+
+        private static final Cause TEST_CAUSE = () -> "Test validation failed";
+
+        @Test
+        void ensureOption_withEmptyOption_returnsSuccessWithNone() {
+            Option<Integer> empty = Option.none();
+
+            Verify.ensureOption(empty, Verify.Is::positive)
+                  .onFailureRun(() -> fail("Should succeed"))
+                  .onSuccess(opt -> assertTrue(opt.isEmpty()));
+        }
+
+        @Test
+        void ensureOption_withPresentValidValue_returnsSuccessWithSome() {
+            Option<Integer> present = Option.some(42);
+
+            Verify.ensureOption(present, Verify.Is::positive)
+                  .onFailureRun(() -> fail("Should succeed"))
+                  .onSuccess(opt -> {
+                      assertTrue(opt.isPresent());
+                      assertEquals(42, opt.fold(() -> -1, v -> v));
+                  });
+        }
+
+        @Test
+        void ensureOption_withPresentInvalidValue_returnsFailure() {
+            Option<Integer> present = Option.some(-5);
+
+            Verify.ensureOption(present, Verify.Is::positive)
+                  .onSuccessRun(() -> fail("Should fail"));
+        }
+
+        @Test
+        void ensureOption_withCause_returnsSpecifiedCauseOnFailure() {
+            Option<Integer> present = Option.some(-5);
+
+            Verify.ensureOption(present, Verify.Is::positive, TEST_CAUSE)
+                  .onSuccessRun(() -> fail("Should fail"))
+                  .onFailure(cause -> assertEquals("Test validation failed", cause.message()));
+        }
+
+        @Test
+        void ensureOption_withCauseProvider_returnsGeneratedCauseOnFailure() {
+            Option<Integer> present = Option.some(-5);
+            Functions.Fn1<Cause, Integer> causeProvider = v -> () -> "Invalid value: " + v;
+
+            Verify.ensureOption(present, Verify.Is::positive, causeProvider)
+                  .onSuccessRun(() -> fail("Should fail"))
+                  .onFailure(cause -> assertEquals("Invalid value: -5", cause.message()));
+        }
+
+        @Test
+        void ensureOption_withBinaryPredicate_validatesCorrectly() {
+            Option<Integer> present = Option.some(15);
+
+            // Success case
+            Verify.ensureOption(present, Verify.Is::greaterThan, 10)
+                  .onFailureRun(() -> fail("Should succeed"))
+                  .onSuccess(opt -> assertTrue(opt.isPresent()));
+
+            // Failure case
+            Verify.ensureOption(present, Verify.Is::greaterThan, 20)
+                  .onSuccessRun(() -> fail("Should fail"));
+        }
+
+        @Test
+        void ensureOption_withBinaryPredicateAndCause_returnsSpecifiedCause() {
+            Option<Integer> present = Option.some(5);
+
+            Verify.ensureOption(present, Verify.Is::greaterThan, 10, TEST_CAUSE)
+                  .onSuccessRun(() -> fail("Should fail"))
+                  .onFailure(cause -> assertEquals("Test validation failed", cause.message()));
+        }
+
+        @Test
+        void ensureOption_withTernaryPredicate_validatesCorrectly() {
+            Option<Integer> present = Option.some(15);
+
+            // Success case - value in range
+            Verify.ensureOption(present, Verify.Is::between, 10, 20)
+                  .onFailureRun(() -> fail("Should succeed"))
+                  .onSuccess(opt -> assertTrue(opt.isPresent()));
+
+            // Failure case - value out of range
+            Verify.ensureOption(present, Verify.Is::between, 20, 30)
+                  .onSuccessRun(() -> fail("Should fail"));
+        }
+
+        @Test
+        void ensureOption_withTernaryPredicateAndCause_returnsSpecifiedCause() {
+            Option<Integer> present = Option.some(25);
+
+            Verify.ensureOption(present, Verify.Is::between, 10, 20, TEST_CAUSE)
+                  .onSuccessRun(() -> fail("Should fail"))
+                  .onFailure(cause -> assertEquals("Test validation failed", cause.message()));
+        }
+
+        @Test
+        void ensureOption_emptyOptionWithCause_stillSucceeds() {
+            Option<Integer> empty = Option.none();
+
+            // Even with a cause specified, empty Option should succeed with None
+            Verify.ensureOption(empty, Verify.Is::positive, TEST_CAUSE)
+                  .onFailureRun(() -> fail("Should succeed"))
+                  .onSuccess(opt -> assertTrue(opt.isEmpty()));
+        }
+    }
 }

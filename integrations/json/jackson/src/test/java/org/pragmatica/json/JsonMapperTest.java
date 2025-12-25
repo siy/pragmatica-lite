@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.TypeToken;
-import tools.jackson.core.type.TypeReference;
 
 import java.util.List;
 
@@ -92,11 +91,10 @@ class JsonMapperTest {
         record User(String name, int age) {}
 
         @Test
-        @SuppressWarnings("deprecation")
         void readString_succeeds_forGenericList() {
             var json = "[{\"name\":\"Alice\",\"age\":30},{\"name\":\"Bob\",\"age\":25}]";
 
-            mapper.readString(json, new TypeReference<List<User>>() {})
+            mapper.readString(json, new TypeToken<List<User>>() {})
                 .onFailure(cause -> fail("Should not fail: " + cause))
                 .onSuccess(users -> {
                     assertEquals(2, users.size());
@@ -106,11 +104,10 @@ class JsonMapperTest {
         }
 
         @Test
-        @SuppressWarnings("deprecation")
         void readBytes_succeeds_forGenericList() {
             var json = "[{\"name\":\"Charlie\",\"age\":35}]".getBytes();
 
-            mapper.readBytes(json, new TypeReference<List<User>>() {})
+            mapper.readBytes(json, new TypeToken<List<User>>() {})
                 .onFailure(cause -> fail("Should not fail: " + cause))
                 .onSuccess(users -> {
                     assertEquals(1, users.size());
@@ -148,11 +145,10 @@ class JsonMapperTest {
         }
 
         @Test
-        @SuppressWarnings("deprecation")
         void readString_succeeds_forResultSuccessWithString() {
             var json = "{\"success\":true,\"value\":\"Bob\"}";
 
-            mapper.readString(json, new TypeReference<Result<String>>() {})
+            mapper.readString(json, new TypeToken<Result<String>>() {})
                 .onFailure(cause -> fail("Should not fail: " + cause))
                 .onSuccess(result ->
                     result.onFailure(cause -> fail("Result should be success"))
@@ -161,11 +157,10 @@ class JsonMapperTest {
         }
 
         @Test
-        @SuppressWarnings("deprecation")
         void readString_succeeds_forResultFailure() {
             var json = "{\"success\":false,\"error\":{\"message\":\"Something failed\",\"type\":\"TestError\"}}";
 
-            mapper.readString(json, new TypeReference<Result<String>>() {})
+            mapper.readString(json, new TypeToken<Result<String>>() {})
                 .onFailure(cause -> fail("Should not fail: " + cause))
                 .onSuccess(result ->
                     result.onSuccess(user -> fail("Result should be failure"))
@@ -279,12 +274,11 @@ class JsonMapperTest {
         }
 
         @Test
-        @SuppressWarnings("deprecation")
         void roundTrip_succeeds_forResultWithString() {
             var original = Result.success("test-value");
 
             mapper.writeAsString(original)
-                .flatMap(json -> mapper.readString(json, new TypeReference<Result<String>>() {}))
+                .flatMap(json -> mapper.readString(json, new TypeToken<Result<String>>() {}))
                 .onFailure(cause -> fail("Should not fail: " + cause))
                 .onSuccess(deserialized ->
                     deserialized.onFailure(cause -> fail("Should be success"))
