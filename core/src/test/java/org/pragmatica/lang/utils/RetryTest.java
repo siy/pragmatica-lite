@@ -124,103 +124,55 @@ class RetryTest {
 
     @Test
     void shouldUseExponentialBackoffStrategy() {
-        var attempts = new AtomicInteger(0);
-        var lastExecutionTime = new AtomicReference<>(System.currentTimeMillis());
-        var firstInterval = new AtomicReference<Long>();
-        var secondInterval = new AtomicReference<Long>();
-
-        Supplier<Promise<String>> operation = () -> {
-            var attempt = attempts.incrementAndGet();
-            var now = System.currentTimeMillis();
-            var timeSinceLastExecution = now - lastExecutionTime.get();
-
-            lastExecutionTime.set(now);
-
-            if (attempt == 2) {
-                firstInterval.set(timeSinceLastExecution);
-            } else if (attempt == 3) {
-                secondInterval.set(timeSinceLastExecution);
-            }
-
-            if (attempt < 4) {
-                return cause("Simulated failure").promise();
-            } else {
-                return success("Success");
-            }
-        };
-
-        var initialDelay = 50L;
+        // Test strategy calculation directly (not actual elapsed time which is system-dependent)
+        var initialDelay = timeSpan(50).millis();
         var factor = 2.0;
 
-        var retry = create().attempts(5)
-                            .strategy(exponential().initialDelay(timeSpan(initialDelay).millis())
-                                                   .maxDelay(timeSpan(1).seconds())
-                                                   .factor(factor)
-                                                   .withoutJitter());
+        var strategy = exponential()
+                .initialDelay(initialDelay)
+                .maxDelay(timeSpan(1).seconds())
+                .factor(factor)
+                .withoutJitter();
 
-        retry.execute(operation)
-             .await();
+        // Verify exponential progression
+        var first = strategy.nextTimeout(1);
+        var second = strategy.nextTimeout(2);
+        var third = strategy.nextTimeout(3);
 
-        // Assert that the second interval is approximately twice the first
-        var first = firstInterval.get();
-        var second = secondInterval.get();
+        assertEquals(initialDelay, first);
+        assertEquals(timeSpan(initialDelay.nanos() * 2).nanos(), second);
+        assertEquals(timeSpan(initialDelay.nanos() * 4).nanos(), third);
 
-        assertNotNull(first);
-        assertNotNull(second);
-
-        var ratio = (double) second / first;
-
-        assertTrue(ratio >= factor * 0.8 && ratio <= factor * 1.2,
-                   "Expected ratio close to " + factor + " but was " + ratio);
+        // Verify the ratio between consecutive timeouts
+        var ratio = (double) second.nanos() / first.nanos();
+        assertEquals(factor, ratio, 0.01, "Expected ratio to be " + factor);
     }
 
     @Test
     void shouldUseLinearBackoffStrategy() {
-        var attempts = new AtomicInteger(0);
-        var lastExecutionTime = new AtomicReference<>(System.currentTimeMillis());
-        var firstInterval = new AtomicReference<Long>();
-        var secondInterval = new AtomicReference<Long>();
+        // Test strategy calculation directly (not actual elapsed time which is system-dependent)
+        var initialDelay = timeSpan(50).millis();
+        var increment = timeSpan(50).millis();
 
-        Supplier<Promise<String>> operation = () -> {
-            var attempt = attempts.incrementAndGet();
-            var now = System.currentTimeMillis();
-            var timeSinceLastExecution = now - lastExecutionTime.get();
+        var strategy = linear()
+                .initialDelay(initialDelay)
+                .increment(increment)
+                .maxDelay(timeSpan(1).seconds());
 
-            lastExecutionTime.set(now);
+        // Verify linear progression
+        var first = strategy.nextTimeout(1);
+        var second = strategy.nextTimeout(2);
+        var third = strategy.nextTimeout(3);
 
-            if (attempt == 2) {
-                firstInterval.set(timeSinceLastExecution);
-            } else if (attempt == 3) {
-                secondInterval.set(timeSinceLastExecution);
-            }
+        assertEquals(initialDelay, first);
+        assertEquals(timeSpan(initialDelay.nanos() + increment.nanos()).nanos(), second);
+        assertEquals(timeSpan(initialDelay.nanos() + 2 * increment.nanos()).nanos(), third);
 
-            if (attempt < 4) {
-                return cause("Simulated failure").promise();
-            } else {
-                return success("Success");
-            }
-        };
-
-        var initialDelay = 50L;
-        var increment = 50L;
-
-        var retry = create().attempts(5)
-                            .strategy(linear().initialDelay(timeSpan(initialDelay).millis())
-                                              .increment(timeSpan(increment).millis())
-                                              .maxDelay(timeSpan(1).seconds()));
-        retry.execute(operation)
-             .await();
-
-        var first = firstInterval.get();
-        var second = secondInterval.get();
-
-        assertNotNull(first);
-        assertNotNull(second);
-
-        var actualDifference = second - first;
-
-        assertTrue(Math.abs(actualDifference - increment) < increment * 0.3,
-                   "Expected difference close to " + increment + "ms but was " + actualDifference + "ms");
+        // Verify constant difference between consecutive timeouts
+        var diff1 = second.nanos() - first.nanos();
+        var diff2 = third.nanos() - second.nanos();
+        assertEquals(increment.nanos(), diff1);
+        assertEquals(increment.nanos(), diff2);
     }
 
     @Test
