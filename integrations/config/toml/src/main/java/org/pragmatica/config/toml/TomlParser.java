@@ -137,7 +137,7 @@ public final class TomlParser {
         try {
             return parse(Files.readString(path));
         } catch (IOException e) {
-            return TomlError.syntaxError(0, "Failed to read file: " + e.getMessage()).result();
+            return TomlError.fileReadFailed(path.toString(), e.getMessage()).result();
         }
     }
 
@@ -174,6 +174,15 @@ public final class TomlParser {
                 return TomlError.unterminatedArray(lineNumber).result();
             }
             return parseArray(value.substring(1, value.length() - 1), lineNumber);
+        }
+
+        // Float (including negative, with decimal point or exponent)
+        if (value.matches("-?\\d+\\.\\d+([eE][+-]?\\d+)?") || value.matches("-?\\d+[eE][+-]?\\d+")) {
+            try {
+                return Result.success(Double.parseDouble(value));
+            } catch (NumberFormatException _) {
+                return TomlError.invalidValue(lineNumber, value, "float").result();
+            }
         }
 
         // Integer (including negative)

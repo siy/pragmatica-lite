@@ -81,7 +81,7 @@ public interface JooqR2dbcOperations {
     /// @param dialect SQL dialect
     ///
     /// @return JooqR2dbcOperations instance
-    static JooqR2dbcOperations create(ConnectionFactory connectionFactory, SQLDialect dialect) {
+    static JooqR2dbcOperations jooqR2dbcOperations(ConnectionFactory connectionFactory, SQLDialect dialect) {
         return new ConnectionFactoryJooqR2dbcOperations(connectionFactory, dialect);
     }
 
@@ -90,8 +90,8 @@ public interface JooqR2dbcOperations {
     /// @param connectionFactory R2DBC ConnectionFactory
     ///
     /// @return JooqR2dbcOperations instance
-    static JooqR2dbcOperations create(ConnectionFactory connectionFactory) {
-        return create(connectionFactory, SQLDialect.DEFAULT);
+    static JooqR2dbcOperations jooqR2dbcOperations(ConnectionFactory connectionFactory) {
+        return jooqR2dbcOperations(connectionFactory, SQLDialect.DEFAULT);
     }
 }
 
@@ -113,10 +113,10 @@ final class ConnectionFactoryJooqR2dbcOperations implements JooqR2dbcOperations 
         return withConnection(conn -> {
             var dslWithConn = DSL.using(conn, dialect);
             return Promise.lift(
-                e -> R2dbcError.fromException(e, query.getSQL()),
+                e -> mapException(e, query.getSQL()),
                 () -> {
                     var result = dslWithConn.fetch(query);
-                    if (result.size() == 0) {
+                    if (result.isEmpty()) {
                         throw new R2dbcNoResultException("Query returned no results");
                     }
                     if (result.size() > 1) {
@@ -133,7 +133,7 @@ final class ConnectionFactoryJooqR2dbcOperations implements JooqR2dbcOperations 
         return withConnection(conn -> {
             var dslWithConn = DSL.using(conn, dialect);
             return Promise.lift(
-                e -> R2dbcError.fromException(e, query.getSQL()),
+                e -> mapException(e, query.getSQL()),
                 () -> {
                     var result = dslWithConn.fetch(query);
                     return result.isEmpty() ? Option.none() : Option.option(result.get(0));
@@ -147,7 +147,7 @@ final class ConnectionFactoryJooqR2dbcOperations implements JooqR2dbcOperations 
         return withConnection(conn -> {
             var dslWithConn = DSL.using(conn, dialect);
             return Promise.lift(
-                e -> R2dbcError.fromException(e, query.getSQL()),
+                e -> mapException(e, query.getSQL()),
                 () -> dslWithConn.fetch(query)
             );
         });
@@ -158,7 +158,7 @@ final class ConnectionFactoryJooqR2dbcOperations implements JooqR2dbcOperations 
         return withConnection(conn -> {
             var dslWithConn = DSL.using(conn, dialect);
             return Promise.lift(
-                e -> R2dbcError.fromException(e, query.getSQL()),
+                e -> mapException(e, query.getSQL()),
                 () -> dslWithConn.execute(query)
             );
         });
@@ -173,6 +173,25 @@ final class ConnectionFactoryJooqR2dbcOperations implements JooqR2dbcOperations 
         return ReactiveOperations.<Connection>fromPublisher(connectionFactory.create())
             .flatMap(conn -> operation.apply(conn)
                 .onResult(_ -> ReactiveOperations.fromPublisher(conn.close())));
+    }
+
+    /// Maps exceptions to R2dbcError, with special handling for JOOQ-R2DBC specific exceptions.
+    private static R2dbcError mapException(Throwable e, String sql) {
+        return switch (e) {
+            case R2dbcNoResultException _ -> new R2dbcError.NoResult(sql);
+            case R2dbcMultipleResultsException ex -> new R2dbcError.MultipleResults(sql, parseCount(ex.getMessage()));
+            default -> R2dbcError.fromException(e, sql);
+        };
+    }
+
+    private static int parseCount(String message) {
+        // Extract count from "Query returned N results"
+        try {
+            var parts = message.split(" ");
+            return Integer.parseInt(parts[2]);
+        } catch (Exception _) {
+            return -1;
+        }
     }
 
     /// Exception for no results case (used internally for error mapping).

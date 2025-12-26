@@ -39,7 +39,16 @@ record JpaOperationsImpl(EntityManager em) implements JpaOperations {
     public <T> Promise<Option<T>> queryOptional(Fn1<JpaError, Throwable> errorMapper, TypedQuery<T> query) {
         return Promise.lift(
             errorMapper,
-            () -> Option.option(query.getResultList().stream().findFirst().orElse(null))
+            () -> {
+                var results = query.setMaxResults(2).getResultList();
+                if (results.isEmpty()) {
+                    return Option.none();
+                }
+                if (results.size() > 1) {
+                    throw new jakarta.persistence.NonUniqueResultException("Query returned more than one result");
+                }
+                return Option.option(results.getFirst());
+            }
         );
     }
 

@@ -18,7 +18,11 @@ package org.pragmatica.config.toml;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -159,6 +163,51 @@ class TomlParserTest {
                 .onSuccess(doc -> {
                     assertTrue(doc.getLong("", "bignum").isPresent());
                     assertEquals(9999999999L, doc.getLong("", "bignum").unwrap());
+                });
+        }
+
+        @Test
+        void parseFloatValue() {
+            var content = """
+                pi = 3.14159
+                negative = -2.5
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertTrue(doc.getDouble("", "pi").isPresent());
+                    assertEquals(3.14159, doc.getDouble("", "pi").unwrap(), 0.00001);
+                    assertEquals(-2.5, doc.getDouble("", "negative").unwrap(), 0.00001);
+                });
+        }
+
+        @Test
+        void parseScientificNotation() {
+            var content = """
+                large = 1.5e10
+                small = 2.5e-3
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals(1.5e10, doc.getDouble("", "large").unwrap(), 1e6);
+                    assertEquals(2.5e-3, doc.getDouble("", "small").unwrap(), 1e-6);
+                });
+        }
+
+        @Test
+        void getDoubleFromInteger() {
+            var content = """
+                count = 42
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    // Should be able to get integer as double
+                    assertEquals(42.0, doc.getDouble("", "count").unwrap(), 0.00001);
                 });
         }
     }
@@ -502,6 +551,43 @@ class TomlParserTest {
                 .onSuccess(_ -> fail("Should fail"))
                 .onFailure(error -> {
                     assertInstanceOf(TomlError.UnterminatedArray.class, error);
+                });
+        }
+    }
+
+    @Nested
+    class FileOperations {
+
+        @TempDir
+        Path tempDir;
+
+        @Test
+        void parseValidFile() throws IOException {
+            var tomlFile = tempDir.resolve("config.toml");
+            Files.writeString(tomlFile, """
+                title = "Test App"
+
+                [server]
+                port = 8080
+                """);
+
+            TomlParser.parseFile(tomlFile)
+                .onFailure(e -> fail("Should not fail: " + e.message()))
+                .onSuccess(doc -> {
+                    assertEquals("Test App", doc.getString("", "title").unwrap());
+                    assertEquals(8080, doc.getInt("server", "port").unwrap());
+                });
+        }
+
+        @Test
+        void parseNonExistentFile() {
+            var nonExistent = tempDir.resolve("does-not-exist.toml");
+
+            TomlParser.parseFile(nonExistent)
+                .onSuccess(_ -> fail("Should fail for non-existent file"))
+                .onFailure(error -> {
+                    assertInstanceOf(TomlError.FileReadFailed.class, error);
+                    assertTrue(error.message().contains("does-not-exist.toml"));
                 });
         }
     }

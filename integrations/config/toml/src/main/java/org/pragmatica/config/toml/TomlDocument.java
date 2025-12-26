@@ -82,6 +82,17 @@ public record TomlDocument(Map<String, Map<String, Object>> sections) {
     }
 
     /**
+     * Get a double value from the document.
+     *
+     * @param section the section name (empty string for root)
+     * @param key     the property key
+     * @return Option containing the double value, or empty if not found or not a number
+     */
+    public Option<Double> getDouble(String section, String key) {
+        return getValue(section, key).flatMap(this::toDouble);
+    }
+
+    /**
      * Get a boolean value from the document.
      *
      * @param section the section name (empty string for root)
@@ -207,6 +218,26 @@ public record TomlDocument(Map<String, Map<String, Object>> sections) {
         if (value instanceof String s) {
             try {
                 return Option.some(Long.parseLong(s));
+            } catch (NumberFormatException _) {
+                return Option.none();
+            }
+        }
+        return Option.none();
+    }
+
+    private Option<Double> toDouble(Object value) {
+        if (value instanceof Double d) {
+            return Option.some(d);
+        }
+        if (value instanceof Long l) {
+            return Option.some(l.doubleValue());
+        }
+        if (value instanceof Integer i) {
+            return Option.some(i.doubleValue());
+        }
+        if (value instanceof String s) {
+            try {
+                return Option.some(Double.parseDouble(s));
             } catch (NumberFormatException _) {
                 return Option.none();
             }

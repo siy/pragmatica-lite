@@ -77,7 +77,7 @@ public interface R2dbcOperations {
     /// @param connectionFactory R2DBC ConnectionFactory
     ///
     /// @return R2dbcOperations instance
-    static R2dbcOperations create(ConnectionFactory connectionFactory) {
+    static R2dbcOperations r2dbcOperations(ConnectionFactory connectionFactory) {
         return new ConnectionFactoryR2dbcOperations(connectionFactory);
     }
 }

@@ -52,6 +52,13 @@ public sealed interface TomlError extends Cause {
         }
     }
 
+    record FileReadFailed(String path, String details) implements TomlError {
+        @Override
+        public String message() {
+            return "Failed to read file '" + path + "': " + details;
+        }
+    }
+
     static TomlError syntaxError(int line, String details) {
         return new SyntaxError(line, details);
     }
@@ -66,6 +73,10 @@ public sealed interface TomlError extends Cause {
 
     static TomlError unterminatedArray(int line) {
         return new UnterminatedArray(line);
+    }
+
+    static TomlError fileReadFailed(String path, String details) {
+        return new FileReadFailed(path, details);
     }
 
     default <T> Result<T> result() {

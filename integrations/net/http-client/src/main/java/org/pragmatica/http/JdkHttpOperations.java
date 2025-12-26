@@ -37,7 +37,7 @@ public final class JdkHttpOperations implements HttpOperations {
     /// Creates JdkHttpOperations with default HttpClient.
     ///
     /// @return JdkHttpOperations instance with default configuration
-    public static JdkHttpOperations create() {
+    public static JdkHttpOperations jdkHttpOperations() {
         return new JdkHttpOperations(HttpClient.newHttpClient());
     }
 
@@ -46,7 +46,7 @@ public final class JdkHttpOperations implements HttpOperations {
     /// @param client Custom HttpClient instance
     ///
     /// @return JdkHttpOperations instance wrapping the provided client
-    public static JdkHttpOperations create(HttpClient client) {
+    public static JdkHttpOperations jdkHttpOperations(HttpClient client) {
         return new JdkHttpOperations(client);
     }
 
@@ -57,9 +57,9 @@ public final class JdkHttpOperations implements HttpOperations {
     /// @param executor Custom executor for async operations
     ///
     /// @return JdkHttpOperations instance with specified configuration
-    public static JdkHttpOperations create(Duration connectTimeout,
-                                            HttpClient.Redirect followRedirects,
-                                            Executor executor) {
+    public static JdkHttpOperations jdkHttpOperations(Duration connectTimeout,
+                                                       HttpClient.Redirect followRedirects,
+                                                       Executor executor) {
         var builder = HttpClient.newBuilder()
             .connectTimeout(connectTimeout)
             .followRedirects(followRedirects);
@@ -73,11 +73,16 @@ public final class JdkHttpOperations implements HttpOperations {
 
     @Override
     public <T> Promise<HttpResult<T>> send(HttpRequest request, BodyHandler<T> handler) {
-        return Promise.lift(
-            HttpError::fromException,
-            () -> client.sendAsync(request, handler)
+        return Promise.promise(promise ->
+            client.sendAsync(request, handler)
                 .thenApply(HttpResult::from)
-                .get()
+                .whenComplete((result, error) -> {
+                    if (error != null) {
+                        promise.fail(HttpError.fromException(error));
+                    } else {
+                        promise.succeed(result);
+                    }
+                })
         );
     }
 
