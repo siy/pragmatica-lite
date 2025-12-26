@@ -36,7 +36,7 @@ var connectionFactory = ConnectionFactories.get(
     "r2dbc:postgresql://localhost:5432/mydb"
 );
 
-JooqR2dbcOperations jooq = JooqR2dbcOperations.create(connectionFactory, SQLDialect.POSTGRES);
+JooqR2dbcOperations jooq = JooqR2dbcOperations.jooqR2dbcOperations(connectionFactory, SQLDialect.POSTGRES);
 
 // Type-safe query
 jooq.fetchOptional(
@@ -52,10 +52,10 @@ jooq.fetchOptional(
 
 ```java
 // With explicit dialect
-JooqR2dbcOperations jooq = JooqR2dbcOperations.create(connectionFactory, SQLDialect.POSTGRES);
+JooqR2dbcOperations jooq = JooqR2dbcOperations.jooqR2dbcOperations(connectionFactory, SQLDialect.POSTGRES);
 
 // With default dialect
-JooqR2dbcOperations jooq = JooqR2dbcOperations.create(connectionFactory);
+JooqR2dbcOperations jooq = JooqR2dbcOperations.jooqR2dbcOperations(connectionFactory);
 ```
 
 #### Query Methods
@@ -109,7 +109,7 @@ Execute operations within a transaction:
 
 ```java
 JooqR2dbcTransactional.withTransaction(connectionFactory, SQLDialect.POSTGRES, dsl -> {
-    var ops = JooqR2dbcOperations.create(dsl);
+    var ops = JooqR2dbcOperations.jooqR2dbcOperations(dsl);
 
     return ops.execute(dsl.insertInto(ORDERS)
             .set(ORDERS.USER_ID, userId)
@@ -129,7 +129,7 @@ public class UserRepository {
     private final JooqR2dbcOperations jooq;
 
     public UserRepository(ConnectionFactory connectionFactory) {
-        this.jooq = JooqR2dbcOperations.create(connectionFactory, SQLDialect.POSTGRES);
+        this.jooq = JooqR2dbcOperations.jooqR2dbcOperations(connectionFactory, SQLDialect.POSTGRES);
     }
 
     public Promise<Option<User>> findById(Long id) {
@@ -225,7 +225,7 @@ public Promise<Order> createOrder(CreateOrderRequest request) {
         connectionFactory,
         SQLDialect.POSTGRES,
         dsl -> {
-            var ops = JooqR2dbcOperations.create(dsl);
+            var ops = JooqR2dbcOperations.jooqR2dbcOperations(dsl);
 
             // Insert order
             return ops.fetchOne(

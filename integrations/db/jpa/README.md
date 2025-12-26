@@ -54,7 +54,7 @@ JpaOperations jpa = JpaOperations.jpaOperations(entityManager);
 // Single result (fails if 0 or >1 results)
 Promise<User> user = jpa.querySingle(JpaError::fromException, typedQuery);
 
-// Optional result
+// Optional result (throws NonUniqueResultException if >1 result)
 Promise<Option<User>> user = jpa.queryOptional(JpaError::fromException, typedQuery);
 
 // List of results

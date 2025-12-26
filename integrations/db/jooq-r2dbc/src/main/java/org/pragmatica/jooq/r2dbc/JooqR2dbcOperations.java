@@ -186,10 +186,18 @@ final class ConnectionFactoryJooqR2dbcOperations implements JooqR2dbcOperations 
 
     private static int parseCount(String message) {
         // Extract count from "Query returned N results"
+        if (message == null || message.isEmpty()) {
+            return -1;
+        }
         try {
-            var parts = message.split(" ");
-            return Integer.parseInt(parts[2]);
-        } catch (Exception _) {
+            var parts = message.split("\\s+");
+            for (int i = 0; i < parts.length - 1; i++) {
+                if ("returned".equals(parts[i])) {
+                    return Integer.parseInt(parts[i + 1]);
+                }
+            }
+            return -1;
+        } catch (NumberFormatException _) {
             return -1;
         }
     }

@@ -19,7 +19,7 @@ import org.pragmatica.jdbc.JdbcOperations;
 import org.pragmatica.jdbc.JdbcTransactional;
 
 // Create from DataSource
-JdbcOperations jdbc = JdbcOperations.create(dataSource);
+JdbcOperations jdbc = JdbcOperations.jdbcOperations(dataSource);
 
 // Query single result
 jdbc.queryOne("SELECT * FROM users WHERE id = ?", this::mapUser, userId)
@@ -38,7 +38,7 @@ jdbc.queryOptional("SELECT * FROM users WHERE email = ?", this::mapUser, email)
 ### JdbcOperations
 
 ```java
-JdbcOperations jdbc = JdbcOperations.create(dataSource);
+JdbcOperations jdbc = JdbcOperations.jdbcOperations(dataSource);
 ```
 
 #### Query Methods
@@ -107,7 +107,7 @@ Execute operations within a transaction:
 
 ```java
 JdbcTransactional.withTransaction(dataSource, JdbcError::fromException, conn -> {
-    var jdbc = JdbcOperations.create(conn);
+    var jdbc = JdbcOperations.jdbcOperations(dataSource);
 
     return jdbc.update("INSERT INTO orders (user_id, total) VALUES (?, ?)", userId, total)
         .flatMap(_ -> jdbc.update("UPDATE users SET order_count = order_count + 1 WHERE id = ?", userId))
@@ -146,7 +146,7 @@ public class UserRepository {
     private final JdbcOperations jdbc;
 
     public UserRepository(DataSource dataSource) {
-        this.jdbc = JdbcOperations.create(dataSource);
+        this.jdbc = JdbcOperations.jdbcOperations(dataSource);
     }
 
     public Promise<Option<User>> findById(long id) {
@@ -193,7 +193,7 @@ public class UserRepository {
 ```java
 public Promise<Order> createOrderWithItems(OrderRequest request) {
     return JdbcTransactional.withTransaction(dataSource, JdbcError::fromException, conn -> {
-        var jdbc = JdbcOperations.create(conn);
+        var jdbc = JdbcOperations.jdbcOperations(dataSource);
 
         // Insert order
         return jdbc.queryOne(

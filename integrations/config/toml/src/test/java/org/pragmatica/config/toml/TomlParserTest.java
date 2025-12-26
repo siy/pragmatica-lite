@@ -394,6 +394,20 @@ class TomlParserTest {
                     assertEquals(8080, doc.getInt("", "port").unwrap());
                 });
         }
+
+        @Test
+        void parseArrayWithInlineComment() {
+            var content = """
+                tags = ["a", "b", "c"] # list of tags
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    var tags = doc.getStringList("", "tags").unwrap();
+                    assertEquals(List.of("a", "b", "c"), tags);
+                });
+        }
     }
 
     @Nested

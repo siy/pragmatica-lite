@@ -142,11 +142,21 @@ public final class TomlParser {
     }
 
     private static String stripInlineComment(String value) {
-        if (!value.startsWith("\"") && !value.startsWith("[")) {
-            int commentIndex = value.indexOf('#');
-            if (commentIndex > 0) {
-                return value.substring(0, commentIndex).trim();
+        if (value.startsWith("\"")) {
+            return value; // Don't strip from quoted strings
+        }
+        if (value.startsWith("[") && value.contains("]")) {
+            // For arrays, strip comment after closing bracket
+            int closingBracket = value.lastIndexOf(']');
+            String afterBracket = value.substring(closingBracket + 1);
+            if (afterBracket.contains("#")) {
+                return value.substring(0, closingBracket + 1).trim();
             }
+            return value;
+        }
+        int commentIndex = value.indexOf('#');
+        if (commentIndex > 0) {
+            return value.substring(0, commentIndex).trim();
         }
         return value;
     }

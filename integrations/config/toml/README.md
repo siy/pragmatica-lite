@@ -76,6 +76,7 @@ doc.getString("", "root_key")             // Root-level property
 ```java
 doc.getInt("server", "port")              // Option<Integer>
 doc.getLong("stats", "total_bytes")       // Option<Long>
+doc.getDouble("config", "ratio")          // Option<Double>
 ```
 
 #### Boolean Values
@@ -124,7 +125,7 @@ TomlDocument updated = doc.with("server", "port", 9090);
 | Inline comments | `port = 8080 # default` | Yes |
 | Inline tables | `{key = value}` | No |
 | Multi-line strings | `"""..."""` | No |
-| Floating point | `pi = 3.14` | No |
+| Floating point | `pi = 3.14` | Yes |
 | Dates | `date = 2024-01-01` | No |
 
 ## Error Handling
@@ -143,6 +144,8 @@ TomlParser.parse(content)
                 log.error("Unterminated array at line {}", e.line());
             case TomlError.InvalidValue e ->
                 log.error("Invalid {} at line {}: {}", e.expectedType(), e.line(), e.value());
+            case TomlError.FileReadFailed e ->
+                log.error("Failed to read file: {}", e.message());
         }
     });
 ```

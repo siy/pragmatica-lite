@@ -20,7 +20,7 @@ import org.pragmatica.http.JdkHttpOperations;
 import java.net.http.HttpRequest;
 import java.net.URI;
 
-var http = JdkHttpOperations.create();
+var http = JdkHttpOperations.jdkHttpOperations();
 
 var request = HttpRequest.newBuilder()
     .uri(URI.create("https://api.example.com/users"))
@@ -46,10 +46,10 @@ Interface for HTTP operations returning `Promise<HttpResult<T>>`.
 
 ```java
 // Create with default settings
-HttpOperations http = JdkHttpOperations.create();
+HttpOperations http = JdkHttpOperations.jdkHttpOperations();
 
 // Create with custom HttpClient
-HttpOperations http = JdkHttpOperations.create(customHttpClient);
+HttpOperations http = JdkHttpOperations.jdkHttpOperations(customHttpClient);
 ```
 
 ### Sending Requests

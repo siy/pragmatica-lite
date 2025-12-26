@@ -36,7 +36,7 @@ var connectionFactory = ConnectionFactories.get(
     "r2dbc:postgresql://localhost:5432/mydb"
 );
 
-R2dbcOperations r2dbc = R2dbcOperations.create(connectionFactory);
+R2dbcOperations r2dbc = R2dbcOperations.r2dbcOperations(connectionFactory);
 
 // Query with row mapper
 r2dbc.queryOne(
@@ -55,7 +55,7 @@ r2dbc.queryOne(
 ### R2dbcOperations
 
 ```java
-R2dbcOperations r2dbc = R2dbcOperations.create(connectionFactory);
+R2dbcOperations r2dbc = R2dbcOperations.r2dbcOperations(connectionFactory);
 ```
 
 #### Query Methods
@@ -158,7 +158,7 @@ public class UserRepository {
     private final R2dbcOperations r2dbc;
 
     public UserRepository(ConnectionFactory connectionFactory) {
-        this.r2dbc = R2dbcOperations.create(connectionFactory);
+        this.r2dbc = R2dbcOperations.r2dbcOperations(connectionFactory);
     }
 
     public Promise<Option<User>> findById(long id) {

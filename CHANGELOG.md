@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `getBoolean(section, key)` returns `Option<Boolean>`
   - `getStringList(section, key)` returns `Option<List<String>>`
   - `with(section, key, value)` - immutable update
-- `TomlError` - sealed interface with typed error causes (SyntaxError, InvalidValue, UnterminatedString, UnterminatedArray)
+- `TomlError` - sealed interface with typed error causes (SyntaxError, InvalidValue, UnterminatedString, UnterminatedArray, FileReadFailed)
 
 ### Changed
 
