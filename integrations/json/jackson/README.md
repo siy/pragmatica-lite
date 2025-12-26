@@ -1,88 +1,251 @@
 # Jackson Integration for Pragmatica Lite
 
-Functional wrapper around Jackson 3.0 providing Result-based JSON serialization/deserialization.
+Result-based JSON serialization/deserialization with Jackson 3.0.
 
-## Status
+## Installation
 
-**Ready for Testing** - Core API design complete, Jackson 3.0 API migration complete.
-
-## API Design
-
-### Functional JsonMapper
-
-All operations return `Result<T>` instead of throwing exceptions:
-
-```java
-var mapper = JsonMapper.create();
-
-// Serialization
-mapper.writeAsString(user)       // Result<String>
-mapper.writeAsBytes(order)        // Result<byte[]>
-
-// Deserialization
-mapper.readString(json, User.class)                    // Result<User>
-mapper.readBytes(bytes, new TypeReference<List<Order>>() {})  // Result<List<Order>>
+```xml
+<dependency>
+    <groupId>org.pragmatica-lite</groupId>
+    <artifactId>jackson</artifactId>
+    <version>0.9.0</version>
+</dependency>
 ```
 
-### Builder Pattern
+Jackson 3.0 dependencies are included transitively.
+
+## Quick Start
 
 ```java
-var mapper = JsonMapper.builder()
-    .withPragmaticaTypes()  // Enables Result/Option support
-    .configure(builder -> builder.enable(...))
+import org.pragmatica.json.JsonMapper;
+
+var mapper = JsonMapper.defaultJsonMapper();
+
+// Serialize to JSON
+mapper.writeAsString(user)
+    .onSuccess(json -> System.out.println(json))
+    .onFailure(error -> log.error("Serialization failed: {}", error.message()));
+
+// Deserialize from JSON
+mapper.readString(json, User.class)
+    .onSuccess(user -> processUser(user))
+    .onFailure(error -> log.error("Deserialization failed: {}", error.message()));
+```
+
+## API Reference
+
+### JsonMapper
+
+All operations return `Result<T>` instead of throwing exceptions.
+
+#### Creating a Mapper
+
+```java
+// Default mapper with Result/Option support
+JsonMapper mapper = JsonMapper.defaultJsonMapper();
+
+// Custom mapper with builder
+JsonMapper mapper = JsonMapper.jsonMapper()
+    .withPragmaticaTypes()  // Enables Result/Option serialization
+    .configure(builder -> builder
+        .enable(SerializationFeature.INDENT_OUTPUT)
+        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES))
     .withModule(customModule)
     .build();
 ```
 
-### Serialization Format
+#### Serialization
 
-**Result<T>:**
-```json
-// Success
-{"success": true, "value": "data"}
+```java
+// To String
+Result<String> json = mapper.writeAsString(object);
 
-// Failure
-{"success": false, "error": {"message": "...", "type": "..."}}
+// To byte array
+Result<byte[]> bytes = mapper.writeAsBytes(object);
 ```
 
-**Option<T>:**
+#### Deserialization
+
+```java
+// From String with Class
+Result<User> user = mapper.readString(json, User.class);
+
+// From String with TypeToken (for generics)
+Result<List<User>> users = mapper.readString(json, new TypeToken<List<User>>() {});
+
+// From byte array
+Result<User> user = mapper.readBytes(bytes, User.class);
+Result<List<User>> users = mapper.readBytes(bytes, new TypeToken<List<User>>() {});
+```
+
+## Pragmatica Type Serialization
+
+### Result<T>
+
+```json
+// Success
+{"success": true, "value": {"name": "Alice", "age": 30}}
+
+// Failure
+{"success": false, "error": {"message": "Validation failed", "type": "ValidationError"}}
+```
+
+```java
+// Serialize
+Result<User> result = Result.success(user);
+mapper.writeAsString(result);  // {"success":true,"value":{...}}
+
+// Deserialize
+mapper.readString(json, new TypeToken<Result<User>>() {})
+    .onSuccess(result ->
+        result.onSuccess(user -> process(user))
+              .onFailure(cause -> log.warn("Deserialized failure: {}", cause.message()))
+    );
+```
+
+### Option<T>
+
 ```json
 // Some
-"data"
+"value"  // or {"name": "Alice"} for objects
 
 // None
 null
 ```
 
-## Jackson 3.0 Migration
+```java
+// In records
+record UserProfile(String name, Option<String> nickname) {}
 
-This integration uses Jackson 3.0.0-rc9 with the following changes applied:
-- Group ID: `tools.jackson.core` (was `com.fasterxml.jackson.core`)
-- Package: `tools.jackson.*` (was `com.fasterxml.jackson.*`)
-- Renamed classes (✓ completed):
-  - `SerializerProvider` → `SerializationContext`
-  - `JsonSerializer` → `ValueSerializer`
-  - `JsonDeserializer` → `ValueDeserializer`
-  - `ContextualSerializer` → removed (method moved to `ValueSerializer`)
-  - `ContextualDeserializer` → removed (method moved to `ValueDeserializer`)
-  - Exceptions changed from checked to unchecked
-  - `writeFieldName` → `writeName`
-  - `writeObjectFieldStart` → `writeName` + `writeStartObject`
-  - `defaultSerializeValue` → `writePOJO`
+var profile = new UserProfile("Alice", Option.some("Ali"));
+mapper.writeAsString(profile);
+// {"name":"Alice","nickname":"Ali"}
 
-## TODO
+var profile2 = new UserProfile("Bob", Option.none());
+mapper.writeAsString(profile2);
+// {"name":"Bob","nickname":null}
+```
 
-- [ ] Implement proper generic type handling
-- [ ] Add comprehensive tests
-- [ ] Document error handling patterns
-- [ ] Add examples
+## Error Handling
+
+All JSON errors are mapped to typed `JsonError` causes:
+
+```java
+mapper.readString(json, User.class)
+    .onFailure(error -> {
+        switch (error) {
+            case JsonError.ParseFailed e ->
+                log.error("Invalid JSON syntax: {}", e.message());
+            case JsonError.MappingFailed e ->
+                log.error("Cannot map to type: {}", e.message());
+            case JsonError.SerializationFailed e ->
+                log.error("Serialization error: {}", e.message());
+        }
+    });
+```
+
+## Complete Examples
+
+### REST API Response Handling
+
+```java
+public class ApiClient {
+    private final HttpOperations http;
+    private final JsonMapper json;
+
+    public Promise<User> fetchUser(long userId) {
+        var request = HttpRequest.newBuilder()
+            .uri(URI.create("https://api.example.com/users/" + userId))
+            .GET()
+            .build();
+
+        return http.sendString(request)
+            .flatMap(response -> response.toResult().async())
+            .flatMap(body -> json.readString(body, User.class).async());
+    }
+
+    public Promise<List<Order>> fetchOrders(long userId) {
+        var request = HttpRequest.newBuilder()
+            .uri(URI.create("https://api.example.com/users/" + userId + "/orders"))
+            .GET()
+            .build();
+
+        return http.sendString(request)
+            .flatMap(response -> response.toResult().async())
+            .flatMap(body -> json.readString(body, new TypeToken<List<Order>>() {}).async());
+    }
+}
+```
+
+### Request/Response Serialization
+
+```java
+public class OrderController {
+    private final JsonMapper json;
+    private final ProcessOrder processOrder;
+
+    public Promise<byte[]> handleCreateOrder(byte[] requestBody) {
+        return json.readBytes(requestBody, CreateOrderRequest.class)
+            .async()
+            .flatMap(processOrder::execute)
+            .flatMap(response -> json.writeAsBytes(response).async());
+    }
+}
+```
+
+### Configuration with Result
+
+```java
+public Result<AppConfig> loadConfig(Path configPath) {
+    try {
+        var content = Files.readString(configPath);
+        return json.readString(content, AppConfig.class);
+    } catch (IOException e) {
+        return ConfigError.READ_FAILED.result();
+    }
+}
+```
+
+### Handling Optional Fields
+
+```java
+public record CreateUserRequest(
+    String name,
+    String email,
+    Option<String> phone,
+    Option<Address> address
+) {}
+
+// JSON with all fields
+{
+    "name": "Alice",
+    "email": "alice@example.com",
+    "phone": "+1234567890",
+    "address": {"street": "123 Main St", "city": "NYC"}
+}
+
+// JSON with optional fields as null
+{
+    "name": "Bob",
+    "email": "bob@example.com",
+    "phone": null,
+    "address": null
+}
+```
+
+## Jackson 3.0 Notes
+
+This integration uses Jackson 3.0 with the following changes from 2.x:
+
+| Jackson 2.x | Jackson 3.0 |
+|-------------|-------------|
+| `com.fasterxml.jackson.*` | `tools.jackson.*` |
+| `JsonSerializer` | `ValueSerializer` |
+| `JsonDeserializer` | `ValueDeserializer` |
+| `SerializerProvider` | `SerializationContext` |
+| Checked exceptions | Unchecked exceptions |
 
 ## Dependencies
 
-```xml
-<dependency>
-    <groupId>tools.jackson.core</groupId>
-    <artifactId>jackson-databind</artifactId>
-    <version>3.0.0-rc9</version>
-</dependency>
-```
+- Jackson 3.0.0+ (`tools.jackson.core:jackson-databind`)
+- `pragmatica-lite-core`

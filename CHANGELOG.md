@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2025-12-26
+
+### Added
+
+#### TOML Parser Integration
+- New module `integrations/config/toml` for zero-dependency TOML parsing
+- `TomlParser` - parses TOML content with Result-based error handling
+  - Supports sections, properties, quoted/unquoted strings, booleans, integers, arrays, comments
+  - `parse(String)` - parse TOML content from string
+  - `parseFile(Path)` - parse TOML content from file
+- `TomlDocument` - immutable document with typed accessors
+  - `getString(section, key)` returns `Option<String>`
+  - `getInt(section, key)` returns `Option<Integer>`
+  - `getLong(section, key)` returns `Option<Long>`
+  - `getBoolean(section, key)` returns `Option<Boolean>`
+  - `getStringList(section, key)` returns `Option<List<String>>`
+  - `with(section, key, value)` - immutable update
+- `TomlError` - sealed interface with typed error causes (SyntaxError, InvalidValue, UnterminatedString, UnterminatedArray, FileReadFailed)
+
+### Changed
+- Integration README files updated to use JBCT-compliant factory method names
+
+### Removed
+
 ## [0.8.6] - 2025-12-25 (Christmas 2025 Release 🎄)
 
 ### Added

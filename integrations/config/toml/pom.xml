@@ -3,35 +3,22 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>db</artifactId>
+        <artifactId>config</artifactId>
         <groupId>org.pragmatica-lite</groupId>
         <version>0.9.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>jooq-r2dbc</artifactId>
+    <artifactId>toml</artifactId>
     <packaging>jar</packaging>
 
-    <name>Pragmatica Lite JOOQ R2DBC Integration</name>
-    <description>Promise-based JOOQ R2DBC wrapper for reactive database access</description>
+    <name>Pragmatica Lite TOML Parser</name>
+    <description>Zero-dependency TOML parser with Result-based API</description>
 
     <dependencies>
         <dependency>
             <groupId>org.pragmatica-lite</groupId>
             <artifactId>core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.pragmatica-lite</groupId>
-            <artifactId>r2dbc</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jooq</groupId>
-            <artifactId>jooq</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.r2dbc</groupId>
-            <artifactId>r2dbc-spi</artifactId>
         </dependency>
 
         <!-- Testing -->

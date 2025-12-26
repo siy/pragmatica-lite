@@ -9,13 +9,13 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>net</artifactId>
+    <artifactId>config</artifactId>
     <packaging>pom</packaging>
 
-    <name>Pragmatica Lite Network Integrations</name>
-    <description>Network and HTTP client integrations</description>
+    <name>Pragmatica Lite Config Integrations</name>
+    <description>Configuration file format parsers</description>
 
     <modules>
-        <module>http-client</module>
+        <module>toml</module>
     </modules>
 </project>

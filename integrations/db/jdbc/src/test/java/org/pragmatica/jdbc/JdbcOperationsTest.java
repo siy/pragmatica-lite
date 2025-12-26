@@ -37,7 +37,7 @@ class JdbcOperationsTest {
     @BeforeEach
     void setUp() throws SQLException {
         dataSource = createH2DataSource();
-        jdbc = JdbcOperations.create(dataSource);
+        jdbc = JdbcOperations.jdbcOperations(dataSource);
         initSchema();
     }
 
