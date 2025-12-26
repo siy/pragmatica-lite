@@ -3,23 +3,19 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>pragmatica-lite</artifactId>
+        <artifactId>integrations</artifactId>
         <groupId>org.pragmatica-lite</groupId>
         <version>0.9.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integrations</artifactId>
+    <artifactId>config</artifactId>
     <packaging>pom</packaging>
 
-    <name>Pragmatica Lite Integrations</name>
-    <description>Integration modules for popular Java libraries</description>
+    <name>Pragmatica Lite Config Integrations</name>
+    <description>Configuration file format parsers</description>
 
     <modules>
-        <module>json</module>
-        <module>metrics</module>
-        <module>db</module>
-        <module>net</module>
-        <module>config</module>
+        <module>toml</module>
     </modules>
 </project>
