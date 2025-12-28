@@ -18,6 +18,9 @@
 package org.pragmatica.json;
 
 import org.pragmatica.lang.Result;
+
+import java.util.Map;
+
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonParser;
 import tools.jackson.databind.BeanProperty;
@@ -25,13 +28,11 @@ import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.JavaType;
 import tools.jackson.databind.ValueDeserializer;
 
-import java.util.Map;
-
 import static org.pragmatica.lang.Result.success;
 
 /// Jackson deserializer for Result<T> types.
 /// Expects JSON in format: {"success": true, "value": <T>} or {"success": false, "error": {"message": "...", "type": "..."}}
-public class ResultDeserializer extends ValueDeserializer<Result<?>> {
+public class ResultDeserializer extends ValueDeserializer<Result< ? >> {
     private final JavaType valueType;
     private final ValueDeserializer<Object> valueDeserializer;
 
@@ -45,67 +46,62 @@ public class ResultDeserializer extends ValueDeserializer<Result<?>> {
     }
 
     @Override
-    public Result<?> deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
+    public Result< ? > deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
         if (p.currentToken() != tools.jackson.core.JsonToken.START_OBJECT) {
             throw new JacksonException("Expected START_OBJECT token") {};
         }
-
         Boolean isSuccess = null;
         Object value = null;
         String errorMessage = null;
-
         while (p.nextToken() != tools.jackson.core.JsonToken.END_OBJECT) {
             String fieldName = p.currentName();
             p.nextToken();
-
             switch (fieldName) {
-                case "success" -> isSuccess = p.getBooleanValue();
-                case "value" -> {
+                case"success" -> isSuccess = p.getBooleanValue();
+                case"value" -> {
                     if (valueDeserializer != null) {
                         value = valueDeserializer.deserialize(p, ctxt);
-                    } else if (valueType != null) {
+                    }else if (valueType != null) {
                         value = ctxt.readValue(p, valueType);
-                    } else {
+                    }else {
                         value = p.readValueAs(Object.class);
                     }
                 }
-                case "error" -> {
+                case"error" -> {
                     while (p.nextToken() != tools.jackson.core.JsonToken.END_OBJECT) {
                         String errorField = p.currentName();
                         p.nextToken();
                         if ("message".equals(errorField)) {
                             errorMessage = p.getText();
                         }
-                        // Skip other error fields
                     }
                 }
             }
         }
-
         if (isSuccess == null) {
             throw new JacksonException("Missing 'success' field in Result JSON") {};
         }
-
         if (isSuccess) {
             return success(value);
-        } else {
-            return DeserializedCause.deserializedCause(errorMessage != null ? errorMessage : "Unknown error").result();
+        }else {
+            return DeserializedCause.deserializedCause(errorMessage != null
+                                                       ? errorMessage
+                                                       : "Unknown error")
+                                    .result();
         }
     }
 
     @Override
-    public ValueDeserializer<?> createContextual(DeserializationContext ctxt, BeanProperty property) {
+    public ValueDeserializer< ? > createContextual(DeserializationContext ctxt, BeanProperty property) {
         if (property == null) {
             return this;
         }
-
         JavaType type = property.getType();
         if (type.hasContentType()) {
             JavaType contentType = type.getContentType();
             ValueDeserializer<Object> deser = ctxt.findContextualValueDeserializer(contentType, property);
             return new ResultDeserializer(contentType, deser);
         }
-
         return this;
     }
 }

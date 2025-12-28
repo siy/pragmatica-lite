@@ -44,9 +44,8 @@ public sealed interface Causes {
     interface SimpleCause extends Cause {
         default String completeMessage() {
             var builder = new StringBuilder("Cause: ");
-
-            iterate(issue -> builder.append("\n  ").append(issue.message()));
-
+            iterate(issue -> builder.append("\n  ")
+                                    .append(issue.message()));
             return builder.toString();
         }
     }
@@ -66,7 +65,6 @@ public sealed interface Causes {
                 return completeMessage();
             }
         }
-
         return new simpleCause(message, source);
     }
 
@@ -77,7 +75,6 @@ public sealed interface Causes {
     static Cause fromThrowable(Throwable throwable) {
         var sw = new StringWriter();
         throwable.printStackTrace(new PrintWriter(sw));
-
         return cause(sw.toString());
     }
 
@@ -113,7 +110,9 @@ public sealed interface Causes {
             if (cause instanceof CompositeCause composite) {
                 return composite.append(cause(text));
             }
-            return composite().append(cause(text, option(cause)));
+            return composite()
+                   .append(cause(text,
+                                 option(cause)));
         }
 
         CompositeCause append(Cause cause);
@@ -123,30 +122,33 @@ public sealed interface Causes {
         Cause replace(Cause input);
     }
 
-    static CompositeCause composite(Result<?> ... results) {
+    static CompositeCause composite(Result<?>... results) {
         record compositeCause(Option<Cause> source, List<Cause> causes) implements CompositeCause {
             @Override
             public CompositeCause append(Cause cause) {
-                causes().add(cause);
+                causes()
+                .add(cause);
                 return this;
             }
 
             @Override
             public Stream<Cause> stream() {
-                return causes().stream();
+                return causes()
+                       .stream();
             }
 
             @Override
             public boolean isEmpty() {
-                return causes().isEmpty();
+                return causes()
+                       .isEmpty();
             }
 
             @Override
             public String message() {
                 var builder = new StringBuilder("Composite:");
-
-                stream().forEach(issue -> builder.append("\n  ")
-                                                 .append(issue.message()));
+                stream()
+                .forEach(issue -> builder.append("\n  ")
+                                         .append(issue.message()));
                 return builder.toString();
             }
 
@@ -157,16 +159,15 @@ public sealed interface Causes {
 
             @Override
             public Cause replace(Cause input) {
-                return isEmpty() ? input : this;
+                return isEmpty()
+                       ? input
+                       : this;
             }
         }
-
         var inner = new ArrayList<Cause>();
-
-        for (Result<?> result : results) {
+        for (Result< ? > result : results) {
             result.onFailure(inner::add);
         }
-
         return new compositeCause(none(), inner);
     }
 }

@@ -25,11 +25,11 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
 
     protected TypeToken() {
         // Retrieve type eagerly to trigger run-time error closer to the issue location
-        if (!(getClass().getGenericSuperclass() instanceof ParameterizedType parameterizedType)) {
+        if (! (getClass()
+               .getGenericSuperclass() instanceof ParameterizedType parameterizedType)) {
             throw new IllegalArgumentException("TypeToken constructed without actual type argument.");
         }
-
-        token = parameterizedType.getActualTypeArguments()[0];
+        token = parameterizedType.getActualTypeArguments() [0];
     }
 
     public static <T> TypeToken<T> of(Class<T> clazz) {
@@ -40,7 +40,7 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
         return token;
     }
 
-    public Class<?> rawType() {
+    public Class< ? > rawType() {
         return rawClass(token);
     }
 
@@ -56,78 +56,66 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
     /// @param indexes Indexes of type arguments
     ///
     /// @return type argument at the specified chain of indexes or empty option some index points to the non-existent type argument
-    public Option<Class<?>> typeArgument(int ... indexes) {
+    public Option<Class< ? >> typeArgument(int... indexes) {
         if (indexes.length == 0) {
             return Option.option(rawClass(token));
         }
-
         for (var ndx : indexes) {
             if (ndx < 0) {
                 return Option.none();
             }
         }
-
         return recursivelyGetType(token, indexes);
     }
 
-    private static Option<Class<?>> recursivelyGetType(Type type, int... indexes) {
+    private static Option<Class< ? >> recursivelyGetType(Type type, int... indexes) {
         var index = indexes[0];
-
-        if (!(type instanceof ParameterizedType parameterizedType)) {
+        if (! (type instanceof ParameterizedType parameterizedType)) {
             return Option.none();
         }
-
         if (parameterizedType.getActualTypeArguments().length <= index) {
             return Option.none();
         }
-
-        var actualTypeArgument = parameterizedType.getActualTypeArguments()[index];
-
+        var actualTypeArgument = parameterizedType.getActualTypeArguments() [index];
         if (indexes.length == 1) {
             return Option.option(rawClass(actualTypeArgument));
-        } else {
+        }else {
             return recursivelyGetType(actualTypeArgument, Arrays.copyOfRange(indexes, 1, indexes.length));
         }
     }
 
-    private static Class<?> rawClass(Type type) {
+    private static Class< ? > rawClass(Type type) {
         return switch (type) {
-            case Class<?> clazz -> clazz;
-            case ParameterizedType parameterizedType -> (Class<?>) parameterizedType.getRawType();
+            case Class< ? > clazz -> clazz;
+            case ParameterizedType parameterizedType -> (Class< ? >) parameterizedType.getRawType();
             default -> throw new IllegalStateException("Unexpected value: " + type);
         };
     }
 
-    public Option<TypeToken<?>> subType(int ... indexes) {
+    public Option<TypeToken< ? >> subType(int... indexes) {
         if (indexes.length == 0) {
             return Option.option(this);
         }
-
         for (var ndx : indexes) {
             if (ndx < 0) {
                 return Option.none();
             }
         }
-
         return recursivelyGetSubType(token, indexes);
     }
 
-    private static Option<TypeToken<?>> recursivelyGetSubType(Type type, int... indexes) {
+    private static Option<TypeToken< ? >> recursivelyGetSubType(Type type, int... indexes) {
         var index = indexes[0];
-
-        if (!(type instanceof ParameterizedType parameterizedType)) {
+        if (! (type instanceof ParameterizedType parameterizedType)) {
             return Option.none();
         }
-
         if (parameterizedType.getActualTypeArguments().length <= index) {
             return Option.none();
         }
-
-        var actualTypeArgument = parameterizedType.getActualTypeArguments()[index];
-
+        var actualTypeArgument = parameterizedType.getActualTypeArguments() [index];
         if (indexes.length == 1) {
             return Option.option(new TypeToken<>(actualTypeArgument) {});
-        } else {
+        }else {
             return recursivelyGetSubType(actualTypeArgument, Arrays.copyOfRange(indexes, 1, indexes.length));
         }
     }
@@ -141,7 +129,7 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
         if (this == o) {
             return true;
         }
-        if (o instanceof TypeToken<?> typeToken) {
+        if (o instanceof TypeToken< ? > typeToken) {
             return token.equals(typeToken.token);
         }
         return false;

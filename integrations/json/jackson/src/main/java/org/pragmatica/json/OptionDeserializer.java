@@ -18,6 +18,7 @@
 package org.pragmatica.json;
 
 import org.pragmatica.lang.Option;
+
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonParser;
 import tools.jackson.core.JsonToken;
@@ -31,7 +32,7 @@ import static org.pragmatica.lang.Option.option;
 
 /// Jackson deserializer for Option<T> types.
 /// Deserializes null as None, any other value as Some<T>
-public class OptionDeserializer extends ValueDeserializer<Option<?>> {
+public class OptionDeserializer extends ValueDeserializer<Option< ? >> {
     private final JavaType valueType;
     private final ValueDeserializer<Object> valueDeserializer;
 
@@ -45,41 +46,37 @@ public class OptionDeserializer extends ValueDeserializer<Option<?>> {
     }
 
     @Override
-    public Option<?> deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
+    public Option< ? > deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
         if (p.currentToken() == JsonToken.VALUE_NULL) {
             return none();
         }
-
         Object value;
         if (valueDeserializer != null) {
             value = valueDeserializer.deserialize(p, ctxt);
-        } else if (valueType != null) {
+        }else if (valueType != null) {
             value = ctxt.readValue(p, valueType);
-        } else {
+        }else {
             value = p.readValueAs(Object.class);
         }
-
         return option(value);
     }
 
     @Override
-    public ValueDeserializer<?> createContextual(DeserializationContext ctxt, BeanProperty property) {
+    public ValueDeserializer< ? > createContextual(DeserializationContext ctxt, BeanProperty property) {
         if (property == null) {
             return this;
         }
-
         JavaType type = property.getType();
         if (type.hasContentType()) {
             JavaType contentType = type.getContentType();
             ValueDeserializer<Object> deser = ctxt.findContextualValueDeserializer(contentType, property);
             return new OptionDeserializer(contentType, deser);
         }
-
         return this;
     }
 
     @Override
-    public Option<?> getNullValue(DeserializationContext ctxt) {
+    public Option< ? > getNullValue(DeserializationContext ctxt) {
         return none();
     }
 }

@@ -18,6 +18,7 @@
 package org.pragmatica.json;
 
 import org.pragmatica.lang.Result;
+
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.BeanProperty;
@@ -28,7 +29,7 @@ import tools.jackson.databind.jsontype.TypeSerializer;
 
 /// Jackson serializer for Result<T> types.
 /// Serializes Result as: {"success": true, "value": <T>} or {"success": false, "error": {"message": "...", "type": "..."}}
-public class ResultSerializer extends ValueSerializer<Result<?>> {
+public class ResultSerializer extends ValueSerializer<Result< ? >> {
     private final JavaType valueType;
     private final ValueSerializer<Object> valueSerializer;
 
@@ -42,50 +43,54 @@ public class ResultSerializer extends ValueSerializer<Result<?>> {
     }
 
     @Override
-    public void serialize(Result<?> value, JsonGenerator gen, SerializationContext provider) throws JacksonException {
+    public void serialize(Result< ? > value, JsonGenerator gen, SerializationContext provider) throws JacksonException {
         gen.writeStartObject();
-
         switch (value) {
-            case Result.Success<?> success -> {
+            case Result.Success< ? > success -> {
                 gen.writeBooleanProperty("success", true);
                 gen.writeName("value");
                 if (valueSerializer != null) {
                     valueSerializer.serialize(success.value(), gen, provider);
-                } else {
+                }else {
                     gen.writePOJO(success.value());
                 }
             }
-            case Result.Failure<?> failure -> {
+            case Result.Failure< ? > failure -> {
                 gen.writeBooleanProperty("success", false);
                 gen.writeName("error");
                 gen.writeStartObject();
-                gen.writeStringProperty("message", failure.cause().message());
-                gen.writeStringProperty("type", failure.cause().getClass().getSimpleName());
+                gen.writeStringProperty("message",
+                                        failure.cause()
+                                               .message());
+                gen.writeStringProperty("type",
+                                        failure.cause()
+                                               .getClass()
+                                               .getSimpleName());
                 gen.writeEndObject();
             }
         }
-
         gen.writeEndObject();
     }
 
     @Override
-    public ValueSerializer<?> createContextual(SerializationContext prov, BeanProperty property) {
+    public ValueSerializer< ? > createContextual(SerializationContext prov, BeanProperty property) {
         if (property == null) {
             return this;
         }
-
         JavaType type = property.getType();
         if (type.hasContentType()) {
             JavaType contentType = type.getContentType();
             ValueSerializer<Object> ser = prov.findValueSerializer(contentType);
             return new ResultSerializer(contentType, ser);
         }
-
         return this;
     }
 
     @Override
-    public void serializeWithType(Result<?> value, JsonGenerator gen, SerializationContext provider, TypeSerializer typeSer) throws JacksonException {
+    public void serializeWithType(Result< ? > value,
+                                  JsonGenerator gen,
+                                  SerializationContext provider,
+                                  TypeSerializer typeSer) throws JacksonException {
         serialize(value, gen, provider);
     }
 }

@@ -24,11 +24,9 @@ import java.util.regex.Pattern;
 /// Result<Integer> result = Verify.ensure(42, Verify.Is::between, 0, 100);
 /// ```
 public sealed interface Verify {
-
     //------------------------------------------------------------------------------------------------------------------
     // Unary predicate variants
     //------------------------------------------------------------------------------------------------------------------
-
     /// Ensures that a value satisfies a given predicate.
     ///
     /// This method evaluates the provided value against the given predicate. If the predicate returns
@@ -74,8 +72,8 @@ public sealed interface Verify {
         if (predicate.test(value)) {
             return Result.success(value);
         }
-
-        return causeProvider.apply(value).result();
+        return causeProvider.apply(value)
+                            .result();
     }
 
     /// Ensures that a value satisfies a given predicate, with a fixed cause on failure.
@@ -113,7 +111,6 @@ public sealed interface Verify {
     //------------------------------------------------------------------------------------------------------------------
     // Binary predicate variants (predicate with one additional parameter)
     //------------------------------------------------------------------------------------------------------------------
-
     /// Ensures that a value satisfies a binary predicate with one additional parameter.
     ///
     /// This method is a convenience wrapper allowing the use of a predicate that takes two parameters:
@@ -202,7 +199,6 @@ public sealed interface Verify {
     //------------------------------------------------------------------------------------------------------------------
     // Ternary predicate variants (predicate with two additional parameters)
     //------------------------------------------------------------------------------------------------------------------
-
     /// Ensures that a value satisfies a ternary predicate with two additional parameters.
     ///
     /// This method is a convenience wrapper allowing the use of a predicate that takes three parameters:
@@ -254,7 +250,11 @@ public sealed interface Verify {
     ///
     /// @return a success result containing the value if the predicate is satisfied,
     ///         or a failure result with the generated cause if not
-    static <T, P1, P2> Result<T> ensure(T value, Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2, Fn1<Cause, T> causeProvider) {
+    static <T, P1, P2> Result<T> ensure(T value,
+                                        Fn3<Boolean, T, P1, P2> predicate,
+                                        P1 param1,
+                                        P2 param2,
+                                        Fn1<Cause, T> causeProvider) {
         return ensure(value, v -> predicate.apply(v, param1, param2), causeProvider);
     }
 
@@ -294,14 +294,17 @@ public sealed interface Verify {
     ///
     /// @deprecated Use {@link #ensure(Object, Fn3, Object, Object, Fn1)} instead for more natural parameter order.
     @Deprecated(forRemoval = true)
-    static <T, P1, P2> Result<T> ensure(Fn1<Cause, T> causeProvider, T value, Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2) {
+    static <T, P1, P2> Result<T> ensure(Fn1<Cause, T> causeProvider,
+                                        T value,
+                                        Fn3<Boolean, T, P1, P2> predicate,
+                                        P1 param1,
+                                        P2 param2) {
         return ensure(value, predicate, param1, param2, causeProvider);
     }
 
     //------------------------------------------------------------------------------------------------------------------
     // Combining validators
     //------------------------------------------------------------------------------------------------------------------
-
     /// Combines multiple individual validation checks into a single validation function.
     ///
     /// The returned function will apply all checks in sequence, returning the first failure
@@ -313,11 +316,10 @@ public sealed interface Verify {
     ///
     /// @return a single validation function that applies all checks in sequence
     @SafeVarargs
-    static <T> Fn1<Result<T>, T> combine(Fn1<Result<T>, T> ... checks) {
+    static <T> Fn1<Result<T>, T> combine(Fn1<Result<T>, T>... checks) {
         return value -> {
             for (var check : checks) {
                 var result = check.apply(value);
-
                 if (result.isSuccess()) {
                     continue;
                 }
@@ -330,7 +332,6 @@ public sealed interface Verify {
     //------------------------------------------------------------------------------------------------------------------
     // Optional value validation (ensureOption)
     //------------------------------------------------------------------------------------------------------------------
-
     /// Validates an optional value against a predicate if present, succeeds with empty Option if absent.
     ///
     /// @param value     the optional value to verify
@@ -341,9 +342,9 @@ public sealed interface Verify {
     ///         or failure if present and invalid
     static <T> Result<Option<T>> ensureOption(Option<T> value, Predicate<T> predicate) {
         return value.fold(
-            () -> Result.success(Option.none()),
-            v -> ensure(v, predicate).map(Option::some)
-        );
+        () -> Result.success(Option.none()),
+        v -> ensure(v, predicate)
+             .map(Option::some));
     }
 
     /// Validates an optional value against a predicate if present, with a fixed cause on failure.
@@ -357,9 +358,9 @@ public sealed interface Verify {
     ///         or failure with the specified cause if present and invalid
     static <T> Result<Option<T>> ensureOption(Option<T> value, Predicate<T> predicate, Cause cause) {
         return value.fold(
-            () -> Result.success(Option.none()),
-            v -> ensure(v, predicate, cause).map(Option::some)
-        );
+        () -> Result.success(Option.none()),
+        v -> ensure(v, predicate, cause)
+             .map(Option::some));
     }
 
     /// Validates an optional value against a predicate if present, with a custom cause provider.
@@ -373,9 +374,9 @@ public sealed interface Verify {
     ///         or failure with the generated cause if present and invalid
     static <T> Result<Option<T>> ensureOption(Option<T> value, Predicate<T> predicate, Fn1<Cause, T> causeProvider) {
         return value.fold(
-            () -> Result.success(Option.none()),
-            v -> ensure(v, predicate, causeProvider).map(Option::some)
-        );
+        () -> Result.success(Option.none()),
+        v -> ensure(v, predicate, causeProvider)
+             .map(Option::some));
     }
 
     /// Validates an optional value against a binary predicate if present.
@@ -390,9 +391,9 @@ public sealed interface Verify {
     ///         or failure if present and invalid
     static <T, P1> Result<Option<T>> ensureOption(Option<T> value, Fn2<Boolean, T, P1> predicate, P1 param1) {
         return value.fold(
-            () -> Result.success(Option.none()),
-            v -> ensure(v, predicate, param1).map(Option::some)
-        );
+        () -> Result.success(Option.none()),
+        v -> ensure(v, predicate, param1)
+             .map(Option::some));
     }
 
     /// Validates an optional value against a binary predicate if present, with a fixed cause on failure.
@@ -406,11 +407,14 @@ public sealed interface Verify {
     ///
     /// @return success with Option.none() if empty, success with Option.some(value) if present and valid,
     ///         or failure with the specified cause if present and invalid
-    static <T, P1> Result<Option<T>> ensureOption(Option<T> value, Fn2<Boolean, T, P1> predicate, P1 param1, Cause cause) {
+    static <T, P1> Result<Option<T>> ensureOption(Option<T> value,
+                                                  Fn2<Boolean, T, P1> predicate,
+                                                  P1 param1,
+                                                  Cause cause) {
         return value.fold(
-            () -> Result.success(Option.none()),
-            v -> ensure(v, predicate, param1, cause).map(Option::some)
-        );
+        () -> Result.success(Option.none()),
+        v -> ensure(v, predicate, param1, cause)
+             .map(Option::some));
     }
 
     /// Validates an optional value against a binary predicate if present, with a custom cause provider.
@@ -424,11 +428,14 @@ public sealed interface Verify {
     ///
     /// @return success with Option.none() if empty, success with Option.some(value) if present and valid,
     ///         or failure with the generated cause if present and invalid
-    static <T, P1> Result<Option<T>> ensureOption(Option<T> value, Fn2<Boolean, T, P1> predicate, P1 param1, Fn1<Cause, T> causeProvider) {
+    static <T, P1> Result<Option<T>> ensureOption(Option<T> value,
+                                                  Fn2<Boolean, T, P1> predicate,
+                                                  P1 param1,
+                                                  Fn1<Cause, T> causeProvider) {
         return value.fold(
-            () -> Result.success(Option.none()),
-            v -> ensure(v, predicate, param1, causeProvider).map(Option::some)
-        );
+        () -> Result.success(Option.none()),
+        v -> ensure(v, predicate, param1, causeProvider)
+             .map(Option::some));
     }
 
     /// Validates an optional value against a ternary predicate if present.
@@ -443,11 +450,14 @@ public sealed interface Verify {
     ///
     /// @return success with Option.none() if empty, success with Option.some(value) if present and valid,
     ///         or failure if present and invalid
-    static <T, P1, P2> Result<Option<T>> ensureOption(Option<T> value, Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2) {
+    static <T, P1, P2> Result<Option<T>> ensureOption(Option<T> value,
+                                                      Fn3<Boolean, T, P1, P2> predicate,
+                                                      P1 param1,
+                                                      P2 param2) {
         return value.fold(
-            () -> Result.success(Option.none()),
-            v -> ensure(v, predicate, param1, param2).map(Option::some)
-        );
+        () -> Result.success(Option.none()),
+        v -> ensure(v, predicate, param1, param2)
+             .map(Option::some));
     }
 
     /// Validates an optional value against a ternary predicate if present, with a fixed cause on failure.
@@ -463,11 +473,15 @@ public sealed interface Verify {
     ///
     /// @return success with Option.none() if empty, success with Option.some(value) if present and valid,
     ///         or failure with the specified cause if present and invalid
-    static <T, P1, P2> Result<Option<T>> ensureOption(Option<T> value, Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2, Cause cause) {
+    static <T, P1, P2> Result<Option<T>> ensureOption(Option<T> value,
+                                                      Fn3<Boolean, T, P1, P2> predicate,
+                                                      P1 param1,
+                                                      P2 param2,
+                                                      Cause cause) {
         return value.fold(
-            () -> Result.success(Option.none()),
-            v -> ensure(v, predicate, param1, param2, cause).map(Option::some)
-        );
+        () -> Result.success(Option.none()),
+        v -> ensure(v, predicate, param1, param2, cause)
+             .map(Option::some));
     }
 
     /// Validates an optional value against a ternary predicate if present, with a custom cause provider.
@@ -483,11 +497,15 @@ public sealed interface Verify {
     ///
     /// @return success with Option.none() if empty, success with Option.some(value) if present and valid,
     ///         or failure with the generated cause if present and invalid
-    static <T, P1, P2> Result<Option<T>> ensureOption(Option<T> value, Fn3<Boolean, T, P1, P2> predicate, P1 param1, P2 param2, Fn1<Cause, T> causeProvider) {
+    static <T, P1, P2> Result<Option<T>> ensureOption(Option<T> value,
+                                                      Fn3<Boolean, T, P1, P2> predicate,
+                                                      P1 param1,
+                                                      P2 param2,
+                                                      Fn1<Cause, T> causeProvider) {
         return value.fold(
-            () -> Result.success(Option.none()),
-            v -> ensure(v, predicate, param1, param2, causeProvider).map(Option::some)
-        );
+        () -> Result.success(Option.none()),
+        v -> ensure(v, predicate, param1, param2, causeProvider)
+             .map(Option::some));
     }
 
     /// A collection of predicate functions that can be used with the `ensure` methods.
@@ -507,7 +525,7 @@ public sealed interface Verify {
         static <T> boolean some(Option<T> option) {
             return option.isPresent();
         }
-        
+
         /// Checks if an Option is empty (contains no value).
         ///
         /// @param <T> the type of the value in the Option
@@ -527,7 +545,6 @@ public sealed interface Verify {
             return value.doubleValue() > 0;
         }
 
-
         /// Checks if a number is negative (less than zero).
         ///
         /// @param <T>   the type of number being checked, must extend Number
@@ -537,7 +554,7 @@ public sealed interface Verify {
         static <T extends Number> boolean negative(T value) {
             return value.doubleValue() < 0;
         }
-        
+
         /// Checks if a number is non-negative (greater than or equal to zero).
         ///
         /// @param <T>   the type of number being checked, must extend Number
@@ -663,7 +680,8 @@ public sealed interface Verify {
         /// @param value the char sequence to check
         /// @return true if the char sequence is blank, false otherwise
         static <T extends CharSequence> boolean blank(T value) {
-            return value.chars().allMatch(Character::isWhitespace);
+            return value.chars()
+                        .allMatch(Character::isWhitespace);
         }
 
         /// Checks if a char sequence is not blank (contains at least one non-whitespace character).
@@ -722,7 +740,8 @@ public sealed interface Verify {
         /// @param regex the compiled Pattern to match against
         /// @return true if the String matches the pattern, false otherwise
         static boolean matches(String value, Pattern regex) {
-            return regex.matcher(value).matches();
+            return regex.matcher(value)
+                        .matches();
         }
     }
 

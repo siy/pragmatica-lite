@@ -68,20 +68,21 @@ public sealed interface TimeSpan extends Comparable<TimeSpan> {
     ///
     /// @return time span represented as tuple containing number of seconds and remaining nanoseconds
     default Tuple2<Long, Integer> secondsAndNanos() {
-        return tuple(nanos() / NANOS_IN_SECOND, (int) (nanos() % NANOS_IN_SECOND));
+        return tuple(nanos() / NANOS_IN_SECOND, (int)(nanos() % NANOS_IN_SECOND));
     }
 
     /// Time span value represented as number of whole milliseconds and remaining nanoseconds. This representation is compatible with many use cases, for
     /// example, with [span represented as a tuple containing the number of milliseconds and remaining nanoseconds][#sleep(long,int).time]
     default Tuple2<Long, Integer> millisAndNanos() {
-        return tuple(nanos() / MILLIS_IN_SECOND, (int) (nanos() % MILLIS_IN_SECOND));
+        return tuple(nanos() / MILLIS_IN_SECOND, (int)(nanos() % MILLIS_IN_SECOND));
     }
 
     /// Time span value represented as [Duration].
     ///
     /// @return time span as [Duration]
     default Duration duration() {
-        return secondsAndNanos().map(Duration::ofSeconds);
+        return secondsAndNanos()
+               .map(Duration::ofSeconds);
     }
 
     @Override
@@ -90,12 +91,14 @@ public sealed interface TimeSpan extends Comparable<TimeSpan> {
     }
 
     default TimeSpan randomize(double scale) {
-        var random = (long) ((Math.random() - 0.5) * 2.0 * scale * nanos());
-        return TimeSpan.timeSpan(random  + nanos()).nanos();
+        var random = (long)((Math.random() - 0.5) * 2.0 * scale * nanos());
+        return TimeSpan.timeSpan(random + nanos())
+                       .nanos();
     }
 
     static TimeSpan fromDuration(Duration duration) {
-        return TimeSpan.timeSpan(duration.toNanos()).nanos();
+        return TimeSpan.timeSpan(duration.toNanos())
+                       .nanos();
     }
 
     /// Create an instance of time span builder.
@@ -110,7 +113,9 @@ public sealed interface TimeSpan extends Comparable<TimeSpan> {
     record TimeSpanImpl(long nanos) implements TimeSpan {
         @Override
         public String toString() {
-            return "TimeSpan(" + duration().toString().substring(2) + ")";
+            return "TimeSpan(" + duration()
+                                .toString()
+                                .substring(2) + ")";
         }
     }
 

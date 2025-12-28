@@ -17,11 +17,11 @@
 
 package org.pragmatica.json;
 
-import tools.jackson.core.Version;
-import tools.jackson.databind.module.SimpleModule;
-
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
+
+import tools.jackson.core.Version;
+import tools.jackson.databind.module.SimpleModule;
 
 /// Jackson module for Pragmatica-Lite types (Result, Option).
 /// Registers custom serializers and deserializers for functional types.
@@ -36,13 +36,11 @@ import org.pragmatica.lang.Result;
 public class PragmaticaModule extends SimpleModule {
     public PragmaticaModule() {
         super("pragmatica", Version.unknownVersion());
-
         // Register Result serializers
-        addSerializer((Class)Result.class, new ResultSerializer());
-        addDeserializer((Class)Result.class, new ResultDeserializer());
-
+        addSerializer((Class) Result.class, new ResultSerializer());
+        addDeserializer((Class) Result.class, new ResultDeserializer());
         // Register Option serializers
-        addSerializer((Class)Option.class, new OptionSerializer());
-        addDeserializer((Class)Option.class, new OptionDeserializer());
+        addSerializer((Class) Option.class, new OptionSerializer());
+        addDeserializer((Class) Option.class, new OptionDeserializer());
     }
 }

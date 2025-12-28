@@ -48,7 +48,6 @@ public record ActionableThreshold(AtomicInteger counter, Runnable action) {
         if (counter.get() <= 0) {
             return;
         }
-
         if (counter.decrementAndGet() == 0) {
             action.run();
         }

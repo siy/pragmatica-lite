@@ -20,6 +20,7 @@ package org.pragmatica.json;
 import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.utils.Causes;
+
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.exc.StreamReadException;
 import tools.jackson.core.exc.StreamWriteException;
@@ -30,7 +31,6 @@ import tools.jackson.databind.exc.MismatchedInputException;
 /// Typed error causes for JSON serialization/deserialization operations.
 /// Maps common Jackson exceptions to domain-friendly error types with context.
 public sealed interface JsonError extends Cause {
-
     /// Serialization failed (converting object to JSON).
     record SerializationFailed(String details, Option<Throwable> cause) implements JsonError {
         public static SerializationFailed serializationFailed(String details) {
@@ -75,9 +75,8 @@ public sealed interface JsonError extends Cause {
 
         @Override
         public String message() {
-            return locationInfo
-                .map(loc -> "Invalid JSON at " + loc + ": " + details)
-                .or("Invalid JSON: " + details);
+            return locationInfo.map(loc -> "Invalid JSON at " + loc + ": " + details)
+                                                .or("Invalid JSON: " + details);
         }
     }
 
@@ -94,7 +93,8 @@ public sealed interface JsonError extends Cause {
         @Override
         public String message() {
             var base = "Type mismatch: expected " + expectedType + ", got " + actualValue;
-            return path.map(p -> base + " at " + p).or(base);
+            return path.map(p -> base + " at " + p)
+                       .or(base);
         }
     }
 
@@ -107,35 +107,33 @@ public sealed interface JsonError extends Cause {
         return switch (throwable) {
             // Serialization failures (write-side)
             case StreamWriteException e ->
-                SerializationFailed.serializationFailed(e.getMessage(), e);
-
+            SerializationFailed.serializationFailed(e.getMessage(), e);
             // Type mismatches during deserialization
             case MismatchedInputException e ->
-                TypeMismatch.typeMismatch(
-                    e.getTargetType() != null ? e.getTargetType().getSimpleName() : "unknown",
-                    extractValue(e),
-                    e.getPathReference()
-                );
-
+            TypeMismatch.typeMismatch(
+            e.getTargetType() != null
+            ? e.getTargetType()
+               .getSimpleName()
+            : "unknown",
+            extractValue(e),
+            e.getPathReference());
             case InvalidDefinitionException e ->
-                TypeMismatch.typeMismatch(
-                    e.getType() != null ? e.getType().getTypeName() : "unknown",
-                    "invalid definition",
-                    e.getPathReference()
-                );
-
+            TypeMismatch.typeMismatch(
+            e.getType() != null
+            ? e.getType()
+               .getTypeName()
+            : "unknown",
+            "invalid definition",
+            e.getPathReference());
             // JSON parsing errors (malformed JSON)
             case StreamReadException e ->
-                InvalidJson.invalidJson(e.getMessage(), extractLocation(e));
-
+            InvalidJson.invalidJson(e.getMessage(), extractLocation(e));
             // General databind failures
             case DatabindException e ->
-                DeserializationFailed.deserializationFailed(e.getMessage(), e);
-
+            DeserializationFailed.deserializationFailed(e.getMessage(), e);
             // Other Jackson exceptions
             case JacksonException e ->
-                DeserializationFailed.deserializationFailed(e.getMessage(), e);
-
+            DeserializationFailed.deserializationFailed(e.getMessage(), e);
             // Non-Jackson exceptions - use generic wrapper
             default -> Causes.fromThrowable(throwable);
         };

@@ -163,6 +163,6 @@ public sealed interface DateTime {
     static Result<Period> parsePeriod(String text) {
         return Result.lift1(Period::parse, text);
     }
-    
+
     record unused() implements DateTime {}
 }

@@ -309,6 +309,11 @@
                         <publishingServerId>central</publishingServerId>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.pragmatica-lite</groupId>
+                    <artifactId>jbct-maven-plugin</artifactId>
+                    <version>0.3.10</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
