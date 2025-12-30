@@ -15,6 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Jackson `getText()` replaced with `getString()` in `ResultDeserializer`
   - `Result.unwrap()` replaced with `onSuccess()` callbacks in `TomlParser`
 - Added `jakarta.xml.bind-api:4.0.4` dependency to jooq-r2dbc module
+- Updated dependencies:
+  - Netty 4.2.2.Final → 4.2.9.Final
+  - Mockito 5.20.0 → 5.21.0
+  - Jackson 3.0.0 → 3.0.3 (jackson-annotations 2.20)
+  - Micrometer 1.14.2 → 1.16.1
+  - jOOQ 3.19.15 → 3.20.10
+  - HikariCP 6.2.1 → 7.0.2
+  - Hibernate 6.6.4.Final → 7.0.0.Final
+  - H2 2.3.232 → 2.4.240
 
 ## [0.9.0] - 2025-12-26
 
