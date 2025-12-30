@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Bumped jbct-maven-plugin to 0.4.0
+- Bumped jbct-maven-plugin to 0.4.2
 - Fixed deprecation warnings:
   - `URL(String)` constructor replaced with URI-based parsing in `Network.parseURL()`
   - Jackson `getText()` replaced with `getString()` in `ResultDeserializer`
