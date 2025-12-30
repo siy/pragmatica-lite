@@ -72,7 +72,7 @@ public class ResultDeserializer extends ValueDeserializer<Result< ? >> {
                         String errorField = p.currentName();
                         p.nextToken();
                         if ("message".equals(errorField)) {
-                            errorMessage = p.getText();
+                            errorMessage = p.getString();
                         }
                     }
                 }

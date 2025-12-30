@@ -117,7 +117,8 @@ public final class TomlParser {
                     return parseResult.map(_ -> null);
                 }
 
-                sections.get(currentSection).put(key, parseResult.unwrap());
+                var section = currentSection;
+                parseResult.onSuccess(value -> sections.get(section).put(key, value));
                 continue;
             }
 
@@ -235,7 +236,7 @@ public final class TomlParser {
                 if (itemResult.isFailure()) {
                     return itemResult;
                 }
-                items.add(itemResult.unwrap());
+                itemResult.onSuccess(items::add);
                 current = new StringBuilder();
             } else {
                 current.append(c);
@@ -249,7 +250,7 @@ public final class TomlParser {
             if (itemResult.isFailure()) {
                 return itemResult;
             }
-            items.add(itemResult.unwrap());
+            itemResult.onSuccess(items::add);
         }
 
         return Result.success(items);
