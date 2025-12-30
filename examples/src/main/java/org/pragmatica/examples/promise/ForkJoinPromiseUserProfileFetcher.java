@@ -7,9 +7,12 @@ import java.util.List;
 import java.util.UUID;
 
 class ForkJoinPromiseUserProfileFetcher {
-    private final UserService userService = _ -> Causes.cause("Not implemented").promise();
-    private final PostService postService = _ -> Causes.cause("Not implemented").promise();
-    private final FriendService friendService = _ -> Causes.cause("Not implemented").promise();
+    private final UserService userService = _ -> Causes.cause("Not implemented")
+                                                       .promise();
+    private final PostService postService = _ -> Causes.cause("Not implemented")
+                                                       .promise();
+    private final FriendService friendService = _ -> Causes.cause("Not implemented")
+                                                           .promise();
 
     // Example data records
     record UserId(UUID id) {}

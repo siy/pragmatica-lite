@@ -144,6 +144,6 @@ public sealed interface Number {
     static Result<BigDecimal> parseBigDecimal(String s) {
         return Result.lift1(BigDecimal::new, s);
     }
-    
+
     record unused() implements Number {}
 }

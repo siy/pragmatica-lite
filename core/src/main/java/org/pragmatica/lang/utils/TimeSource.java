@@ -16,7 +16,6 @@
  */
 
 package org.pragmatica.lang.utils;
-
 /// Time source abstraction for testability.
 /// Allows injecting a mock time source in tests for deterministic behavior.
 @FunctionalInterface

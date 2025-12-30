@@ -7,10 +7,14 @@ import org.pragmatica.lang.utils.Causes;
 import java.util.List;
 
 class PromiseAnyOperationExample {
-    private final WeatherService openWeatherMapService = _ -> Causes.cause("Not implemented").promise();
-    private final WeatherService weatherstackService = _ -> Causes.cause("Not implemented").promise();
-    private final WeatherService accuWeatherService = _ -> Causes.cause("Not implemented").promise();
-    private final WeatherService NWService = _ -> Causes.cause("Not implemented").promise();
+    private final WeatherService openWeatherMapService = _ -> Causes.cause("Not implemented")
+                                                                    .promise();
+    private final WeatherService weatherstackService = _ -> Causes.cause("Not implemented")
+                                                                  .promise();
+    private final WeatherService accuWeatherService = _ -> Causes.cause("Not implemented")
+                                                                 .promise();
+    private final WeatherService NWService = _ -> Causes.cause("Not implemented")
+                                                        .promise();
 
     record WeatherInfo(String city, String temperature) {}
 
@@ -25,14 +29,16 @@ class PromiseAnyOperationExample {
                            NWService.fetchWeatherInfo(city));
     }
 
+    private final UserRepository userRepository = _ -> Causes.cause("User not found")
+                                                             .promise();
+    private final OrderRepository orderRepository = _ -> Causes.cause("Order not found")
+                                                               .promise();
+    private final InvoiceService invoiceService = _ -> Causes.cause("Invoice generation failed")
+                                                             .promise();
 
-    private final UserRepository userRepository = _ -> Causes.cause("User not found").promise();
-    private final OrderRepository orderRepository = _ -> Causes.cause("Order not found").promise();
-    private final InvoiceService invoiceService = _ -> Causes.cause("Invoice generation failed").promise();
-    private final EmailService emailService = _ -> {
-    };
-    private final LogService logService = (_, _) -> {
-    };
+    private final EmailService emailService = _ -> {};
+
+    private final LogService logService = (_, _) -> {};
 
     record UserId(String id) {}
 

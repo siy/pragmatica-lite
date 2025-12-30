@@ -14,13 +14,16 @@ import static org.pragmatica.lang.utils.Retry.BackoffStrategy.fixed;
 import static org.pragmatica.lang.utils.Retry.BackoffStrategy.linear;
 
 class SequentialPromiseOperationExample {
-    private final UserRepository userRepository = _ -> Causes.cause("User not found").promise();
-    private final OrderRepository orderRepository = _ -> Causes.cause("Order not found").promise();
-    private final InvoiceService invoiceService = _ -> Causes.cause("Invoice generation failed").promise();
-    private final EmailService emailService = _ -> {
-    };
-    private final LogService logService = (_, _) -> {
-    };
+    private final UserRepository userRepository = _ -> Causes.cause("User not found")
+                                                             .promise();
+    private final OrderRepository orderRepository = _ -> Causes.cause("Order not found")
+                                                               .promise();
+    private final InvoiceService invoiceService = _ -> Causes.cause("Invoice generation failed")
+                                                             .promise();
+
+    private final EmailService emailService = _ -> {};
+
+    private final LogService logService = (_, _) -> {};
 
     record UserId(String id) {}
 
@@ -60,7 +63,8 @@ class SequentialPromiseOperationExample {
                              .onFailure(cause -> logService.logError("Invoice generation failed", cause));
     }
 
-    private final PaymentService paymentService = _ -> Causes.cause("Payment failed").promise();
+    private final PaymentService paymentService = _ -> Causes.cause("Payment failed")
+                                                             .promise();
 
     record Amount(BigDecimal value) {}
 
@@ -73,8 +77,10 @@ class SequentialPromiseOperationExample {
     }
 
     private Retry retry = Retry.create()
-                               .attempts(5)
-                               .strategy(fixed().interval(timeSpan(2).seconds()));
+                              .attempts(5)
+                              .strategy(fixed()
+                                        .interval(timeSpan(2)
+                                                  .seconds()));
 
     Promise<PaymentConfirmation> processPayment(Payment payment) {
         return retry.execute(() -> paymentService.processPayment(payment));
@@ -83,9 +89,12 @@ class SequentialPromiseOperationExample {
     void configureRetry() {
         var linear = Retry.create()
                           .attempts(5)
-                          .strategy(linear().initialDelay(timeSpan(50L).millis())
-                                            .increment(timeSpan(50L).millis())
-                                            .maxDelay(timeSpan(1).seconds()));
-
+                          .strategy(linear()
+                                    .initialDelay(timeSpan(50L)
+                                                  .millis())
+                                    .increment(timeSpan(50L)
+                                               .millis())
+                                    .maxDelay(timeSpan(1)
+                                              .seconds()));
     }
 }

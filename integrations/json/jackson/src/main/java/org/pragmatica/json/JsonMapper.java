@@ -19,11 +19,12 @@ package org.pragmatica.json;
 
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.TypeToken;
+
+import java.util.function.Consumer;
+
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JacksonModule;
 import tools.jackson.databind.json.JsonMapper.Builder;
-
-import java.util.function.Consumer;
 
 /// Functional wrapper around Jackson's JsonMapper providing Result-based API.
 /// All operations return Result<T> instead of throwing exceptions, enabling
@@ -56,7 +57,7 @@ public interface JsonMapper {
     /// @param <T>   Value type
     ///
     /// @return Result containing JSON bytes or error
-    <T> Result<byte[]> writeAsBytes(T value);
+    <T> Result<byte[] > writeAsBytes(T value);
 
     /// Deserialize from JSON string.
     ///
@@ -105,7 +106,9 @@ public interface JsonMapper {
     ///
     /// @return JsonMapper instance
     static JsonMapper defaultJsonMapper() {
-        return jsonMapper().withPragmaticaTypes().build();
+        return jsonMapper()
+               .withPragmaticaTypes()
+               .build();
     }
 
     /// Builder interface for configuring JsonMapper.

@@ -17,13 +17,13 @@
 
 package org.pragmatica.metrics;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /// Base class for metrics builder stages providing common tag management and meter creation.
 /// Uses self-bounded generics to enable fluent API with correct return types.
@@ -33,7 +33,9 @@ public class StageTags<T extends StageTags<T>> {
     private final List<Tag> tags = new ArrayList<>();
 
     protected enum TimerType {
-        SUCCESS, FAILURE, PLAIN
+        SUCCESS,
+        FAILURE,
+        PLAIN
     }
 
     protected StageTags(String name, MeterRegistry registry) {

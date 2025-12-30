@@ -25,8 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 /// Common scheduler for use by [Retry] and [CircuitBreaker]
 public final class SharedScheduler {
-    private SharedScheduler() {
-    }
+    private SharedScheduler() {}
 
     private static final ScheduledExecutorService SCHEDULER = new ScheduledThreadPoolExecutor(2);
 

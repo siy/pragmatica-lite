@@ -12,15 +12,14 @@ class AsynchronousUserDataProcessingExample {
     void retrieveAndPrintUserSummaries() {
         //List<String>
         var userIds = List.of("user1", "user2", "user3", "user4", "user5");
-
         // Process each user ID in parallel
         List<Promise<UserData>> promises = userIds.stream()
                                                   .map(this::processUserAsync)
                                                   .toList();
-
         // Wait for all to complete
         Promise.allOf(promises)
-               .flatMap(users -> Result.allOf(users).async())
+               .flatMap(users -> Result.allOf(users)
+                                       .async())
                .onSuccess(users -> users.forEach(this::displayUserSummary))
                .onFailure(System.err::println);
     }

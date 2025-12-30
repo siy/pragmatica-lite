@@ -15,7 +15,6 @@
  */
 
 package org.pragmatica.lang;
-
 /// Collection of basic functions for various use cases.
 @SuppressWarnings("unused")
 public interface Functions {
@@ -107,37 +106,106 @@ public interface Functions {
     /// Function with ten parameters.
     @FunctionalInterface
     interface Fn10<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
-        R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10);
+        R apply(T1 param1,
+                T2 param2,
+                T3 param3,
+                T4 param4,
+                T5 param5,
+                T6 param6,
+                T7 param7,
+                T8 param8,
+                T9 param9,
+                T10 param10);
     }
 
     /// Function with eleven parameters.
     @FunctionalInterface
     interface Fn11<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> {
-        R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10, T11 param11);
+        R apply(T1 param1,
+                T2 param2,
+                T3 param3,
+                T4 param4,
+                T5 param5,
+                T6 param6,
+                T7 param7,
+                T8 param8,
+                T9 param9,
+                T10 param10,
+                T11 param11);
     }
 
     /// Function with twelve parameters.
     @FunctionalInterface
     interface Fn12<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> {
-        R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10, T11 param11, T12 param12);
+        R apply(T1 param1,
+                T2 param2,
+                T3 param3,
+                T4 param4,
+                T5 param5,
+                T6 param6,
+                T7 param7,
+                T8 param8,
+                T9 param9,
+                T10 param10,
+                T11 param11,
+                T12 param12);
     }
 
     /// Function with thirteen parameters.
     @FunctionalInterface
     interface Fn13<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> {
-        R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10, T11 param11, T12 param12, T13 param13);
+        R apply(T1 param1,
+                T2 param2,
+                T3 param3,
+                T4 param4,
+                T5 param5,
+                T6 param6,
+                T7 param7,
+                T8 param8,
+                T9 param9,
+                T10 param10,
+                T11 param11,
+                T12 param12,
+                T13 param13);
     }
 
     /// Function with fourteen parameters.
     @FunctionalInterface
     interface Fn14<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> {
-        R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10, T11 param11, T12 param12, T13 param13, T14 param14);
+        R apply(T1 param1,
+                T2 param2,
+                T3 param3,
+                T4 param4,
+                T5 param5,
+                T6 param6,
+                T7 param7,
+                T8 param8,
+                T9 param9,
+                T10 param10,
+                T11 param11,
+                T12 param12,
+                T13 param13,
+                T14 param14);
     }
 
     /// Function with fifteen parameters.
     @FunctionalInterface
     interface Fn15<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> {
-        R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10, T11 param11, T12 param12, T13 param13, T14 param14, T15 param15);
+        R apply(T1 param1,
+                T2 param2,
+                T3 param3,
+                T4 param4,
+                T5 param5,
+                T6 param6,
+                T7 param7,
+                T8 param8,
+                T9 param9,
+                T10 param10,
+                T11 param11,
+                T12 param12,
+                T13 param13,
+                T14 param14,
+                T15 param15);
     }
 
     /// Universal identity function.
@@ -203,32 +271,101 @@ public interface Functions {
 
     @FunctionalInterface
     interface ThrowingFn10<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
-        R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10) throws Throwable;
+        R apply(T1 param1,
+                T2 param2,
+                T3 param3,
+                T4 param4,
+                T5 param5,
+                T6 param6,
+                T7 param7,
+                T8 param8,
+                T9 param9,
+                T10 param10) throws Throwable;
     }
 
     @FunctionalInterface
     interface ThrowingFn11<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> {
-        R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10, T11 param11) throws Throwable;
+        R apply(T1 param1,
+                T2 param2,
+                T3 param3,
+                T4 param4,
+                T5 param5,
+                T6 param6,
+                T7 param7,
+                T8 param8,
+                T9 param9,
+                T10 param10,
+                T11 param11) throws Throwable;
     }
 
     @FunctionalInterface
     interface ThrowingFn12<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> {
-        R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10, T11 param11, T12 param12) throws Throwable;
+        R apply(T1 param1,
+                T2 param2,
+                T3 param3,
+                T4 param4,
+                T5 param5,
+                T6 param6,
+                T7 param7,
+                T8 param8,
+                T9 param9,
+                T10 param10,
+                T11 param11,
+                T12 param12) throws Throwable;
     }
 
     @FunctionalInterface
     interface ThrowingFn13<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> {
-        R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10, T11 param11, T12 param12, T13 param13) throws Throwable;
+        R apply(T1 param1,
+                T2 param2,
+                T3 param3,
+                T4 param4,
+                T5 param5,
+                T6 param6,
+                T7 param7,
+                T8 param8,
+                T9 param9,
+                T10 param10,
+                T11 param11,
+                T12 param12,
+                T13 param13) throws Throwable;
     }
 
     @FunctionalInterface
     interface ThrowingFn14<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> {
-        R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10, T11 param11, T12 param12, T13 param13, T14 param14) throws Throwable;
+        R apply(T1 param1,
+                T2 param2,
+                T3 param3,
+                T4 param4,
+                T5 param5,
+                T6 param6,
+                T7 param7,
+                T8 param8,
+                T9 param9,
+                T10 param10,
+                T11 param11,
+                T12 param12,
+                T13 param13,
+                T14 param14) throws Throwable;
     }
 
     @FunctionalInterface
     interface ThrowingFn15<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> {
-        R apply(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10, T11 param11, T12 param12, T13 param13, T14 param14, T15 param15) throws Throwable;
+        R apply(T1 param1,
+                T2 param2,
+                T3 param3,
+                T4 param4,
+                T5 param5,
+                T6 param6,
+                T7 param7,
+                T8 param8,
+                T9 param9,
+                T10 param10,
+                T11 param11,
+                T12 param12,
+                T13 param13,
+                T14 param14,
+                T15 param15) throws Throwable;
     }
 
     /// Function with the variable argument list.
@@ -239,35 +376,39 @@ public interface Functions {
 
     /// Universal consumers of values which do nothing with input values. Useful for cases when the API
     /// requires a function, but there is no need to do anything with the received values.
-    static <T1> void unitFn() {
-    }
+    static <T1> void unitFn() {}
 
     /// No-operation function that accepts one parameter and returns nothing. Used when API requires a function, but there is no need to do anything with the received value.
     ///
     /// @param value Input value (ignored)
-    static <T1> void unitFn(T1 value) {
-    }
+    static <T1> void unitFn(T1 value) {}
 
-    static <T1, T2> void unitFn(T1 param1, T2 param2) {
-    }
+    static <T1, T2> void unitFn(T1 param1, T2 param2) {}
 
-    static <T1, T2, T3> void unitFn(T1 param1, T2 param2, T3 param3) {
-    }
+    static <T1, T2, T3> void unitFn(T1 param1, T2 param2, T3 param3) {}
 
-    static <T1, T2, T3, T4> void unitFn(T1 param1, T2 param2, T3 param3, T4 param4) {
-    }
+    static <T1, T2, T3, T4> void unitFn(T1 param1, T2 param2, T3 param3, T4 param4) {}
 
-    static <T1, T2, T3, T4, T5> void unitFn(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5) {
-    }
+    static <T1, T2, T3, T4, T5> void unitFn(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5) {}
 
-    static <T1, T2, T3, T4, T5, T6> void unitFn(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6) {
-    }
+    static <T1, T2, T3, T4, T5, T6> void unitFn(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6) {}
 
-    static <T1, T2, T3, T4, T5, T6, T7> void unitFn(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7) {
-    }
+    static <T1, T2, T3, T4, T5, T6, T7> void unitFn(T1 param1,
+                                                    T2 param2,
+                                                    T3 param3,
+                                                    T4 param4,
+                                                    T5 param5,
+                                                    T6 param6,
+                                                    T7 param7) {}
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8> void unitFn(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8) {
-    }
+    static <T1, T2, T3, T4, T5, T6, T7, T8> void unitFn(T1 param1,
+                                                        T2 param2,
+                                                        T3 param3,
+                                                        T4 param4,
+                                                        T5 param5,
+                                                        T6 param6,
+                                                        T7 param7,
+                                                        T8 param8) {}
 
     static <T1, T2, T3, T4, T5, T6, T7, T8, T9> void unitFn(T1 param1,
                                                             T2 param2,
@@ -277,38 +418,88 @@ public interface Functions {
                                                             T6 param6,
                                                             T7 param7,
                                                             T8 param8,
-                                                            T9 param9) {
-    }
+                                                            T9 param9) {}
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> void unitFn(
-            T1 param1, T2 param2, T3 param3, T4 param4, T5 param5,
-            T6 param6, T7 param7, T8 param8, T9 param9, T10 param10) {
-    }
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> void unitFn(T1 param1,
+                                                                 T2 param2,
+                                                                 T3 param3,
+                                                                 T4 param4,
+                                                                 T5 param5,
+                                                                 T6 param6,
+                                                                 T7 param7,
+                                                                 T8 param8,
+                                                                 T9 param9,
+                                                                 T10 param10) {}
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> void unitFn(
-            T1 param1, T2 param2, T3 param3, T4 param4, T5 param5,
-            T6 param6, T7 param7, T8 param8, T9 param9, T10 param10, T11 param11) {
-    }
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> void unitFn(T1 param1,
+                                                                      T2 param2,
+                                                                      T3 param3,
+                                                                      T4 param4,
+                                                                      T5 param5,
+                                                                      T6 param6,
+                                                                      T7 param7,
+                                                                      T8 param8,
+                                                                      T9 param9,
+                                                                      T10 param10,
+                                                                      T11 param11) {}
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> void unitFn(
-            T1 param1, T2 param2, T3 param3, T4 param4, T5 param5,
-            T6 param6, T7 param7, T8 param8, T9 param9, T10 param10, T11 param11, T12 param12) {
-    }
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> void unitFn(T1 param1,
+                                                                           T2 param2,
+                                                                           T3 param3,
+                                                                           T4 param4,
+                                                                           T5 param5,
+                                                                           T6 param6,
+                                                                           T7 param7,
+                                                                           T8 param8,
+                                                                           T9 param9,
+                                                                           T10 param10,
+                                                                           T11 param11,
+                                                                           T12 param12) {}
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> void unitFn(
-            T1 param1, T2 param2, T3 param3, T4 param4, T5 param5,
-            T6 param6, T7 param7, T8 param8, T9 param9, T10 param10, T11 param11, T12 param12, T13 param13) {
-    }
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> void unitFn(T1 param1,
+                                                                                T2 param2,
+                                                                                T3 param3,
+                                                                                T4 param4,
+                                                                                T5 param5,
+                                                                                T6 param6,
+                                                                                T7 param7,
+                                                                                T8 param8,
+                                                                                T9 param9,
+                                                                                T10 param10,
+                                                                                T11 param11,
+                                                                                T12 param12,
+                                                                                T13 param13) {}
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> void unitFn(
-            T1 param1, T2 param2, T3 param3, T4 param4, T5 param5,
-            T6 param6, T7 param7, T8 param8, T9 param9, T10 param10, T11 param11, T12 param12, T13 param13, T14 param14) {
-    }
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> void unitFn(T1 param1,
+                                                                                     T2 param2,
+                                                                                     T3 param3,
+                                                                                     T4 param4,
+                                                                                     T5 param5,
+                                                                                     T6 param6,
+                                                                                     T7 param7,
+                                                                                     T8 param8,
+                                                                                     T9 param9,
+                                                                                     T10 param10,
+                                                                                     T11 param11,
+                                                                                     T12 param12,
+                                                                                     T13 param13,
+                                                                                     T14 param14) {}
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> void unitFn(
-            T1 param1, T2 param2, T3 param3, T4 param4, T5 param5,
-            T6 param6, T7 param7, T8 param8, T9 param9, T10 param10, T11 param11, T12 param12, T13 param13, T14 param14, T15 param15) {
-    }
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> void unitFn(T1 param1,
+                                                                                          T2 param2,
+                                                                                          T3 param3,
+                                                                                          T4 param4,
+                                                                                          T5 param5,
+                                                                                          T6 param6,
+                                                                                          T7 param7,
+                                                                                          T8 param8,
+                                                                                          T9 param9,
+                                                                                          T10 param10,
+                                                                                          T11 param11,
+                                                                                          T12 param12,
+                                                                                          T13 param13,
+                                                                                          T14 param14,
+                                                                                          T15 param15) {}
 
     /// Utility function that ignores input and always returns null. Used in functional contexts where a null value is needed.
     ///

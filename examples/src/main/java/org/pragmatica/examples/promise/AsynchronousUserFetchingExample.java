@@ -10,7 +10,6 @@ class AsynchronousUserFetchingExample {
     private final UserRepository userRepository = List::of;
 
     record User(String id, String name) {
-
         boolean isActive() {
             return true;
         }
@@ -23,9 +22,7 @@ class AsynchronousUserFetchingExample {
 
     // Run synchronous API asynchronously (1)
     Promise<List<User>> fetchUsers1() {
-        return Promise.promise(promise ->
-                                       promise.resolve(Result.lift(Causes::fromThrowable,
-                                                                   userRepository::findAll)));
+        return Promise.promise(promise -> promise.resolve(Result.lift(Causes::fromThrowable, userRepository::findAll)));
     }
 
     // Run synchronous API asynchronously (2)
@@ -41,9 +38,7 @@ class AsynchronousUserFetchingExample {
     // Alternative way using Promise.async
     Promise<List<User>> fetchUsers4() {
         var promise = Promise.<List<User>>promise();
-
         promise.async(p -> p.resolve(Result.lift(Causes::fromThrowable, userRepository::findAll)));
-
         return promise;
     }
 }

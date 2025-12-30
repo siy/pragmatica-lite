@@ -21,13 +21,14 @@ import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.io.TimeSpan;
 import org.pragmatica.lang.utils.CircuitBreaker.CircuitBreakerErrors.CircuitBreakerOpenError;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 
@@ -60,9 +61,11 @@ public interface CircuitBreaker {
     TimeSpan timeSinceLastStateChange();
 
     enum State {
-        CLOSED,     // Circuit is closed, operations are executed normally
-        OPEN,       // Circuit is open, operations are rejected immediately
-        HALF_OPEN   // Circuit is testing if service is recovered
+        CLOSED,
+        // Circuit is closed, operations are executed normally
+        OPEN,
+        // Circuit is open, operations are rejected immediately
+        HALF_OPEN
     }
 
     static CircuitBreaker create(int failureThreshold,
@@ -78,8 +81,7 @@ public interface CircuitBreaker {
                               AtomicLong failureCountRef,
                               AtomicLong lastStateChangeTimestamp,
                               AtomicLong testSuccessCount,
-                              org.pragmatica.lang.utils.TimeSource timeSource
-        ) implements CircuitBreaker {
+                              org.pragmatica.lang.utils.TimeSource timeSource) implements CircuitBreaker {
             private static final Logger log = LoggerFactory.getLogger(CircuitBreaker.class);
 
             @Override
@@ -94,26 +96,24 @@ public interface CircuitBreaker {
 
             @Override
             public TimeSpan timeSinceLastStateChange() {
-                return timeSpan(timeSource().nanoTime() - lastStateChangeTimestamp.get()).nanos();
+                return timeSpan(timeSource()
+                                .nanoTime() - lastStateChangeTimestamp.get())
+                       .nanos();
             }
 
             @Override
             public <T> Promise<T> execute(Supplier<Promise<T>> operation) {
                 return switch (stateRef.get()) {
                     case CLOSED -> executeClosedState(operation);
-
                     case OPEN -> {
                         if (isResetTimeoutExpired()) {
                             transitionTo(State.HALF_OPEN);
-
                             yield executeHalfOpenState(operation);
                         }
-
-                        var timeout = timeSpan(resetTimeout.nanos() - (timeSource().nanoTime() - lastStateChangeTimestamp.get()))
-                                .nanos();
-
-                        yield new CircuitBreakerOpenError("Circuit breaker is open. Operation rejected.",
-                                                          timeout).promise();
+                        var timeout = timeSpan(resetTimeout.nanos() - (timeSource()
+                                                                       .nanoTime() - lastStateChangeTimestamp.get()))
+                                      .nanos();
+                        yield new CircuitBreakerOpenError("Circuit breaker is open. Operation rejected.", timeout).promise();
                     }
                     case HALF_OPEN -> executeHalfOpenState(operation);
                 };
@@ -128,12 +128,13 @@ public interface CircuitBreaker {
             private <T> Promise<T> executeHalfOpenState(Supplier<Promise<T>> operation) {
                 return operation.get()
                                 .onSuccess(_ -> {
-                                    long successCount = testSuccessCount.incrementAndGet();
-                                    if (successCount >= testAttempts) {
-                                        transitionTo(State.CLOSED);
-                                    }
-                                })
-                                .onFailure(error -> shouldTrip.ifTrue(error, () -> transitionTo(State.OPEN)));
+                                               long successCount = testSuccessCount.incrementAndGet();
+                                               if (successCount >= testAttempts) {
+                                               transitionTo(State.CLOSED);
+                                           }
+                                           })
+                                .onFailure(error -> shouldTrip.ifTrue(error,
+                                                                      () -> transitionTo(State.OPEN)));
             }
 
             private void handleFailure() {
@@ -145,11 +146,10 @@ public interface CircuitBreaker {
 
             private void transitionTo(State newState) {
                 var oldState = stateRef.getAndSet(newState);
-
                 if (oldState != newState) {
-                    lastStateChangeTimestamp.set(timeSource().nanoTime());
+                    lastStateChangeTimestamp.set(timeSource()
+                                                 .nanoTime());
                     log.info("Circuit breaker stateRef changed from {} to {}", oldState, newState);
-
                     switch (newState) {
                         case OPEN -> scheduleReset();
                         case HALF_OPEN -> testSuccessCount.set(0);
@@ -161,28 +161,27 @@ public interface CircuitBreaker {
             private void scheduleReset() {
                 SharedScheduler.schedule(() -> {
                                              if (stateRef.get() == State.OPEN && isResetTimeoutExpired()) {
-                                                 transitionTo(State.HALF_OPEN);
-                                             }
+                                             transitionTo(State.HALF_OPEN);
+                                         }
                                          },
                                          resetTimeout);
             }
 
             private boolean isResetTimeoutExpired() {
-                return timeSource().nanoTime() - lastStateChangeTimestamp.get() >= resetTimeout.nanos();
+                return timeSource()
+                       .nanoTime() - lastStateChangeTimestamp.get() >= resetTimeout.nanos();
             }
         }
-
         return new circuitBreaker(
-                failureThreshold,
-                resetTimeout,
-                testAttempts,
-                FluentPredicate.from(shouldTrip),
-                new AtomicReference<>(State.CLOSED),
-                new AtomicLong(0),
-                new AtomicLong(timeSource.nanoTime()),
-                new AtomicLong(0),
-                timeSource
-        );
+        failureThreshold,
+        resetTimeout,
+        testAttempts,
+        FluentPredicate.from(shouldTrip),
+        new AtomicReference<>(State.CLOSED),
+        new AtomicLong(0),
+        new AtomicLong(timeSource.nanoTime()),
+        new AtomicLong(0),
+        timeSource);
     }
 
     sealed interface CircuitBreakerErrors extends Cause {
@@ -198,16 +197,11 @@ public interface CircuitBreaker {
     ///
     /// @return A new builder
     static StageFailureThreshold builder() {
-        return failureThreshold ->
-                resetTimeout ->
-                        testAttempts ->
-                                shouldTrip ->
-                                        timeSource ->
-                                                create(failureThreshold,
-                                                       resetTimeout,
-                                                       testAttempts,
-                                                       shouldTrip,
-                                                       timeSource);
+        return failureThreshold -> resetTimeout -> testAttempts -> shouldTrip -> timeSource -> create(failureThreshold,
+                                                                                                      resetTimeout,
+                                                                                                      testAttempts,
+                                                                                                      shouldTrip,
+                                                                                                      timeSource);
     }
 
     interface StageFailureThreshold {
@@ -230,7 +224,7 @@ public interface CircuitBreaker {
         StateTimeSource shouldTrip(Predicate<Cause> value);
 
         default StateTimeSource withDefaultShouldTrip() {
-            return shouldTrip(_ -> true); // All errors count
+            return shouldTrip(_ -> true);
         }
     }
 

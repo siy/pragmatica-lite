@@ -23,8 +23,6 @@ import org.pragmatica.lang.io.CoreError;
 import org.pragmatica.lang.io.TimeSpan;
 import org.pragmatica.lang.utils.Causes;
 import org.pragmatica.lang.utils.ResultCollector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -37,6 +35,9 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.pragmatica.lang.Result.unitResult;
 import static org.pragmatica.lang.utils.ActionableThreshold.threshold;
@@ -120,7 +121,7 @@ public interface Promise<T> {
     ///
     /// @return New promise instance.
     default <U> Promise<U> flatMap(Fn1<Promise<U>, ? super T> transformation) {
-        return fold(result -> result.fold(Promise::<U>failure, transformation));
+        return fold(result -> result.fold(Promise:: <U>failure, transformation));
     }
 
     /// Version of the [#flatMap(Fn1)] which allows convenient "mixing in" additional parameter without the need to revert
@@ -157,7 +158,9 @@ public interface Promise<T> {
     ///
     /// @return New promise instance.
     default Promise<T> trace() {
-        var text = Thread.currentThread().getStackTrace()[2].toString();
+        var text = Thread.currentThread()
+                         .getStackTrace() [2]
+                         .toString();
         return mapError(cause -> Causes.CompositeCause.toComposite(text, cause));
     }
 
@@ -320,7 +323,8 @@ public interface Promise<T> {
     ///
     /// @return current instance if predicate returns `true` or failure instance if predicate returns `false`
     default Promise<T> filter(Cause cause, Predicate<T> predicate) {
-        return fold(result -> result.filter(cause, predicate).async());
+        return fold(result -> result.filter(cause, predicate)
+                                    .async());
     }
 
     /// Asynchronous version of the filtering
@@ -336,12 +340,16 @@ public interface Promise<T> {
     ///
     /// @return current instance if predicate returns `true` or failure instance if predicate returns `false`
     default Promise<T> filter(Fn1<Cause, T> causeMapper, Predicate<T> predicate) {
-        return fold(result -> result.filter(causeMapper, predicate).async());
+        return fold(result -> result.filter(causeMapper, predicate)
+                                    .async());
     }
 
     default Promise<T> filter(Fn1<Cause, T> causeMapper, Promise<Boolean> predicate) {
         return fold(result -> result.fold(Promise::failure,
-                                          value -> predicate.flatMap(decision -> decision ? Promise.this : causeMapper.apply(value).promise())));
+                                          value -> predicate.flatMap(decision -> decision
+                                                                                 ? Promise.this
+                                                                                 : causeMapper.apply(value)
+                                                                                              .promise())));
     }
 
     /// Run an action once the promise is resolved with failure. The action is executed in the order in which transformations are written in the code.
@@ -407,7 +415,7 @@ public interface Promise<T> {
     /// @param supplier Supplier of the value to resolve the promise with.
     ///
     /// @return Current promise instance.
-    default Promise<T> succeedAsync(Supplier<? extends T> supplier) {
+    default Promise<T> succeedAsync(Supplier< ? extends T> supplier) {
         return async(promise -> promise.succeed(supplier.get()));
     }
 
@@ -448,9 +456,9 @@ public interface Promise<T> {
     ///             .map(this::transformationStep1)     // <-- This transformation will see Timeout error and will be skipped
     ///             .flatMap(this::transformationStep3);// <-- This transformation will see Timeout error and will be skipped
     /// ```
-
     default Promise<T> timeout(TimeSpan timeout) {
-        return async(timeout, promise -> promise.fail(new CoreError.Timeout("Promise timed out after " + timeout.millis() + "ms")));
+        return async(timeout,
+                     promise -> promise.fail(new CoreError.Timeout("Promise timed out after " + timeout.millis() + "ms")));
     }
 
     /// Cancel the promise.
@@ -522,7 +530,6 @@ public interface Promise<T> {
     //------------------------------------------------------------------------------------------------------------------
     // Instance all() methods - for-comprehension style composition
     //------------------------------------------------------------------------------------------------------------------
-
     /// Chain a dependent operation with access to this Promise's value.
     /// Enables for-comprehension style composition without nested flatMaps.
     ///
@@ -531,7 +538,8 @@ public interface Promise<T> {
     ///
     /// @return Mapper1 for further transformation
     default <T1> Mapper1<T1> all(Fn1<Promise<T1>, T> fn1) {
-        return () -> flatMap(v -> fn1.apply(v).map(Tuple::tuple));
+        return () -> flatMap(v -> fn1.apply(v)
+                                     .map(Tuple::tuple));
     }
 
     /// Chain two dependent operations with access to this Promise's value.
@@ -542,13 +550,11 @@ public interface Promise<T> {
     /// @param <T2> Type of the result from fn2
     ///
     /// @return Mapper2 for further transformation
-    default <T1, T2> Mapper2<T1, T2> all(
-            Fn1<Promise<T1>, T> fn1,
-            Fn1<Promise<T2>, T> fn2
-    ) {
-        return () -> flatMap(v ->
-                fn1.apply(v).flatMap(v1 ->
-                        fn2.apply(v).map(v2 -> Tuple.tuple(v1, v2))));
+    default <T1, T2> Mapper2<T1, T2> all(Fn1<Promise<T1>, T> fn1,
+                                         Fn1<Promise<T2>, T> fn2) {
+        return () -> flatMap(v -> fn1.apply(v)
+                                     .flatMap(v1 -> fn2.apply(v)
+                                                       .map(v2 -> Tuple.tuple(v1, v2))));
     }
 
     /// Chain three dependent operations with access to this Promise's value.
@@ -561,224 +567,391 @@ public interface Promise<T> {
     /// @param <T3> Type of the result from fn3
     ///
     /// @return Mapper3 for further transformation
-    default <T1, T2, T3> Mapper3<T1, T2, T3> all(
-            Fn1<Promise<T1>, T> fn1,
-            Fn1<Promise<T2>, T> fn2,
-            Fn1<Promise<T3>, T> fn3
-    ) {
-        return () -> flatMap(v ->
-                fn1.apply(v).flatMap(v1 ->
-                        fn2.apply(v).flatMap(v2 ->
-                                fn3.apply(v).map(v3 -> Tuple.tuple(v1, v2, v3)))));
+    default <T1, T2, T3> Mapper3<T1, T2, T3> all(Fn1<Promise<T1>, T> fn1,
+                                                 Fn1<Promise<T2>, T> fn2,
+                                                 Fn1<Promise<T3>, T> fn3) {
+        return () -> flatMap(v -> fn1.apply(v)
+                                     .flatMap(v1 -> fn2.apply(v)
+                                                       .flatMap(v2 -> fn3.apply(v)
+                                                                         .map(v3 -> Tuple.tuple(v1, v2, v3)))));
     }
 
     /// Chain four dependent operations with access to this Promise's value.
-    default <T1, T2, T3, T4> Mapper4<T1, T2, T3, T4> all(
-            Fn1<Promise<T1>, T> fn1,
-            Fn1<Promise<T2>, T> fn2,
-            Fn1<Promise<T3>, T> fn3,
-            Fn1<Promise<T4>, T> fn4
-    ) {
-        return () -> flatMap(v ->
-                fn1.apply(v).flatMap(v1 ->
-                        fn2.apply(v).flatMap(v2 ->
-                                fn3.apply(v).flatMap(v3 ->
-                                        fn4.apply(v).map(v4 -> Tuple.tuple(v1, v2, v3, v4))))));
+    default <T1, T2, T3, T4> Mapper4<T1, T2, T3, T4> all(Fn1<Promise<T1>, T> fn1,
+                                                         Fn1<Promise<T2>, T> fn2,
+                                                         Fn1<Promise<T3>, T> fn3,
+                                                         Fn1<Promise<T4>, T> fn4) {
+        return () -> flatMap(v -> fn1.apply(v)
+                                     .flatMap(v1 -> fn2.apply(v)
+                                                       .flatMap(v2 -> fn3.apply(v)
+                                                                         .flatMap(v3 -> fn4.apply(v)
+                                                                                           .map(v4 -> Tuple.tuple(v1,
+                                                                                                                  v2,
+                                                                                                                  v3,
+                                                                                                                  v4))))));
     }
 
     /// Chain five dependent operations with access to this Promise's value.
-    default <T1, T2, T3, T4, T5> Mapper5<T1, T2, T3, T4, T5> all(
-            Fn1<Promise<T1>, T> fn1,
-            Fn1<Promise<T2>, T> fn2,
-            Fn1<Promise<T3>, T> fn3,
-            Fn1<Promise<T4>, T> fn4,
-            Fn1<Promise<T5>, T> fn5
-    ) {
-        return () -> flatMap(v ->
-                fn1.apply(v).flatMap(v1 ->
-                        fn2.apply(v).flatMap(v2 ->
-                                fn3.apply(v).flatMap(v3 ->
-                                        fn4.apply(v).flatMap(v4 ->
-                                                fn5.apply(v).map(v5 -> Tuple.tuple(v1, v2, v3, v4, v5)))))));
+    default <T1, T2, T3, T4, T5> Mapper5<T1, T2, T3, T4, T5> all(Fn1<Promise<T1>, T> fn1,
+                                                                 Fn1<Promise<T2>, T> fn2,
+                                                                 Fn1<Promise<T3>, T> fn3,
+                                                                 Fn1<Promise<T4>, T> fn4,
+                                                                 Fn1<Promise<T5>, T> fn5) {
+        return () -> flatMap(v -> fn1.apply(v)
+                                     .flatMap(v1 -> fn2.apply(v)
+                                                       .flatMap(v2 -> fn3.apply(v)
+                                                                         .flatMap(v3 -> fn4.apply(v)
+                                                                                           .flatMap(v4 -> fn5.apply(v)
+                                                                                                             .map(v5 -> Tuple.tuple(v1,
+                                                                                                                                    v2,
+                                                                                                                                    v3,
+                                                                                                                                    v4,
+                                                                                                                                    v5)))))));
     }
 
     /// Chain six dependent operations with access to this Promise's value.
-    default <T1, T2, T3, T4, T5, T6> Mapper6<T1, T2, T3, T4, T5, T6> all(
-            Fn1<Promise<T1>, T> fn1,
-            Fn1<Promise<T2>, T> fn2,
-            Fn1<Promise<T3>, T> fn3,
-            Fn1<Promise<T4>, T> fn4,
-            Fn1<Promise<T5>, T> fn5,
-            Fn1<Promise<T6>, T> fn6
-    ) {
-        return () -> flatMap(v ->
-                fn1.apply(v).flatMap(v1 ->
-                        fn2.apply(v).flatMap(v2 ->
-                                fn3.apply(v).flatMap(v3 ->
-                                        fn4.apply(v).flatMap(v4 ->
-                                                fn5.apply(v).flatMap(v5 ->
-                                                        fn6.apply(v).map(v6 -> Tuple.tuple(v1, v2, v3, v4, v5, v6))))))));
+    default <T1, T2, T3, T4, T5, T6> Mapper6<T1, T2, T3, T4, T5, T6> all(Fn1<Promise<T1>, T> fn1,
+                                                                         Fn1<Promise<T2>, T> fn2,
+                                                                         Fn1<Promise<T3>, T> fn3,
+                                                                         Fn1<Promise<T4>, T> fn4,
+                                                                         Fn1<Promise<T5>, T> fn5,
+                                                                         Fn1<Promise<T6>, T> fn6) {
+        return () -> flatMap(v -> fn1.apply(v)
+                                     .flatMap(v1 -> fn2.apply(v)
+                                                       .flatMap(v2 -> fn3.apply(v)
+                                                                         .flatMap(v3 -> fn4.apply(v)
+                                                                                           .flatMap(v4 -> fn5.apply(v)
+                                                                                                             .flatMap(v5 -> fn6.apply(v)
+                                                                                                                               .map(v6 -> Tuple.tuple(v1,
+                                                                                                                                                      v2,
+                                                                                                                                                      v3,
+                                                                                                                                                      v4,
+                                                                                                                                                      v5,
+                                                                                                                                                      v6))))))));
     }
 
     /// Chain seven dependent operations with access to this Promise's value.
-    default <T1, T2, T3, T4, T5, T6, T7> Mapper7<T1, T2, T3, T4, T5, T6, T7> all(
-            Fn1<Promise<T1>, T> fn1,
-            Fn1<Promise<T2>, T> fn2,
-            Fn1<Promise<T3>, T> fn3,
-            Fn1<Promise<T4>, T> fn4,
-            Fn1<Promise<T5>, T> fn5,
-            Fn1<Promise<T6>, T> fn6,
-            Fn1<Promise<T7>, T> fn7
-    ) {
-        return () -> flatMap(v ->
-                fn1.apply(v).flatMap(v1 ->
-                        fn2.apply(v).flatMap(v2 ->
-                                fn3.apply(v).flatMap(v3 ->
-                                        fn4.apply(v).flatMap(v4 ->
-                                                fn5.apply(v).flatMap(v5 ->
-                                                        fn6.apply(v).flatMap(v6 ->
-                                                                fn7.apply(v).map(v7 -> Tuple.tuple(v1, v2, v3, v4, v5, v6, v7)))))))));
+    default <T1, T2, T3, T4, T5, T6, T7> Mapper7<T1, T2, T3, T4, T5, T6, T7> all(Fn1<Promise<T1>, T> fn1,
+                                                                                 Fn1<Promise<T2>, T> fn2,
+                                                                                 Fn1<Promise<T3>, T> fn3,
+                                                                                 Fn1<Promise<T4>, T> fn4,
+                                                                                 Fn1<Promise<T5>, T> fn5,
+                                                                                 Fn1<Promise<T6>, T> fn6,
+                                                                                 Fn1<Promise<T7>, T> fn7) {
+        return () -> flatMap(v -> fn1.apply(v)
+                                     .flatMap(v1 -> fn2.apply(v)
+                                                       .flatMap(v2 -> fn3.apply(v)
+                                                                         .flatMap(v3 -> fn4.apply(v)
+                                                                                           .flatMap(v4 -> fn5.apply(v)
+                                                                                                             .flatMap(v5 -> fn6.apply(v)
+                                                                                                                               .flatMap(v6 -> fn7.apply(v)
+                                                                                                                                                 .map(v7 -> Tuple.tuple(v1,
+                                                                                                                                                                        v2,
+                                                                                                                                                                        v3,
+                                                                                                                                                                        v4,
+                                                                                                                                                                        v5,
+                                                                                                                                                                        v6,
+                                                                                                                                                                        v7)))))))));
     }
 
     /// Chain eight dependent operations with access to this Promise's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8> Mapper8<T1, T2, T3, T4, T5, T6, T7, T8> all(
-            Fn1<Promise<T1>, T> fn1,
-            Fn1<Promise<T2>, T> fn2,
-            Fn1<Promise<T3>, T> fn3,
-            Fn1<Promise<T4>, T> fn4,
-            Fn1<Promise<T5>, T> fn5,
-            Fn1<Promise<T6>, T> fn6,
-            Fn1<Promise<T7>, T> fn7,
-            Fn1<Promise<T8>, T> fn8
-    ) {
-        return () -> flatMap(v ->
-                fn1.apply(v).flatMap(v1 ->
-                        fn2.apply(v).flatMap(v2 ->
-                                fn3.apply(v).flatMap(v3 ->
-                                        fn4.apply(v).flatMap(v4 ->
-                                                fn5.apply(v).flatMap(v5 ->
-                                                        fn6.apply(v).flatMap(v6 ->
-                                                                fn7.apply(v).flatMap(v7 ->
-                                                                        fn8.apply(v).map(v8 -> Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8))))))))));
+    default <T1, T2, T3, T4, T5, T6, T7, T8> Mapper8<T1, T2, T3, T4, T5, T6, T7, T8> all(Fn1<Promise<T1>, T> fn1,
+                                                                                         Fn1<Promise<T2>, T> fn2,
+                                                                                         Fn1<Promise<T3>, T> fn3,
+                                                                                         Fn1<Promise<T4>, T> fn4,
+                                                                                         Fn1<Promise<T5>, T> fn5,
+                                                                                         Fn1<Promise<T6>, T> fn6,
+                                                                                         Fn1<Promise<T7>, T> fn7,
+                                                                                         Fn1<Promise<T8>, T> fn8) {
+        return () -> flatMap(v -> fn1.apply(v)
+                                     .flatMap(v1 -> fn2.apply(v)
+                                                       .flatMap(v2 -> fn3.apply(v)
+                                                                         .flatMap(v3 -> fn4.apply(v)
+                                                                                           .flatMap(v4 -> fn5.apply(v)
+                                                                                                             .flatMap(v5 -> fn6.apply(v)
+                                                                                                                               .flatMap(v6 -> fn7.apply(v)
+                                                                                                                                                 .flatMap(v7 -> fn8.apply(v)
+                                                                                                                                                                   .map(v8 -> Tuple.tuple(v1,
+                                                                                                                                                                                          v2,
+                                                                                                                                                                                          v3,
+                                                                                                                                                                                          v4,
+                                                                                                                                                                                          v5,
+                                                                                                                                                                                          v6,
+                                                                                                                                                                                          v7,
+                                                                                                                                                                                          v8))))))))));
     }
 
     /// Chain nine dependent operations with access to this Promise's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9> Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> all(
-            Fn1<Promise<T1>, T> fn1,
-            Fn1<Promise<T2>, T> fn2,
-            Fn1<Promise<T3>, T> fn3,
-            Fn1<Promise<T4>, T> fn4,
-            Fn1<Promise<T5>, T> fn5,
-            Fn1<Promise<T6>, T> fn6,
-            Fn1<Promise<T7>, T> fn7,
-            Fn1<Promise<T8>, T> fn8,
-            Fn1<Promise<T9>, T> fn9
-    ) {
-        return () -> flatMap(v ->
-                fn1.apply(v).flatMap(v1 ->
-                        fn2.apply(v).flatMap(v2 ->
-                                fn3.apply(v).flatMap(v3 ->
-                                        fn4.apply(v).flatMap(v4 ->
-                                                fn5.apply(v).flatMap(v5 ->
-                                                        fn6.apply(v).flatMap(v6 ->
-                                                                fn7.apply(v).flatMap(v7 ->
-                                                                        fn8.apply(v).flatMap(v8 ->
-                                                                                fn9.apply(v).map(v9 -> Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9)))))))))));
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9> Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> all(Fn1<Promise<T1>, T> fn1,
+                                                                                                 Fn1<Promise<T2>, T> fn2,
+                                                                                                 Fn1<Promise<T3>, T> fn3,
+                                                                                                 Fn1<Promise<T4>, T> fn4,
+                                                                                                 Fn1<Promise<T5>, T> fn5,
+                                                                                                 Fn1<Promise<T6>, T> fn6,
+                                                                                                 Fn1<Promise<T7>, T> fn7,
+                                                                                                 Fn1<Promise<T8>, T> fn8,
+                                                                                                 Fn1<Promise<T9>, T> fn9) {
+        return () -> flatMap(v -> fn1.apply(v)
+                                     .flatMap(v1 -> fn2.apply(v)
+                                                       .flatMap(v2 -> fn3.apply(v)
+                                                                         .flatMap(v3 -> fn4.apply(v)
+                                                                                           .flatMap(v4 -> fn5.apply(v)
+                                                                                                             .flatMap(v5 -> fn6.apply(v)
+                                                                                                                               .flatMap(v6 -> fn7.apply(v)
+                                                                                                                                                 .flatMap(v7 -> fn8.apply(v)
+                                                                                                                                                                   .flatMap(v8 -> fn9.apply(v)
+                                                                                                                                                                                     .map(v9 -> Tuple.tuple(v1,
+                                                                                                                                                                                                            v2,
+                                                                                                                                                                                                            v3,
+                                                                                                                                                                                                            v4,
+                                                                                                                                                                                                            v5,
+                                                                                                                                                                                                            v6,
+                                                                                                                                                                                                            v7,
+                                                                                                                                                                                                            v8,
+                                                                                                                                                                                                            v9)))))))))));
     }
 
     /// Chain ten dependent operations with access to this Promise's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> Mapper10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> all(
-            Fn1<Promise<T1>, T> fn1, Fn1<Promise<T2>, T> fn2, Fn1<Promise<T3>, T> fn3,
-            Fn1<Promise<T4>, T> fn4, Fn1<Promise<T5>, T> fn5, Fn1<Promise<T6>, T> fn6,
-            Fn1<Promise<T7>, T> fn7, Fn1<Promise<T8>, T> fn8, Fn1<Promise<T9>, T> fn9,
-            Fn1<Promise<T10>, T> fn10
-    ) {
-        return () -> flatMap(v ->
-                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
-                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
-                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
-                fn10.apply(v).map(v10 -> Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10))))))))))));
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> Mapper10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> all(Fn1<Promise<T1>, T> fn1,
+                                                                                                            Fn1<Promise<T2>, T> fn2,
+                                                                                                            Fn1<Promise<T3>, T> fn3,
+                                                                                                            Fn1<Promise<T4>, T> fn4,
+                                                                                                            Fn1<Promise<T5>, T> fn5,
+                                                                                                            Fn1<Promise<T6>, T> fn6,
+                                                                                                            Fn1<Promise<T7>, T> fn7,
+                                                                                                            Fn1<Promise<T8>, T> fn8,
+                                                                                                            Fn1<Promise<T9>, T> fn9,
+                                                                                                            Fn1<Promise<T10>, T> fn10) {
+        return () -> flatMap(v -> fn1.apply(v)
+                                     .flatMap(v1 -> fn2.apply(v)
+                                                       .flatMap(v2 -> fn3.apply(v)
+                                                                         .flatMap(v3 -> fn4.apply(v)
+                                                                                           .flatMap(v4 -> fn5.apply(v)
+                                                                                                             .flatMap(v5 -> fn6.apply(v)
+                                                                                                                               .flatMap(v6 -> fn7.apply(v)
+                                                                                                                                                 .flatMap(v7 -> fn8.apply(v)
+                                                                                                                                                                   .flatMap(v8 -> fn9.apply(v)
+                                                                                                                                                                                     .flatMap(v9 -> fn10.apply(v)
+                                                                                                                                                                                                        .map(v10 -> Tuple.tuple(v1,
+                                                                                                                                                                                                                                v2,
+                                                                                                                                                                                                                                v3,
+                                                                                                                                                                                                                                v4,
+                                                                                                                                                                                                                                v5,
+                                                                                                                                                                                                                                v6,
+                                                                                                                                                                                                                                v7,
+                                                                                                                                                                                                                                v8,
+                                                                                                                                                                                                                                v9,
+                                                                                                                                                                                                                                v10))))))))))));
     }
 
     /// Chain eleven dependent operations with access to this Promise's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> Mapper11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> all(
-            Fn1<Promise<T1>, T> fn1, Fn1<Promise<T2>, T> fn2, Fn1<Promise<T3>, T> fn3,
-            Fn1<Promise<T4>, T> fn4, Fn1<Promise<T5>, T> fn5, Fn1<Promise<T6>, T> fn6,
-            Fn1<Promise<T7>, T> fn7, Fn1<Promise<T8>, T> fn8, Fn1<Promise<T9>, T> fn9,
-            Fn1<Promise<T10>, T> fn10, Fn1<Promise<T11>, T> fn11
-    ) {
-        return () -> flatMap(v ->
-                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
-                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
-                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
-                fn10.apply(v).flatMap(v10 -> fn11.apply(v).map(v11 ->
-                        Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11)))))))))))));
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> Mapper11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> all(Fn1<Promise<T1>, T> fn1,
+                                                                                                                      Fn1<Promise<T2>, T> fn2,
+                                                                                                                      Fn1<Promise<T3>, T> fn3,
+                                                                                                                      Fn1<Promise<T4>, T> fn4,
+                                                                                                                      Fn1<Promise<T5>, T> fn5,
+                                                                                                                      Fn1<Promise<T6>, T> fn6,
+                                                                                                                      Fn1<Promise<T7>, T> fn7,
+                                                                                                                      Fn1<Promise<T8>, T> fn8,
+                                                                                                                      Fn1<Promise<T9>, T> fn9,
+                                                                                                                      Fn1<Promise<T10>, T> fn10,
+                                                                                                                      Fn1<Promise<T11>, T> fn11) {
+        return () -> flatMap(v -> fn1.apply(v)
+                                     .flatMap(v1 -> fn2.apply(v)
+                                                       .flatMap(v2 -> fn3.apply(v)
+                                                                         .flatMap(v3 -> fn4.apply(v)
+                                                                                           .flatMap(v4 -> fn5.apply(v)
+                                                                                                             .flatMap(v5 -> fn6.apply(v)
+                                                                                                                               .flatMap(v6 -> fn7.apply(v)
+                                                                                                                                                 .flatMap(v7 -> fn8.apply(v)
+                                                                                                                                                                   .flatMap(v8 -> fn9.apply(v)
+                                                                                                                                                                                     .flatMap(v9 -> fn10.apply(v)
+                                                                                                                                                                                                        .flatMap(v10 -> fn11.apply(v)
+                                                                                                                                                                                                                            .map(v11 -> Tuple.tuple(v1,
+                                                                                                                                                                                                                                                    v2,
+                                                                                                                                                                                                                                                    v3,
+                                                                                                                                                                                                                                                    v4,
+                                                                                                                                                                                                                                                    v5,
+                                                                                                                                                                                                                                                    v6,
+                                                                                                                                                                                                                                                    v7,
+                                                                                                                                                                                                                                                    v8,
+                                                                                                                                                                                                                                                    v9,
+                                                                                                                                                                                                                                                    v10,
+                                                                                                                                                                                                                                                    v11)))))))))))));
     }
 
     /// Chain twelve dependent operations with access to this Promise's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(
-            Fn1<Promise<T1>, T> fn1, Fn1<Promise<T2>, T> fn2, Fn1<Promise<T3>, T> fn3,
-            Fn1<Promise<T4>, T> fn4, Fn1<Promise<T5>, T> fn5, Fn1<Promise<T6>, T> fn6,
-            Fn1<Promise<T7>, T> fn7, Fn1<Promise<T8>, T> fn8, Fn1<Promise<T9>, T> fn9,
-            Fn1<Promise<T10>, T> fn10, Fn1<Promise<T11>, T> fn11, Fn1<Promise<T12>, T> fn12
-    ) {
-        return () -> flatMap(v ->
-                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
-                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
-                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
-                fn10.apply(v).flatMap(v10 -> fn11.apply(v).flatMap(v11 -> fn12.apply(v).map(v12 ->
-                        Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12))))))))))))));
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(Fn1<Promise<T1>, T> fn1,
+                                                                                                                                Fn1<Promise<T2>, T> fn2,
+                                                                                                                                Fn1<Promise<T3>, T> fn3,
+                                                                                                                                Fn1<Promise<T4>, T> fn4,
+                                                                                                                                Fn1<Promise<T5>, T> fn5,
+                                                                                                                                Fn1<Promise<T6>, T> fn6,
+                                                                                                                                Fn1<Promise<T7>, T> fn7,
+                                                                                                                                Fn1<Promise<T8>, T> fn8,
+                                                                                                                                Fn1<Promise<T9>, T> fn9,
+                                                                                                                                Fn1<Promise<T10>, T> fn10,
+                                                                                                                                Fn1<Promise<T11>, T> fn11,
+                                                                                                                                Fn1<Promise<T12>, T> fn12) {
+        return () -> flatMap(v -> fn1.apply(v)
+                                     .flatMap(v1 -> fn2.apply(v)
+                                                       .flatMap(v2 -> fn3.apply(v)
+                                                                         .flatMap(v3 -> fn4.apply(v)
+                                                                                           .flatMap(v4 -> fn5.apply(v)
+                                                                                                             .flatMap(v5 -> fn6.apply(v)
+                                                                                                                               .flatMap(v6 -> fn7.apply(v)
+                                                                                                                                                 .flatMap(v7 -> fn8.apply(v)
+                                                                                                                                                                   .flatMap(v8 -> fn9.apply(v)
+                                                                                                                                                                                     .flatMap(v9 -> fn10.apply(v)
+                                                                                                                                                                                                        .flatMap(v10 -> fn11.apply(v)
+                                                                                                                                                                                                                            .flatMap(v11 -> fn12.apply(v)
+                                                                                                                                                                                                                                                .map(v12 -> Tuple.tuple(v1,
+                                                                                                                                                                                                                                                                        v2,
+                                                                                                                                                                                                                                                                        v3,
+                                                                                                                                                                                                                                                                        v4,
+                                                                                                                                                                                                                                                                        v5,
+                                                                                                                                                                                                                                                                        v6,
+                                                                                                                                                                                                                                                                        v7,
+                                                                                                                                                                                                                                                                        v8,
+                                                                                                                                                                                                                                                                        v9,
+                                                                                                                                                                                                                                                                        v10,
+                                                                                                                                                                                                                                                                        v11,
+                                                                                                                                                                                                                                                                        v12))))))))))))));
     }
 
     /// Chain thirteen dependent operations with access to this Promise's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(
-            Fn1<Promise<T1>, T> fn1, Fn1<Promise<T2>, T> fn2, Fn1<Promise<T3>, T> fn3,
-            Fn1<Promise<T4>, T> fn4, Fn1<Promise<T5>, T> fn5, Fn1<Promise<T6>, T> fn6,
-            Fn1<Promise<T7>, T> fn7, Fn1<Promise<T8>, T> fn8, Fn1<Promise<T9>, T> fn9,
-            Fn1<Promise<T10>, T> fn10, Fn1<Promise<T11>, T> fn11, Fn1<Promise<T12>, T> fn12,
-            Fn1<Promise<T13>, T> fn13
-    ) {
-        return () -> flatMap(v ->
-                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
-                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
-                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
-                fn10.apply(v).flatMap(v10 -> fn11.apply(v).flatMap(v11 -> fn12.apply(v).flatMap(v12 ->
-                fn13.apply(v).map(v13 ->
-                        Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13)))))))))))))));
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(Fn1<Promise<T1>, T> fn1,
+                                                                                                                                          Fn1<Promise<T2>, T> fn2,
+                                                                                                                                          Fn1<Promise<T3>, T> fn3,
+                                                                                                                                          Fn1<Promise<T4>, T> fn4,
+                                                                                                                                          Fn1<Promise<T5>, T> fn5,
+                                                                                                                                          Fn1<Promise<T6>, T> fn6,
+                                                                                                                                          Fn1<Promise<T7>, T> fn7,
+                                                                                                                                          Fn1<Promise<T8>, T> fn8,
+                                                                                                                                          Fn1<Promise<T9>, T> fn9,
+                                                                                                                                          Fn1<Promise<T10>, T> fn10,
+                                                                                                                                          Fn1<Promise<T11>, T> fn11,
+                                                                                                                                          Fn1<Promise<T12>, T> fn12,
+                                                                                                                                          Fn1<Promise<T13>, T> fn13) {
+        return () -> flatMap(v -> fn1.apply(v)
+                                     .flatMap(v1 -> fn2.apply(v)
+                                                       .flatMap(v2 -> fn3.apply(v)
+                                                                         .flatMap(v3 -> fn4.apply(v)
+                                                                                           .flatMap(v4 -> fn5.apply(v)
+                                                                                                             .flatMap(v5 -> fn6.apply(v)
+                                                                                                                               .flatMap(v6 -> fn7.apply(v)
+                                                                                                                                                 .flatMap(v7 -> fn8.apply(v)
+                                                                                                                                                                   .flatMap(v8 -> fn9.apply(v)
+                                                                                                                                                                                     .flatMap(v9 -> fn10.apply(v)
+                                                                                                                                                                                                        .flatMap(v10 -> fn11.apply(v)
+                                                                                                                                                                                                                            .flatMap(v11 -> fn12.apply(v)
+                                                                                                                                                                                                                                                .flatMap(v12 -> fn13.apply(v)
+                                                                                                                                                                                                                                                                    .map(v13 -> Tuple.tuple(v1,
+                                                                                                                                                                                                                                                                                            v2,
+                                                                                                                                                                                                                                                                                            v3,
+                                                                                                                                                                                                                                                                                            v4,
+                                                                                                                                                                                                                                                                                            v5,
+                                                                                                                                                                                                                                                                                            v6,
+                                                                                                                                                                                                                                                                                            v7,
+                                                                                                                                                                                                                                                                                            v8,
+                                                                                                                                                                                                                                                                                            v9,
+                                                                                                                                                                                                                                                                                            v10,
+                                                                                                                                                                                                                                                                                            v11,
+                                                                                                                                                                                                                                                                                            v12,
+                                                                                                                                                                                                                                                                                            v13)))))))))))))));
     }
 
     /// Chain fourteen dependent operations with access to this Promise's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(
-            Fn1<Promise<T1>, T> fn1, Fn1<Promise<T2>, T> fn2, Fn1<Promise<T3>, T> fn3,
-            Fn1<Promise<T4>, T> fn4, Fn1<Promise<T5>, T> fn5, Fn1<Promise<T6>, T> fn6,
-            Fn1<Promise<T7>, T> fn7, Fn1<Promise<T8>, T> fn8, Fn1<Promise<T9>, T> fn9,
-            Fn1<Promise<T10>, T> fn10, Fn1<Promise<T11>, T> fn11, Fn1<Promise<T12>, T> fn12,
-            Fn1<Promise<T13>, T> fn13, Fn1<Promise<T14>, T> fn14
-    ) {
-        return () -> flatMap(v ->
-                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
-                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
-                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
-                fn10.apply(v).flatMap(v10 -> fn11.apply(v).flatMap(v11 -> fn12.apply(v).flatMap(v12 ->
-                fn13.apply(v).flatMap(v13 -> fn14.apply(v).map(v14 ->
-                        Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14))))))))))))))));
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(Fn1<Promise<T1>, T> fn1,
+                                                                                                                                                    Fn1<Promise<T2>, T> fn2,
+                                                                                                                                                    Fn1<Promise<T3>, T> fn3,
+                                                                                                                                                    Fn1<Promise<T4>, T> fn4,
+                                                                                                                                                    Fn1<Promise<T5>, T> fn5,
+                                                                                                                                                    Fn1<Promise<T6>, T> fn6,
+                                                                                                                                                    Fn1<Promise<T7>, T> fn7,
+                                                                                                                                                    Fn1<Promise<T8>, T> fn8,
+                                                                                                                                                    Fn1<Promise<T9>, T> fn9,
+                                                                                                                                                    Fn1<Promise<T10>, T> fn10,
+                                                                                                                                                    Fn1<Promise<T11>, T> fn11,
+                                                                                                                                                    Fn1<Promise<T12>, T> fn12,
+                                                                                                                                                    Fn1<Promise<T13>, T> fn13,
+                                                                                                                                                    Fn1<Promise<T14>, T> fn14) {
+        return () -> flatMap(v -> fn1.apply(v)
+                                     .flatMap(v1 -> fn2.apply(v)
+                                                       .flatMap(v2 -> fn3.apply(v)
+                                                                         .flatMap(v3 -> fn4.apply(v)
+                                                                                           .flatMap(v4 -> fn5.apply(v)
+                                                                                                             .flatMap(v5 -> fn6.apply(v)
+                                                                                                                               .flatMap(v6 -> fn7.apply(v)
+                                                                                                                                                 .flatMap(v7 -> fn8.apply(v)
+                                                                                                                                                                   .flatMap(v8 -> fn9.apply(v)
+                                                                                                                                                                                     .flatMap(v9 -> fn10.apply(v)
+                                                                                                                                                                                                        .flatMap(v10 -> fn11.apply(v)
+                                                                                                                                                                                                                            .flatMap(v11 -> fn12.apply(v)
+                                                                                                                                                                                                                                                .flatMap(v12 -> fn13.apply(v)
+                                                                                                                                                                                                                                                                    .flatMap(v13 -> fn14.apply(v)
+                                                                                                                                                                                                                                                                                        .map(v14 -> Tuple.tuple(v1,
+                                                                                                                                                                                                                                                                                                                v2,
+                                                                                                                                                                                                                                                                                                                v3,
+                                                                                                                                                                                                                                                                                                                v4,
+                                                                                                                                                                                                                                                                                                                v5,
+                                                                                                                                                                                                                                                                                                                v6,
+                                                                                                                                                                                                                                                                                                                v7,
+                                                                                                                                                                                                                                                                                                                v8,
+                                                                                                                                                                                                                                                                                                                v9,
+                                                                                                                                                                                                                                                                                                                v10,
+                                                                                                                                                                                                                                                                                                                v11,
+                                                                                                                                                                                                                                                                                                                v12,
+                                                                                                                                                                                                                                                                                                                v13,
+                                                                                                                                                                                                                                                                                                                v14))))))))))))))));
     }
 
     /// Chain fifteen dependent operations with access to this Promise's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(
-            Fn1<Promise<T1>, T> fn1, Fn1<Promise<T2>, T> fn2, Fn1<Promise<T3>, T> fn3,
-            Fn1<Promise<T4>, T> fn4, Fn1<Promise<T5>, T> fn5, Fn1<Promise<T6>, T> fn6,
-            Fn1<Promise<T7>, T> fn7, Fn1<Promise<T8>, T> fn8, Fn1<Promise<T9>, T> fn9,
-            Fn1<Promise<T10>, T> fn10, Fn1<Promise<T11>, T> fn11, Fn1<Promise<T12>, T> fn12,
-            Fn1<Promise<T13>, T> fn13, Fn1<Promise<T14>, T> fn14, Fn1<Promise<T15>, T> fn15
-    ) {
-        return () -> flatMap(v ->
-                fn1.apply(v).flatMap(v1 -> fn2.apply(v).flatMap(v2 -> fn3.apply(v).flatMap(v3 ->
-                fn4.apply(v).flatMap(v4 -> fn5.apply(v).flatMap(v5 -> fn6.apply(v).flatMap(v6 ->
-                fn7.apply(v).flatMap(v7 -> fn8.apply(v).flatMap(v8 -> fn9.apply(v).flatMap(v9 ->
-                fn10.apply(v).flatMap(v10 -> fn11.apply(v).flatMap(v11 -> fn12.apply(v).flatMap(v12 ->
-                fn13.apply(v).flatMap(v13 -> fn14.apply(v).flatMap(v14 -> fn15.apply(v).map(v15 ->
-                        Tuple.tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15)))))))))))))))));
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(Fn1<Promise<T1>, T> fn1,
+                                                                                                                                                              Fn1<Promise<T2>, T> fn2,
+                                                                                                                                                              Fn1<Promise<T3>, T> fn3,
+                                                                                                                                                              Fn1<Promise<T4>, T> fn4,
+                                                                                                                                                              Fn1<Promise<T5>, T> fn5,
+                                                                                                                                                              Fn1<Promise<T6>, T> fn6,
+                                                                                                                                                              Fn1<Promise<T7>, T> fn7,
+                                                                                                                                                              Fn1<Promise<T8>, T> fn8,
+                                                                                                                                                              Fn1<Promise<T9>, T> fn9,
+                                                                                                                                                              Fn1<Promise<T10>, T> fn10,
+                                                                                                                                                              Fn1<Promise<T11>, T> fn11,
+                                                                                                                                                              Fn1<Promise<T12>, T> fn12,
+                                                                                                                                                              Fn1<Promise<T13>, T> fn13,
+                                                                                                                                                              Fn1<Promise<T14>, T> fn14,
+                                                                                                                                                              Fn1<Promise<T15>, T> fn15) {
+        return () -> flatMap(v -> fn1.apply(v)
+                                     .flatMap(v1 -> fn2.apply(v)
+                                                       .flatMap(v2 -> fn3.apply(v)
+                                                                         .flatMap(v3 -> fn4.apply(v)
+                                                                                           .flatMap(v4 -> fn5.apply(v)
+                                                                                                             .flatMap(v5 -> fn6.apply(v)
+                                                                                                                               .flatMap(v6 -> fn7.apply(v)
+                                                                                                                                                 .flatMap(v7 -> fn8.apply(v)
+                                                                                                                                                                   .flatMap(v8 -> fn9.apply(v)
+                                                                                                                                                                                     .flatMap(v9 -> fn10.apply(v)
+                                                                                                                                                                                                        .flatMap(v10 -> fn11.apply(v)
+                                                                                                                                                                                                                            .flatMap(v11 -> fn12.apply(v)
+                                                                                                                                                                                                                                                .flatMap(v12 -> fn13.apply(v)
+                                                                                                                                                                                                                                                                    .flatMap(v13 -> fn14.apply(v)
+                                                                                                                                                                                                                                                                                        .flatMap(v14 -> fn15.apply(v)
+                                                                                                                                                                                                                                                                                                            .map(v15 -> Tuple.tuple(v1,
+                                                                                                                                                                                                                                                                                                                                    v2,
+                                                                                                                                                                                                                                                                                                                                    v3,
+                                                                                                                                                                                                                                                                                                                                    v4,
+                                                                                                                                                                                                                                                                                                                                    v5,
+                                                                                                                                                                                                                                                                                                                                    v6,
+                                                                                                                                                                                                                                                                                                                                    v7,
+                                                                                                                                                                                                                                                                                                                                    v8,
+                                                                                                                                                                                                                                                                                                                                    v9,
+                                                                                                                                                                                                                                                                                                                                    v10,
+                                                                                                                                                                                                                                                                                                                                    v11,
+                                                                                                                                                                                                                                                                                                                                    v12,
+                                                                                                                                                                                                                                                                                                                                    v13,
+                                                                                                                                                                                                                                                                                                                                    v14,
+                                                                                                                                                                                                                                                                                                                                    v15)))))))))))))))));
     }
 
     /// Create a new unresolved promise instance.
@@ -839,7 +1012,8 @@ public interface Promise<T> {
     ///
     /// @return Created instance.
     static <T> Promise<T> promise(Consumer<Promise<T>> consumer) {
-        return Promise.<T>promise().async(consumer);
+        return Promise.<T> promise()
+               .async(consumer);
     }
 
     /// Creates a promise that resolves with the result provided by the given supplier.
@@ -858,7 +1032,8 @@ public interface Promise<T> {
     ///
     /// @return Created instance.
     static <T> Promise<T> promise(TimeSpan delay, Consumer<Promise<T>> consumer) {
-        return Promise.<T>promise().async(delay, consumer);
+        return Promise.<T> promise()
+               .async(delay, consumer);
     }
 
     /// Create a new unresolved promise instance and run the provided supplier asynchronously.
@@ -869,7 +1044,8 @@ public interface Promise<T> {
     ///
     /// @return Created instance.
     static <T> Promise<T> promise(TimeSpan delay, Supplier<Result<T>> supplier) {
-        return promise(delay, promise -> promise.resolve(supplier.get()));
+        return promise(delay,
+                       promise -> promise.resolve(supplier.get()));
     }
 
     /// Asynchronously run the provided lambda and eventually resolve returned [Promise] with the value returned by lambda if the call succeeds or with
@@ -879,7 +1055,7 @@ public interface Promise<T> {
     /// @param supplier        the call to wrap
     ///
     /// @return the [Promise] instance, which eventually will be resolved with the output of the provided lambda
-    static <U> Promise<U> lift(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn0<U> supplier) {
+    static <U> Promise<U> lift(Fn1< ? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn0<U> supplier) {
         return Promise.promise(() -> Result.lift(exceptionMapper, supplier));
     }
 
@@ -889,7 +1065,8 @@ public interface Promise<T> {
     /// @param function        the function to wrap
     ///
     /// @return the [Promise] instance, which eventually will be resolved with the output of the provided lambda
-    static <U, T1> Fn1<Promise<U>, T1> liftFn1(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn1<U, T1> function) {
+    static <U, T1> Fn1<Promise<U>, T1> liftFn1(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
+                                               ThrowingFn1<U, T1> function) {
         return value -> Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value)));
     }
 
@@ -903,8 +1080,10 @@ public interface Promise<T> {
     /// @param <T2>            The type of the second parameter
     ///
     /// @return A binary function that takes two parameters and returns a Promise
-    static <U, T1, T2> Fn2<Promise<U>, T1, T2> liftFn2(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn2<U, T1, T2> function) {
-        return (value1, value2) -> Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value1, value2)));
+    static <U, T1, T2> Fn2<Promise<U>, T1, T2> liftFn2(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
+                                                       ThrowingFn2<U, T1, T2> function) {
+        return (value1, value2) -> Promise.promise(() -> Result.lift(exceptionMapper,
+                                                                     () -> function.apply(value1, value2)));
     }
 
     /// Convenience method for creating a ternary function that wraps a throwing function and returns a Promise.
@@ -918,8 +1097,10 @@ public interface Promise<T> {
     /// @param <T3>            The type of the third parameter
     ///
     /// @return A ternary function that takes three parameters and returns a Promise
-    static <U, T1, T2, T3> Fn3<Promise<U>, T1, T2, T3> liftFn3(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn3<U, T1, T2, T3> function) {
-        return (value1, value2, value3) -> Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value1, value2, value3)));
+    static <U, T1, T2, T3> Fn3<Promise<U>, T1, T2, T3> liftFn3(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
+                                                               ThrowingFn3<U, T1, T2, T3> function) {
+        return (value1, value2, value3) -> Promise.promise(() -> Result.lift(exceptionMapper,
+                                                                             () -> function.apply(value1, value2, value3)));
     }
 
     /// Same as [#liftFn1(Fn1, ThrowingFn1)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
@@ -968,7 +1149,9 @@ public interface Promise<T> {
     /// @param <T1>            The type of the parameter
     ///
     /// @return A Promise that will be resolved with the function result or failure
-    static <U, T1> Promise<U> lift1(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn1<U, T1> function, T1 value1) {
+    static <U, T1> Promise<U> lift1(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
+                                    ThrowingFn1<U, T1> function,
+                                    T1 value1) {
         return Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value1)));
     }
 
@@ -996,7 +1179,10 @@ public interface Promise<T> {
     /// @param <T2>            The type of the second parameter
     ///
     /// @return A Promise that will be resolved with the function result or failure
-    static <U, T1, T2> Promise<U> lift2(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn2<U, T1, T2> function, T1 value1, T2 value2) {
+    static <U, T1, T2> Promise<U> lift2(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
+                                        ThrowingFn2<U, T1, T2> function,
+                                        T1 value1,
+                                        T2 value2) {
         return Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value1, value2)));
     }
 
@@ -1028,7 +1214,11 @@ public interface Promise<T> {
     /// @param <T3>            The type of the third parameter
     ///
     /// @return A Promise that will be resolved with the function result or failure
-    static <U, T1, T2, T3> Promise<U> lift3(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn3<U, T1, T2, T3> function, T1 value1, T2 value2, T3 value3) {
+    static <U, T1, T2, T3> Promise<U> lift3(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
+                                            ThrowingFn3<U, T1, T2, T3> function,
+                                            T1 value1,
+                                            T2 value2,
+                                            T3 value3) {
         return Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value1, value2, value3)));
     }
 
@@ -1055,7 +1245,7 @@ public interface Promise<T> {
     /// @param runnable        the call to wrap
     ///
     /// @return the [Promise] instance which eventually will be resolved with the [Unit] or with the failure with the provided cause.
-    static Promise<Unit> lift(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingRunnable runnable) {
+    static Promise<Unit> lift(Fn1< ? extends Cause, ? super Throwable> exceptionMapper, ThrowingRunnable runnable) {
         return Promise.promise(() -> Result.lift(exceptionMapper, runnable));
     }
 
@@ -1141,12 +1331,12 @@ public interface Promise<T> {
     /// @return Created instance
     @SafeVarargs
     static <T> Promise<T> any(Result<T> failureResult, Promise<T>... promises) {
-        return Promise.promise(anySuccess -> threshold(promises.length, () -> anySuccess.resolve(failureResult))
-                .apply(at -> List.of(promises).forEach(
-                        promise -> promise.withResult(result ->
-                                                              result.onSuccess(anySuccess::succeed)
-                                                                    .onSuccessRun(() -> cancelAll(promises))
-                                                                    .onResultRun(at::registerEvent)))));
+        return Promise.promise(anySuccess -> threshold(promises.length,
+                                                       () -> anySuccess.resolve(failureResult))
+                                             .apply(at -> List.of(promises)
+                                                              .forEach(promise -> promise.withResult(result -> result.onSuccess(anySuccess::succeed)
+                                                                                                                     .onSuccessRun(() -> cancelAll(promises))
+                                                                                                                     .onResultRun(at::registerEvent)))));
     }
 
     /// Return promise which will be resolved once any of the promises provided as parameters are resolved with success. If none of the promises
@@ -1157,12 +1347,12 @@ public interface Promise<T> {
     ///
     /// @return Created instance
     static <T> Promise<T> any(Result<T> failureResult, List<Promise<T>> promises) {
-        return Promise.promise(anySuccess -> threshold(promises.size(), () -> anySuccess.resolve(failureResult))
-                .apply(at -> promises.forEach(
-                        promise -> promise.withResult(result ->
-                                                              result.onSuccess(anySuccess::succeed)
-                                                                    .onSuccessRun(() -> cancelAll(promises))
-                                                                    .onResultRun(at::registerEvent)))));
+        return Promise.promise(anySuccess -> threshold(promises.size(),
+                                                       () -> anySuccess.resolve(failureResult))
+                                             .apply(at -> promises.forEach(
+        promise -> promise.withResult(result -> result.onSuccess(anySuccess::succeed)
+                                                      .onSuccessRun(() -> cancelAll(promises))
+                                                      .onResultRun(at::registerEvent)))));
     }
 
     /// Return promise which will be resolved once any of the promises provided as parameters are resolved with success. If none of the promises
@@ -1213,14 +1403,13 @@ public interface Promise<T> {
         if (promises.isEmpty()) {
             return Promise.success(List.of());
         }
-
         var array = promises.toArray(new Promise[0]);
         var promise = Promise.promise();
         var collector = ResultCollector.resultCollector(promises.size(),
                                                         values -> promise.succeed(List.of(values)));
-        IntStream.range(0, promises.size())
+        IntStream.range(0,
+                        promises.size())
                  .forEach(index -> array[index].withResult(result -> collector.registerEvent(index, result)));
-
         return promise.map(list -> (List<Result<T>>) list);
     }
 
@@ -1234,7 +1423,6 @@ public interface Promise<T> {
     /// @return Promise instance, which will be resolved with all collected results.
     static <T1> Mapper1<T1> all(Promise<T1> promise1) {
         var causes = Causes.composite();
-
         return () -> promise1.map(Tuple::tuple)
                              .mapError(causes::append);
     }
@@ -1248,7 +1436,9 @@ public interface Promise<T> {
     /// @return Promise instance, which will be resolved with all collected results.
     @SuppressWarnings("unchecked")
     static <T1, T2> Mapper2<T1, T2> all(Promise<T1> promise1, Promise<T2> promise2) {
-        return () -> setupResult(values -> Result.all((Result<T1>) values[0], (Result<T2>) values[1]).id(),
+        return () -> setupResult(values -> Result.all((Result<T1>) values[0],
+                                                      (Result<T2>) values[1])
+                                                 .id(),
                                  promise1,
                                  promise2);
     }
@@ -1262,13 +1452,14 @@ public interface Promise<T> {
     ///
     /// @return Promise instance, which will be resolved with all collected results.
     @SuppressWarnings("unchecked")
-    static <T1, T2, T3> Mapper3<T1, T2, T3> all(
-            Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3) {
-
+    static <T1, T2, T3> Mapper3<T1, T2, T3> all(Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3) {
         return () -> setupResult(values -> Result.all((Result<T1>) values[0],
                                                       (Result<T2>) values[1],
-                                                      (Result<T3>) values[2]).id(),
-                                 promise1, promise2, promise3);
+                                                      (Result<T3>) values[2])
+                                                 .id(),
+                                 promise1,
+                                 promise2,
+                                 promise3);
     }
 
     /// Return a promise which will be resolved when all promises passed as a parameter are resolved. If any of the provided promises are
@@ -1281,13 +1472,19 @@ public interface Promise<T> {
     ///
     /// @return Promise instance, which will be resolved with all collected results.
     @SuppressWarnings("unchecked")
-    static <T1, T2, T3, T4> Mapper4<T1, T2, T3, T4> all(
-            Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4) {
-
-        return () -> setupResult(values -> Result.all(
-                                         (Result<T1>) values[0], (Result<T2>) values[1],
-                                         (Result<T3>) values[2], (Result<T4>) values[3]).id(),
-                                 promise1, promise2, promise3, promise4);
+    static <T1, T2, T3, T4> Mapper4<T1, T2, T3, T4> all(Promise<T1> promise1,
+                                                        Promise<T2> promise2,
+                                                        Promise<T3> promise3,
+                                                        Promise<T4> promise4) {
+        return () -> setupResult(values -> Result.all((Result<T1>) values[0],
+                                                      (Result<T2>) values[1],
+                                                      (Result<T3>) values[2],
+                                                      (Result<T4>) values[3])
+                                                 .id(),
+                                 promise1,
+                                 promise2,
+                                 promise3,
+                                 promise4);
     }
 
     /// Return a promise which will be resolved when all promises passed as a parameter are resolved. If any of the provided promises are
@@ -1301,17 +1498,22 @@ public interface Promise<T> {
     ///
     /// @return Promise instance, which will be resolved with all collected results.
     @SuppressWarnings("unchecked")
-    static <T1, T2, T3, T4, T5> Mapper5<T1, T2, T3, T4, T5> all(
-            Promise<T1> promise1,
-            Promise<T2> promise2,
-            Promise<T3> promise3,
-            Promise<T4> promise4,
-            Promise<T5> promise5) {
-
-        return () -> setupResult(values -> Result.all(
-                                         (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2],
-                                         (Result<T4>) values[3], (Result<T5>) values[4]).id(),
-                                 promise1, promise2, promise3, promise4, promise5);
+    static <T1, T2, T3, T4, T5> Mapper5<T1, T2, T3, T4, T5> all(Promise<T1> promise1,
+                                                                Promise<T2> promise2,
+                                                                Promise<T3> promise3,
+                                                                Promise<T4> promise4,
+                                                                Promise<T5> promise5) {
+        return () -> setupResult(values -> Result.all((Result<T1>) values[0],
+                                                      (Result<T2>) values[1],
+                                                      (Result<T3>) values[2],
+                                                      (Result<T4>) values[3],
+                                                      (Result<T5>) values[4])
+                                                 .id(),
+                                 promise1,
+                                 promise2,
+                                 promise3,
+                                 promise4,
+                                 promise5);
     }
 
     /// Return a promise which will be resolved when all promises passed as a parameter are resolved. If any of the provided promises are
@@ -1326,14 +1528,25 @@ public interface Promise<T> {
     ///
     /// @return Promise instance, which will be resolved with all collected results.
     @SuppressWarnings("unchecked")
-    static <T1, T2, T3, T4, T5, T6> Mapper6<T1, T2, T3, T4, T5, T6> all(
-            Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4,
-            Promise<T5> promise5, Promise<T6> promise6) {
-
-        return () -> setupResult(values -> Result.all(
-                                         (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2],
-                                         (Result<T4>) values[3], (Result<T5>) values[4], (Result<T6>) values[5]).id(),
-                                 promise1, promise2, promise3, promise4, promise5, promise6);
+    static <T1, T2, T3, T4, T5, T6> Mapper6<T1, T2, T3, T4, T5, T6> all(Promise<T1> promise1,
+                                                                        Promise<T2> promise2,
+                                                                        Promise<T3> promise3,
+                                                                        Promise<T4> promise4,
+                                                                        Promise<T5> promise5,
+                                                                        Promise<T6> promise6) {
+        return () -> setupResult(values -> Result.all((Result<T1>) values[0],
+                                                      (Result<T2>) values[1],
+                                                      (Result<T3>) values[2],
+                                                      (Result<T4>) values[3],
+                                                      (Result<T5>) values[4],
+                                                      (Result<T6>) values[5])
+                                                 .id(),
+                                 promise1,
+                                 promise2,
+                                 promise3,
+                                 promise4,
+                                 promise5,
+                                 promise6);
     }
 
     /// Return a promise which will be resolved when all promises passed as a parameter are resolved. If any of the provided promises are
@@ -1349,14 +1562,28 @@ public interface Promise<T> {
     ///
     /// @return Promise instance, which will be resolved with all collected results.
     @SuppressWarnings("unchecked")
-    static <T1, T2, T3, T4, T5, T6, T7> Mapper7<T1, T2, T3, T4, T5, T6, T7> all(
-            Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4,
-            Promise<T5> promise5, Promise<T6> promise6, Promise<T7> promise7) {
-
-        return () -> setupResult(values -> Result.all(
-                                         (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2],
-                                         (Result<T4>) values[3], (Result<T5>) values[4], (Result<T6>) values[5], (Result<T7>) values[6]).id(),
-                                 promise1, promise2, promise3, promise4, promise5, promise6, promise7);
+    static <T1, T2, T3, T4, T5, T6, T7> Mapper7<T1, T2, T3, T4, T5, T6, T7> all(Promise<T1> promise1,
+                                                                                Promise<T2> promise2,
+                                                                                Promise<T3> promise3,
+                                                                                Promise<T4> promise4,
+                                                                                Promise<T5> promise5,
+                                                                                Promise<T6> promise6,
+                                                                                Promise<T7> promise7) {
+        return () -> setupResult(values -> Result.all((Result<T1>) values[0],
+                                                      (Result<T2>) values[1],
+                                                      (Result<T3>) values[2],
+                                                      (Result<T4>) values[3],
+                                                      (Result<T5>) values[4],
+                                                      (Result<T6>) values[5],
+                                                      (Result<T7>) values[6])
+                                                 .id(),
+                                 promise1,
+                                 promise2,
+                                 promise3,
+                                 promise4,
+                                 promise5,
+                                 promise6,
+                                 promise7);
     }
 
     /// Return a promise which will be resolved when all promises passed as a parameter are resolved. If any of the provided promises are
@@ -1373,14 +1600,31 @@ public interface Promise<T> {
     ///
     /// @return Promise instance, which will be resolved with all collected results.
     @SuppressWarnings("unchecked")
-    static <T1, T2, T3, T4, T5, T6, T7, T8> Mapper8<T1, T2, T3, T4, T5, T6, T7, T8> all(
-            Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4,
-            Promise<T5> promise5, Promise<T6> promise6, Promise<T7> promise7, Promise<T8> promise8) {
-
-        return () -> setupResult(values -> Result.all(
-                                         (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2], (Result<T4>) values[3],
-                                         (Result<T5>) values[4], (Result<T6>) values[5], (Result<T7>) values[6], (Result<T8>) values[7]).id(),
-                                 promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8);
+    static <T1, T2, T3, T4, T5, T6, T7, T8> Mapper8<T1, T2, T3, T4, T5, T6, T7, T8> all(Promise<T1> promise1,
+                                                                                        Promise<T2> promise2,
+                                                                                        Promise<T3> promise3,
+                                                                                        Promise<T4> promise4,
+                                                                                        Promise<T5> promise5,
+                                                                                        Promise<T6> promise6,
+                                                                                        Promise<T7> promise7,
+                                                                                        Promise<T8> promise8) {
+        return () -> setupResult(values -> Result.all((Result<T1>) values[0],
+                                                      (Result<T2>) values[1],
+                                                      (Result<T3>) values[2],
+                                                      (Result<T4>) values[3],
+                                                      (Result<T5>) values[4],
+                                                      (Result<T6>) values[5],
+                                                      (Result<T7>) values[6],
+                                                      (Result<T8>) values[7])
+                                                 .id(),
+                                 promise1,
+                                 promise2,
+                                 promise3,
+                                 promise4,
+                                 promise5,
+                                 promise6,
+                                 promise7,
+                                 promise8);
     }
 
     /// Return a promise which will be resolved when all promises passed as a parameter are resolved. If any of the provided promises are
@@ -1398,27 +1642,25 @@ public interface Promise<T> {
     ///
     /// @return Promise instance, which will be resolved with all collected results.
     @SuppressWarnings("unchecked")
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9> Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> all(
-            Promise<T1> promise1,
-            Promise<T2> promise2,
-            Promise<T3> promise3,
-            Promise<T4> promise4,
-            Promise<T5> promise5,
-            Promise<T6> promise6,
-            Promise<T7> promise7,
-            Promise<T8> promise8,
-            Promise<T9> promise9) {
-
-        return () -> setupResult(values -> Result.all(
-                                         (Result<T1>) values[0],
-                                         (Result<T2>) values[1],
-                                         (Result<T3>) values[2],
-                                         (Result<T4>) values[3],
-                                         (Result<T5>) values[4],
-                                         (Result<T6>) values[5],
-                                         (Result<T7>) values[6],
-                                         (Result<T8>) values[7],
-                                         (Result<T9>) values[8]).id(),
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9> Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> all(Promise<T1> promise1,
+                                                                                                Promise<T2> promise2,
+                                                                                                Promise<T3> promise3,
+                                                                                                Promise<T4> promise4,
+                                                                                                Promise<T5> promise5,
+                                                                                                Promise<T6> promise6,
+                                                                                                Promise<T7> promise7,
+                                                                                                Promise<T8> promise8,
+                                                                                                Promise<T9> promise9) {
+        return () -> setupResult(values -> Result.all((Result<T1>) values[0],
+                                                      (Result<T2>) values[1],
+                                                      (Result<T3>) values[2],
+                                                      (Result<T4>) values[3],
+                                                      (Result<T5>) values[4],
+                                                      (Result<T6>) values[5],
+                                                      (Result<T7>) values[6],
+                                                      (Result<T8>) values[7],
+                                                      (Result<T9>) values[8])
+                                                 .id(),
                                  promise1,
                                  promise2,
                                  promise3,
@@ -1431,74 +1673,257 @@ public interface Promise<T> {
     }
 
     @SuppressWarnings("unchecked")
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> Mapper10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> all(
-            Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4, Promise<T5> promise5,
-            Promise<T6> promise6, Promise<T7> promise7, Promise<T8> promise8, Promise<T9> promise9, Promise<T10> promise10) {
-
-        return () -> setupResult(values -> Result.all(
-                        (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2], (Result<T4>) values[3], (Result<T5>) values[4],
-                        (Result<T6>) values[5], (Result<T7>) values[6], (Result<T8>) values[7], (Result<T9>) values[8], (Result<T10>) values[9]).id(),
-                promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8, promise9, promise10);
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> Mapper10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> all(Promise<T1> promise1,
+                                                                                                           Promise<T2> promise2,
+                                                                                                           Promise<T3> promise3,
+                                                                                                           Promise<T4> promise4,
+                                                                                                           Promise<T5> promise5,
+                                                                                                           Promise<T6> promise6,
+                                                                                                           Promise<T7> promise7,
+                                                                                                           Promise<T8> promise8,
+                                                                                                           Promise<T9> promise9,
+                                                                                                           Promise<T10> promise10) {
+        return () -> setupResult(values -> Result.all((Result<T1>) values[0],
+                                                      (Result<T2>) values[1],
+                                                      (Result<T3>) values[2],
+                                                      (Result<T4>) values[3],
+                                                      (Result<T5>) values[4],
+                                                      (Result<T6>) values[5],
+                                                      (Result<T7>) values[6],
+                                                      (Result<T8>) values[7],
+                                                      (Result<T9>) values[8],
+                                                      (Result<T10>) values[9])
+                                                 .id(),
+                                 promise1,
+                                 promise2,
+                                 promise3,
+                                 promise4,
+                                 promise5,
+                                 promise6,
+                                 promise7,
+                                 promise8,
+                                 promise9,
+                                 promise10);
     }
 
     @SuppressWarnings("unchecked")
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> Mapper11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> all(
-            Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4, Promise<T5> promise5,
-            Promise<T6> promise6, Promise<T7> promise7, Promise<T8> promise8, Promise<T9> promise9, Promise<T10> promise10, Promise<T11> promise11) {
-
-        return () -> setupResult(values -> Result.all(
-                        (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2], (Result<T4>) values[3], (Result<T5>) values[4],
-                        (Result<T6>) values[5], (Result<T7>) values[6], (Result<T8>) values[7], (Result<T9>) values[8], (Result<T10>) values[9], (Result<T11>) values[10]).id(),
-                promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8, promise9, promise10, promise11);
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> Mapper11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> all(Promise<T1> promise1,
+                                                                                                                     Promise<T2> promise2,
+                                                                                                                     Promise<T3> promise3,
+                                                                                                                     Promise<T4> promise4,
+                                                                                                                     Promise<T5> promise5,
+                                                                                                                     Promise<T6> promise6,
+                                                                                                                     Promise<T7> promise7,
+                                                                                                                     Promise<T8> promise8,
+                                                                                                                     Promise<T9> promise9,
+                                                                                                                     Promise<T10> promise10,
+                                                                                                                     Promise<T11> promise11) {
+        return () -> setupResult(values -> Result.all((Result<T1>) values[0],
+                                                      (Result<T2>) values[1],
+                                                      (Result<T3>) values[2],
+                                                      (Result<T4>) values[3],
+                                                      (Result<T5>) values[4],
+                                                      (Result<T6>) values[5],
+                                                      (Result<T7>) values[6],
+                                                      (Result<T8>) values[7],
+                                                      (Result<T9>) values[8],
+                                                      (Result<T10>) values[9],
+                                                      (Result<T11>) values[10])
+                                                 .id(),
+                                 promise1,
+                                 promise2,
+                                 promise3,
+                                 promise4,
+                                 promise5,
+                                 promise6,
+                                 promise7,
+                                 promise8,
+                                 promise9,
+                                 promise10,
+                                 promise11);
     }
 
     @SuppressWarnings("unchecked")
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(
-            Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4, Promise<T5> promise5, Promise<T6> promise6,
-            Promise<T7> promise7, Promise<T8> promise8, Promise<T9> promise9, Promise<T10> promise10, Promise<T11> promise11, Promise<T12> promise12) {
-
-        return () -> setupResult(values -> Result.all(
-                        (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2], (Result<T4>) values[3], (Result<T5>) values[4], (Result<T6>) values[5],
-                        (Result<T7>) values[6], (Result<T8>) values[7], (Result<T9>) values[8], (Result<T10>) values[9], (Result<T11>) values[10], (Result<T12>) values[11]).id(),
-                promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8, promise9, promise10, promise11, promise12);
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(Promise<T1> promise1,
+                                                                                                                               Promise<T2> promise2,
+                                                                                                                               Promise<T3> promise3,
+                                                                                                                               Promise<T4> promise4,
+                                                                                                                               Promise<T5> promise5,
+                                                                                                                               Promise<T6> promise6,
+                                                                                                                               Promise<T7> promise7,
+                                                                                                                               Promise<T8> promise8,
+                                                                                                                               Promise<T9> promise9,
+                                                                                                                               Promise<T10> promise10,
+                                                                                                                               Promise<T11> promise11,
+                                                                                                                               Promise<T12> promise12) {
+        return () -> setupResult(values -> Result.all((Result<T1>) values[0],
+                                                      (Result<T2>) values[1],
+                                                      (Result<T3>) values[2],
+                                                      (Result<T4>) values[3],
+                                                      (Result<T5>) values[4],
+                                                      (Result<T6>) values[5],
+                                                      (Result<T7>) values[6],
+                                                      (Result<T8>) values[7],
+                                                      (Result<T9>) values[8],
+                                                      (Result<T10>) values[9],
+                                                      (Result<T11>) values[10],
+                                                      (Result<T12>) values[11])
+                                                 .id(),
+                                 promise1,
+                                 promise2,
+                                 promise3,
+                                 promise4,
+                                 promise5,
+                                 promise6,
+                                 promise7,
+                                 promise8,
+                                 promise9,
+                                 promise10,
+                                 promise11,
+                                 promise12);
     }
 
     @SuppressWarnings("unchecked")
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(
-            Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4, Promise<T5> promise5, Promise<T6> promise6,
-            Promise<T7> promise7, Promise<T8> promise8, Promise<T9> promise9, Promise<T10> promise10, Promise<T11> promise11, Promise<T12> promise12, Promise<T13> promise13) {
-
-        return () -> setupResult(values -> Result.all(
-                        (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2], (Result<T4>) values[3], (Result<T5>) values[4], (Result<T6>) values[5],
-                        (Result<T7>) values[6], (Result<T8>) values[7], (Result<T9>) values[8], (Result<T10>) values[9], (Result<T11>) values[10], (Result<T12>) values[11], (Result<T13>) values[12]).id(),
-                promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8, promise9, promise10, promise11, promise12, promise13);
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(Promise<T1> promise1,
+                                                                                                                                         Promise<T2> promise2,
+                                                                                                                                         Promise<T3> promise3,
+                                                                                                                                         Promise<T4> promise4,
+                                                                                                                                         Promise<T5> promise5,
+                                                                                                                                         Promise<T6> promise6,
+                                                                                                                                         Promise<T7> promise7,
+                                                                                                                                         Promise<T8> promise8,
+                                                                                                                                         Promise<T9> promise9,
+                                                                                                                                         Promise<T10> promise10,
+                                                                                                                                         Promise<T11> promise11,
+                                                                                                                                         Promise<T12> promise12,
+                                                                                                                                         Promise<T13> promise13) {
+        return () -> setupResult(values -> Result.all((Result<T1>) values[0],
+                                                      (Result<T2>) values[1],
+                                                      (Result<T3>) values[2],
+                                                      (Result<T4>) values[3],
+                                                      (Result<T5>) values[4],
+                                                      (Result<T6>) values[5],
+                                                      (Result<T7>) values[6],
+                                                      (Result<T8>) values[7],
+                                                      (Result<T9>) values[8],
+                                                      (Result<T10>) values[9],
+                                                      (Result<T11>) values[10],
+                                                      (Result<T12>) values[11],
+                                                      (Result<T13>) values[12])
+                                                 .id(),
+                                 promise1,
+                                 promise2,
+                                 promise3,
+                                 promise4,
+                                 promise5,
+                                 promise6,
+                                 promise7,
+                                 promise8,
+                                 promise9,
+                                 promise10,
+                                 promise11,
+                                 promise12,
+                                 promise13);
     }
 
     @SuppressWarnings("unchecked")
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(
-            Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4, Promise<T5> promise5, Promise<T6> promise6, Promise<T7> promise7,
-            Promise<T8> promise8, Promise<T9> promise9, Promise<T10> promise10, Promise<T11> promise11, Promise<T12> promise12, Promise<T13> promise13, Promise<T14> promise14) {
-
-        return () -> setupResult(values -> Result.all(
-                        (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2], (Result<T4>) values[3], (Result<T5>) values[4], (Result<T6>) values[5], (Result<T7>) values[6],
-                        (Result<T8>) values[7], (Result<T9>) values[8], (Result<T10>) values[9], (Result<T11>) values[10], (Result<T12>) values[11], (Result<T13>) values[12], (Result<T14>) values[13]).id(),
-                promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8, promise9, promise10, promise11, promise12, promise13, promise14);
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(Promise<T1> promise1,
+                                                                                                                                                   Promise<T2> promise2,
+                                                                                                                                                   Promise<T3> promise3,
+                                                                                                                                                   Promise<T4> promise4,
+                                                                                                                                                   Promise<T5> promise5,
+                                                                                                                                                   Promise<T6> promise6,
+                                                                                                                                                   Promise<T7> promise7,
+                                                                                                                                                   Promise<T8> promise8,
+                                                                                                                                                   Promise<T9> promise9,
+                                                                                                                                                   Promise<T10> promise10,
+                                                                                                                                                   Promise<T11> promise11,
+                                                                                                                                                   Promise<T12> promise12,
+                                                                                                                                                   Promise<T13> promise13,
+                                                                                                                                                   Promise<T14> promise14) {
+        return () -> setupResult(values -> Result.all((Result<T1>) values[0],
+                                                      (Result<T2>) values[1],
+                                                      (Result<T3>) values[2],
+                                                      (Result<T4>) values[3],
+                                                      (Result<T5>) values[4],
+                                                      (Result<T6>) values[5],
+                                                      (Result<T7>) values[6],
+                                                      (Result<T8>) values[7],
+                                                      (Result<T9>) values[8],
+                                                      (Result<T10>) values[9],
+                                                      (Result<T11>) values[10],
+                                                      (Result<T12>) values[11],
+                                                      (Result<T13>) values[12],
+                                                      (Result<T14>) values[13])
+                                                 .id(),
+                                 promise1,
+                                 promise2,
+                                 promise3,
+                                 promise4,
+                                 promise5,
+                                 promise6,
+                                 promise7,
+                                 promise8,
+                                 promise9,
+                                 promise10,
+                                 promise11,
+                                 promise12,
+                                 promise13,
+                                 promise14);
     }
 
     @SuppressWarnings("unchecked")
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(
-            Promise<T1> promise1, Promise<T2> promise2, Promise<T3> promise3, Promise<T4> promise4, Promise<T5> promise5, Promise<T6> promise6, Promise<T7> promise7,
-            Promise<T8> promise8, Promise<T9> promise9, Promise<T10> promise10, Promise<T11> promise11, Promise<T12> promise12, Promise<T13> promise13, Promise<T14> promise14, Promise<T15> promise15) {
-
-        return () -> setupResult(values -> Result.all(
-                        (Result<T1>) values[0], (Result<T2>) values[1], (Result<T3>) values[2], (Result<T4>) values[3], (Result<T5>) values[4], (Result<T6>) values[5], (Result<T7>) values[6],
-                        (Result<T8>) values[7], (Result<T9>) values[8], (Result<T10>) values[9], (Result<T11>) values[10], (Result<T12>) values[11], (Result<T13>) values[12], (Result<T14>) values[13], (Result<T15>) values[14]).id(),
-                promise1, promise2, promise3, promise4, promise5, promise6, promise7, promise8, promise9, promise10, promise11, promise12, promise13, promise14, promise15);
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(Promise<T1> promise1,
+                                                                                                                                                             Promise<T2> promise2,
+                                                                                                                                                             Promise<T3> promise3,
+                                                                                                                                                             Promise<T4> promise4,
+                                                                                                                                                             Promise<T5> promise5,
+                                                                                                                                                             Promise<T6> promise6,
+                                                                                                                                                             Promise<T7> promise7,
+                                                                                                                                                             Promise<T8> promise8,
+                                                                                                                                                             Promise<T9> promise9,
+                                                                                                                                                             Promise<T10> promise10,
+                                                                                                                                                             Promise<T11> promise11,
+                                                                                                                                                             Promise<T12> promise12,
+                                                                                                                                                             Promise<T13> promise13,
+                                                                                                                                                             Promise<T14> promise14,
+                                                                                                                                                             Promise<T15> promise15) {
+        return () -> setupResult(values -> Result.all((Result<T1>) values[0],
+                                                      (Result<T2>) values[1],
+                                                      (Result<T3>) values[2],
+                                                      (Result<T4>) values[3],
+                                                      (Result<T5>) values[4],
+                                                      (Result<T6>) values[5],
+                                                      (Result<T7>) values[6],
+                                                      (Result<T8>) values[7],
+                                                      (Result<T9>) values[8],
+                                                      (Result<T10>) values[9],
+                                                      (Result<T11>) values[10],
+                                                      (Result<T12>) values[11],
+                                                      (Result<T13>) values[12],
+                                                      (Result<T14>) values[13],
+                                                      (Result<T15>) values[14])
+                                                 .id(),
+                                 promise1,
+                                 promise2,
+                                 promise3,
+                                 promise4,
+                                 promise5,
+                                 promise6,
+                                 promise7,
+                                 promise8,
+                                 promise9,
+                                 promise10,
+                                 promise11,
+                                 promise12,
+                                 promise13,
+                                 promise14,
+                                 promise15);
     }
 
-    Promise<Unit> UNIT = Promise.resolved(unitResult());
+    Promise<Unit>UNIT = Promise.resolved(unitResult());
 
-    Result<?> OTHER_SUCCEEDED = new CoreError.Cancelled("Cancelled because other Promise instance succeeded").result();
+    Result< ? >OTHER_SUCCEEDED = new CoreError.Cancelled("Cancelled because other Promise instance succeeded").result();
 
     CoreError.Cancelled PROMISE_CANCELLED = new CoreError.Cancelled("Promise cancelled");
 
@@ -1509,11 +1934,13 @@ public interface Promise<T> {
         Promise<Tuple1<T1>> id();
 
         default <R> Promise<R> map(Fn1<R, T1> mapper) {
-            return id().map(tuple -> tuple.map(mapper));
+            return id()
+                   .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn1<Promise<R>, T1> mapper) {
-            return id().flatMap(tuple -> tuple.map(mapper));
+            return id()
+                   .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1524,11 +1951,13 @@ public interface Promise<T> {
         Promise<Tuple2<T1, T2>> id();
 
         default <R> Promise<R> map(Fn2<R, T1, T2> mapper) {
-            return id().map(tuple -> tuple.map(mapper));
+            return id()
+                   .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn2<Promise<R>, T1, T2> mapper) {
-            return id().flatMap(tuple -> tuple.map(mapper));
+            return id()
+                   .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1539,11 +1968,13 @@ public interface Promise<T> {
         Promise<Tuple3<T1, T2, T3>> id();
 
         default <R> Promise<R> map(Fn3<R, T1, T2, T3> mapper) {
-            return id().map(tuple -> tuple.map(mapper));
+            return id()
+                   .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn3<Promise<R>, T1, T2, T3> mapper) {
-            return id().flatMap(tuple -> tuple.map(mapper));
+            return id()
+                   .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1554,11 +1985,13 @@ public interface Promise<T> {
         Promise<Tuple4<T1, T2, T3, T4>> id();
 
         default <R> Promise<R> map(Fn4<R, T1, T2, T3, T4> mapper) {
-            return id().map(tuple -> tuple.map(mapper));
+            return id()
+                   .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn4<Promise<R>, T1, T2, T3, T4> mapper) {
-            return id().flatMap(tuple -> tuple.map(mapper));
+            return id()
+                   .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1569,11 +2002,13 @@ public interface Promise<T> {
         Promise<Tuple5<T1, T2, T3, T4, T5>> id();
 
         default <R> Promise<R> map(Fn5<R, T1, T2, T3, T4, T5> mapper) {
-            return id().map(tuple -> tuple.map(mapper));
+            return id()
+                   .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn5<Promise<R>, T1, T2, T3, T4, T5> mapper) {
-            return id().flatMap(tuple -> tuple.map(mapper));
+            return id()
+                   .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1584,11 +2019,13 @@ public interface Promise<T> {
         Promise<Tuple6<T1, T2, T3, T4, T5, T6>> id();
 
         default <R> Promise<R> map(Fn6<R, T1, T2, T3, T4, T5, T6> mapper) {
-            return id().map(tuple -> tuple.map(mapper));
+            return id()
+                   .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn6<Promise<R>, T1, T2, T3, T4, T5, T6> mapper) {
-            return id().flatMap(tuple -> tuple.map(mapper));
+            return id()
+                   .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1599,11 +2036,13 @@ public interface Promise<T> {
         Promise<Tuple7<T1, T2, T3, T4, T5, T6, T7>> id();
 
         default <R> Promise<R> map(Fn7<R, T1, T2, T3, T4, T5, T6, T7> mapper) {
-            return id().map(tuple -> tuple.map(mapper));
+            return id()
+                   .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn7<Promise<R>, T1, T2, T3, T4, T5, T6, T7> mapper) {
-            return id().flatMap(tuple -> tuple.map(mapper));
+            return id()
+                   .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1614,11 +2053,13 @@ public interface Promise<T> {
         Promise<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> id();
 
         default <R> Promise<R> map(Fn8<R, T1, T2, T3, T4, T5, T6, T7, T8> mapper) {
-            return id().map(tuple -> tuple.map(mapper));
+            return id()
+                   .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn8<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8> mapper) {
-            return id().flatMap(tuple -> tuple.map(mapper));
+            return id()
+                   .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1629,11 +2070,13 @@ public interface Promise<T> {
         Promise<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> id();
 
         default <R> Promise<R> map(Fn9<R, T1, T2, T3, T4, T5, T6, T7, T8, T9> mapper) {
-            return id().map(tuple -> tuple.map(mapper));
+            return id()
+                   .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn9<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9> mapper) {
-            return id().flatMap(tuple -> tuple.map(mapper));
+            return id()
+                   .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1644,11 +2087,13 @@ public interface Promise<T> {
         Promise<Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>> id();
 
         default <R> Promise<R> map(Fn10<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
-            return id().map(tuple -> tuple.map(mapper));
+            return id()
+                   .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn10<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
-            return id().flatMap(tuple -> tuple.map(mapper));
+            return id()
+                   .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1659,11 +2104,13 @@ public interface Promise<T> {
         Promise<Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>> id();
 
         default <R> Promise<R> map(Fn11<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
-            return id().map(tuple -> tuple.map(mapper));
+            return id()
+                   .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn11<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
-            return id().flatMap(tuple -> tuple.map(mapper));
+            return id()
+                   .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1674,11 +2121,13 @@ public interface Promise<T> {
         Promise<Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>> id();
 
         default <R> Promise<R> map(Fn12<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
-            return id().map(tuple -> tuple.map(mapper));
+            return id()
+                   .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn12<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
-            return id().flatMap(tuple -> tuple.map(mapper));
+            return id()
+                   .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1689,11 +2138,13 @@ public interface Promise<T> {
         Promise<Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>> id();
 
         default <R> Promise<R> map(Fn13<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
-            return id().map(tuple -> tuple.map(mapper));
+            return id()
+                   .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn13<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
-            return id().flatMap(tuple -> tuple.map(mapper));
+            return id()
+                   .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1704,11 +2155,13 @@ public interface Promise<T> {
         Promise<Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>> id();
 
         default <R> Promise<R> map(Fn14<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
-            return id().map(tuple -> tuple.map(mapper));
+            return id()
+                   .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn14<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
-            return id().flatMap(tuple -> tuple.map(mapper));
+            return id()
+                   .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1719,44 +2172,40 @@ public interface Promise<T> {
         Promise<Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>> id();
 
         default <R> Promise<R> map(Fn15<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
-            return id().map(tuple -> tuple.map(mapper));
+            return id()
+                   .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn15<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
-            return id().flatMap(tuple -> tuple.map(mapper));
+            return id()
+                   .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
     private static <R> Promise<R> setupResult(FnX<Result<R>> transformer, Promise<?>... promises) {
         var promise = Promise.<R>promise();
-        var collector = resultCollector(promises.length, values -> promise.resolve(transformer.apply(values)));
-
+        var collector = resultCollector(promises.length,
+                                        values -> promise.resolve(transformer.apply(values)));
         int count = 0;
         for (var p : promises) {
-            final var index = count++;
+            final var index = count++ ;
             p.withResult(result -> collector.registerEvent(index, result));
         }
-
         return promise;
     }
 }
 
 enum AsyncExecutor {
     INSTANCE;
-
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-
     void runAsync(Runnable runnable) {
         executor.submit(runnable);
     }
-
     void runAsync(TimeSpan delay, Runnable runnable) {
         runAsync(() -> {
-            try {
+            try{
                 Thread.sleep(delay.duration());
-            } catch (InterruptedException e) {
-                // ignore
-            }
+            } catch (InterruptedException e) {}
             runnable.run();
         });
     }
@@ -1767,16 +2216,18 @@ final class PromiseImpl<T> implements Promise<T> {
     private static final Logger log = LoggerFactory.getLogger(Promise.class);
 
     volatile Result<T> result;
-    volatile Completion<T> stack; // Rely on default initialization to null
+    volatile Completion<T> stack;
 
+    // Rely on default initialization to null
     PromiseImpl(Result<T> result) {
         this.result = result;
     }
 
     @Override
     public String toString() {
-        return result == null ? "Promise<>"
-                : "Promise<" + result + '>';
+        return result == null
+               ? "Promise<>"
+               : "Promise<" + result + '>';
     }
 
     @Override
@@ -1789,10 +2240,9 @@ final class PromiseImpl<T> implements Promise<T> {
         if (result != null) {
             action.accept(result);
             return this;
-        } else {
+        }else {
             push(new CompletionOnResult<>(action));
         }
-
         return this;
     }
 
@@ -1800,7 +2250,7 @@ final class PromiseImpl<T> implements Promise<T> {
     public <U> Promise<U> fold(Fn1<Promise<U>, Result<T>> action) {
         if (result != null) {
             return action.apply(result);
-        } else {
+        }else {
             return chain(action);
         }
     }
@@ -1810,23 +2260,20 @@ final class PromiseImpl<T> implements Promise<T> {
         if (result != null) {
             return result;
         }
-
         var thread = Thread.currentThread();
-
         if (log.isTraceEnabled()) {
-            var stackTraceElement = thread.getStackTrace()[2];
-
+            var stackTraceElement = thread.getStackTrace() [2];
             log.trace("Thread {} ({}) is waiting for resolution of Promise {} at {}:{}",
-                      thread.threadId(), thread.getName(), this,
-                      stackTraceElement.getFileName(), stackTraceElement.getLineNumber());
+                      thread.threadId(),
+                      thread.getName(),
+                      this,
+                      stackTraceElement.getFileName(),
+                      stackTraceElement.getLineNumber());
         }
-
         push(new CompletionJoin<>(thread));
-
         while (result == null) {
             LockSupport.park();
         }
-
         return result;
     }
 
@@ -1840,39 +2287,34 @@ final class PromiseImpl<T> implements Promise<T> {
         if (result != null) {
             return result;
         }
-
         var thread = Thread.currentThread();
-
         if (log.isTraceEnabled()) {
-            var stackTraceElement = thread.getStackTrace()[2];
-
+            var stackTraceElement = thread.getStackTrace() [2];
             log.trace("Thread {} ({}) is waiting for resolution of Promise {} at {}:{} for {}ns",
-                      thread.threadId(), thread.getName(), this,
-                      stackTraceElement.getFileName(), stackTraceElement.getLineNumber(),
+                      thread.threadId(),
+                      thread.getName(),
+                      this,
+                      stackTraceElement.getFileName(),
+                      stackTraceElement.getLineNumber(),
                       timeout.nanos());
         }
-
         push(new CompletionJoin<>(thread));
-
         var deadline = System.nanoTime() + timeout.nanos();
-
         while (result == null && System.nanoTime() < deadline) {
             LockSupport.parkNanos(deadline - System.nanoTime());
         }
-
         if (result == null) {
             return new CoreError.Timeout("Promise is not resolved within specified timeout").result();
         }
-
         return result;
     }
 
     @Override
     public Promise<T> resolve(Result<T> value) {
         if (RESULT.compareAndSet(this, null, value)) {
-            do {
+            do{
                 processActions();
-            } while (this.stack != null);
+            }while (this.stack != null);
         }
         return this;
     }
@@ -1880,11 +2322,9 @@ final class PromiseImpl<T> implements Promise<T> {
     @SuppressWarnings("rawtypes")
     private void processActions() {
         Completion head;
-
-        do {
+        do{
             head = this.stack;
-        } while (!STACK.compareAndSet(this, head, null));
-
+        }while (!STACK.compareAndSet(this, head, null));
         // Split all completions into three lists - joins, regular completions (dependent transformations), and
         // event handlers.
         // Regular completions are executed immediately, event processors executed asynchronously.
@@ -1892,25 +2332,20 @@ final class PromiseImpl<T> implements Promise<T> {
         CompletionJoin joins = null;
         CompletionOnResult events = null;
         CompletionFold actions = null;
-
         Completion current = head;
         Completion tmp;
-
         // Split and reverse the list in one pass
         while (current != null) {
             tmp = current.next;
-
             switch ((CompletionMarker) current) {
                 case CompletionJoin join -> {
                     join.next = joins;
                     joins = join;
                 }
-
                 case CompletionOnResult event -> {
                     event.next = events;
                     events = event;
                 }
-
                 case CompletionFold action -> {
                     action.next = actions;
                     actions = action;
@@ -1918,7 +2353,6 @@ final class PromiseImpl<T> implements Promise<T> {
             }
             current = tmp;
         }
-
         runEventHandlers(events);
         runSequentialActions(actions);
         runJoins(joins);
@@ -1943,26 +2377,23 @@ final class PromiseImpl<T> implements Promise<T> {
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void runEventHandlers(Completion asyncEvents) {
         AsyncExecutor.INSTANCE.runAsync(() -> {
-            var current = asyncEvents;
-
-            while (current != null) {
-                current.complete(result);
-                current = current.next;
-            }
-        });
+                                            var current = asyncEvents;
+                                            while (current != null) {
+                                            current.complete(result);
+                                            current = current.next;
+                                        }
+                                        });
     }
 
     private <U> Promise<U> chain(Fn1<Promise<U>, Result<T>> transformer) {
         var dependency = new PromiseImpl<U>(null);
-
         push(new CompletionFold<>(dependency, transformer));
-
         return dependency;
     }
 
     private void push(Completion<T> completion) {
         Completion<T> prevStack;
-        do {
+        do{
             if (result != null) {
                 // In rare circumstances, when one thread resolves the instance while other tries to
                 // add new independent completion, we resolve completion here. There might be chances that this might
@@ -1973,7 +2404,7 @@ final class PromiseImpl<T> implements Promise<T> {
             }
             prevStack = stack;
             completion.next = prevStack;
-        } while (!STACK.compareAndSet(this, prevStack, completion));
+        }while (!STACK.compareAndSet(this, prevStack, completion));
     }
 
     sealed interface CompletionMarker permits CompletionOnResult, CompletionFold, CompletionJoin {}
@@ -2023,13 +2454,14 @@ final class PromiseImpl<T> implements Promise<T> {
         @Override
         public void complete(Result<T> value) {
             if (log.isTraceEnabled()) {
-                var stackTraceElement = thread.getStackTrace()[2];
-
+                var stackTraceElement = thread.getStackTrace() [2];
                 log.trace("Unblocking thread {} ({}) after resolution of Promise with {} at {}:{}",
-                          thread.threadId(), thread.getName(), value,
-                          stackTraceElement.getFileName(), stackTraceElement.getLineNumber());
+                          thread.threadId(),
+                          thread.getName(),
+                          value,
+                          stackTraceElement.getFileName(),
+                          stackTraceElement.getLineNumber());
             }
-
             LockSupport.unpark(thread);
         }
     }
@@ -2038,17 +2470,16 @@ final class PromiseImpl<T> implements Promise<T> {
     private static final VarHandle STACK;
 
     static {
-        try {
+        try{
             var lookup = MethodHandles.lookup();
             RESULT = lookup.findVarHandle(PromiseImpl.class, "result", Result.class);
             STACK = lookup.findVarHandle(PromiseImpl.class, "stack", PromiseImpl.Completion.class);
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }
-
         // Reduce the risk of rare disastrous classloading in the first call to
         // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773
         @SuppressWarnings("unused")
-        Class<?> ensureLoaded = LockSupport.class;
+        Class< ? > ensureLoaded = LockSupport.class;
     }
 }

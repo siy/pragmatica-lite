@@ -4,7 +4,7 @@
 
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>pragmatica-lite</artifactId>
-    <version>0.9.0</version>
+    <version>0.9.1</version>
     <modules>
         <module>core</module>
         <module>examples</module>
@@ -47,21 +47,21 @@
         <github.global.server>github</github.global.server>
 
         <!-- Dependencies -->
-        <netty.version>4.2.2.Final</netty.version>
+        <netty.version>4.2.9.Final</netty.version>
         <slf4j.version>2.0.17</slf4j.version>
         <junit.version>5.13.4</junit.version>
         <assertj-core.version>3.27.3</assertj-core.version>
-        <mockito.version>5.20.0</mockito.version>
+        <mockito.version>5.21.0</mockito.version>
         <awaitility.version>4.3.0</awaitility.version>
         <tinylog.version>2.7.0</tinylog.version>
         <kryo.version>5.6.2</kryo.version>
         <fury-core.version>0.10.3</fury-core.version>
 
         <!-- Integration Dependencies -->
-        <jackson.version>3.0.0-rc9</jackson.version>
-        <micrometer.version>1.14.2</micrometer.version>
+        <jackson.version>3.0.3</jackson.version>
+        <micrometer.version>1.16.1</micrometer.version>
         <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
-        <jooq.version>3.19.15</jooq.version>
+        <jooq.version>3.20.10</jooq.version>
     </properties>
 
     <distributionManagement>
@@ -204,7 +204,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>3.0-rc5</version>
+                <version>2.20</version>
             </dependency>
             <dependency>
                 <groupId>io.micrometer</groupId>
@@ -308,6 +308,11 @@
                     <configuration>
                         <publishingServerId>central</publishingServerId>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.pragmatica-lite</groupId>
+                    <artifactId>jbct-maven-plugin</artifactId>
+                    <version>0.4.2</version>
                 </plugin>
             </plugins>
         </pluginManagement>

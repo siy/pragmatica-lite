@@ -30,7 +30,6 @@ import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 /// A rate limiter implementation using Token Bucket algorithm.
 /// Thread-safe, one instance per protected resource/endpoint.
 public interface RateLimiter {
-
     /// Execute an operation if a permit is available, otherwise fail immediately.
     ///
     /// @param operation The promise-returning operation to execute
@@ -55,9 +54,10 @@ public interface RateLimiter {
     ///
     /// @return A new rate limiter
     static RateLimiter create(int rate, TimeSpan period) {
-        return builder().rate(rate)
-                        .period(period)
-                        .withDefaultTimeSource();
+        return builder()
+               .rate(rate)
+               .period(period)
+               .withDefaultTimeSource();
     }
 
     /// Create a rate limiter builder.
@@ -76,7 +76,6 @@ public interface RateLimiter {
     }
 
     record OptionalStage(int rate, TimeSpan period, int burst, TimeSource timeSource) {
-
         public OptionalStage burst(int extraPermits) {
             return new OptionalStage(rate, period, extraPermits, timeSource);
         }
@@ -98,35 +97,30 @@ public interface RateLimiter {
                            int refillRate,
                            long refillPeriodNanos,
                            TimeSource timeSource,
-                           long[] state // [0] = tokens, [1] = lastRefillTimeNanos
-        ) implements RateLimiter {
-
+                           long[] state) implements RateLimiter {
             @Override
             public <T> Promise<T> execute(Supplier<Promise<T>> operation) {
-                return tryAcquire().async()
-                                   .flatMap(operation);
+                return tryAcquire()
+                       .async()
+                       .flatMap(operation);
             }
 
             private synchronized Result<Unit> tryAcquire() {
                 refill();
-
                 if (state[0] >= 1) {
-                    state[0]--;
+                    state[0]-- ;
                     return Result.unitResult();
                 }
-
                 return new RateLimiterError.LimitExceeded(calculateRetryAfter()).result();
             }
 
             private void refill() {
                 long now = timeSource.nanoTime();
                 long elapsed = now - state[1];
-
                 if (elapsed >= refillPeriodNanos) {
                     long periods = elapsed / refillPeriodNanos;
                     // Cap periods to prevent overflow on extended idle periods
                     long tokensToAdd = Math.min(periods, maxTokens) * refillRate;
-
                     state[0] = Math.min(maxTokens, state[0] + tokensToAdd);
                     state[1] += periods * refillPeriodNanos;
                 }
@@ -136,14 +130,12 @@ public interface RateLimiter {
                 long now = timeSource.nanoTime();
                 long timeSinceLastRefill = now - state[1];
                 long remainingTimeInCurrentPeriod = refillPeriodNanos - timeSinceLastRefill;
-
-                return timeSpan(Math.max(1, remainingTimeInCurrentPeriod)).nanos();
+                return timeSpan(Math.max(1, remainingTimeInCurrentPeriod))
+                       .nanos();
             }
         }
-
         int maxTokens = rate + burst;
         long[] state = {maxTokens, timeSource.nanoTime()};
-
         return new rateLimiter(maxTokens, rate, period.nanos(), timeSource, state);
     }
 }
