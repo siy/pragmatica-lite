@@ -5,13 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.1] - Unreleased
-
-### Added
+## [0.9.1] - 2025-12-30
 
 ### Changed
 
-### Removed
+- Bumped jbct-maven-plugin to 0.4.0
+- Fixed deprecation warnings:
+  - `URL(String)` constructor replaced with URI-based parsing in `Network.parseURL()`
+  - Jackson `getText()` replaced with `getString()` in `ResultDeserializer`
+  - `Result.unwrap()` replaced with `onSuccess()` callbacks in `TomlParser`
+- Added `jakarta.xml.bind-api:4.0.4` dependency to jooq-r2dbc module
 
 ## [0.9.0] - 2025-12-26
 
