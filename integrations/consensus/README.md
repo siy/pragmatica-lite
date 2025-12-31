@@ -1,0 +1,126 @@
+# Consensus Module
+
+Rabia CFT (Crash Fault Tolerant) consensus algorithm for replicated state machines.
+
+## Features
+
+- Crash-fault-tolerant consensus without persistent event log
+- Batch-based command processing for efficiency
+- Automatic state synchronization on node recovery
+- Deterministic decision-making with coin-flip fallback
+- Pluggable network and persistence layers
+
+## Usage
+
+### Basic Setup
+
+```java
+import org.pragmatica.consensus.*;
+import org.pragmatica.consensus.rabia.*;
+
+// 1. Implement your state machine
+class CounterStateMachine implements StateMachine<CounterCommand> {
+    private int value = 0;
+
+    @Override
+    public <R> R process(CounterCommand command) {
+        return switch (command) {
+            case Increment() -> { value++; yield (R) Integer.valueOf(value); }
+            case Decrement() -> { value--; yield (R) Integer.valueOf(value); }
+            case Get() -> (R) Integer.valueOf(value);
+        };
+    }
+
+    @Override
+    public Result<byte[]> makeSnapshot() { /* serialize value */ }
+
+    @Override
+    public Result<Unit> restoreSnapshot(byte[] snapshot) { /* deserialize */ }
+
+    @Override
+    public void reset() { value = 0; }
+
+    @Override
+    public void configure(MessageRouter.MutableRouter router) {}
+}
+
+// 2. Implement network layer
+class MyConsensusNetwork implements ConsensusNetwork {
+    @Override
+    public <M extends ProtocolMessage> void broadcast(M message) { /* broadcast */ }
+
+    @Override
+    public <M extends ProtocolMessage> void send(NodeId nodeId, M message) { /* send */ }
+}
+
+// 3. Create topology info
+var topology = TopologyInfo.topologyInfo(NodeId.nodeId("node-1"), 3);
+
+// 4. Create and configure the engine
+var engine = new RabiaEngine<>(topology, network, stateMachine, ProtocolConfig.defaultConfig());
+var router = MessageRouter.mutable();
+engine.configure(router);
+
+// 5. Start and use
+engine.start().await();
+engine.apply(List.of(new Increment())).await(); // Returns List<Integer> with results
+```
+
+### Configuration
+
+```java
+// Production configuration
+var config = ProtocolConfig.defaultConfig();
+
+// Test configuration with faster intervals
+var testConfig = ProtocolConfig.testConfig();
+
+// Custom configuration
+var custom = new ProtocolConfig(
+    timeSpan(30).seconds(),  // cleanup interval
+    timeSpan(2).seconds(),   // sync retry interval
+    50                       // phases to keep
+);
+```
+
+## Architecture
+
+### Components
+
+- **RabiaEngine** - Main consensus engine coordinating the protocol
+- **StateMachine** - User-provided replicated state machine
+- **ConsensusNetwork** - Abstraction for node-to-node communication
+- **TopologyInfo** - Cluster size and quorum calculations
+- **RabiaPersistence** - State persistence for recovery
+
+### Protocol Flow
+
+1. **Propose** - Node proposes a batch of commands
+2. **Round 1 Vote** - Nodes vote on whether to accept the proposal
+3. **Round 2 Vote** - Based on round 1 majority, nodes refine their vote
+4. **Decision** - With f+1 votes, nodes commit or use coin flip
+
+### Quorum Requirements
+
+- **Cluster Size = N**: Tolerates up to f = (N-1)/2 failures
+- **Quorum Size**: N/2 + 1 (majority)
+- **f+1 Size**: N - quorum + 1
+
+| Nodes | Quorum | f+1 | Max Failures |
+|-------|--------|-----|--------------|
+| 3     | 2      | 2   | 1            |
+| 5     | 3      | 3   | 2            |
+| 7     | 4      | 4   | 3            |
+
+## Message Types
+
+### Synchronous (Consensus Rounds)
+- `Propose` - Initial batch proposal
+- `VoteRound1` - First round vote (V0/V1)
+- `VoteRound2` - Second round vote (V0/V1/VQUESTION)
+- `Decision` - Final decision broadcast
+- `SyncResponse` - State synchronization response
+
+### Asynchronous
+- `SyncRequest` - Request state from other nodes
+- `NewBatch` - Distribute new command batch

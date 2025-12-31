@@ -17,5 +17,7 @@
 
     <modules>
         <module>http-client</module>
+        <module>dns</module>
+        <module>tcp</module>
     </modules>
 </project>

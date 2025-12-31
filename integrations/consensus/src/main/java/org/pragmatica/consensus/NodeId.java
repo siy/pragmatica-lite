@@ -1,0 +1,43 @@
+/*
+ *  Copyright (c) 2020-2025 Sergiy Yevtushenko.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.pragmatica.consensus;
+
+import org.pragmatica.utility.IdGenerator;
+
+/**
+ * Unique identifier for a node in the consensus cluster.
+ */
+public record NodeId(String id) implements Comparable<NodeId> {
+    /**
+     * Create a node ID from the given string.
+     */
+    public static NodeId nodeId(String id) {
+        return new NodeId(id);
+    }
+
+    /**
+     * Generate a unique random node ID.
+     */
+    public static NodeId randomNodeId() {
+        return nodeId(IdGenerator.generate("node"));
+    }
+
+    @Override
+    public int compareTo(NodeId other) {
+        return id.compareTo(other.id);
+    }
+}

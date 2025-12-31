@@ -20,6 +20,11 @@
         <module>metrics</module>
         <module>db</module>
         <module>net</module>
+        <module>serialization</module>
+        <module>messaging</module>
+        <module>utility</module>
+        <module>dht</module>
+        <module>consensus</module>
         <module>config</module>
     </modules>
 </project>
