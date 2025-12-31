@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `timestamp()` - extract Unix timestamp
   - `encoded()` / `toBytes()` - serialize to string/bytes
   - `KSUIDError` sealed interface for typed parsing errors
+- JOOQ Integration (`integrations/db/jooq`)
+  - `JooqOperations` - Promise-based JOOQ operations with JDBC
+    - `fetchOne()` - fetch single record
+    - `fetchOptional()` - fetch optional record
+    - `fetch()` - fetch all records
+    - `execute()` - execute INSERT/UPDATE/DELETE
+  - `JooqTransactional` - transaction management with auto commit/rollback
+  - `JooqError` - sealed interface for typed error handling
 
 ### Changed
 - `IdGenerator.generate()` now uses KSUID instead of ULID
