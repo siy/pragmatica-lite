@@ -16,10 +16,11 @@
 
 package org.pragmatica.net.tcp;
 
+import org.pragmatica.lang.Result;
+
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
-import org.pragmatica.lang.Result;
 
 /**
  * Factory for creating Netty SSL contexts from TLS configuration.
@@ -40,10 +41,12 @@ public final class TlsContextFactory {
         };
     }
 
+    @SuppressWarnings("deprecation") // SelfSignedCertificate is for dev/testing only
     private static Result<SslContext> createSelfSigned() {
-        try {
+        try{
             var ssc = new SelfSignedCertificate();
-            var sslContext = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey())
+            var sslContext = SslContextBuilder.forServer(ssc.certificate(),
+                                                         ssc.privateKey())
                                               .build();
             return Result.success(sslContext);
         } catch (Exception e) {
@@ -52,14 +55,15 @@ public final class TlsContextFactory {
     }
 
     private static Result<SslContext> createFromFiles(TlsConfig.FromFiles config) {
-        try {
+        try{
             var password = config.keyPassword()
-                                 .fold(() -> null, pwd -> pwd);
-            var builder = SslContextBuilder.forServer(
-                config.certificatePath().toFile(),
-                config.privateKeyPath().toFile(),
-                password
-            );
+                                 .fold(() -> null,
+                                       pwd -> pwd);
+            var builder = SslContextBuilder.forServer(config.certificatePath()
+                                                            .toFile(),
+                                                      config.privateKeyPath()
+                                                            .toFile(),
+                                                      password);
             return Result.success(builder.build());
         } catch (Exception e) {
             return new TlsError.CertificateLoadFailed(config.certificatePath(), e).result();

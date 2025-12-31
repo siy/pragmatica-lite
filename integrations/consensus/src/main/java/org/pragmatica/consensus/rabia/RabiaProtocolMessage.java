@@ -33,29 +33,28 @@ public sealed interface RabiaProtocolMessage extends ProtocolMessage {
          * Initial proposal from a node.
          */
         record Propose<C extends Command>(NodeId sender, Phase phase, Batch<C> value)
-                implements Synchronous {}
+        implements Synchronous {}
 
         /**
          * Round 1 vote message.
          */
         record VoteRound1(NodeId sender, Phase phase, StateValue stateValue)
-                implements Synchronous {}
+        implements Synchronous {}
 
         /**
          * Round 2 vote message.
          */
         record VoteRound2(NodeId sender, Phase phase, StateValue stateValue)
-                implements Synchronous {}
+        implements Synchronous {}
 
         /**
          * Decision broadcast message.
          */
-        record Decision<C extends Command>(
-                NodeId sender,
-                Phase phase,
-                StateValue stateValue,
-                Batch<C> value)
-                implements Synchronous {}
+        record Decision<C extends Command>(NodeId sender,
+                                           Phase phase,
+                                           StateValue stateValue,
+                                           Batch<C> value)
+        implements Synchronous {}
 
         /**
          * State synchronization response.

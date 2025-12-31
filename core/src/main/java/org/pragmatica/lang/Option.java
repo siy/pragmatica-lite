@@ -956,11 +956,11 @@ public sealed interface Option<T> permits Some, None {
     static <T> Option<T> any(Option<T> op, Supplier<Option<T>>... ops) {
         return op.fold(() -> {
                            for (var option : ops) {
-                           var result = option.get();
-                           if (result.isPresent()) {
-                           return result;
-                       }
-                       }
+                               var result = option.get();
+                               if (result.isPresent()) {
+                                   return result;
+                               }
+                           }
                            return op;
                        },
                        _ -> op);
@@ -1026,11 +1026,7 @@ public sealed interface Option<T> permits Some, None {
                                                         Option<T2> op2,
                                                         Option<T3> op3,
                                                         Option<T4> op4) {
-        return () -> op1.flatMap(
-        v1 -> op2.flatMap(
-        v2 -> op3.flatMap(
-        v3 -> op4.flatMap(
-        v4 -> some(tuple(v1, v2, v3, v4))))));
+        return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> op3.flatMap(v3 -> op4.flatMap(v4 -> some(tuple(v1, v2, v3, v4))))));
     }
 
     /// Transform options into option with the tuple of five values. The result is empty if any input option is empty. Otherwise, the resulting instance contains
@@ -1042,12 +1038,11 @@ public sealed interface Option<T> permits Some, None {
                                                                 Option<T3> op3,
                                                                 Option<T4> op4,
                                                                 Option<T5> op5) {
-        return () -> op1.flatMap(
-        v1 -> op2.flatMap(
-        v2 -> op3.flatMap(
-        v3 -> op4.flatMap(
-        v4 -> op5.flatMap(
-        v5 -> some(tuple(v1, v2, v3, v4, v5)))))));
+        return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> op3.flatMap(v3 -> op4.flatMap(v4 -> op5.flatMap(v5 -> some(tuple(v1,
+                                                                                                                          v2,
+                                                                                                                          v3,
+                                                                                                                          v4,
+                                                                                                                          v5)))))));
     }
 
     /// Transform options into option with the tuple of six values. The result is empty if any input option is empty. Otherwise, the resulting instance contains
@@ -1060,13 +1055,12 @@ public sealed interface Option<T> permits Some, None {
                                                                         Option<T4> op4,
                                                                         Option<T5> op5,
                                                                         Option<T6> op6) {
-        return () -> op1.flatMap(
-        v1 -> op2.flatMap(
-        v2 -> op3.flatMap(
-        v3 -> op4.flatMap(
-        v4 -> op5.flatMap(
-        v5 -> op6.flatMap(
-        v6 -> some(tuple(v1, v2, v3, v4, v5, v6))))))));
+        return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> op3.flatMap(v3 -> op4.flatMap(v4 -> op5.flatMap(v5 -> op6.flatMap(v6 -> some(tuple(v1,
+                                                                                                                                            v2,
+                                                                                                                                            v3,
+                                                                                                                                            v4,
+                                                                                                                                            v5,
+                                                                                                                                            v6))))))));
     }
 
     /// Transform options into option with the tuple of seven values. The result is empty if any input option is empty. Otherwise, the resulting instance
@@ -1080,14 +1074,13 @@ public sealed interface Option<T> permits Some, None {
                                                                                 Option<T5> op5,
                                                                                 Option<T6> op6,
                                                                                 Option<T7> op7) {
-        return () -> op1.flatMap(
-        v1 -> op2.flatMap(
-        v2 -> op3.flatMap(
-        v3 -> op4.flatMap(
-        v4 -> op5.flatMap(
-        v5 -> op6.flatMap(
-        v6 -> op7.flatMap(
-        v7 -> some(tuple(v1, v2, v3, v4, v5, v6, v7)))))))));
+        return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> op3.flatMap(v3 -> op4.flatMap(v4 -> op5.flatMap(v5 -> op6.flatMap(v6 -> op7.flatMap(v7 -> some(tuple(v1,
+                                                                                                                                                              v2,
+                                                                                                                                                              v3,
+                                                                                                                                                              v4,
+                                                                                                                                                              v5,
+                                                                                                                                                              v6,
+                                                                                                                                                              v7)))))))));
     }
 
     /// Transform options into option with the tuple of eight values. The result is empty if any input option is empty. Otherwise, the resulting instance
@@ -1102,15 +1095,14 @@ public sealed interface Option<T> permits Some, None {
                                                                                         Option<T6> op6,
                                                                                         Option<T7> op7,
                                                                                         Option<T8> op8) {
-        return () -> op1.flatMap(
-        v1 -> op2.flatMap(
-        v2 -> op3.flatMap(
-        v3 -> op4.flatMap(
-        v4 -> op5.flatMap(
-        v5 -> op6.flatMap(
-        v6 -> op7.flatMap(
-        v7 -> op8.flatMap(
-        v8 -> some(tuple(v1, v2, v3, v4, v5, v6, v7, v8))))))))));
+        return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> op3.flatMap(v3 -> op4.flatMap(v4 -> op5.flatMap(v5 -> op6.flatMap(v6 -> op7.flatMap(v7 -> op8.flatMap(v8 -> some(tuple(v1,
+                                                                                                                                                                                v2,
+                                                                                                                                                                                v3,
+                                                                                                                                                                                v4,
+                                                                                                                                                                                v5,
+                                                                                                                                                                                v6,
+                                                                                                                                                                                v7,
+                                                                                                                                                                                v8))))))))));
     }
 
     /// Transform options into option with the tuple of nine values. The result is empty if any input option is empty. Otherwise, the resulting instance contains
@@ -1126,16 +1118,15 @@ public sealed interface Option<T> permits Some, None {
                                                                                                 Option<T7> op7,
                                                                                                 Option<T8> op8,
                                                                                                 Option<T9> op9) {
-        return () -> op1.flatMap(
-        v1 -> op2.flatMap(
-        v2 -> op3.flatMap(
-        v3 -> op4.flatMap(
-        v4 -> op5.flatMap(
-        v5 -> op6.flatMap(
-        v6 -> op7.flatMap(
-        v7 -> op8.flatMap(
-        v8 -> op9.flatMap(
-        v9 -> some(tuple(v1, v2, v3, v4, v5, v6, v7, v8, v9)))))))))));
+        return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> op3.flatMap(v3 -> op4.flatMap(v4 -> op5.flatMap(v5 -> op6.flatMap(v6 -> op7.flatMap(v7 -> op8.flatMap(v8 -> op9.flatMap(v9 -> some(tuple(v1,
+                                                                                                                                                                                                  v2,
+                                                                                                                                                                                                  v3,
+                                                                                                                                                                                                  v4,
+                                                                                                                                                                                                  v5,
+                                                                                                                                                                                                  v6,
+                                                                                                                                                                                                  v7,
+                                                                                                                                                                                                  v8,
+                                                                                                                                                                                                  v9)))))))))));
     }
 
     static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> Mapper10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> all(Option<T1> op1,
@@ -1315,12 +1306,12 @@ public sealed interface Option<T> permits Some, None {
 
         default <R> Option<R> map(Fn1<R, T1> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn1<Option<R>, T1> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1339,12 +1330,12 @@ public sealed interface Option<T> permits Some, None {
 
         default <R> Option<R> map(Fn2<R, T1, T2> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn2<Option<R>, T1, T2> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1363,12 +1354,12 @@ public sealed interface Option<T> permits Some, None {
 
         default <R> Option<R> map(Fn3<R, T1, T2, T3> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn3<Option<R>, T1, T2, T3> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1387,12 +1378,12 @@ public sealed interface Option<T> permits Some, None {
 
         default <R> Option<R> map(Fn4<R, T1, T2, T3, T4> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn4<Option<R>, T1, T2, T3, T4> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1411,12 +1402,12 @@ public sealed interface Option<T> permits Some, None {
 
         default <R> Option<R> map(Fn5<R, T1, T2, T3, T4, T5> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn5<Option<R>, T1, T2, T3, T4, T5> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1435,12 +1426,12 @@ public sealed interface Option<T> permits Some, None {
 
         default <R> Option<R> map(Fn6<R, T1, T2, T3, T4, T5, T6> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn6<Option<R>, T1, T2, T3, T4, T5, T6> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1459,12 +1450,12 @@ public sealed interface Option<T> permits Some, None {
 
         default <R> Option<R> map(Fn7<R, T1, T2, T3, T4, T5, T6, T7> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn7<Option<R>, T1, T2, T3, T4, T5, T6, T7> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1483,12 +1474,12 @@ public sealed interface Option<T> permits Some, None {
 
         default <R> Option<R> map(Fn8<R, T1, T2, T3, T4, T5, T6, T7, T8> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn8<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1507,12 +1498,12 @@ public sealed interface Option<T> permits Some, None {
 
         default <R> Option<R> map(Fn9<R, T1, T2, T3, T4, T5, T6, T7, T8, T9> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn9<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1521,12 +1512,12 @@ public sealed interface Option<T> permits Some, None {
 
         default <R> Option<R> map(Fn10<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn10<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1535,12 +1526,12 @@ public sealed interface Option<T> permits Some, None {
 
         default <R> Option<R> map(Fn11<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn11<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1549,12 +1540,12 @@ public sealed interface Option<T> permits Some, None {
 
         default <R> Option<R> map(Fn12<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn12<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1563,12 +1554,12 @@ public sealed interface Option<T> permits Some, None {
 
         default <R> Option<R> map(Fn13<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn13<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1577,12 +1568,12 @@ public sealed interface Option<T> permits Some, None {
 
         default <R> Option<R> map(Fn14<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn14<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1591,12 +1582,12 @@ public sealed interface Option<T> permits Some, None {
 
         default <R> Option<R> map(Fn15<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn15<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
     }
 }

@@ -15,7 +15,6 @@
  */
 
 package org.pragmatica.net.dns;
-
 /**
  * Domain name to resolve.
  */

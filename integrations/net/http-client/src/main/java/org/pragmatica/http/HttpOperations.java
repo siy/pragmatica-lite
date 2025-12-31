@@ -25,7 +25,6 @@ import java.net.http.HttpResponse.BodyHandler;
 /// Implementation-agnostic interface for HTTP operations.
 /// Abstracts over HTTP client implementations to allow future extensibility.
 public interface HttpOperations {
-
     /// Sends an HTTP request and returns the response asynchronously.
     ///
     /// @param request HTTP request to send

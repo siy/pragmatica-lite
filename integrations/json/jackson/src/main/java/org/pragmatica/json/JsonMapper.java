@@ -57,7 +57,7 @@ public interface JsonMapper {
     /// @param <T>   Value type
     ///
     /// @return Result containing JSON bytes or error
-    <T> Result<byte[] > writeAsBytes(T value);
+    <T> Result<byte[]> writeAsBytes(T value);
 
     /// Deserialize from JSON string.
     ///
@@ -107,8 +107,8 @@ public interface JsonMapper {
     /// @return JsonMapper instance
     static JsonMapper defaultJsonMapper() {
         return jsonMapper()
-               .withPragmaticaTypes()
-               .build();
+                         .withPragmaticaTypes()
+                         .build();
     }
 
     /// Builder interface for configuring JsonMapper.

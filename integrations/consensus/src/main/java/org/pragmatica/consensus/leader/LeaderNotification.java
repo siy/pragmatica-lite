@@ -14,20 +14,16 @@
  *  limitations under the License.
  */
 
-package org.pragmatica.consensus;
+package org.pragmatica.consensus.leader;
 
-/**
- * Network abstraction for consensus protocol communication.
- * Implementations handle the actual network transport.
- */
-public interface ConsensusNetwork {
-    /**
-     * Broadcast a message to all nodes in the cluster.
-     */
-    <M extends ProtocolMessage> void broadcast(M message);
+import org.pragmatica.consensus.NodeId;
+import org.pragmatica.lang.Option;
+import org.pragmatica.messaging.Message;
 
-    /**
-     * Send a message to a specific node.
-     */
-    <M extends ProtocolMessage> void send(NodeId nodeId, M message);
+public sealed interface LeaderNotification extends Message.Local {
+    record LeaderChange(Option<NodeId> leaderId, boolean localNodeIsLeader) implements LeaderNotification {}
+
+    static LeaderChange leaderChange(Option<NodeId> leaderId, boolean localNodeIsLeader) {
+        return new LeaderChange(leaderId, localNodeIsLeader);
+    }
 }

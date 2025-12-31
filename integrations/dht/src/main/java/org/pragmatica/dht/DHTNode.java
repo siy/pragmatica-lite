@@ -52,9 +52,9 @@ public final class DHTNode<N extends Comparable<N>> {
      * @param config  DHT configuration
      */
     public static <N extends Comparable<N>> DHTNode<N> dhtNode(N nodeId,
-                                                                StorageEngine storage,
-                                                                ConsistentHashRing<N> ring,
-                                                                DHTConfig config) {
+                                                               StorageEngine storage,
+                                                               ConsistentHashRing<N> ring,
+                                                               DHTConfig config) {
         return new DHTNode<>(nodeId, storage, ring, config);
     }
 
@@ -118,14 +118,18 @@ public final class DHTNode<N extends Comparable<N>> {
      * Check if this node is responsible for a key (as primary or replica).
      */
     public boolean isResponsibleFor(byte[] key) {
-        return ring.nodesFor(key, config.replicationFactor()).contains(nodeId);
+        return ring.nodesFor(key,
+                             config.replicationFactor())
+                   .contains(nodeId);
     }
 
     /**
      * Check if this node is the primary for a key.
      */
     public boolean isPrimaryFor(byte[] key) {
-        return ring.primaryFor(key).map(nodeId::equals).orElse(false);
+        return ring.primaryFor(key)
+                   .map(nodeId::equals)
+                   .orElse(false);
     }
 
     /**
@@ -155,8 +159,8 @@ public final class DHTNode<N extends Comparable<N>> {
     public void handleGetRequest(DHTMessage.GetRequest request,
                                  Consumer<DHTMessage.GetResponse> responseHandler) {
         storage.get(request.key())
-               .onSuccess(value -> responseHandler.accept(
-                   new DHTMessage.GetResponse(request.requestId(), value)));
+               .onSuccess(value -> responseHandler.accept(new DHTMessage.GetResponse(request.requestId(),
+                                                                                     value)));
     }
 
     /**
@@ -164,11 +168,12 @@ public final class DHTNode<N extends Comparable<N>> {
      */
     public void handlePutRequest(DHTMessage.PutRequest request,
                                  Consumer<DHTMessage.PutResponse> responseHandler) {
-        storage.put(request.key(), request.value())
-               .onSuccess(_ -> responseHandler.accept(
-                   new DHTMessage.PutResponse(request.requestId(), true)))
-               .onFailure(_ -> responseHandler.accept(
-                   new DHTMessage.PutResponse(request.requestId(), false)));
+        storage.put(request.key(),
+                    request.value())
+               .onSuccess(_ -> responseHandler.accept(new DHTMessage.PutResponse(request.requestId(),
+                                                                                 true)))
+               .onFailure(_ -> responseHandler.accept(new DHTMessage.PutResponse(request.requestId(),
+                                                                                 false)));
     }
 
     /**
@@ -177,8 +182,8 @@ public final class DHTNode<N extends Comparable<N>> {
     public void handleRemoveRequest(DHTMessage.RemoveRequest request,
                                     Consumer<DHTMessage.RemoveResponse> responseHandler) {
         storage.remove(request.key())
-               .onSuccess(found -> responseHandler.accept(
-                   new DHTMessage.RemoveResponse(request.requestId(), found)));
+               .onSuccess(found -> responseHandler.accept(new DHTMessage.RemoveResponse(request.requestId(),
+                                                                                        found)));
     }
 
     /**
@@ -187,7 +192,7 @@ public final class DHTNode<N extends Comparable<N>> {
     public void handleExistsRequest(DHTMessage.ExistsRequest request,
                                     Consumer<DHTMessage.ExistsResponse> responseHandler) {
         storage.exists(request.key())
-               .onSuccess(exists -> responseHandler.accept(
-                   new DHTMessage.ExistsResponse(request.requestId(), exists)));
+               .onSuccess(exists -> responseHandler.accept(new DHTMessage.ExistsResponse(request.requestId(),
+                                                                                         exists)));
     }
 }

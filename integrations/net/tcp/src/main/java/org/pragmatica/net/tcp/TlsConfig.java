@@ -40,11 +40,9 @@ public sealed interface TlsConfig {
      * Certificate and private key loaded from PEM files.
      * Suitable for production use.
      */
-    record FromFiles(
-        Path certificatePath,
-        Path privateKeyPath,
-        Option<String> keyPassword
-    ) implements TlsConfig {}
+    record FromFiles(Path certificatePath,
+                     Path privateKeyPath,
+                     Option<String> keyPassword) implements TlsConfig {}
 
     /**
      * Create self-signed TLS configuration.

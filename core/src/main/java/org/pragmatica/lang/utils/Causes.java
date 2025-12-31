@@ -111,8 +111,8 @@ public sealed interface Causes {
                 return composite.append(cause(text));
             }
             return composite()
-                   .append(cause(text,
-                                 option(cause)));
+                            .append(cause(text,
+                                          option(cause)));
         }
 
         CompositeCause append(Cause cause);
@@ -127,28 +127,28 @@ public sealed interface Causes {
             @Override
             public CompositeCause append(Cause cause) {
                 causes()
-                .add(cause);
+                      .add(cause);
                 return this;
             }
 
             @Override
             public Stream<Cause> stream() {
                 return causes()
-                       .stream();
+                             .stream();
             }
 
             @Override
             public boolean isEmpty() {
                 return causes()
-                       .isEmpty();
+                             .isEmpty();
             }
 
             @Override
             public String message() {
                 var builder = new StringBuilder("Composite:");
                 stream()
-                .forEach(issue -> builder.append("\n  ")
-                                         .append(issue.message()));
+                      .forEach(issue -> builder.append("\n  ")
+                                               .append(issue.message()));
                 return builder.toString();
             }
 

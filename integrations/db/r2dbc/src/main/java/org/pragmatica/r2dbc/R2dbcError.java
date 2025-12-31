@@ -17,18 +17,18 @@
 
 package org.pragmatica.r2dbc;
 
+import org.pragmatica.lang.Cause;
+
 import io.r2dbc.spi.R2dbcDataIntegrityViolationException;
 import io.r2dbc.spi.R2dbcException;
 import io.r2dbc.spi.R2dbcTimeoutException;
 import io.r2dbc.spi.R2dbcTransientException;
-import org.pragmatica.lang.Cause;
 
 import static org.pragmatica.r2dbc.R2dbcError.DatabaseFailure.databaseFailure;
 
 /// Typed error causes for R2DBC operations.
 /// Maps common R2DBC exceptions to domain-friendly error types.
 public sealed interface R2dbcError extends Cause {
-
     /// Connection to database failed.
     record ConnectionFailed(String message) implements R2dbcError {
         @Override
@@ -90,7 +90,10 @@ public sealed interface R2dbcError extends Cause {
         @Override
         public String message() {
             var msg = cause.getMessage();
-            return "Database operation failed: " + (msg != null ? msg : cause.getClass().getName());
+            return "Database operation failed: " + (msg != null
+                                                    ? msg
+                                                    : cause.getClass()
+                                                           .getName());
         }
     }
 

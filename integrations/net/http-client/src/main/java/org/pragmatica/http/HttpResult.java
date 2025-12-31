@@ -31,7 +31,6 @@ import java.util.List;
 /// @param body Response body (typed)
 /// @param <T> Body type
 public record HttpResult<T>(int statusCode, HttpHeaders headers, T body) {
-
     /// Creates HttpResult from JDK HttpResponse.
     ///
     /// @param response JDK HttpResponse
@@ -69,7 +68,8 @@ public record HttpResult<T>(int statusCode, HttpHeaders headers, T body) {
     ///
     /// @return First header value, or empty if not present
     public Option<String> header(String name) {
-        return Option.option(headers.firstValue(name).orElse(null));
+        return Option.option(headers.firstValue(name)
+                                    .orElse(null));
     }
 
     /// Gets all values for a header.

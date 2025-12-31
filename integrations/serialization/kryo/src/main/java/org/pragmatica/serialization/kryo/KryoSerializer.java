@@ -16,13 +16,14 @@
 
 package org.pragmatica.serialization.kryo;
 
+import org.pragmatica.serialization.ClassRegistrator;
+import org.pragmatica.serialization.Serializer;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.util.Pool;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
-import org.pragmatica.serialization.ClassRegistrator;
-import org.pragmatica.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +50,7 @@ public interface KryoSerializer extends Serializer {
                 } catch (Exception e) {
                     log.error("Error serializing object", e);
                     throw new RuntimeException(e);
-                } finally {
+                } finally{
                     pool.free(kryo);
                 }
             }

@@ -32,12 +32,12 @@ public interface Serializer {
      */
     default <T> byte[] encode(T object) {
         var byteBuf = Unpooled.buffer();
-        try {
+        try{
             write(byteBuf, object);
             var bytes = new byte[byteBuf.readableBytes()];
             byteBuf.readBytes(bytes);
             return bytes;
-        } finally {
+        } finally{
             byteBuf.release();
         }
     }

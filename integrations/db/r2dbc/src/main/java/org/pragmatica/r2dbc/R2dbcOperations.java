@@ -17,23 +17,23 @@
 
 package org.pragmatica.r2dbc;
 
+import org.pragmatica.lang.Functions.Fn1;
+import org.pragmatica.lang.Option;
+import org.pragmatica.lang.Promise;
+
+import java.util.List;
+import java.util.function.BiFunction;
+
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import io.r2dbc.spi.Statement;
-import org.pragmatica.lang.Functions.Fn1;
-import org.pragmatica.lang.Option;
-import org.pragmatica.lang.Promise;
 import org.reactivestreams.Publisher;
-
-import java.util.List;
-import java.util.function.BiFunction;
 
 /// Promise-based R2DBC operations interface.
 /// Provides a functional wrapper for reactive database access with typed error handling.
 public interface R2dbcOperations {
-
     /// Executes a query and maps the single result.
     ///
     /// @param sql SQL query
@@ -93,88 +93,78 @@ final class ConnectionFactoryR2dbcOperations implements R2dbcOperations {
     @Override
     public <T> Promise<T> queryOne(String sql, BiFunction<Row, RowMetadata, T> mapper, Object... params) {
         return withConnection(conn -> {
-            var stmt = createStatement(conn, sql, params);
-            return ReactiveOperations.<T>fromPublisher(
-                flatMapResult(stmt.execute(), mapper),
-                e -> R2dbcError.fromException(e, sql)
-            );
-        });
+                                  var stmt = createStatement(conn, sql, params);
+                                  return ReactiveOperations.<T>fromPublisher(flatMapResult(stmt.execute(), mapper),
+                                                                             e -> R2dbcError.fromException(e, sql));
+                              });
     }
 
     @Override
     public <T> Promise<Option<T>> queryOptional(String sql, BiFunction<Row, RowMetadata, T> mapper, Object... params) {
         return withConnection(conn -> {
-            var stmt = createStatement(conn, sql, params);
-            return ReactiveOperations.<T>firstFromPublisher(
-                flatMapResult(stmt.execute(), mapper),
-                e -> R2dbcError.fromException(e, sql)
-            );
-        });
+                                  var stmt = createStatement(conn, sql, params);
+                                  return ReactiveOperations.<T>firstFromPublisher(flatMapResult(stmt.execute(), mapper),
+                                                                                  e -> R2dbcError.fromException(e, sql));
+                              });
     }
 
     @Override
     public <T> Promise<List<T>> queryList(String sql, BiFunction<Row, RowMetadata, T> mapper, Object... params) {
         return withConnection(conn -> {
-            var stmt = createStatement(conn, sql, params);
-            return ReactiveOperations.<T>collectFromPublisher(
-                flatMapResult(stmt.execute(), mapper),
-                e -> R2dbcError.fromException(e, sql)
-            );
-        });
+                                  var stmt = createStatement(conn, sql, params);
+                                  return ReactiveOperations.<T>collectFromPublisher(flatMapResult(stmt.execute(), mapper),
+                                                                                    e -> R2dbcError.fromException(e, sql));
+                              });
     }
 
     @Override
     public Promise<Long> update(String sql, Object... params) {
         return withConnection(conn -> {
-            var stmt = createStatement(conn, sql, params);
-            return ReactiveOperations.<io.r2dbc.spi.Result>fromPublisher(
-                stmt.execute(),
-                e -> R2dbcError.fromException(e, sql)
-            ).flatMap(result ->
-                ReactiveOperations.fromPublisher(
-                    result.getRowsUpdated(),
-                    e -> R2dbcError.fromException(e, sql)
-                )
-            );
-        });
+                                  var stmt = createStatement(conn, sql, params);
+                                  return ReactiveOperations.<io.r2dbc.spi.Result> fromPublisher(stmt.execute(),
+                                                                                                e -> R2dbcError.fromException(e,
+                                                                                                                              sql))
+                                                           .flatMap(result -> ReactiveOperations.fromPublisher(result.getRowsUpdated(),
+                                                                                                               e -> R2dbcError.fromException(e,
+                                                                                                                                             sql)));
+                              });
     }
 
     private <T> Promise<T> withConnection(Fn1<Promise<T>, Connection> operation) {
-        return ReactiveOperations.<Connection>fromPublisher(connectionFactory.create())
-            .flatMap(conn -> operation.apply(conn)
-                .onResult(_ -> ReactiveOperations.fromPublisher(conn.close())));
+        return ReactiveOperations.<Connection> fromPublisher(connectionFactory.create())
+                                 .flatMap(conn -> operation.apply(conn)
+                                                           .onResult(_ -> ReactiveOperations.fromPublisher(conn.close())));
     }
 
     private Statement createStatement(Connection conn, String sql, Object[] params) {
         var stmt = conn.createStatement(sql);
-        for (int i = 0; i < params.length; i++) {
+        for (int i = 0; i < params.length; i++ ) {
             stmt.bind(i, params[i]);
         }
         return stmt;
     }
 
-    private <T> Publisher<T> flatMapResult(Publisher<? extends io.r2dbc.spi.Result> resultPublisher,
+    private <T> Publisher<T> flatMapResult(Publisher< ? extends io.r2dbc.spi.Result> resultPublisher,
                                            BiFunction<Row, RowMetadata, T> mapper) {
         return subscriber -> resultPublisher.subscribe(new org.reactivestreams.Subscriber<io.r2dbc.spi.Result>() {
             @Override
             public void onSubscribe(org.reactivestreams.Subscription s) {
-                s.request(1);
-            }
+                                                           s.request(1);
+                                                       }
 
             @Override
             public void onNext(io.r2dbc.spi.Result result) {
-                result.map(mapper).subscribe(subscriber);
-            }
+                                                           result.map(mapper)
+                                                                 .subscribe(subscriber);
+                                                       }
 
             @Override
             public void onError(Throwable t) {
-                subscriber.onError(t);
-            }
+                                                           subscriber.onError(t);
+                                                       }
 
             @Override
-            public void onComplete() {
-                // Completion handled by inner subscriber
-            }
+            public void onComplete() {}
         });
     }
 }

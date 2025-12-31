@@ -15,7 +15,6 @@
  */
 
 package org.pragmatica.dht;
-
 /**
  * Configuration for the distributed hash table.
  *
@@ -93,6 +92,8 @@ public record DHTConfig(int replicationFactor, int writeQuorum, int readQuorum) 
      * For full replication, returns cluster size. Otherwise returns configured value.
      */
     public int effectiveReplicationFactor(int clusterSize) {
-        return isFullReplication() ? clusterSize : Math.min(replicationFactor, clusterSize);
+        return isFullReplication()
+               ? clusterSize
+               : Math.min(replicationFactor, clusterSize);
     }
 }

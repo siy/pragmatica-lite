@@ -57,7 +57,7 @@ public sealed interface Text {
     /// @param src Base64 encoded string
     ///
     /// @return Result containing decoded byte array or parsing error
-    static Result<byte[] > decodeBase64(String src) {
+    static Result<byte[]> decodeBase64(String src) {
         return Result.lift1(Base64.getDecoder()::decode, src);
     }
 
@@ -66,7 +66,7 @@ public sealed interface Text {
     /// @param src Base64 URL-safe encoded string
     ///
     /// @return Result containing decoded byte array or parsing error
-    static Result<byte[] > decodeBase64URL(String src) {
+    static Result<byte[]> decodeBase64URL(String src) {
         return Result.lift1(Base64.getUrlDecoder()::decode, src);
     }
 
@@ -75,7 +75,7 @@ public sealed interface Text {
     /// @param src MIME Base64 encoded string
     ///
     /// @return Result containing decoded byte array or parsing error
-    static Result<byte[] > decodeBase64MIME(String src) {
+    static Result<byte[]> decodeBase64MIME(String src) {
         return Result.lift1(Base64.getMimeDecoder()::decode, src);
     }
 

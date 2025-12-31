@@ -15,7 +15,6 @@
  */
 
 package org.pragmatica.net.tcp;
-
 /**
  * Socket-level options for server configuration.
  *

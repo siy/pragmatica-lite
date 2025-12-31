@@ -16,11 +16,12 @@
 
 package org.pragmatica.serialization.kryo;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.util.Pool;
 import org.pragmatica.serialization.ClassRegistrator;
 
 import java.util.stream.Stream;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.util.Pool;
 
 /**
  * Factory for creating thread-safe Kryo instance pools.
@@ -33,7 +34,10 @@ public sealed interface KryoPoolFactory {
      * @return a thread-safe Kryo pool
      */
     static Pool<Kryo> kryoPool(ClassRegistrator... registrators) {
-        return new Pool<>(true, false, Runtime.getRuntime().availableProcessors() * 2) {
+        return new Pool<>(true,
+                          false,
+                          Runtime.getRuntime()
+                                 .availableProcessors() * 2) {
             @Override
             protected Kryo create() {
                 var kryo = new Kryo();

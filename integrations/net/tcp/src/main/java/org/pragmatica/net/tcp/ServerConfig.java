@@ -26,12 +26,10 @@ import org.pragmatica.lang.Option;
  * @param tls           optional TLS configuration for secure connections
  * @param socketOptions socket-level options
  */
-public record ServerConfig(
-    String name,
-    int port,
-    Option<TlsConfig> tls,
-    SocketOptions socketOptions
-) {
+public record ServerConfig(String name,
+                           int port,
+                           Option<TlsConfig> tls,
+                           SocketOptions socketOptions) {
     public static ServerConfig serverConfig(String name, int port) {
         return new ServerConfig(name, port, Option.empty(), SocketOptions.defaults());
     }

@@ -15,7 +15,6 @@
  */
 
 package org.pragmatica.messaging;
-
 /**
  * Marker interface for all messages circulating inside the system.
  * <p>

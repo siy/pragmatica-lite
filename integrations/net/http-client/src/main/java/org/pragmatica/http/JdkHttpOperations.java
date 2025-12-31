@@ -58,32 +58,28 @@ public final class JdkHttpOperations implements HttpOperations {
     ///
     /// @return JdkHttpOperations instance with specified configuration
     public static JdkHttpOperations jdkHttpOperations(Duration connectTimeout,
-                                                       HttpClient.Redirect followRedirects,
-                                                       Executor executor) {
+                                                      HttpClient.Redirect followRedirects,
+                                                      Executor executor) {
         var builder = HttpClient.newBuilder()
-            .connectTimeout(connectTimeout)
-            .followRedirects(followRedirects);
-
+                                .connectTimeout(connectTimeout)
+                                .followRedirects(followRedirects);
         if (executor != null) {
             builder.executor(executor);
         }
-
         return new JdkHttpOperations(builder.build());
     }
 
     @Override
     public <T> Promise<HttpResult<T>> send(HttpRequest request, BodyHandler<T> handler) {
-        return Promise.promise(promise ->
-            client.sendAsync(request, handler)
-                .thenApply(HttpResult::from)
-                .whenComplete((result, error) -> {
-                    if (error != null) {
-                        promise.fail(HttpError.fromException(error));
-                    } else {
-                        promise.succeed(result);
-                    }
-                })
-        );
+        return Promise.promise(promise -> client.sendAsync(request, handler)
+                                                .thenApply(HttpResult::from)
+                                                .whenComplete((result, error) -> {
+                                                                  if (error != null) {
+                                                                      promise.fail(HttpError.fromException(error));
+                                                                  } else {
+                                                                      promise.succeed(result);
+                                                                  }
+                                                              }));
     }
 
     /// Returns the underlying HttpClient.

@@ -15,23 +15,17 @@
  */
 
 package org.pragmatica.utility;
-
-import java.util.Locale;
-
 /**
- * ID generator using ULID for unique, time-sortable identifiers.
+ * ID generator using KSUID for unique, time-sortable identifiers.
  */
 public sealed interface IdGenerator {
-    /**
-     * Generate a unique ID with the given prefix.
-     *
-     * @param prefix the prefix for the ID
-     * @return a unique ID in the format "prefix-ulid"
-     */
+    /// Generate a unique ID with the given prefix.
+    ///
+    /// @param prefix the prefix for the ID
+    /// @return a unique ID in the format "prefix-ksuid"
     static String generate(String prefix) {
-        return prefix + "-" + ULID.randomULID()
-                                  .encoded()
-                                  .toLowerCase(Locale.ROOT);
+        return prefix + "-" + KSUID.ksuid()
+                                  .encoded();
     }
 
     @SuppressWarnings("unused")

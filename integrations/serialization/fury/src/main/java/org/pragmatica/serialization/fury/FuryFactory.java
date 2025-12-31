@@ -16,12 +16,13 @@
 
 package org.pragmatica.serialization.fury;
 
-import org.apache.fury.Fury;
-import org.apache.fury.ThreadSafeFury;
-import org.apache.fury.config.Language;
 import org.pragmatica.serialization.ClassRegistrator;
 
 import java.util.stream.Stream;
+
+import org.apache.fury.Fury;
+import org.apache.fury.ThreadSafeFury;
+import org.apache.fury.config.Language;
 
 /**
  * Factory for creating thread-safe Fury instances.
@@ -34,7 +35,8 @@ public sealed interface FuryFactory {
      * @return a thread-safe Fury instance
      */
     static ThreadSafeFury fury(ClassRegistrator... registrators) {
-        int coreCount = Runtime.getRuntime().availableProcessors();
+        int coreCount = Runtime.getRuntime()
+                               .availableProcessors();
         var fury = Fury.builder()
                        .withLanguage(Language.JAVA)
                        .buildThreadSafeFuryPool(coreCount * 2, coreCount * 4);

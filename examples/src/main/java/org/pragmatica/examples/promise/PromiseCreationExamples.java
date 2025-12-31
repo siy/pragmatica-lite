@@ -18,7 +18,8 @@ class PromiseCreationExamples {
         var anotherFailedPromise = new CoreError.Fault("Operation failed").promise();
         // Create a Promise that resolves after a delay
         var delayedPromise = Promise.<String>promise(timeSpan(2)
-                                                     .seconds(), promise -> promise.succeed("Delayed result"));
+                                                             .seconds(),
+                                                     promise -> promise.succeed("Delayed result"));
         // Asynchronously resolve Promise with result of synchronous operation
         var anotherPromise = Promise.promise(() -> Result.success("Synchronous result"));
         Option<String> stringOption = Option.option("Some value");

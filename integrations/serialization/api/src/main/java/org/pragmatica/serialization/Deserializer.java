@@ -32,9 +32,9 @@ public interface Deserializer {
      */
     default <T> T decode(byte[] bytes) {
         var byteBuf = Unpooled.wrappedBuffer(bytes);
-        try {
+        try{
             return read(byteBuf);
-        } finally {
+        } finally{
             byteBuf.release();
         }
     }

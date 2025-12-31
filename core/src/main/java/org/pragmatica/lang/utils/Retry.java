@@ -136,7 +136,7 @@ public interface Retry {
                     long delay = (long)(initialDelay.nanos() * multiplier);
                     return timeSpan(Math.min(delay,
                                              maxDelay.nanos()))
-                           .nanos();
+                                   .nanos();
                 }
             }
             return initialDelay -> maxDelay -> factor -> withJitter -> new exponentialBackoffStrategy(initialDelay,
@@ -177,7 +177,7 @@ public interface Retry {
                     long delay = initialDelay.nanos() + (increment.nanos() * (attempt - 1));
                     return timeSpan(Math.min(delay,
                                              maxDelay.nanos()))
-                           .nanos();
+                                   .nanos();
                 }
             }
             return initialDelay -> increment -> maxDelay -> new linearBackoffStrategy(initialDelay, increment, maxDelay);

@@ -48,7 +48,7 @@ public class OptionSerializer extends ValueSerializer<Option< ? >> {
             case Option.Some< ? > some -> {
                 if (valueSerializer != null) {
                     valueSerializer.serialize(some.value(), gen, provider);
-                }else {
+                } else {
                     gen.writePOJO(some.value());
                 }
             }

@@ -16,6 +16,14 @@
 
 package org.pragmatica.net.tcp;
 
+import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
+import org.pragmatica.lang.utils.Causes;
+
+import java.util.List;
+import java.util.function.Supplier;
+
+import io.netty.handler.ssl.SslContext;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -25,14 +33,8 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import org.pragmatica.lang.Promise;
-import org.pragmatica.lang.Unit;
-import org.pragmatica.lang.utils.Causes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * Convenient wrapper for Netty server setup boilerplate.
@@ -61,14 +63,12 @@ public interface Server {
      * @return promise of the running server
      */
     static Promise<Server> server(ServerConfig config, Supplier<List<ChannelHandler>> channelHandlers) {
-        record server(
-            String name,
-            int port,
-            EventLoopGroup bossGroup,
-            EventLoopGroup workerGroup,
-            Channel serverChannel,
-            Supplier<List<ChannelHandler>> channelHandlers
-        ) implements Server {
+        record server(String name,
+                      int port,
+                      EventLoopGroup bossGroup,
+                      EventLoopGroup workerGroup,
+                      Channel serverChannel,
+                      Supplier<List<ChannelHandler>> channelHandlers) implements Server {
             private static final Logger log = LoggerFactory.getLogger(Server.class);
 
             @Override
@@ -92,27 +92,24 @@ public interface Server {
 
             @Override
             public Promise<Channel> connectTo(NodeAddress address) {
-                var bootstrap = new Bootstrap()
-                    .group(workerGroup)
-                    .channel(NioSocketChannel.class)
-                    .handler(createChildHandler(channelHandlers, null));
-
+                var bootstrap = new Bootstrap().group(workerGroup)
+                                               .channel(NioSocketChannel.class)
+                                               .handler(createChildHandler(channelHandlers, null));
                 var promise = Promise.<Channel>promise();
-                bootstrap.connect(address.host(), address.port())
+                bootstrap.connect(address.host(),
+                                  address.port())
                          .addListener((ChannelFutureListener) future -> {
-                             if (future.isSuccess()) {
-                                 promise.succeed(future.channel());
-                             } else {
-                                 promise.fail(Causes.fromThrowable(future.cause()));
-                             }
-                         });
+                                          if (future.isSuccess()) {
+                                              promise.succeed(future.channel());
+                                          } else {
+                                              promise.fail(Causes.fromThrowable(future.cause()));
+                                          }
+                                      });
                 return promise;
             }
 
-            private static ChannelInitializer<SocketChannel> createChildHandler(
-                Supplier<List<ChannelHandler>> channelHandlers,
-                io.netty.handler.ssl.SslContext sslContext
-            ) {
+            private static ChannelInitializer<SocketChannel> createChildHandler(Supplier<List<ChannelHandler>> channelHandlers,
+                                                                                SslContext sslContext) {
                 return new ChannelInitializer<>() {
                     @Override
                     protected void initChannel(SocketChannel ch) {
@@ -127,55 +124,53 @@ public interface Server {
                 };
             }
         }
-
         // Handle TLS configuration
         var sslContextResult = config.tls()
                                      .map(TlsContextFactory::create)
-                                     .fold(() -> null, result -> result);
-
+                                     .fold(() -> null,
+                                           result -> result);
         if (sslContextResult != null && sslContextResult.isFailure()) {
             return sslContextResult.mapError(cause -> cause)
-                                   .<Server>map(_ -> null)
+                                   .<Server> map(_ -> null)
                                    .async();
         }
-
         var sslContext = sslContextResult != null
                          ? sslContextResult.fold(_ -> null, ctx -> ctx)
                          : null;
-
         var bossGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
         var workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         var socketOptions = config.socketOptions();
-
-        var bootstrap = new ServerBootstrap()
-            .group(bossGroup, workerGroup)
-            .channel(NioServerSocketChannel.class)
-            .handler(new LoggingHandler(LogLevel.TRACE))
-            .childHandler(server.createChildHandler(channelHandlers, sslContext))
-            .option(ChannelOption.SO_BACKLOG, socketOptions.soBacklog())
-            .childOption(ChannelOption.SO_KEEPALIVE, socketOptions.soKeepalive());
-
+        var bootstrap = new ServerBootstrap().group(bossGroup, workerGroup)
+                                             .channel(NioServerSocketChannel.class)
+                                             .handler(new LoggingHandler(LogLevel.TRACE))
+                                             .childHandler(server.createChildHandler(channelHandlers, sslContext))
+                                             .option(ChannelOption.SO_BACKLOG,
+                                                     socketOptions.soBacklog())
+                                             .childOption(ChannelOption.SO_KEEPALIVE,
+                                                          socketOptions.soKeepalive());
         var promise = Promise.<Server>promise();
         bootstrap.bind(config.port())
                  .addListener((ChannelFutureListener) future -> {
-                     if (future.isSuccess()) {
-                         var protocol = sslContext != null ? "TLS" : "TCP";
-                         server.log.info("Server {} started on port {} ({})",
-                                         config.name(), config.port(), protocol);
-                         promise.succeed(new server(
-                             config.name(),
-                             config.port(),
-                             bossGroup,
-                             workerGroup,
-                             future.channel(),
-                             channelHandlers
-                         ));
-                     } else {
-                         bossGroup.shutdownGracefully();
-                         workerGroup.shutdownGracefully();
-                         promise.fail(Causes.fromThrowable(future.cause()));
-                     }
-                 });
+                                  if (future.isSuccess()) {
+                                      var protocol = sslContext != null
+                                                     ? "TLS"
+                                                     : "TCP";
+                                      server.log.info("Server {} started on port {} ({})",
+                                                      config.name(),
+                                                      config.port(),
+                                                      protocol);
+                                      promise.succeed(new server(config.name(),
+                                                                 config.port(),
+                                                                 bossGroup,
+                                                                 workerGroup,
+                                                                 future.channel(),
+                                                                 channelHandlers));
+                                  } else {
+                                      bossGroup.shutdownGracefully();
+                                      workerGroup.shutdownGracefully();
+                                      promise.fail(Causes.fromThrowable(future.cause()));
+                                  }
+                              });
         return promise;
     }
 

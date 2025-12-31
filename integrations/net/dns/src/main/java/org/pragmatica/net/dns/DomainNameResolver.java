@@ -16,23 +16,24 @@
 
 package org.pragmatica.net.dns;
 
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.MultiThreadIoEventLoopGroup;
-import io.netty.channel.nio.NioIoHandler;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.io.AsyncCloseable;
 import org.pragmatica.lang.io.TimeSpan;
 import org.pragmatica.net.dns.ResolverErrors.UnknownDomain;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.pragmatica.lang.Option.option;
 import static org.pragmatica.lang.Promise.resolved;
@@ -48,7 +49,7 @@ import static org.pragmatica.net.dns.DomainName.domainName;
  */
 public interface DomainNameResolver extends AsyncCloseable {
     int DNS_UDP_PORT = 53;
-    Result<DomainAddress> UNKNOWN_DOMAIN = new UnknownDomain("Unknown domain").result();
+    Result<DomainAddress>UNKNOWN_DOMAIN = new UnknownDomain("Unknown domain").result();
 
     /**
      * Resolve domain name, using cache if available.
@@ -83,13 +84,7 @@ public interface DomainNameResolver extends AsyncCloseable {
      */
     static DomainNameResolver domainNameResolver(List<InetAddress> servers) {
         var eventLoop = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
-        return new Resolver(
-            DnsClient.dnsClient(eventLoop),
-            prepareServers(servers),
-            buildDnsCache(),
-            eventLoop,
-            true
-        );
+        return new Resolver(DnsClient.dnsClient(eventLoop), prepareServers(servers), buildDnsCache(), eventLoop, true);
     }
 
     /**
@@ -101,13 +96,7 @@ public interface DomainNameResolver extends AsyncCloseable {
      * @return new resolver instance
      */
     static DomainNameResolver domainNameResolver(List<InetAddress> servers, EventLoopGroup eventLoop) {
-        return new Resolver(
-            DnsClient.dnsClient(eventLoop),
-            prepareServers(servers),
-            buildDnsCache(),
-            eventLoop,
-            false
-        );
+        return new Resolver(DnsClient.dnsClient(eventLoop), prepareServers(servers), buildDnsCache(), eventLoop, false);
     }
 
     private static List<InetSocketAddress> prepareServers(List<InetAddress> serverList) {
@@ -118,43 +107,41 @@ public interface DomainNameResolver extends AsyncCloseable {
 
     private static ConcurrentHashMap<DomainName, Promise<DomainAddress>> buildDnsCache() {
         var cache = new ConcurrentHashMap<DomainName, Promise<DomainAddress>>();
-        var resolvedLocalHost = domainAddress(
-            domainName("localhost"),
-            InetAddress.getLoopbackAddress(),
-            Duration.ofSeconds(0)  // Duration does not matter for localhost
-        );
-
+        var resolvedLocalHost = domainAddress(domainName("localhost"),
+                                              InetAddress.getLoopbackAddress(),
+                                              Duration.ofSeconds(0));
         cache.put(resolvedLocalHost.name(), success(resolvedLocalHost));
         return cache;
     }
 }
 
-record Resolver(
-    DnsClient client,
-    List<InetSocketAddress> serverList,
-    ConcurrentHashMap<DomainName, Promise<DomainAddress>> cache,
-    EventLoopGroup eventLoop,
-    boolean ownsEventLoop
-) implements DomainNameResolver {
+record Resolver(DnsClient client,
+                List<InetSocketAddress> serverList,
+                ConcurrentHashMap<DomainName, Promise<DomainAddress>> cache,
+                EventLoopGroup eventLoop,
+                boolean ownsEventLoop) implements DomainNameResolver {
     private static final Logger log = LoggerFactory.getLogger(DomainNameResolver.class);
 
     @Override
     public Promise<DomainAddress> resolveCached(DomainName name) {
-        return option(cache.get(name)).or(() -> resolved(UNKNOWN_DOMAIN));
+        return option(cache.get(name))
+                     .or(() -> resolved(UNKNOWN_DOMAIN));
     }
 
     @Override
     public Promise<DomainAddress> resolve(DomainName name) {
         var promise = cache.computeIfAbsent(name, this::fireRequest);
-
         // Do not cache failed requests and observe TTL for successful ones
         return promise.onFailureRun(() -> cache.remove(name))
                       .onSuccess(domainAddress -> {
-                          log.debug("TTL for {} is {}", domainAddress.name(), domainAddress.ttl());
-                          var ttl = TimeSpan.fromDuration(domainAddress.ttl());
-                          promise.async(ttl,
-                                        _ -> log.debug("TTL expired, removing {} from cache", cache.remove(domainAddress.name())));
-                      });
+                                     log.debug("TTL for {} is {}",
+                                               domainAddress.name(),
+                                               domainAddress.ttl());
+                                     var ttl = TimeSpan.fromDuration(domainAddress.ttl());
+                                     promise.async(ttl,
+                                                   _ -> log.debug("TTL expired, removing {} from cache",
+                                                                  cache.remove(domainAddress.name())));
+                                 });
     }
 
     private Promise<DomainAddress> fireRequest(DomainName domainName) {
@@ -169,11 +156,8 @@ record Resolver(
         if (!ownsEventLoop) {
             return client.close();
         }
-
         return client.close()
-                     .flatMap(_ -> Promise.promise(promise ->
-                         eventLoop.shutdownGracefully()
-                                  .addListener(_ -> promise.succeed(Unit.unit()))
-                     ));
+                     .flatMap(_ -> Promise.promise(promise -> eventLoop.shutdownGracefully()
+                                                                       .addListener(_ -> promise.succeed(Unit.unit()))));
     }
 }

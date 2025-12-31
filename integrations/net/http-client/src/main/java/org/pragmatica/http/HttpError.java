@@ -31,7 +31,6 @@ import static org.pragmatica.http.HttpError.Timeout.timeout;
 /// Typed error causes for HTTP operations.
 /// Maps common HTTP exceptions to domain-friendly error types.
 public sealed interface HttpError extends Cause {
-
     /// Connection to server failed (network unreachable, DNS failure, connection refused).
     record ConnectionFailed(String message, Option<Throwable> cause) implements HttpError {
         public static ConnectionFailed connectionFailed(String message) {
@@ -60,9 +59,8 @@ public sealed interface HttpError extends Cause {
 
         @Override
         public String message() {
-            return duration
-                .map(d -> "Timeout after " + d.toMillis() + "ms: " + message)
-                .or("Timeout: " + message);
+            return duration.map(d -> "Timeout after " + d.toMillis() + "ms: " + message)
+                           .or("Timeout: " + message);
         }
     }
 
@@ -99,7 +97,10 @@ public sealed interface HttpError extends Cause {
         @Override
         public String message() {
             var msg = cause.getMessage();
-            return "HTTP operation failed: " + (msg != null ? msg : cause.getClass().getName());
+            return "HTTP operation failed: " + (msg != null
+                                                ? msg
+                                                : cause.getClass()
+                                                       .getName());
         }
     }
 

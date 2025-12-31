@@ -46,7 +46,7 @@ public interface RabiaPersistence<C extends Command> {
      * Create an in-memory persistence implementation (for testing or single-session use).
      */
     static <C extends Command> RabiaPersistence<C> inMemory() {
-        record inMemory<C extends Command>(AtomicReference<SavedState<C>> state) implements RabiaPersistence<C> {
+        record inMemory <C extends Command>(AtomicReference<SavedState<C>> state) implements RabiaPersistence<C> {
             @Override
             public Result<Unit> save(StateMachine<C> stateMachine,
                                      Phase lastCommittedPhase,
@@ -62,10 +62,11 @@ public interface RabiaPersistence<C extends Command> {
 
             @Override
             public Option<SavedState<C>> load() {
-                return Option.option(state().get());
+                return Option.option(state()
+                                          .get());
             }
         }
-        return new inMemory<>(new AtomicReference<>());
+        return new inMemory <>(new AtomicReference<>());
     }
 
     /**
@@ -81,17 +82,17 @@ public interface RabiaPersistence<C extends Command> {
         static <C extends Command> SavedState<C> savedState(byte[] snapshot,
                                                             Phase lastCommittedPhase,
                                                             Collection<Batch<C>> pendingBatches) {
-            record savedState<C extends Command>(byte[] snapshot,
-                                                 Phase lastCommittedPhase,
-                                                 List<Batch<C>> pendingBatches) implements SavedState<C> {
+            record savedState <C extends Command>(byte[] snapshot,
+                                                  Phase lastCommittedPhase,
+                                                  List<Batch<C>> pendingBatches) implements SavedState<C> {
                 @Override
                 public boolean equals(Object o) {
-                    if (!(o instanceof savedState<?>( byte[] snapshot1, Phase committedPhase, List<?> batches))) {
+                    if (! (o instanceof savedState < ? >( byte[] snapshot1, Phase committedPhase, List< ? > batches))) {
                         return false;
                     }
                     return Objects.deepEquals(snapshot(), snapshot1) &&
-                           Objects.equals(lastCommittedPhase(), committedPhase) &&
-                           Objects.equals(pendingBatches(), batches);
+                    Objects.equals(lastCommittedPhase(), committedPhase) &&
+                    Objects.equals(pendingBatches(), batches);
                 }
 
                 @Override
@@ -99,7 +100,7 @@ public interface RabiaPersistence<C extends Command> {
                     return Objects.hash(Arrays.hashCode(snapshot()), lastCommittedPhase(), pendingBatches());
                 }
             }
-            return new savedState<>(snapshot, lastCommittedPhase, List.copyOf(pendingBatches));
+            return new savedState <>(snapshot, lastCommittedPhase, List.copyOf(pendingBatches));
         }
 
         static <C extends Command> SavedState<C> empty() {

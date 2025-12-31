@@ -8,10 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.2] - Unreleased
 
 ### Added
+- `KSUID` - K-Sortable Unique Identifier implementation (replaces ULID)
+  - 20-byte identifiers: 4-byte timestamp + 16-byte random payload
+  - 27-character base62 string representation (lexicographically sortable)
+  - `KSUID.ksuid()` - generate new random KSUID
+  - `KSUID.parse(String)` - parse from string with Result error handling
+  - `KSUID.fromBytes(byte[])` - create from binary with Result error handling
+  - `timestamp()` - extract Unix timestamp
+  - `encoded()` / `toBytes()` - serialize to string/bytes
+  - `KSUIDError` sealed interface for typed parsing errors
 
 ### Changed
+- `IdGenerator.generate()` now uses KSUID instead of ULID
 
 ### Removed
+- `ULID` class - replaced by KSUID
 
 ## [0.9.1] - 2025-12-30
 

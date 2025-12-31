@@ -15,7 +15,6 @@
  */
 
 package org.pragmatica.consensus.rabia;
-
 /**
  * Represents the state values defined in the Rabia protocol (v0, v1, v?).
  */

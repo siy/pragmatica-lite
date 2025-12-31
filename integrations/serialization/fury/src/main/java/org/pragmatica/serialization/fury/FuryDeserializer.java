@@ -16,12 +16,13 @@
 
 package org.pragmatica.serialization.fury;
 
+import org.pragmatica.serialization.ClassRegistrator;
+import org.pragmatica.serialization.Deserializer;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import org.apache.fury.ThreadSafeFury;
 import org.apache.fury.io.FuryInputStream;
-import org.pragmatica.serialization.ClassRegistrator;
-import org.pragmatica.serialization.Deserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

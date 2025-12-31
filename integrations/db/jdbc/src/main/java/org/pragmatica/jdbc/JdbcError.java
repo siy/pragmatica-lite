@@ -21,18 +21,17 @@ import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Option;
 
 import java.sql.SQLException;
-
-import static org.pragmatica.jdbc.JdbcError.ConnectionFailed.connectionFailed;
-import static org.pragmatica.jdbc.JdbcError.ConstraintViolation.constraintViolation;
-import static org.pragmatica.jdbc.JdbcError.DatabaseFailure.databaseFailure;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.SQLTimeoutException;
 import java.sql.SQLTransactionRollbackException;
 
+import static org.pragmatica.jdbc.JdbcError.ConnectionFailed.connectionFailed;
+import static org.pragmatica.jdbc.JdbcError.ConstraintViolation.constraintViolation;
+import static org.pragmatica.jdbc.JdbcError.DatabaseFailure.databaseFailure;
+
 /// Typed error causes for JDBC operations.
 /// Maps common SQL exceptions to domain-friendly error types.
 public sealed interface JdbcError extends Cause {
-
     /// Connection to database failed.
     record ConnectionFailed(String message, Option<Throwable> cause) implements JdbcError {
         public static ConnectionFailed connectionFailed(String message) {
@@ -88,7 +87,6 @@ public sealed interface JdbcError extends Cause {
     /// Transaction not active when required.
     enum TransactionRequired implements JdbcError {
         INSTANCE;
-
         @Override
         public String message() {
             return "Transaction is required for this operation";
@@ -104,7 +102,10 @@ public sealed interface JdbcError extends Cause {
         @Override
         public String message() {
             var msg = cause.getMessage();
-            return "Database operation failed: " + (msg != null ? msg : cause.getClass().getName());
+            return "Database operation failed: " + (msg != null
+                                                    ? msg
+                                                    : cause.getClass()
+                                                           .getName());
         }
     }
 

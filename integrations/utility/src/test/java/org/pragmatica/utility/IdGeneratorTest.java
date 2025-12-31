@@ -23,14 +23,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 class IdGeneratorTest {
 
     @Test
-    void generate_creates_prefixed_id() {
+    void generateCreatesPrefixedId() {
         var id = IdGenerator.generate("test");
 
         assertThat(id).startsWith("test-");
     }
 
     @Test
-    void generate_creates_unique_ids() {
+    void generateCreatesUniqueIds() {
         var id1 = IdGenerator.generate("test");
         var id2 = IdGenerator.generate("test");
 
@@ -38,12 +38,21 @@ class IdGeneratorTest {
     }
 
     @Test
-    void generate_creates_lowercase_ids() {
+    void generateCreatesCorrectLengthIds() {
         var id = IdGenerator.generate("PREFIX");
 
-        // Only the ULID part should be lowercase, prefix stays as-is
         assertThat(id).startsWith("PREFIX-");
-        var ulidPart = id.substring("PREFIX-".length());
-        assertThat(ulidPart).isEqualTo(ulidPart.toLowerCase());
+        var ksuidPart = id.substring("PREFIX-".length());
+        // KSUID is always 27 characters
+        assertThat(ksuidPart).hasSize(KSUID.STRING_LENGTH);
+    }
+
+    @Test
+    void generateCreatesBase62Ids() {
+        var id = IdGenerator.generate("test");
+        var ksuidPart = id.substring("test-".length());
+
+        // KSUID uses base62: 0-9, A-Z, a-z
+        assertThat(ksuidPart).matches("[0-9A-Za-z]+");
     }
 }

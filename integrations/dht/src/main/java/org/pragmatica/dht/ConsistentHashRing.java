@@ -62,7 +62,7 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
             return;
         }
         List<Integer> virtualNodes = new ArrayList<>(virtualNodesPerPhysical);
-        for (int i = 0; i < virtualNodesPerPhysical; i++) {
+        for (int i = 0; i < virtualNodesPerPhysical; i++ ) {
             int hash = hash(node.toString() + "#" + i);
             ring.put(hash, node);
             virtualNodes.add(hash);
@@ -190,11 +190,11 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
             h *= 0x01000193;
         }
         // Final mix
-        h ^= h >>> 16;
+        h ^= h>>> 16;
         h *= 0x85ebca6b;
-        h ^= h >>> 13;
+        h ^= h>>> 13;
         h *= 0xc2b2ae35;
-        h ^= h >>> 16;
+        h ^= h>>> 16;
         return h;
     }
 

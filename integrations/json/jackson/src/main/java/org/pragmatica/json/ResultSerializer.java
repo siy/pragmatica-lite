@@ -51,7 +51,7 @@ public class ResultSerializer extends ValueSerializer<Result< ? >> {
                 gen.writeName("value");
                 if (valueSerializer != null) {
                     valueSerializer.serialize(success.value(), gen, provider);
-                }else {
+                } else {
                     gen.writePOJO(success.value());
                 }
             }

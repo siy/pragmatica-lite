@@ -15,7 +15,6 @@
  */
 
 package org.pragmatica.messaging;
-
 /**
  * Interface for components that can configure a message router.
  */

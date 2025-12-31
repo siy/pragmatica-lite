@@ -32,12 +32,12 @@ public class ComprehensivePromiseExamples {
         // Create promise from computation
         Promise<Integer> computed = Promise.promise(() -> {
                                                         try{
-                                                        // Simulate some work
+                                                            // Simulate some work
         Thread.sleep(100);
-                                                        return Result.success(42);
-                                                    } catch (Exception e) {
-                                                        return Result.failure(CoreError.exception(e));
-                                                    }
+                                                            return Result.success(42);
+                                                        } catch (Exception e) {
+                                                            return Result.failure(CoreError.exception(e));
+                                                        }
                                                     });
         // Transform promise value
         Promise<String> transformed = computed.map(value -> "Result: " + value);
@@ -51,8 +51,8 @@ public class ComprehensivePromiseExamples {
     public void errorHandlingPatterns() {
         Promise<String> riskyOperation = Promise.promise(() -> {
                                                              if (Math.random() > 0.5) {
-                                                             return Result.failure(CoreError.exception(new RuntimeException("Random failure")));
-                                                         }
+                                                                 return Result.failure(CoreError.exception(new RuntimeException("Random failure")));
+                                                             }
                                                              return Result.success("Success!");
                                                          });
         // Handle errors with recovery
@@ -70,31 +70,30 @@ public class ComprehensivePromiseExamples {
      * Example 3: Promise composition - all, race, sequence
      */
     public void compositionPatterns() {
-        List<Promise<String>> promises = List.of(
-        Promise.promise(() -> {
-                            try{
-                            Thread.sleep(100);
-                            return Result.success("First");
-                        } catch (Exception e) {
-                            return Result.failure(CoreError.exception(e));
-                        }
-                        }),
-        Promise.promise(() -> {
-                            try{
-                            Thread.sleep(200);
-                            return Result.success("Second");
-                        } catch (Exception e) {
-                            return Result.failure(CoreError.exception(e));
-                        }
-                        }),
-        Promise.promise(() -> {
-                            try{
-                            Thread.sleep(150);
-                            return Result.success("Third");
-                        } catch (Exception e) {
-                            return Result.failure(CoreError.exception(e));
-                        }
-                        }));
+        List<Promise<String>> promises = List.of(Promise.promise(() -> {
+                                                                     try{
+                                                                         Thread.sleep(100);
+                                                                         return Result.success("First");
+                                                                     } catch (Exception e) {
+                                                                         return Result.failure(CoreError.exception(e));
+                                                                     }
+                                                                 }),
+                                                 Promise.promise(() -> {
+                                                                     try{
+                                                                         Thread.sleep(200);
+                                                                         return Result.success("Second");
+                                                                     } catch (Exception e) {
+                                                                         return Result.failure(CoreError.exception(e));
+                                                                     }
+                                                                 }),
+                                                 Promise.promise(() -> {
+                                                                     try{
+                                                                         Thread.sleep(150);
+                                                                         return Result.success("Third");
+                                                                     } catch (Exception e) {
+                                                                         return Result.failure(CoreError.exception(e));
+                                                                     }
+                                                                 }));
         // Wait for all to complete
         Promise<List<Result<String>>> allResults = Promise.allOf(promises);
         // Race - first to complete wins
@@ -114,11 +113,11 @@ public class ComprehensivePromiseExamples {
         // Promise<Result<T>> pattern for operations that can fail
         Promise<Result<String>> resultPromise = Promise.promise(() -> {
                                                                     try{
-                                                                    // Some operation that might fail
+                                                                        // Some operation that might fail
         return Result.success(Result.success("Operation completed"));
-                                                                } catch (Exception e) {
-                                                                    return Result.success(Result.failure(CoreError.exception(e)));
-                                                                }
+                                                                    } catch (Exception e) {
+                                                                        return Result.success(Result.failure(CoreError.exception(e)));
+                                                                    }
                                                                 });
         // Promise<Option<T>> pattern for optional values
         Promise<Option<String>> optionPromise = Promise.promise(() -> {
@@ -126,9 +125,8 @@ public class ComprehensivePromiseExamples {
                                                                     return Result.success(Option.option(value));
                                                                 });
         // Flatten nested structures
-        Promise<String> flattened = resultPromise.flatMap(result -> result.fold(
-        error -> Promise.failure(error),
-        success -> Promise.resolved(Result.success(success))));
+        Promise<String> flattened = resultPromise.flatMap(result -> result.fold(error -> Promise.failure(error),
+                                                                                success -> Promise.resolved(Result.success(success))));
     }
 
     // ========================================
@@ -141,20 +139,20 @@ public class ComprehensivePromiseExamples {
         // Simulate async file reading
         Promise<String> fileContent = Promise.promise(() -> {
                                                           try{
-                                                          // In real code, this would be actual async I/O
+                                                              // In real code, this would be actual async I/O
         Thread.sleep(500);
-                                                          // Simulate I/O delay
+                                                              // Simulate I/O delay
         return Result.success("File content...");
-                                                      } catch (Exception e) {
-                                                          return Result.failure(CoreError.exception(e));
-                                                      }
+                                                          } catch (Exception e) {
+                                                              return Result.failure(CoreError.exception(e));
+                                                          }
                                                       });
         // Process file content
         Promise<List<String>> processedLines = fileContent.map(content -> List.of(content.split("\n")))
-                                                                       .map(lines -> lines.stream()
-                                                                                          .map(String::trim)
-                                                                                          .filter(line -> !line.isEmpty())
-                                                                                          .toList());
+                                                          .map(lines -> lines.stream()
+                                                                             .map(String::trim)
+                                                                             .filter(line -> !line.isEmpty())
+                                                                             .toList());
     }
 
     /**
@@ -166,12 +164,12 @@ public class ComprehensivePromiseExamples {
         List<Promise<Integer>> parallelWork = data.stream()
                                                   .map(item -> Promise.promise(() -> {
                                                                                    try{
-                                                                                   // Simulate expensive computation
+                                                                                       // Simulate expensive computation
         Thread.sleep(100);
-                                                                                   return Result.success(item * item);
-                                                                               } catch (Exception e) {
-                                                                                   return Result.failure(CoreError.exception(e));
-                                                                               }
+                                                                                       return Result.success(item * item);
+                                                                                   } catch (Exception e) {
+                                                                                       return Result.failure(CoreError.exception(e));
+                                                                                   }
                                                                                }))
                                                   .toList();
         // Collect results
@@ -188,12 +186,12 @@ public class ComprehensivePromiseExamples {
     public void timeoutAndCancellation() {
         Promise<String> longRunningTask = Promise.promise(() -> {
                                                               try{
-                                                              Thread.sleep(5000);
-                                                              // 5 second task
+                                                                  Thread.sleep(5000);
+                                                                  // 5 second task
         return Result.success("Task completed");
-                                                          } catch (Exception e) {
-                                                              return Result.failure(CoreError.exception(e));
-                                                          }
+                                                              } catch (Exception e) {
+                                                                  return Result.failure(CoreError.exception(e));
+                                                              }
                                                           });
         // Add timeout (Note: timeout() method not available in current API)
         Promise<String> withTimeout = longRunningTask.recover(error -> "Task timed out");
@@ -205,8 +203,8 @@ public class ComprehensivePromiseExamples {
     public void migrationFromCompletableFuture() {
         // Old CompletableFuture approach
         CompletableFuture<String> oldWay = CompletableFuture.supplyAsync(() -> "Hello")
-                                                                         .thenApply(s -> s + " World")
-                                                                         .exceptionally(throwable -> "Error: " + throwable.getMessage());
+                                                            .thenApply(s -> s + " World")
+                                                            .exceptionally(throwable -> "Error: " + throwable.getMessage());
         // New Promise approach
         Promise<String> newWay = Promise.promise(() -> Result.success("Hello"))
                                         .map(s -> s + " World")

@@ -52,8 +52,8 @@ public interface Cause {
     default <T> T iterate(Fn1<T, Cause> action) {
         var value = action.apply(this);
         return source()
-               .fold(() -> value,
-                     src -> src.iterate(action));
+                     .fold(() -> value,
+                           src -> src.iterate(action));
     }
 
     /// Stream of causes starting from this cause. For the single cause it will be a stream of one element. For composite cause, it will be a stream of all

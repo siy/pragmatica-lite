@@ -13,7 +13,7 @@
     <packaging>jar</packaging>
 
     <name>Pragmatica Lite Utility</name>
-    <description>Common utilities including ULID generator</description>
+    <description>Common utilities including KSUID generator</description>
 
     <dependencies>
         <dependency>

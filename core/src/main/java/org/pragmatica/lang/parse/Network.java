@@ -31,7 +31,8 @@ public sealed interface Network {
     ///
     /// @return Result containing parsed URL or parsing error
     static Result<URL> parseURL(String spec) {
-        return parseURI(spec).flatMap(uri -> Result.lift(uri::toURL));
+        return parseURI(spec)
+                       .flatMap(uri -> Result.lift(uri::toURL));
     }
 
     /// Parse a string as a URI value

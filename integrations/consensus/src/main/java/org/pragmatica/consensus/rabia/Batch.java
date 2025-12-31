@@ -37,7 +37,8 @@ public record Batch<C extends Command>(BatchId id,
         if (idCompare != 0) {
             return idCompare;
         }
-        return correlationId.id().compareTo(o.correlationId.id());
+        return correlationId.id()
+                            .compareTo(o.correlationId.id());
     }
 
     public static <C extends Command> Batch<C> batch(List<C> commands) {

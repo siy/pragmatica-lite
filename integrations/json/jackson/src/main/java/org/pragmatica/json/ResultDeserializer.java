@@ -61,9 +61,9 @@ public class ResultDeserializer extends ValueDeserializer<Result< ? >> {
                 case"value" -> {
                     if (valueDeserializer != null) {
                         value = valueDeserializer.deserialize(p, ctxt);
-                    }else if (valueType != null) {
+                    } else if (valueType != null) {
                         value = ctxt.readValue(p, valueType);
-                    }else {
+                    } else {
                         value = p.readValueAs(Object.class);
                     }
                 }
@@ -83,7 +83,7 @@ public class ResultDeserializer extends ValueDeserializer<Result< ? >> {
         }
         if (isSuccess) {
             return success(value);
-        }else {
+        } else {
             return DeserializedCause.deserializedCause(errorMessage != null
                                                        ? errorMessage
                                                        : "Unknown error")

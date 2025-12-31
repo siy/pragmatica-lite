@@ -17,15 +17,16 @@
 
 package org.pragmatica.jpa;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.Query;
-import jakarta.persistence.TypedQuery;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 
 import java.util.List;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+import jakarta.persistence.TypedQuery;
 
 /// Functional wrapper around JPA EntityManager for Promise-based operations.
 /// All operations use Promise.lift() to convert exceptions to typed Causes.
@@ -44,7 +45,6 @@ import java.util.List;
 ///    .onSuccess(optUser -> optUser.onPresent(this::processUser));
 /// ```
 public interface JpaOperations {
-
     /// Execute query returning single result.
     /// Fails if query returns no results or multiple results.
     ///

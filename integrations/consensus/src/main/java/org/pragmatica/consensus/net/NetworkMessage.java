@@ -14,20 +14,19 @@
  *  limitations under the License.
  */
 
-package org.pragmatica.consensus;
+package org.pragmatica.consensus.net;
 
+import org.pragmatica.consensus.NodeId;
 import org.pragmatica.messaging.Message;
 
-/**
- * Quorum state notifications for consensus engines.
- */
-public enum QuorumState implements Message.Local {
+public sealed interface NetworkMessage extends Message.Wired {
     /**
-     * Quorum has been established (enough nodes connected).
+     * Ping - test connection request
      */
-    ESTABLISHED,
+    record Ping(NodeId sender) implements NetworkMessage {}
+
     /**
-     * Quorum has been lost (not enough nodes connected).
+     * Pong - test connection response
      */
-    LOST
+    record Pong(NodeId sender) implements NetworkMessage {}
 }

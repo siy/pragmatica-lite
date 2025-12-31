@@ -15,7 +15,6 @@
  */
 
 package org.pragmatica.consensus.rabia;
-
 /**
  * Represents a protocol phase as defined in the Rabia formal specification.
  */

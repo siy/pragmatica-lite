@@ -1300,9 +1300,7 @@ public sealed interface Result<T> permits Success, Failure {
     /// @return [Mapper3] prepared for further transformation.
     static <T1, T2, T3> Mapper3<T1, T2, T3> all(Result<T1> value1, Result<T2> value2, Result<T3> value3) {
         var causes = Causes.composite(value1, value2, value3);
-        return () -> value1.flatMap(vv1 -> value2.flatMap(
-        vv2 -> value3.flatMap(
-        vv3 -> success(tuple(vv1, vv2, vv3)))))
+        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> success(tuple(vv1, vv2, vv3)))))
                            .mapError(causes::replace);
     }
 
@@ -1315,10 +1313,10 @@ public sealed interface Result<T> permits Success, Failure {
                                                         Result<T3> value3,
                                                         Result<T4> value4) {
         var causes = Causes.composite(value1, value2, value3, value4);
-        return () -> value1.flatMap(vv1 -> value2.flatMap(
-        vv2 -> value3.flatMap(
-        vv3 -> value4.flatMap(
-        vv4 -> success(tuple(vv1, vv2, vv3, vv4))))))
+        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> value4.flatMap(vv4 -> success(tuple(vv1,
+                                                                                                                           vv2,
+                                                                                                                           vv3,
+                                                                                                                           vv4))))))
                            .mapError(causes::replace);
     }
 
@@ -1332,11 +1330,11 @@ public sealed interface Result<T> permits Success, Failure {
                                                                 Result<T4> value4,
                                                                 Result<T5> value5) {
         var causes = Causes.composite(value1, value2, value3, value4, value5);
-        return () -> value1.flatMap(vv1 -> value2.flatMap(
-        vv2 -> value3.flatMap(
-        vv3 -> value4.flatMap(
-        vv4 -> value5.flatMap(
-        vv5 -> success(tuple(vv1, vv2, vv3, vv4, vv5)))))))
+        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> value4.flatMap(vv4 -> value5.flatMap(vv5 -> success(tuple(vv1,
+                                                                                                                                                 vv2,
+                                                                                                                                                 vv3,
+                                                                                                                                                 vv4,
+                                                                                                                                                 vv5)))))))
                            .mapError(causes::replace);
     }
 
@@ -1351,12 +1349,12 @@ public sealed interface Result<T> permits Success, Failure {
                                                                         Result<T5> value5,
                                                                         Result<T6> value6) {
         var causes = Causes.composite(value1, value2, value3, value4, value5, value6);
-        return () -> value1.flatMap(vv1 -> value2.flatMap(
-        vv2 -> value3.flatMap(
-        vv3 -> value4.flatMap(
-        vv4 -> value5.flatMap(
-        vv5 -> value6.flatMap(
-        vv6 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6))))))))
+        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> value4.flatMap(vv4 -> value5.flatMap(vv5 -> value6.flatMap(vv6 -> success(tuple(vv1,
+                                                                                                                                                                       vv2,
+                                                                                                                                                                       vv3,
+                                                                                                                                                                       vv4,
+                                                                                                                                                                       vv5,
+                                                                                                                                                                       vv6))))))))
                            .mapError(causes::replace);
     }
 
@@ -1372,13 +1370,13 @@ public sealed interface Result<T> permits Success, Failure {
                                                                                 Result<T6> value6,
                                                                                 Result<T7> value7) {
         var causes = Causes.composite(value1, value2, value3, value4, value5, value6, value7);
-        return () -> value1.flatMap(vv1 -> value2.flatMap(
-        vv2 -> value3.flatMap(
-        vv3 -> value4.flatMap(
-        vv4 -> value5.flatMap(
-        vv5 -> value6.flatMap(
-        vv6 -> value7.flatMap(
-        vv7 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6, vv7)))))))))
+        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> value4.flatMap(vv4 -> value5.flatMap(vv5 -> value6.flatMap(vv6 -> value7.flatMap(vv7 -> success(tuple(vv1,
+                                                                                                                                                                                             vv2,
+                                                                                                                                                                                             vv3,
+                                                                                                                                                                                             vv4,
+                                                                                                                                                                                             vv5,
+                                                                                                                                                                                             vv6,
+                                                                                                                                                                                             vv7)))))))))
                            .mapError(causes::replace);
     }
 
@@ -1395,14 +1393,14 @@ public sealed interface Result<T> permits Success, Failure {
                                                                                         Result<T7> value7,
                                                                                         Result<T8> value8) {
         var causes = Causes.composite(value1, value2, value3, value4, value5, value6, value7, value8);
-        return () -> value1.flatMap(vv1 -> value2.flatMap(
-        vv2 -> value3.flatMap(
-        vv3 -> value4.flatMap(
-        vv4 -> value5.flatMap(
-        vv5 -> value6.flatMap(
-        vv6 -> value7.flatMap(
-        vv7 -> value8.flatMap(
-        vv8 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6, vv7, vv8))))))))))
+        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> value4.flatMap(vv4 -> value5.flatMap(vv5 -> value6.flatMap(vv6 -> value7.flatMap(vv7 -> value8.flatMap(vv8 -> success(tuple(vv1,
+                                                                                                                                                                                                                   vv2,
+                                                                                                                                                                                                                   vv3,
+                                                                                                                                                                                                                   vv4,
+                                                                                                                                                                                                                   vv5,
+                                                                                                                                                                                                                   vv6,
+                                                                                                                                                                                                                   vv7,
+                                                                                                                                                                                                                   vv8))))))))))
                            .mapError(causes::replace);
     }
 
@@ -1420,15 +1418,15 @@ public sealed interface Result<T> permits Success, Failure {
                                                                                                 Result<T8> value8,
                                                                                                 Result<T9> value9) {
         var causes = Causes.composite(value1, value2, value3, value4, value5, value6, value7, value8, value9);
-        return () -> value1.flatMap(vv1 -> value2.flatMap(
-        vv2 -> value3.flatMap(
-        vv3 -> value4.flatMap(
-        vv4 -> value5.flatMap(
-        vv5 -> value6.flatMap(
-        vv6 -> value7.flatMap(
-        vv7 -> value8.flatMap(
-        vv8 -> value9.flatMap(
-        vv9 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6, vv7, vv8, vv9)))))))))))
+        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> value4.flatMap(vv4 -> value5.flatMap(vv5 -> value6.flatMap(vv6 -> value7.flatMap(vv7 -> value8.flatMap(vv8 -> value9.flatMap(vv9 -> success(tuple(vv1,
+                                                                                                                                                                                                                                         vv2,
+                                                                                                                                                                                                                                         vv3,
+                                                                                                                                                                                                                                         vv4,
+                                                                                                                                                                                                                                         vv5,
+                                                                                                                                                                                                                                         vv6,
+                                                                                                                                                                                                                                         vv7,
+                                                                                                                                                                                                                                         vv8,
+                                                                                                                                                                                                                                         vv9)))))))))))
                            .mapError(causes::replace);
     }
 
@@ -1443,9 +1441,16 @@ public sealed interface Result<T> permits Success, Failure {
                                                                                                            Result<T9> value9,
                                                                                                            Result<T10> value10) {
         var causes = Causes.composite(value1, value2, value3, value4, value5, value6, value7, value8, value9, value10);
-        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> value4.flatMap(vv4 -> value5.flatMap(
-        vv5 -> value6.flatMap(vv6 -> value7.flatMap(vv7 -> value8.flatMap(vv8 -> value9.flatMap(vv9 -> value10.flatMap(
-        vv10 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6, vv7, vv8, vv9, vv10))))))))))))
+        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> value4.flatMap(vv4 -> value5.flatMap(vv5 -> value6.flatMap(vv6 -> value7.flatMap(vv7 -> value8.flatMap(vv8 -> value9.flatMap(vv9 -> value10.flatMap(vv10 -> success(tuple(vv1,
+                                                                                                                                                                                                                                                                 vv2,
+                                                                                                                                                                                                                                                                 vv3,
+                                                                                                                                                                                                                                                                 vv4,
+                                                                                                                                                                                                                                                                 vv5,
+                                                                                                                                                                                                                                                                 vv6,
+                                                                                                                                                                                                                                                                 vv7,
+                                                                                                                                                                                                                                                                 vv8,
+                                                                                                                                                                                                                                                                 vv9,
+                                                                                                                                                                                                                                                                 vv10))))))))))))
                            .mapError(causes::replace);
     }
 
@@ -1471,9 +1476,17 @@ public sealed interface Result<T> permits Success, Failure {
                                       value9,
                                       value10,
                                       value11);
-        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> value4.flatMap(vv4 -> value5.flatMap(
-        vv5 -> value6.flatMap(vv6 -> value7.flatMap(vv7 -> value8.flatMap(vv8 -> value9.flatMap(vv9 -> value10.flatMap(
-        vv10 -> value11.flatMap(vv11 -> success(tuple(vv1, vv2, vv3, vv4, vv5, vv6, vv7, vv8, vv9, vv10, vv11)))))))))))))
+        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> value4.flatMap(vv4 -> value5.flatMap(vv5 -> value6.flatMap(vv6 -> value7.flatMap(vv7 -> value8.flatMap(vv8 -> value9.flatMap(vv9 -> value10.flatMap(vv10 -> value11.flatMap(vv11 -> success(tuple(vv1,
+                                                                                                                                                                                                                                                                                         vv2,
+                                                                                                                                                                                                                                                                                         vv3,
+                                                                                                                                                                                                                                                                                         vv4,
+                                                                                                                                                                                                                                                                                         vv5,
+                                                                                                                                                                                                                                                                                         vv6,
+                                                                                                                                                                                                                                                                                         vv7,
+                                                                                                                                                                                                                                                                                         vv8,
+                                                                                                                                                                                                                                                                                         vv9,
+                                                                                                                                                                                                                                                                                         vv10,
+                                                                                                                                                                                                                                                                                         vv11)))))))))))))
                            .mapError(causes::replace);
     }
 
@@ -1501,20 +1514,18 @@ public sealed interface Result<T> permits Success, Failure {
                                       value10,
                                       value11,
                                       value12);
-        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> value4.flatMap(vv4 -> value5.flatMap(
-        vv5 -> value6.flatMap(vv6 -> value7.flatMap(vv7 -> value8.flatMap(vv8 -> value9.flatMap(vv9 -> value10.flatMap(
-        vv10 -> value11.flatMap(vv11 -> value12.flatMap(vv12 -> success(tuple(vv1,
-                                                                              vv2,
-                                                                              vv3,
-                                                                              vv4,
-                                                                              vv5,
-                                                                              vv6,
-                                                                              vv7,
-                                                                              vv8,
-                                                                              vv9,
-                                                                              vv10,
-                                                                              vv11,
-                                                                              vv12))))))))))))))
+        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> value4.flatMap(vv4 -> value5.flatMap(vv5 -> value6.flatMap(vv6 -> value7.flatMap(vv7 -> value8.flatMap(vv8 -> value9.flatMap(vv9 -> value10.flatMap(vv10 -> value11.flatMap(vv11 -> value12.flatMap(vv12 -> success(tuple(vv1,
+                                                                                                                                                                                                                                                                                                                 vv2,
+                                                                                                                                                                                                                                                                                                                 vv3,
+                                                                                                                                                                                                                                                                                                                 vv4,
+                                                                                                                                                                                                                                                                                                                 vv5,
+                                                                                                                                                                                                                                                                                                                 vv6,
+                                                                                                                                                                                                                                                                                                                 vv7,
+                                                                                                                                                                                                                                                                                                                 vv8,
+                                                                                                                                                                                                                                                                                                                 vv9,
+                                                                                                                                                                                                                                                                                                                 vv10,
+                                                                                                                                                                                                                                                                                                                 vv11,
+                                                                                                                                                                                                                                                                                                                 vv12))))))))))))))
                            .mapError(causes::replace);
     }
 
@@ -1544,21 +1555,19 @@ public sealed interface Result<T> permits Success, Failure {
                                       value11,
                                       value12,
                                       value13);
-        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> value4.flatMap(vv4 -> value5.flatMap(
-        vv5 -> value6.flatMap(vv6 -> value7.flatMap(vv7 -> value8.flatMap(vv8 -> value9.flatMap(vv9 -> value10.flatMap(
-        vv10 -> value11.flatMap(vv11 -> value12.flatMap(vv12 -> value13.flatMap(vv13 -> success(tuple(vv1,
-                                                                                                      vv2,
-                                                                                                      vv3,
-                                                                                                      vv4,
-                                                                                                      vv5,
-                                                                                                      vv6,
-                                                                                                      vv7,
-                                                                                                      vv8,
-                                                                                                      vv9,
-                                                                                                      vv10,
-                                                                                                      vv11,
-                                                                                                      vv12,
-                                                                                                      vv13)))))))))))))))
+        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> value4.flatMap(vv4 -> value5.flatMap(vv5 -> value6.flatMap(vv6 -> value7.flatMap(vv7 -> value8.flatMap(vv8 -> value9.flatMap(vv9 -> value10.flatMap(vv10 -> value11.flatMap(vv11 -> value12.flatMap(vv12 -> value13.flatMap(vv13 -> success(tuple(vv1,
+                                                                                                                                                                                                                                                                                                                                         vv2,
+                                                                                                                                                                                                                                                                                                                                         vv3,
+                                                                                                                                                                                                                                                                                                                                         vv4,
+                                                                                                                                                                                                                                                                                                                                         vv5,
+                                                                                                                                                                                                                                                                                                                                         vv6,
+                                                                                                                                                                                                                                                                                                                                         vv7,
+                                                                                                                                                                                                                                                                                                                                         vv8,
+                                                                                                                                                                                                                                                                                                                                         vv9,
+                                                                                                                                                                                                                                                                                                                                         vv10,
+                                                                                                                                                                                                                                                                                                                                         vv11,
+                                                                                                                                                                                                                                                                                                                                         vv12,
+                                                                                                                                                                                                                                                                                                                                         vv13)))))))))))))))
                            .mapError(causes::replace);
     }
 
@@ -1590,22 +1599,20 @@ public sealed interface Result<T> permits Success, Failure {
                                       value12,
                                       value13,
                                       value14);
-        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> value4.flatMap(vv4 -> value5.flatMap(
-        vv5 -> value6.flatMap(vv6 -> value7.flatMap(vv7 -> value8.flatMap(vv8 -> value9.flatMap(vv9 -> value10.flatMap(
-        vv10 -> value11.flatMap(vv11 -> value12.flatMap(vv12 -> value13.flatMap(vv13 -> value14.flatMap(vv14 -> success(tuple(vv1,
-                                                                                                                              vv2,
-                                                                                                                              vv3,
-                                                                                                                              vv4,
-                                                                                                                              vv5,
-                                                                                                                              vv6,
-                                                                                                                              vv7,
-                                                                                                                              vv8,
-                                                                                                                              vv9,
-                                                                                                                              vv10,
-                                                                                                                              vv11,
-                                                                                                                              vv12,
-                                                                                                                              vv13,
-                                                                                                                              vv14))))))))))))))))
+        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> value4.flatMap(vv4 -> value5.flatMap(vv5 -> value6.flatMap(vv6 -> value7.flatMap(vv7 -> value8.flatMap(vv8 -> value9.flatMap(vv9 -> value10.flatMap(vv10 -> value11.flatMap(vv11 -> value12.flatMap(vv12 -> value13.flatMap(vv13 -> value14.flatMap(vv14 -> success(tuple(vv1,
+                                                                                                                                                                                                                                                                                                                                                                 vv2,
+                                                                                                                                                                                                                                                                                                                                                                 vv3,
+                                                                                                                                                                                                                                                                                                                                                                 vv4,
+                                                                                                                                                                                                                                                                                                                                                                 vv5,
+                                                                                                                                                                                                                                                                                                                                                                 vv6,
+                                                                                                                                                                                                                                                                                                                                                                 vv7,
+                                                                                                                                                                                                                                                                                                                                                                 vv8,
+                                                                                                                                                                                                                                                                                                                                                                 vv9,
+                                                                                                                                                                                                                                                                                                                                                                 vv10,
+                                                                                                                                                                                                                                                                                                                                                                 vv11,
+                                                                                                                                                                                                                                                                                                                                                                 vv12,
+                                                                                                                                                                                                                                                                                                                                                                 vv13,
+                                                                                                                                                                                                                                                                                                                                                                 vv14))))))))))))))))
                            .mapError(causes::replace);
     }
 
@@ -1639,23 +1646,21 @@ public sealed interface Result<T> permits Success, Failure {
                                       value13,
                                       value14,
                                       value15);
-        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> value4.flatMap(vv4 -> value5.flatMap(
-        vv5 -> value6.flatMap(vv6 -> value7.flatMap(vv7 -> value8.flatMap(vv8 -> value9.flatMap(vv9 -> value10.flatMap(
-        vv10 -> value11.flatMap(vv11 -> value12.flatMap(vv12 -> value13.flatMap(vv13 -> value14.flatMap(vv14 -> value15.flatMap(vv15 -> success(tuple(vv1,
-                                                                                                                                                      vv2,
-                                                                                                                                                      vv3,
-                                                                                                                                                      vv4,
-                                                                                                                                                      vv5,
-                                                                                                                                                      vv6,
-                                                                                                                                                      vv7,
-                                                                                                                                                      vv8,
-                                                                                                                                                      vv9,
-                                                                                                                                                      vv10,
-                                                                                                                                                      vv11,
-                                                                                                                                                      vv12,
-                                                                                                                                                      vv13,
-                                                                                                                                                      vv14,
-                                                                                                                                                      vv15)))))))))))))))))
+        return () -> value1.flatMap(vv1 -> value2.flatMap(vv2 -> value3.flatMap(vv3 -> value4.flatMap(vv4 -> value5.flatMap(vv5 -> value6.flatMap(vv6 -> value7.flatMap(vv7 -> value8.flatMap(vv8 -> value9.flatMap(vv9 -> value10.flatMap(vv10 -> value11.flatMap(vv11 -> value12.flatMap(vv12 -> value13.flatMap(vv13 -> value14.flatMap(vv14 -> value15.flatMap(vv15 -> success(tuple(vv1,
+                                                                                                                                                                                                                                                                                                                                                                                         vv2,
+                                                                                                                                                                                                                                                                                                                                                                                         vv3,
+                                                                                                                                                                                                                                                                                                                                                                                         vv4,
+                                                                                                                                                                                                                                                                                                                                                                                         vv5,
+                                                                                                                                                                                                                                                                                                                                                                                         vv6,
+                                                                                                                                                                                                                                                                                                                                                                                         vv7,
+                                                                                                                                                                                                                                                                                                                                                                                         vv8,
+                                                                                                                                                                                                                                                                                                                                                                                         vv9,
+                                                                                                                                                                                                                                                                                                                                                                                         vv10,
+                                                                                                                                                                                                                                                                                                                                                                                         vv11,
+                                                                                                                                                                                                                                                                                                                                                                                         vv12,
+                                                                                                                                                                                                                                                                                                                                                                                         vv13,
+                                                                                                                                                                                                                                                                                                                                                                                         vv14,
+                                                                                                                                                                                                                                                                                                                                                                                         vv15)))))))))))))))))
                            .mapError(causes::replace);
     }
 
@@ -2145,12 +2150,12 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> map(Fn1<R, T1> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn1<Result<R>, T1> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper1<T1> async() {
@@ -2172,12 +2177,12 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> map(Fn2<R, T1, T2> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn2<Result<R>, T1, T2> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper2<T1, T2> async() {
@@ -2199,12 +2204,12 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> map(Fn3<R, T1, T2, T3> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn3<Result<R>, T1, T2, T3> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper3<T1, T2, T3> async() {
@@ -2226,12 +2231,12 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> map(Fn4<R, T1, T2, T3, T4> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn4<Result<R>, T1, T2, T3, T4> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper4<T1, T2, T3, T4> async() {
@@ -2253,12 +2258,12 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> map(Fn5<R, T1, T2, T3, T4, T5> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn5<Result<R>, T1, T2, T3, T4, T5> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper5<T1, T2, T3, T4, T5> async() {
@@ -2280,12 +2285,12 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> map(Fn6<R, T1, T2, T3, T4, T5, T6> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn6<Result<R>, T1, T2, T3, T4, T5, T6> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper6<T1, T2, T3, T4, T5, T6> async() {
@@ -2307,12 +2312,12 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> map(Fn7<R, T1, T2, T3, T4, T5, T6, T7> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn7<Result<R>, T1, T2, T3, T4, T5, T6, T7> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper7<T1, T2, T3, T4, T5, T6, T7> async() {
@@ -2334,12 +2339,12 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> map(Fn8<R, T1, T2, T3, T4, T5, T6, T7, T8> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn8<Result<R>, T1, T2, T3, T4, T5, T6, T7, T8> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper8<T1, T2, T3, T4, T5, T6, T7, T8> async() {
@@ -2361,12 +2366,12 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> map(Fn9<R, T1, T2, T3, T4, T5, T6, T7, T8, T9> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn9<Result<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> async() {
@@ -2388,12 +2393,12 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> map(Fn10<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn10<Result<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> async() {
@@ -2415,12 +2420,12 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> map(Fn11<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn11<Result<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> async() {
@@ -2442,12 +2447,12 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> map(Fn12<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn12<Result<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> async() {
@@ -2469,12 +2474,12 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> map(Fn13<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn13<Result<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> async() {
@@ -2496,12 +2501,12 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> map(Fn14<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn14<Result<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> async() {
@@ -2523,12 +2528,12 @@ public sealed interface Result<T> permits Success, Failure {
 
         default <R> Result<R> map(Fn15<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
             return id()
-                   .map(tuple -> tuple.map(mapper));
+                     .map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn15<Result<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
             return id()
-                   .flatMap(tuple -> tuple.map(mapper));
+                     .flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> async() {

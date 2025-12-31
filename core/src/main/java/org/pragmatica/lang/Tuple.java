@@ -488,17 +488,16 @@ public interface Tuple {
                                                                                                             T8 param8,
                                                                                                             T9 param9,
                                                                                                             T10 param10) {
-        record tuple10 <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(
-        T1 param1,
-        T2 param2,
-        T3 param3,
-        T4 param4,
-        T5 param5,
-        T6 param6,
-        T7 param7,
-        T8 param8,
-        T9 param9,
-        T10 param10) implements Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
+        record tuple10 <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(T1 param1,
+                                                                 T2 param2,
+                                                                 T3 param3,
+                                                                 T4 param4,
+                                                                 T5 param5,
+                                                                 T6 param6,
+                                                                 T7 param7,
+                                                                 T8 param8,
+                                                                 T9 param9,
+                                                                 T10 param10) implements Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
             @Override
             public <T> T map(Fn10<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
                 return mapper.apply(param1(),
@@ -545,18 +544,17 @@ public interface Tuple {
                                                                                                                       T9 param9,
                                                                                                                       T10 param10,
                                                                                                                       T11 param11) {
-        record tuple11 <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(
-        T1 param1,
-        T2 param2,
-        T3 param3,
-        T4 param4,
-        T5 param5,
-        T6 param6,
-        T7 param7,
-        T8 param8,
-        T9 param9,
-        T10 param10,
-        T11 param11) implements Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> {
+        record tuple11 <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(T1 param1,
+                                                                      T2 param2,
+                                                                      T3 param3,
+                                                                      T4 param4,
+                                                                      T5 param5,
+                                                                      T6 param6,
+                                                                      T7 param7,
+                                                                      T8 param8,
+                                                                      T9 param9,
+                                                                      T10 param10,
+                                                                      T11 param11) implements Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> {
             @Override
             public <T> T map(Fn11<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
                 return mapper.apply(param1(),
@@ -606,19 +604,18 @@ public interface Tuple {
                                                                                                                                 T10 param10,
                                                                                                                                 T11 param11,
                                                                                                                                 T12 param12) {
-        record tuple12 <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(
-        T1 param1,
-        T2 param2,
-        T3 param3,
-        T4 param4,
-        T5 param5,
-        T6 param6,
-        T7 param7,
-        T8 param8,
-        T9 param9,
-        T10 param10,
-        T11 param11,
-        T12 param12) implements Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> {
+        record tuple12 <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(T1 param1,
+                                                                           T2 param2,
+                                                                           T3 param3,
+                                                                           T4 param4,
+                                                                           T5 param5,
+                                                                           T6 param6,
+                                                                           T7 param7,
+                                                                           T8 param8,
+                                                                           T9 param9,
+                                                                           T10 param10,
+                                                                           T11 param11,
+                                                                           T12 param12) implements Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> {
             @Override
             public <T> T map(Fn12<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
                 return mapper.apply(param1(),
@@ -682,20 +679,19 @@ public interface Tuple {
                                                                                                                                           T11 param11,
                                                                                                                                           T12 param12,
                                                                                                                                           T13 param13) {
-        record tuple13 <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(
-        T1 param1,
-        T2 param2,
-        T3 param3,
-        T4 param4,
-        T5 param5,
-        T6 param6,
-        T7 param7,
-        T8 param8,
-        T9 param9,
-        T10 param10,
-        T11 param11,
-        T12 param12,
-        T13 param13) implements Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> {
+        record tuple13 <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(T1 param1,
+                                                                                T2 param2,
+                                                                                T3 param3,
+                                                                                T4 param4,
+                                                                                T5 param5,
+                                                                                T6 param6,
+                                                                                T7 param7,
+                                                                                T8 param8,
+                                                                                T9 param9,
+                                                                                T10 param10,
+                                                                                T11 param11,
+                                                                                T12 param12,
+                                                                                T13 param13) implements Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> {
             @Override
             public <T> T map(Fn13<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
                 return mapper.apply(param1(),
@@ -763,21 +759,20 @@ public interface Tuple {
                                                                                                                                                     T12 param12,
                                                                                                                                                     T13 param13,
                                                                                                                                                     T14 param14) {
-        record tuple14 <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(
-        T1 param1,
-        T2 param2,
-        T3 param3,
-        T4 param4,
-        T5 param5,
-        T6 param6,
-        T7 param7,
-        T8 param8,
-        T9 param9,
-        T10 param10,
-        T11 param11,
-        T12 param12,
-        T13 param13,
-        T14 param14) implements Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> {
+        record tuple14 <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(T1 param1,
+                                                                                     T2 param2,
+                                                                                     T3 param3,
+                                                                                     T4 param4,
+                                                                                     T5 param5,
+                                                                                     T6 param6,
+                                                                                     T7 param7,
+                                                                                     T8 param8,
+                                                                                     T9 param9,
+                                                                                     T10 param10,
+                                                                                     T11 param11,
+                                                                                     T12 param12,
+                                                                                     T13 param13,
+                                                                                     T14 param14) implements Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> {
             @Override
             public <T> T map(Fn14<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
                 return mapper.apply(param1(),
@@ -849,22 +844,21 @@ public interface Tuple {
                                                                                                                                                               T13 param13,
                                                                                                                                                               T14 param14,
                                                                                                                                                               T15 param15) {
-        record tuple15 <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(
-        T1 param1,
-        T2 param2,
-        T3 param3,
-        T4 param4,
-        T5 param5,
-        T6 param6,
-        T7 param7,
-        T8 param8,
-        T9 param9,
-        T10 param10,
-        T11 param11,
-        T12 param12,
-        T13 param13,
-        T14 param14,
-        T15 param15) implements Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> {
+        record tuple15 <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(T1 param1,
+                                                                                          T2 param2,
+                                                                                          T3 param3,
+                                                                                          T4 param4,
+                                                                                          T5 param5,
+                                                                                          T6 param6,
+                                                                                          T7 param7,
+                                                                                          T8 param8,
+                                                                                          T9 param9,
+                                                                                          T10 param10,
+                                                                                          T11 param11,
+                                                                                          T12 param12,
+                                                                                          T13 param13,
+                                                                                          T14 param14,
+                                                                                          T15 param15) implements Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> {
             @Override
             public <T> T map(Fn15<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
                 return mapper.apply(param1(),

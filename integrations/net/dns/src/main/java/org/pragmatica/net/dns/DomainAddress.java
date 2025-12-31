@@ -31,7 +31,6 @@ public interface DomainAddress {
 
     static DomainAddress domainAddress(DomainName name, InetAddress ip, Duration ttl) {
         record domainAddress(DomainName name, InetAddress ip, Duration ttl) implements DomainAddress {}
-
         return new domainAddress(name, ip, ttl);
     }
 

@@ -97,8 +97,8 @@ public interface CircuitBreaker {
             @Override
             public TimeSpan timeSinceLastStateChange() {
                 return timeSpan(timeSource()
-                                .nanoTime() - lastStateChangeTimestamp.get())
-                       .nanos();
+                                          .nanoTime() - lastStateChangeTimestamp.get())
+                               .nanos();
             }
 
             @Override
@@ -111,8 +111,8 @@ public interface CircuitBreaker {
                             yield executeHalfOpenState(operation);
                         }
                         var timeout = timeSpan(resetTimeout.nanos() - (timeSource()
-                                                                       .nanoTime() - lastStateChangeTimestamp.get()))
-                                      .nanos();
+                                                                                 .nanoTime() - lastStateChangeTimestamp.get()))
+                                              .nanos();
                         yield new CircuitBreakerOpenError("Circuit breaker is open. Operation rejected.", timeout).promise();
                     }
                     case HALF_OPEN -> executeHalfOpenState(operation);
@@ -130,8 +130,8 @@ public interface CircuitBreaker {
                                 .onSuccess(_ -> {
                                                long successCount = testSuccessCount.incrementAndGet();
                                                if (successCount >= testAttempts) {
-                                               transitionTo(State.CLOSED);
-                                           }
+                                                   transitionTo(State.CLOSED);
+                                               }
                                            })
                                 .onFailure(error -> shouldTrip.ifTrue(error,
                                                                       () -> transitionTo(State.OPEN)));
@@ -148,7 +148,7 @@ public interface CircuitBreaker {
                 var oldState = stateRef.getAndSet(newState);
                 if (oldState != newState) {
                     lastStateChangeTimestamp.set(timeSource()
-                                                 .nanoTime());
+                                                           .nanoTime());
                     log.info("Circuit breaker stateRef changed from {} to {}", oldState, newState);
                     switch (newState) {
                         case OPEN -> scheduleReset();
@@ -161,27 +161,26 @@ public interface CircuitBreaker {
             private void scheduleReset() {
                 SharedScheduler.schedule(() -> {
                                              if (stateRef.get() == State.OPEN && isResetTimeoutExpired()) {
-                                             transitionTo(State.HALF_OPEN);
-                                         }
+                                                 transitionTo(State.HALF_OPEN);
+                                             }
                                          },
                                          resetTimeout);
             }
 
             private boolean isResetTimeoutExpired() {
                 return timeSource()
-                       .nanoTime() - lastStateChangeTimestamp.get() >= resetTimeout.nanos();
+                                 .nanoTime() - lastStateChangeTimestamp.get() >= resetTimeout.nanos();
             }
         }
-        return new circuitBreaker(
-        failureThreshold,
-        resetTimeout,
-        testAttempts,
-        FluentPredicate.from(shouldTrip),
-        new AtomicReference<>(State.CLOSED),
-        new AtomicLong(0),
-        new AtomicLong(timeSource.nanoTime()),
-        new AtomicLong(0),
-        timeSource);
+        return new circuitBreaker(failureThreshold,
+                                  resetTimeout,
+                                  testAttempts,
+                                  FluentPredicate.from(shouldTrip),
+                                  new AtomicReference<>(State.CLOSED),
+                                  new AtomicLong(0),
+                                  new AtomicLong(timeSource.nanoTime()),
+                                  new AtomicLong(0),
+                                  timeSource);
     }
 
     sealed interface CircuitBreakerErrors extends Cause {

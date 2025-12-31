@@ -29,5 +29,5 @@ public interface ClassRegistrator {
      *
      * @param consumer accepts each class to be registered
      */
-    void registerClasses(Consumer<Class<?>> consumer);
+    void registerClasses(Consumer<Class< ? >> consumer);
 }

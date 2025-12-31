@@ -79,8 +79,8 @@ class SequentialPromiseOperationExample {
     private Retry retry = Retry.create()
                               .attempts(5)
                               .strategy(fixed()
-                                        .interval(timeSpan(2)
-                                                  .seconds()));
+                                             .interval(timeSpan(2)
+                                                               .seconds()));
 
     Promise<PaymentConfirmation> processPayment(Payment payment) {
         return retry.execute(() -> paymentService.processPayment(payment));
@@ -90,11 +90,11 @@ class SequentialPromiseOperationExample {
         var linear = Retry.create()
                           .attempts(5)
                           .strategy(linear()
-                                    .initialDelay(timeSpan(50L)
-                                                  .millis())
-                                    .increment(timeSpan(50L)
-                                               .millis())
-                                    .maxDelay(timeSpan(1)
-                                              .seconds()));
+                                          .initialDelay(timeSpan(50L)
+                                                                .millis())
+                                          .increment(timeSpan(50L)
+                                                             .millis())
+                                          .maxDelay(timeSpan(1)
+                                                            .seconds()));
     }
 }
