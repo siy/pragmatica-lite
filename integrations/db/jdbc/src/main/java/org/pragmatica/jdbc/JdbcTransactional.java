@@ -28,7 +28,6 @@ import java.sql.SQLException;
 /// Transaction aspect for JDBC operations.
 /// Provides transactional boundaries with automatic commit/rollback.
 public interface JdbcTransactional {
-
     /// Executes an operation within a transaction.
     /// Automatically commits on success and rolls back on failure.
     ///
@@ -55,33 +54,33 @@ public interface JdbcTransactional {
                                           Fn1<JdbcError, Throwable> errorMapper,
                                           Fn1<Promise<R>, Connection> operation) {
         return Promise.promise(promise -> {
-            Connection conn = null;
-            try {
-                conn = dataSource.getConnection();
-                conn.setAutoCommit(false);
-
-                var result = operation.apply(conn).await();
-
-                if (result instanceof Result.Success<R>) {
-                    try {
-                        conn.commit();
-                    } catch (SQLException e) {
-                        rollback(conn);
-                        promise.resolve(errorMapper.apply(e).result());
-                        return;
-                    }
-                } else {
-                    rollback(conn);
-                }
-
-                promise.resolve(result);
-            } catch (Exception e) {
-                rollback(conn);
-                promise.resolve(errorMapper.apply(e).result());
-            } finally {
-                close(conn);
-            }
-        });
+                                   Connection conn = null;
+                                   try{
+                                       conn = dataSource.getConnection();
+                                       conn.setAutoCommit(false);
+                                       var result = operation.apply(conn)
+                                                             .await();
+                                       if (result instanceof Result.Success<R>) {
+                                           try{
+                                               conn.commit();
+                                           } catch (SQLException e) {
+                                               rollback(conn);
+                                               promise.resolve(errorMapper.apply(e)
+                                                                          .result());
+                                               return;
+                                           }
+                                       } else {
+                                           rollback(conn);
+                                       }
+                                       promise.resolve(result);
+                                   } catch (Exception e) {
+                                       rollback(conn);
+                                       promise.resolve(errorMapper.apply(e)
+                                                                  .result());
+                                   } finally{
+                                       close(conn);
+                                   }
+                               });
     }
 
     /// Creates a transactional wrapper function.
@@ -97,22 +96,18 @@ public interface JdbcTransactional {
 
     private static void rollback(Connection conn) {
         if (conn != null) {
-            try {
+            try{
                 conn.rollback();
-            } catch (SQLException _) {
-                // Best effort rollback
-            }
+            } catch (SQLException _) {}
         }
     }
 
     private static void close(Connection conn) {
         if (conn != null) {
-            try {
+            try{
                 conn.setAutoCommit(true);
                 conn.close();
-            } catch (SQLException _) {
-                // Best effort close
-            }
+            } catch (SQLException _) {}
         }
     }
 }

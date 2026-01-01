@@ -28,7 +28,6 @@ import java.util.List;
 /// Promise-based JDBC operations interface.
 /// Provides a functional wrapper for common JDBC operations with typed error handling.
 public interface JdbcOperations {
-
     /// Executes a query and maps the single result.
     ///
     /// @param sql SQL query

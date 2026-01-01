@@ -84,7 +84,7 @@ public sealed interface Causes {
     ///
     /// @return created mapping function
     static <T> Fn1<Cause, T> forOneValue(String template) {
-        return (T input) -> cause(String.format(template, input));
+        return ( T input) -> cause(String.format(template, input));
     }
 
     /// Create a mapper which will map two values into a formatted message.
@@ -93,7 +93,7 @@ public sealed interface Causes {
     ///
     /// @return created mapping function
     static <T1, T2> Fn2<Cause, T1, T2> forTwoValues(String template) {
-        return (T1 input1, T2 input2) -> cause(String.format(template, input1, input2));
+        return ( T1 input1, T2 input2) -> cause(String.format(template, input1, input2));
     }
 
     /// Create a mapper which will map three values into a formatted message.
@@ -102,7 +102,7 @@ public sealed interface Causes {
     ///
     /// @return created mapping function
     static <T1, T2, T3> Fn3<Cause, T1, T2, T3> forThreeValues(String template) {
-        return (T1 input1, T2 input2, T3 input3) -> cause(String.format(template, input1, input2, input3));
+        return ( T1 input1, T2 input2, T3 input3) -> cause(String.format(template, input1, input2, input3));
     }
 
     interface CompositeCause extends Cause {
@@ -111,8 +111,8 @@ public sealed interface Causes {
                 return composite.append(cause(text));
             }
             return composite()
-                   .append(cause(text,
-                                 option(cause)));
+                            .append(cause(text,
+                                          option(cause)));
         }
 
         CompositeCause append(Cause cause);
@@ -127,28 +127,28 @@ public sealed interface Causes {
             @Override
             public CompositeCause append(Cause cause) {
                 causes()
-                .add(cause);
+                      .add(cause);
                 return this;
             }
 
             @Override
             public Stream<Cause> stream() {
                 return causes()
-                       .stream();
+                             .stream();
             }
 
             @Override
             public boolean isEmpty() {
                 return causes()
-                       .isEmpty();
+                             .isEmpty();
             }
 
             @Override
             public String message() {
                 var builder = new StringBuilder("Composite:");
                 stream()
-                .forEach(issue -> builder.append("\n  ")
-                                         .append(issue.message()));
+                      .forEach(issue -> builder.append("\n  ")
+                                               .append(issue.message()));
                 return builder.toString();
             }
 

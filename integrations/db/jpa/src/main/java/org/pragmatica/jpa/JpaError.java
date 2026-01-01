@@ -17,17 +17,16 @@
 
 package org.pragmatica.jpa;
 
-import jakarta.persistence.*;
 import org.pragmatica.lang.Cause;
+
+import jakarta.persistence.*;
 
 /// Typed error causes for JPA operations.
 /// Maps common JPA exceptions to domain-friendly error types.
 public sealed interface JpaError extends Cause {
-
     /// Entity not found by ID or query returned no results.
     enum EntityNotFound implements JpaError {
         INSTANCE;
-
         @Override
         public String message() {
             return "Entity not found";
@@ -61,7 +60,6 @@ public sealed interface JpaError extends Cause {
     /// Transaction required but not active.
     enum TransactionRequired implements JpaError {
         INSTANCE;
-
         @Override
         public String message() {
             return "Transaction is required for this operation";
@@ -93,10 +91,12 @@ public sealed interface JpaError extends Cause {
         @Override
         public String message() {
             var msg = cause.getMessage();
-            return "Database operation failed: " + (msg != null ? msg : cause.getClass().getName());
+            return "Database operation failed: " + ( msg != null
+                                                     ? msg
+                                                     : cause.getClass()
+                                                            .getName());
         }
     }
-
 
     /// Maps JPA exceptions to typed JpaError causes.
     ///
@@ -111,15 +111,17 @@ public sealed interface JpaError extends Cause {
     static JpaError fromException(Throwable throwable) {
         return switch (throwable) {
             case EntityNotFoundException _, NoResultException _ -> EntityNotFound.INSTANCE;
-            case OptimisticLockException e -> new OptimisticLock(
-                e.getEntity() != null ? e.getEntity().getClass().getSimpleName() : "Unknown",
-                e.getEntity()
-            );
+            case OptimisticLockException e -> new OptimisticLock(e.getEntity() != null
+                                                                 ? e.getEntity()
+                                                                    .getClass()
+                                                                    .getSimpleName()
+                                                                 : "Unknown",
+                                                                 e.getEntity());
             case PessimisticLockException e -> new PessimisticLock(e.getMessage());
             case LockTimeoutException e -> new PessimisticLock("Lock timeout: " + e.getMessage());
-            case EntityExistsException e -> new EntityExists(
-                e.getMessage() != null ? e.getMessage() : "Unknown entity"
-            );
+            case EntityExistsException e -> new EntityExists(e.getMessage() != null
+                                                             ? e.getMessage()
+                                                             : "Unknown entity");
             case QueryTimeoutException e -> new QueryTimeout(e.getMessage());
             case TransactionRequiredException _ -> TransactionRequired.INSTANCE;
             // Vendor-specific exceptions (Hibernate, EclipseLink) fall through to DatabaseFailure

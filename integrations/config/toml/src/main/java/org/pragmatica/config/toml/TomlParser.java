@@ -63,7 +63,6 @@ import java.util.regex.Pattern;
  * }</pre>
  */
 public final class TomlParser {
-
     private static final Pattern SECTION_PATTERN = Pattern.compile("^\\[([a-zA-Z0-9_.]+)]$");
     private static final Pattern KEY_VALUE_PATTERN = Pattern.compile("^([a-zA-Z0-9_-]+)\\s*=\\s*(.+)$");
 
@@ -79,22 +78,18 @@ public final class TomlParser {
         if (content == null || content.isBlank()) {
             return Result.success(TomlDocument.EMPTY);
         }
-
         Map<String, Map<String, Object>> sections = new LinkedHashMap<>();
-        sections.put("", new LinkedHashMap<>()); // Root section
-
+        sections.put("", new LinkedHashMap<>());
+        // Root section
         String currentSection = "";
         int lineNumber = 0;
-
         for (String rawLine : content.split("\n")) {
-            lineNumber++;
+            lineNumber++ ;
             String line = rawLine.trim();
-
             // Skip empty lines and comments
             if (line.isEmpty() || line.startsWith("#")) {
                 continue;
             }
-
             // Check for section header
             var sectionMatcher = SECTION_PATTERN.matcher(line);
             if (sectionMatcher.matches()) {
@@ -102,29 +97,26 @@ public final class TomlParser {
                 sections.putIfAbsent(currentSection, new LinkedHashMap<>());
                 continue;
             }
-
             // Check for key = value
             var kvMatcher = KEY_VALUE_PATTERN.matcher(line);
             if (kvMatcher.matches()) {
                 String key = kvMatcher.group(1);
-                String rawValue = kvMatcher.group(2).trim();
-
+                String rawValue = kvMatcher.group(2)
+                                           .trim();
                 // Strip inline comment (but not from quoted strings)
                 rawValue = stripInlineComment(rawValue);
-
                 var parseResult = parseValue(rawValue, lineNumber);
                 if (parseResult.isFailure()) {
                     return parseResult.map(_ -> null);
                 }
-
                 var section = currentSection;
-                parseResult.onSuccess(value -> sections.get(section).put(key, value));
+                parseResult.onSuccess(value -> sections.get(section)
+                                                       .put(key, value));
                 continue;
             }
-
-            return TomlError.syntaxError(lineNumber, line).result();
+            return TomlError.syntaxError(lineNumber, line)
+                            .result();
         }
-
         return Result.success(new TomlDocument(Map.copyOf(sections)));
     }
 
@@ -135,29 +127,33 @@ public final class TomlParser {
      * @return Result containing the parsed TomlDocument, or an error
      */
     public static Result<TomlDocument> parseFile(Path path) {
-        try {
+        try{
             return parse(Files.readString(path));
         } catch (IOException e) {
-            return TomlError.fileReadFailed(path.toString(), e.getMessage()).result();
+            return TomlError.fileReadFailed(path.toString(),
+                                            e.getMessage())
+                            .result();
         }
     }
 
     private static String stripInlineComment(String value) {
         if (value.startsWith("\"")) {
-            return value; // Don't strip from quoted strings
+            return value;
         }
         if (value.startsWith("[") && value.contains("]")) {
             // For arrays, strip comment after closing bracket
             int closingBracket = value.lastIndexOf(']');
             String afterBracket = value.substring(closingBracket + 1);
             if (afterBracket.contains("#")) {
-                return value.substring(0, closingBracket + 1).trim();
+                return value.substring(0, closingBracket + 1)
+                            .trim();
             }
             return value;
         }
         int commentIndex = value.indexOf('#');
         if (commentIndex > 0) {
-            return value.substring(0, commentIndex).trim();
+            return value.substring(0, commentIndex)
+                        .trim();
         }
         return value;
     }
@@ -170,69 +166,69 @@ public final class TomlParser {
         if ("false".equals(value)) {
             return Result.success(false);
         }
-
         // Quoted string
         if (value.startsWith("\"")) {
             if (!value.endsWith("\"") || value.length() < 2) {
-                return TomlError.unterminatedString(lineNumber).result();
+                return TomlError.unterminatedString(lineNumber)
+                                .result();
             }
             return Result.success(unescapeString(value.substring(1, value.length() - 1)));
         }
-
         // Array
         if (value.startsWith("[")) {
             if (!value.endsWith("]")) {
-                return TomlError.unterminatedArray(lineNumber).result();
+                return TomlError.unterminatedArray(lineNumber)
+                                .result();
             }
-            return parseArray(value.substring(1, value.length() - 1), lineNumber);
+            return parseArray(value.substring(1, value.length() - 1),
+                              lineNumber);
         }
-
         // Float (including negative, with decimal point or exponent)
         if (value.matches("-?\\d+\\.\\d+([eE][+-]?\\d+)?") || value.matches("-?\\d+[eE][+-]?\\d+")) {
-            try {
+            try{
                 return Result.success(Double.parseDouble(value));
             } catch (NumberFormatException _) {
-                return TomlError.invalidValue(lineNumber, value, "float").result();
+                return TomlError.invalidValue(lineNumber, value, "float")
+                                .result();
             }
         }
-
         // Integer (including negative)
         if (value.matches("-?\\d+")) {
-            try {
+            try{
                 return Result.success(Long.parseLong(value));
             } catch (NumberFormatException _) {
-                return TomlError.invalidValue(lineNumber, value, "integer").result();
+                return TomlError.invalidValue(lineNumber, value, "integer")
+                                .result();
             }
         }
-
         // Unquoted string (identifier-like)
         return Result.success(value);
     }
 
     private static Result<Object> parseArray(String content, int lineNumber) {
         List<Object> items = new ArrayList<>();
-        if (content.trim().isEmpty()) {
+        if (content.trim()
+                   .isEmpty()) {
             return Result.success(items);
         }
-
         StringBuilder current = new StringBuilder();
         boolean inQuotes = false;
         int bracketDepth = 0;
-
-        for (int i = 0; i < content.length(); i++) {
+        for (int i = 0; i < content.length(); i++ ) {
             char c = content.charAt(i);
-
             if (c == '"' && (i == 0 || content.charAt(i - 1) != '\\')) {
                 inQuotes = !inQuotes;
                 current.append(c);
             } else if (c == '[' && !inQuotes) {
-                bracketDepth++;
+                bracketDepth++ ;
                 current.append(c);
             } else if (c == ']' && !inQuotes) {
-                bracketDepth--;
+                bracketDepth-- ;
                 current.append(c);
             } else if (c == ',' && !inQuotes && bracketDepth == 0) {
-                var itemResult = parseValue(current.toString().trim(), lineNumber);
+                var itemResult = parseValue(current.toString()
+                                                   .trim(),
+                                            lineNumber);
                 if (itemResult.isFailure()) {
                     return itemResult;
                 }
@@ -242,9 +238,9 @@ public final class TomlParser {
                 current.append(c);
             }
         }
-
         // Add last item
-        String lastItem = current.toString().trim();
+        String lastItem = current.toString()
+                                 .trim();
         if (!lastItem.isEmpty()) {
             var itemResult = parseValue(lastItem, lineNumber);
             if (itemResult.isFailure()) {
@@ -252,23 +248,37 @@ public final class TomlParser {
             }
             itemResult.onSuccess(items::add);
         }
-
         return Result.success(items);
     }
 
     private static String unescapeString(String s) {
         // Process character by character to handle escape sequences correctly
         var result = new StringBuilder();
-        for (int i = 0; i < s.length(); i++) {
+        for (int i = 0; i < s.length(); i++ ) {
             char c = s.charAt(i);
             if (c == '\\' && i + 1 < s.length()) {
                 char next = s.charAt(i + 1);
                 switch (next) {
-                    case '\\' -> { result.append('\\'); i++; }
-                    case '"' -> { result.append('"'); i++; }
-                    case 'n' -> { result.append('\n'); i++; }
-                    case 't' -> { result.append('\t'); i++; }
-                    case 'r' -> { result.append('\r'); i++; }
+                    case '\\' -> {
+                        result.append('\\');
+                        i++ ;
+                    }
+                    case '"' -> {
+                        result.append('"');
+                        i++ ;
+                    }
+                    case 'n' -> {
+                        result.append('\n');
+                        i++ ;
+                    }
+                    case 't' -> {
+                        result.append('\t');
+                        i++ ;
+                    }
+                    case 'r' -> {
+                        result.append('\r');
+                        i++ ;
+                    }
                     default -> result.append(c);
                 }
             } else {

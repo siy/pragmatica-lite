@@ -26,7 +26,7 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
     protected TypeToken() {
         // Retrieve type eagerly to trigger run-time error closer to the issue location
         if (! (getClass()
-               .getGenericSuperclass() instanceof ParameterizedType parameterizedType)) {
+                       .getGenericSuperclass() instanceof ParameterizedType parameterizedType)) {
             throw new IllegalArgumentException("TypeToken constructed without actual type argument.");
         }
         token = parameterizedType.getActualTypeArguments() [0];
@@ -79,7 +79,7 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
         var actualTypeArgument = parameterizedType.getActualTypeArguments() [index];
         if (indexes.length == 1) {
             return Option.option(rawClass(actualTypeArgument));
-        }else {
+        } else {
             return recursivelyGetType(actualTypeArgument, Arrays.copyOfRange(indexes, 1, indexes.length));
         }
     }
@@ -115,7 +115,7 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
         var actualTypeArgument = parameterizedType.getActualTypeArguments() [index];
         if (indexes.length == 1) {
             return Option.option(new TypeToken<>(actualTypeArgument) {});
-        }else {
+        } else {
             return recursivelyGetSubType(actualTypeArgument, Arrays.copyOfRange(indexes, 1, indexes.length));
         }
     }
@@ -124,7 +124,7 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
         return 0;
     }
 
-    @Override
+    @ Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;

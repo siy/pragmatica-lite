@@ -82,7 +82,7 @@ public sealed interface TimeSpan extends Comparable<TimeSpan> {
     /// @return time span as [Duration]
     default Duration duration() {
         return secondsAndNanos()
-               .map(Duration::ofSeconds);
+                              .map(Duration::ofSeconds);
     }
 
     @Override
@@ -114,8 +114,8 @@ public sealed interface TimeSpan extends Comparable<TimeSpan> {
         @Override
         public String toString() {
             return "TimeSpan(" + duration()
-                                .toString()
-                                .substring(2) + ")";
+                                         .toString()
+                                         .substring(2) + ")";
         }
     }
 

@@ -39,7 +39,7 @@ record JsonMapperImpl(tools.jackson.databind.json.JsonMapper mapper) implements 
     }
 
     @Override
-    public <T> Result<byte[] > writeAsBytes(T value) {
+    public <T> Result<byte[]> writeAsBytes(T value) {
         return lift(JsonError::fromException, () -> mapper.writeValueAsBytes(value));
     }
 

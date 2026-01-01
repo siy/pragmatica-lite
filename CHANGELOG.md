@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2025-12-31
+
+### Added
+- `KSUID` - K-Sortable Unique Identifier implementation (replaces ULID)
+  - 20-byte identifiers: 4-byte timestamp + 16-byte random payload
+  - 27-character base62 string representation (lexicographically sortable)
+  - `KSUID.ksuid()` - generate new random KSUID
+  - `KSUID.parse(String)` - parse from string with Result error handling
+  - `KSUID.fromBytes(byte[])` - create from binary with Result error handling
+  - `timestamp()` - extract Unix timestamp
+  - `encoded()` / `toBytes()` - serialize to string/bytes
+  - `KSUIDError` sealed interface for typed parsing errors
+- JOOQ Integration (`integrations/db/jooq`)
+  - `JooqOperations` - Promise-based JOOQ operations with JDBC
+    - `fetchOne()` - fetch single record
+    - `fetchOptional()` - fetch optional record
+    - `fetch()` - fetch all records
+    - `execute()` - execute INSERT/UPDATE/DELETE
+  - `JooqTransactional` - transaction management with auto commit/rollback
+  - `JooqError` - sealed interface for typed error handling
+
+### Changed
+- `IdGenerator.generate()` now uses KSUID instead of ULID
+
+### Removed
+- `ULID` class - replaced by KSUID
+
 ## [0.9.1] - 2025-12-30
 
 ### Changed

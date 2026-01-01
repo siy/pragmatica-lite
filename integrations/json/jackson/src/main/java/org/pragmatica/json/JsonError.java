@@ -76,7 +76,7 @@ public sealed interface JsonError extends Cause {
         @Override
         public String message() {
             return locationInfo.map(loc -> "Invalid JSON at " + loc + ": " + details)
-                                                .or("Invalid JSON: " + details);
+                               .or("Invalid JSON: " + details);
         }
     }
 
@@ -110,21 +110,19 @@ public sealed interface JsonError extends Cause {
             SerializationFailed.serializationFailed(e.getMessage(), e);
             // Type mismatches during deserialization
             case MismatchedInputException e ->
-            TypeMismatch.typeMismatch(
-            e.getTargetType() != null
-            ? e.getTargetType()
-               .getSimpleName()
-            : "unknown",
-            extractValue(e),
-            e.getPathReference());
+            TypeMismatch.typeMismatch(e.getTargetType() != null
+                                      ? e.getTargetType()
+                                         .getSimpleName()
+                                      : "unknown",
+                                      extractValue(e),
+                                      e.getPathReference());
             case InvalidDefinitionException e ->
-            TypeMismatch.typeMismatch(
-            e.getType() != null
-            ? e.getType()
-               .getTypeName()
-            : "unknown",
-            "invalid definition",
-            e.getPathReference());
+            TypeMismatch.typeMismatch(e.getType() != null
+                                      ? e.getType()
+                                         .getTypeName()
+                                      : "unknown",
+                                      "invalid definition",
+                                      e.getPathReference());
             // JSON parsing errors (malformed JSON)
             case StreamReadException e ->
             InvalidJson.invalidJson(e.getMessage(), extractLocation(e));

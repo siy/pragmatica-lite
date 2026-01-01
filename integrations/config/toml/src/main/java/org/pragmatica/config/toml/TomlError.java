@@ -23,7 +23,6 @@ import org.pragmatica.lang.Result;
  * Typed errors for TOML parsing operations.
  */
 public sealed interface TomlError extends Cause {
-
     record SyntaxError(int line, String details) implements TomlError {
         @Override
         public String message() {

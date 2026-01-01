@@ -53,9 +53,9 @@ public class OptionDeserializer extends ValueDeserializer<Option< ? >> {
         Object value;
         if (valueDeserializer != null) {
             value = valueDeserializer.deserialize(p, ctxt);
-        }else if (valueType != null) {
+        } else if (valueType != null) {
             value = ctxt.readValue(p, valueType);
-        }else {
+        } else {
             value = p.readValueAs(Object.class);
         }
         return option(value);

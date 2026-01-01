@@ -17,13 +17,14 @@
 
 package org.pragmatica.metrics;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Result;
 
 import java.util.function.Supplier;
+
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 
 /// Aspect decorator for adding Micrometer metrics to Result-returning functions.
 /// Supports timer-based metrics (duration + counts), counter-based metrics (counts only),
@@ -97,8 +98,7 @@ public interface ResultMetrics {
         ///
         /// @return ResultMetrics instance
         public ResultMetrics build() {
-            return new TimerMetrics(timer(TimerType.SUCCESS),
-                                    timer(TimerType.FAILURE));
+            return new TimerMetrics(timer(TimerType.SUCCESS), timer(TimerType.FAILURE));
         }
     }
 
@@ -116,8 +116,7 @@ public interface ResultMetrics {
         ///
         /// @return ResultMetrics instance
         public ResultMetrics build() {
-            return new CounterMetrics(successCounter(),
-                                      failureCounter());
+            return new CounterMetrics(successCounter(), failureCounter());
         }
     }
 
@@ -135,9 +134,7 @@ public interface ResultMetrics {
         ///
         /// @return ResultMetrics instance
         public ResultMetrics build() {
-            return new CombinedMetrics(timer(TimerType.PLAIN),
-                                       successCounter(),
-                                       failureCounter());
+            return new CombinedMetrics(timer(TimerType.PLAIN), successCounter(), failureCounter());
         }
     }
 

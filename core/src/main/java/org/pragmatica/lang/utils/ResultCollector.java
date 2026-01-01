@@ -25,14 +25,14 @@ import java.util.function.Consumer;
 ///
 /// Note that this is fairly low-level class and for performance reasons it omits most checks.
 @SuppressWarnings("unused")
-public record ResultCollector(Object[] results, AtomicInteger counter, Consumer<Object[] > action) {
+public record ResultCollector(Object[] results, AtomicInteger counter, Consumer<Object[]> action) {
     /// Create an instance configured for threshold and action.
     ///
     /// @param count  Number of events to register
     /// @param action Action to perform
     ///
     /// @return Created instance
-    public static ResultCollector resultCollector(int count, Consumer<Object[] > action) {
+    public static ResultCollector resultCollector(int count, Consumer<Object[]> action) {
         assert count >= 0;
         return new ResultCollector(new Object[count], new AtomicInteger(count), action);
     }

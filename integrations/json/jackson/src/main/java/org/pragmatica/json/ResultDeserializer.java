@@ -57,17 +57,17 @@ public class ResultDeserializer extends ValueDeserializer<Result< ? >> {
             String fieldName = p.currentName();
             p.nextToken();
             switch (fieldName) {
-                case"success" -> isSuccess = p.getBooleanValue();
-                case"value" -> {
+                case "success" -> isSuccess = p.getBooleanValue();
+                case "value" -> {
                     if (valueDeserializer != null) {
                         value = valueDeserializer.deserialize(p, ctxt);
-                    }else if (valueType != null) {
+                    } else if (valueType != null) {
                         value = ctxt.readValue(p, valueType);
-                    }else {
+                    } else {
                         value = p.readValueAs(Object.class);
                     }
                 }
-                case"error" -> {
+                case "error" -> {
                     while (p.nextToken() != tools.jackson.core.JsonToken.END_OBJECT) {
                         String errorField = p.currentName();
                         p.nextToken();
@@ -83,7 +83,7 @@ public class ResultDeserializer extends ValueDeserializer<Result< ? >> {
         }
         if (isSuccess) {
             return success(value);
-        }else {
+        } else {
             return DeserializedCause.deserializedCause(errorMessage != null
                                                        ? errorMessage
                                                        : "Unknown error")

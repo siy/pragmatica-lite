@@ -17,12 +17,13 @@
 
 package org.pragmatica.metrics;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Option;
 
 import java.util.function.Supplier;
+
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 
 /// Aspect decorator for adding Micrometer metrics to Option-returning functions.
 /// Since Option represents presence/absence without failure semantics, only counter-based
@@ -78,8 +79,7 @@ public interface OptionMetrics {
         ///
         /// @return OptionMetrics instance
         public OptionMetrics build() {
-            return new CounterMetrics(presentCounter(),
-                                      absentCounter());
+            return new CounterMetrics(presentCounter(), absentCounter());
         }
     }
 

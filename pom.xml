@@ -4,7 +4,7 @@
 
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>pragmatica-lite</artifactId>
-    <version>0.9.1</version>
+    <version>0.9.2</version>
     <modules>
         <module>core</module>
         <module>examples</module>
@@ -312,7 +312,7 @@
                 <plugin>
                     <groupId>org.pragmatica-lite</groupId>
                     <artifactId>jbct-maven-plugin</artifactId>
-                    <version>0.4.2</version>
+                    <version>0.4.3</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -333,6 +333,17 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.pragmatica-lite</groupId>
+                <artifactId>jbct-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

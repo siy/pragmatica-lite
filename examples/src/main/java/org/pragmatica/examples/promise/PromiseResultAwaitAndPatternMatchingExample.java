@@ -19,7 +19,7 @@ class PromiseResultAwaitAndPatternMatchingExample {
         // Process the result using pattern matching in instanceof
         if (result instanceof Result.Success<Integer>(Integer value)) {
             System.out.println("Result: " + value);
-        }else if (result instanceof Result.Failure<Integer>(Cause cause)) {
+        } else if (result instanceof Result.Failure<Integer>(Cause cause)) {
             System.err.println("Operation failed: " + cause.message());
         }
         switch (result) {

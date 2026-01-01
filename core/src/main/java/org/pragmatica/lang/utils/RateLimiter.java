@@ -55,9 +55,9 @@ public interface RateLimiter {
     /// @return A new rate limiter
     static RateLimiter create(int rate, TimeSpan period) {
         return builder()
-               .rate(rate)
-               .period(period)
-               .withDefaultTimeSource();
+                      .rate(rate)
+                      .period(period)
+                      .withDefaultTimeSource();
     }
 
     /// Create a rate limiter builder.
@@ -101,8 +101,8 @@ public interface RateLimiter {
             @Override
             public <T> Promise<T> execute(Supplier<Promise<T>> operation) {
                 return tryAcquire()
-                       .async()
-                       .flatMap(operation);
+                                 .async()
+                                 .flatMap(operation);
             }
 
             private synchronized Result<Unit> tryAcquire() {
@@ -131,7 +131,7 @@ public interface RateLimiter {
                 long timeSinceLastRefill = now - state[1];
                 long remainingTimeInCurrentPeriod = refillPeriodNanos - timeSinceLastRefill;
                 return timeSpan(Math.max(1, remainingTimeInCurrentPeriod))
-                       .nanos();
+                               .nanos();
             }
         }
         int maxTokens = rate + burst;

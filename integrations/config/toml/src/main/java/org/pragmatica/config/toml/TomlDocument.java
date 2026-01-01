@@ -42,7 +42,6 @@ import java.util.Set;
  * @param sections Map of section names to their key-value pairs
  */
 public record TomlDocument(Map<String, Map<String, Object>> sections) {
-
     /**
      * Empty document constant.
      */
@@ -56,7 +55,8 @@ public record TomlDocument(Map<String, Map<String, Object>> sections) {
      * @return Option containing the string value, or empty if not found
      */
     public Option<String> getString(String section, String key) {
-        return getValue(section, key).map(Object::toString);
+        return getValue(section, key)
+                       .map(Object::toString);
     }
 
     /**
@@ -67,7 +67,8 @@ public record TomlDocument(Map<String, Map<String, Object>> sections) {
      * @return Option containing the integer value, or empty if not found or not an integer
      */
     public Option<Integer> getInt(String section, String key) {
-        return getValue(section, key).flatMap(this::toInt);
+        return getValue(section, key)
+                       .flatMap(this::toInt);
     }
 
     /**
@@ -78,7 +79,8 @@ public record TomlDocument(Map<String, Map<String, Object>> sections) {
      * @return Option containing the long value, or empty if not found or not a number
      */
     public Option<Long> getLong(String section, String key) {
-        return getValue(section, key).flatMap(this::toLong);
+        return getValue(section, key)
+                       .flatMap(this::toLong);
     }
 
     /**
@@ -89,7 +91,8 @@ public record TomlDocument(Map<String, Map<String, Object>> sections) {
      * @return Option containing the double value, or empty if not found or not a number
      */
     public Option<Double> getDouble(String section, String key) {
-        return getValue(section, key).flatMap(this::toDouble);
+        return getValue(section, key)
+                       .flatMap(this::toDouble);
     }
 
     /**
@@ -100,7 +103,8 @@ public record TomlDocument(Map<String, Map<String, Object>> sections) {
      * @return Option containing the boolean value, or empty if not found or not a boolean
      */
     public Option<Boolean> getBoolean(String section, String key) {
-        return getValue(section, key).flatMap(this::toBoolean);
+        return getValue(section, key)
+                       .flatMap(this::toBoolean);
     }
 
     /**
@@ -111,7 +115,8 @@ public record TomlDocument(Map<String, Map<String, Object>> sections) {
      * @return Option containing the string list, or empty if not found or not a list
      */
     public Option<List<String>> getStringList(String section, String key) {
-        return getValue(section, key).flatMap(this::toStringList);
+        return getValue(section, key)
+                       .flatMap(this::toStringList);
     }
 
     /**
@@ -199,7 +204,7 @@ public record TomlDocument(Map<String, Map<String, Object>> sections) {
             return Option.some(l.intValue());
         }
         if (value instanceof String s) {
-            try {
+            try{
                 return Option.some(Integer.parseInt(s));
             } catch (NumberFormatException _) {
                 return Option.none();
@@ -216,7 +221,7 @@ public record TomlDocument(Map<String, Map<String, Object>> sections) {
             return Option.some(i.longValue());
         }
         if (value instanceof String s) {
-            try {
+            try{
                 return Option.some(Long.parseLong(s));
             } catch (NumberFormatException _) {
                 return Option.none();
@@ -236,7 +241,7 @@ public record TomlDocument(Map<String, Map<String, Object>> sections) {
             return Option.some(i.doubleValue());
         }
         if (value instanceof String s) {
-            try {
+            try{
                 return Option.some(Double.parseDouble(s));
             } catch (NumberFormatException _) {
                 return Option.none();
@@ -261,8 +266,10 @@ public record TomlDocument(Map<String, Map<String, Object>> sections) {
     }
 
     private Option<List<String>> toStringList(Object value) {
-        if (value instanceof List<?> list) {
-            return Option.some(list.stream().map(Object::toString).toList());
+        if (value instanceof List< ? > list) {
+            return Option.some(list.stream()
+                                   .map(Object::toString)
+                                   .toList());
         }
         return Option.none();
     }

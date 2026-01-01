@@ -68,7 +68,7 @@ public class StageTags<T extends StageTags<T>> {
         for (int i = 0; i < keyValues.length; i += 2) {
             tags.add(Tag.of(keyValues[i], keyValues[i + 1]));
         }
-        return (T) this;
+        return ( T) this;
     }
 
     protected Counter failureCounter() {
@@ -98,7 +98,7 @@ public class StageTags<T extends StageTags<T>> {
     protected Timer timer(TimerType type) {
         var builder = Timer.builder(name())
                            .tags(tags());
-        return (switch (type) {
+        return ( switch (type) {
             case SUCCESS -> builder.tag("result", "success");
             case FAILURE -> builder.tag("result", "failure");
             case PLAIN -> builder;

@@ -17,11 +17,6 @@
 
 package org.pragmatica.jooq.r2dbc;
 
-import io.r2dbc.spi.Connection;
-import io.r2dbc.spi.ConnectionFactory;
-import org.jooq.DSLContext;
-import org.jooq.SQLDialect;
-import org.jooq.impl.DSL;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Functions.Fn2;
 import org.pragmatica.lang.Promise;
@@ -29,10 +24,15 @@ import org.pragmatica.lang.Result;
 import org.pragmatica.r2dbc.R2dbcError;
 import org.pragmatica.r2dbc.ReactiveOperations;
 
+import io.r2dbc.spi.Connection;
+import io.r2dbc.spi.ConnectionFactory;
+import org.jooq.DSLContext;
+import org.jooq.SQLDialect;
+import org.jooq.impl.DSL;
+
 /// Transaction aspect for JOOQ R2DBC operations.
 /// Provides transactional boundaries with automatic commit/rollback.
 public interface JooqR2dbcTransactional {
-
     /// Executes an operation within a transaction.
     /// Automatically commits on success and rolls back on failure.
     ///
@@ -62,15 +62,17 @@ public interface JooqR2dbcTransactional {
                                           SQLDialect dialect,
                                           Fn1<R2dbcError, Throwable> errorMapper,
                                           Fn2<Promise<R>, DSLContext, Connection> operation) {
-        return ReactiveOperations.<Connection>fromPublisher(connectionFactory.create(), errorMapper)
-            .flatMap(conn -> beginTransaction(conn, errorMapper)
-                .flatMap(_ -> {
-                    var dsl = DSL.using(conn, dialect);
-                    return operation.apply(dsl, conn);
-                })
-                .flatMap(result -> commitTransaction(conn, errorMapper).map(_ -> result))
-                .onFailure(_ -> rollbackTransaction(conn))
-                .onResult(_ -> closeConnection(conn)));
+        return ReactiveOperations.<Connection> fromPublisher(connectionFactory.create(),
+                                                             errorMapper)
+                                 .flatMap(conn -> beginTransaction(conn, errorMapper)
+                                                                  .flatMap(_ -> {
+                                                                               var dsl = DSL.using(conn, dialect);
+                                                                               return operation.apply(dsl, conn);
+                                                                           })
+                                                                  .flatMap(result -> commitTransaction(conn, errorMapper)
+                                                                                                      .map(_ -> result))
+                                                                  .onFailure(_ -> rollbackTransaction(conn))
+                                                                  .onResult(_ -> closeConnection(conn)));
     }
 
     private static Promise<Void> beginTransaction(Connection conn, Fn1<R2dbcError, Throwable> errorMapper) {
@@ -83,11 +85,11 @@ public interface JooqR2dbcTransactional {
 
     private static void rollbackTransaction(Connection conn) {
         ReactiveOperations.fromPublisher(conn.rollbackTransaction())
-            .await(); // Best effort, ignore result
+                          .await();
     }
 
     private static void closeConnection(Connection conn) {
         ReactiveOperations.fromPublisher(conn.close())
-            .await(); // Best effort, ignore result
+                          .await();
     }
 }
