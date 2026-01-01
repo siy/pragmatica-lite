@@ -122,8 +122,9 @@ public sealed interface MessageRouter {
         @Override
         @SuppressWarnings("unchecked")
         default <R extends Message> void route(R message) {
-            routingTable().get(message.getClass())
-                          .forEach(fn -> fn.accept((T) message));
+            routingTable()
+                        .get(message.getClass())
+                        .forEach(fn -> fn.accept((T) message));
         }
     }
 

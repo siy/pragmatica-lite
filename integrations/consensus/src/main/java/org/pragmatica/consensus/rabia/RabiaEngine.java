@@ -145,6 +145,8 @@ public class RabiaEngine<C extends Command> {
         stateMachine.reset();
         startPromise.set(Promise.promise());
         pendingBatches.clear();
+        correlationMap.forEach((_, promise) -> promise.fail(ConsensusErrors.nodeInactive(self)));
+        correlationMap.clear();
     }
 
     public <R> Promise<List<R>> apply(List<C> commands) {
@@ -597,9 +599,8 @@ public class RabiaEngine<C extends Command> {
                                             .map(Batch::correlationId)
                                             .filter(correlationId -> correlationId.equals(propose.value()
                                                                                                  .correlationId()))
-                                            .distinct()
-                                            .toList();
-            if (existingProposal.size() > 1) {
+                                            .count();
+            if (existingProposal > 1L) {
                 return new VoteRound1(self, propose.phase(), StateValue.V0);
             }
             proposals.put(self, propose.value());

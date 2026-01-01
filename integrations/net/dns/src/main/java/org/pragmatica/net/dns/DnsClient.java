@@ -169,6 +169,16 @@ record DnsClientImpl(Bootstrap bootstrap,
                          .onSuccess(addresses::add)
                          .onFailureRun(() -> log.warn("Response for {} contains incorrectly formatted IP address",
                                                       request.domainName()));
+            } else if (record.type() == DnsRecordType.AAAA) {
+                var raw = (DnsRawRecord) record;
+                log.debug("AAAA record {}, ttl {}", raw, raw.timeToLive());
+                InetUtils.forBytes(ByteBufUtil.getBytes(raw.content()))
+                         .map(inetAddress -> DomainAddress.domainAddress(request.domainName(),
+                                                                         inetAddress,
+                                                                         Duration.ofSeconds(raw.timeToLive())))
+                         .onSuccess(addresses::add)
+                         .onFailureRun(() -> log.warn("Response for {} contains incorrectly formatted IPv6 address",
+                                                      request.domainName()));
             }
         }
         return addresses;

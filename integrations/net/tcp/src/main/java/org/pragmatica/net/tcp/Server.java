@@ -16,6 +16,7 @@
 
 package org.pragmatica.net.tcp;
 
+import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.utils.Causes;
@@ -23,7 +24,6 @@ import org.pragmatica.lang.utils.Causes;
 import java.util.List;
 import java.util.function.Supplier;
 
-import io.netty.handler.ssl.SslContext;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -33,6 +33,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.SslContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +61,7 @@ public interface Server {
      *
      * @param config          server configuration
      * @param channelHandlers supplier for channel handlers (called for each new connection)
+     *
      * @return promise of the running server
      */
     static Promise<Server> server(ServerConfig config, Supplier<List<ChannelHandler>> channelHandlers) {
@@ -90,11 +92,13 @@ public interface Server {
                 log.info("Server {} stopped", name());
             }
 
+            //TODO: add support for TLS 
             @Override
             public Promise<Channel> connectTo(NodeAddress address) {
                 var bootstrap = new Bootstrap().group(workerGroup)
                                                .channel(NioSocketChannel.class)
-                                               .handler(createChildHandler(channelHandlers, null));
+                                               .handler(createChildHandler(channelHandlers,
+                                                                           Option.none()));
                 var promise = Promise.<Channel>promise();
                 bootstrap.connect(address.host(),
                                   address.port())
@@ -109,14 +113,12 @@ public interface Server {
             }
 
             private static ChannelInitializer<SocketChannel> createChildHandler(Supplier<List<ChannelHandler>> channelHandlers,
-                                                                                SslContext sslContext) {
+                                                                                Option<SslContext> sslContext) {
                 return new ChannelInitializer<>() {
                     @Override
                     protected void initChannel(SocketChannel ch) {
                         var pipeline = ch.pipeline();
-                        if (sslContext != null) {
-                            pipeline.addLast(sslContext.newHandler(ch.alloc()));
-                        }
+                        sslContext.onPresent(ctx -> pipeline.addLast(ctx.newHandler(ch.alloc())));
                         for (var handler : channelHandlers.get()) {
                             pipeline.addLast(handler);
                         }
@@ -125,18 +127,10 @@ public interface Server {
             }
         }
         // Handle TLS configuration
-        var sslContextResult = config.tls()
-                                     .map(TlsContextFactory::create)
-                                     .fold(() -> null,
-                                           result -> result);
-        if (sslContextResult != null && sslContextResult.isFailure()) {
-            return sslContextResult.mapError(cause -> cause)
-                                   .<Server> map(_ -> null)
-                                   .async();
-        }
-        var sslContext = sslContextResult != null
-                         ? sslContextResult.fold(_ -> null, ctx -> ctx)
-                         : null;
+        var sslContext = config.tls()
+                               .await()
+                               .flatMap(TlsContextFactory::create)
+                               .option();
         var bossGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
         var workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         var socketOptions = config.socketOptions();
@@ -152,7 +146,7 @@ public interface Server {
         bootstrap.bind(config.port())
                  .addListener((ChannelFutureListener) future -> {
                                   if (future.isSuccess()) {
-                                      var protocol = sslContext != null
+                                      var protocol = sslContext.isPresent()
                                                      ? "TLS"
                                                      : "TCP";
                                       server.log.info("Server {} started on port {} ({})",
@@ -180,6 +174,7 @@ public interface Server {
      * @param name            server name for logging
      * @param port            port to bind to
      * @param channelHandlers supplier for channel handlers
+     *
      * @return promise of the running server
      */
     static Promise<Server> server(String name, int port, Supplier<List<ChannelHandler>> channelHandlers) {
