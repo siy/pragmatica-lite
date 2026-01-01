@@ -91,10 +91,10 @@ public sealed interface JpaError extends Cause {
         @Override
         public String message() {
             var msg = cause.getMessage();
-            return "Database operation failed: " + (msg != null
-                                                    ? msg
-                                                    : cause.getClass()
-                                                           .getName());
+            return "Database operation failed: " + ( msg != null
+                                                     ? msg
+                                                     : cause.getClass()
+                                                            .getName());
         }
     }
 

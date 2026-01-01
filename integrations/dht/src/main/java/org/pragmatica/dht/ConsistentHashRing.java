@@ -16,8 +16,12 @@
 
 package org.pragmatica.dht;
 
+import org.pragmatica.lang.Option;
+
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Consistent hash ring for distributing data across nodes.
@@ -32,6 +36,7 @@ import java.util.*;
 public final class ConsistentHashRing<N extends Comparable<N>> {
     private static final int VIRTUAL_NODES_PER_PHYSICAL = 150;
 
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final NavigableMap<Integer, N> ring = new TreeMap<>();
     private final Map<N, List<Integer>> nodeToVirtualNodes = new HashMap<>();
     private final int virtualNodesPerPhysical;
@@ -57,31 +62,46 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
     /**
      * Add a node to the ring.
      */
-    public synchronized void addNode(N node) {
-        if (nodeToVirtualNodes.containsKey(node)) {
-            return;
+    public void addNode(N node) {
+        lock.writeLock()
+            .lock();
+        try{
+            if (nodeToVirtualNodes.containsKey(node)) {
+                return;
+            }
+            List<Integer> virtualNodes = new ArrayList<>(virtualNodesPerPhysical);
+            for (int i = 0; i < virtualNodesPerPhysical; i++ ) {
+                int hash = hash(node.toString() + "#" + i);
+                ring.put(hash, node);
+                virtualNodes.add(hash);
+            }
+            nodeToVirtualNodes.put(node, virtualNodes);
+        } finally{
+            lock.writeLock()
+                .unlock();
         }
-        List<Integer> virtualNodes = new ArrayList<>(virtualNodesPerPhysical);
-        for (int i = 0; i < virtualNodesPerPhysical; i++ ) {
-            int hash = hash(node.toString() + "#" + i);
-            ring.put(hash, node);
-            virtualNodes.add(hash);
-        }
-        nodeToVirtualNodes.put(node, virtualNodes);
     }
 
     /**
      * Remove a node from the ring.
      */
-    public synchronized void removeNode(N node) {
-        List<Integer> virtualNodes = nodeToVirtualNodes.remove(node);
-        if (virtualNodes != null) {
-            virtualNodes.forEach(ring::remove);
+    public void removeNode(N node) {
+        lock.writeLock()
+            .lock();
+        try{
+            List<Integer> virtualNodes = nodeToVirtualNodes.remove(node);
+            if (virtualNodes != null) {
+                virtualNodes.forEach(ring::remove);
+            }
+        } finally{
+            lock.writeLock()
+                .unlock();
         }
     }
 
     /**
      * Get the partition for a given key.
+     * Note: This method does not require locking as it only uses the hash function.
      */
     public Partition partitionFor(byte[] key) {
         int hash = hash(key);
@@ -99,18 +119,25 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
      * Get the primary node for a given key.
      * Returns empty if no nodes are in the ring.
      */
-    public Optional<N> primaryFor(byte[] key) {
-        if (ring.isEmpty()) {
-            return Optional.empty();
+    public Option<N> primaryFor(byte[] key) {
+        lock.readLock()
+            .lock();
+        try{
+            if (ring.isEmpty()) {
+                return Option.none();
+            }
+            int hash = hash(key);
+            return Option.some(getNodeForHash(hash));
+        } finally{
+            lock.readLock()
+                .unlock();
         }
-        int hash = hash(key);
-        return Optional.of(getNodeForHash(hash));
     }
 
     /**
      * Get the primary node for a given string key.
      */
-    public Optional<N> primaryFor(String key) {
+    public Option<N> primaryFor(String key) {
         return primaryFor(key.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -119,28 +146,35 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
      * Returns up to replicaCount nodes, starting with primary.
      */
     public List<N> nodesFor(byte[] key, int replicaCount) {
-        if (ring.isEmpty()) {
-            return List.of();
-        }
-        if (replicaCount <= 0) {
-            return List.of();
-        }
-        int hash = hash(key);
-        Set<N> seen = new LinkedHashSet<>();
-        // Start from the hash position and walk clockwise
-        Integer current = ring.ceilingKey(hash);
-        if (current == null) {
-            current = ring.firstKey();
-        }
-        while (seen.size() < replicaCount && seen.size() < nodeToVirtualNodes.size()) {
-            N node = ring.get(current);
-            seen.add(node);
-            current = ring.higherKey(current);
+        lock.readLock()
+            .lock();
+        try{
+            if (ring.isEmpty()) {
+                return List.of();
+            }
+            if (replicaCount <= 0) {
+                return List.of();
+            }
+            int hash = hash(key);
+            Set<N> seen = new LinkedHashSet<>();
+            // Start from the hash position and walk clockwise
+            Integer current = ring.ceilingKey(hash);
             if (current == null) {
                 current = ring.firstKey();
             }
+            while (seen.size() < replicaCount && seen.size() < nodeToVirtualNodes.size()) {
+                N node = ring.get(current);
+                seen.add(node);
+                current = ring.higherKey(current);
+                if (current == null) {
+                    current = ring.firstKey();
+                }
+            }
+            return new ArrayList<>(seen);
+        } finally{
+            lock.readLock()
+                .unlock();
         }
-        return new ArrayList<>(seen);
     }
 
     /**
@@ -154,21 +188,42 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
      * Get all nodes currently in the ring.
      */
     public Set<N> nodes() {
-        return Collections.unmodifiableSet(nodeToVirtualNodes.keySet());
+        lock.readLock()
+            .lock();
+        try{
+            return new HashSet<>(nodeToVirtualNodes.keySet());
+        } finally{
+            lock.readLock()
+                .unlock();
+        }
     }
 
     /**
      * Get the number of nodes in the ring.
      */
     public int nodeCount() {
-        return nodeToVirtualNodes.size();
+        lock.readLock()
+            .lock();
+        try{
+            return nodeToVirtualNodes.size();
+        } finally{
+            lock.readLock()
+                .unlock();
+        }
     }
 
     /**
      * Check if the ring is empty.
      */
     public boolean isEmpty() {
-        return ring.isEmpty();
+        lock.readLock()
+            .lock();
+        try{
+            return ring.isEmpty();
+        } finally{
+            lock.readLock()
+                .unlock();
+        }
     }
 
     private N getNodeForHash(int hash) {

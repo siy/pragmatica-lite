@@ -124,7 +124,7 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
         return 0;
     }
 
-    @Override
+    @ Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;

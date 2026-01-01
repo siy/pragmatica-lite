@@ -86,7 +86,7 @@ public sealed interface HierarchyScanner {
         }
         while (!queue.isEmpty()) {
             Class< ? > type = queue.poll();
-            Stream.of(clazz.getInterfaces())
+            Stream.of(type.getInterfaces())
                   .forEach(e -> {
                       if (interfaces.add(e)) {
                           queue.offer(e);

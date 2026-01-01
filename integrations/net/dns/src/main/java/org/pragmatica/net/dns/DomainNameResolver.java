@@ -49,7 +49,7 @@ import static org.pragmatica.net.dns.DomainName.domainName;
  */
 public interface DomainNameResolver extends AsyncCloseable {
     int DNS_UDP_PORT = 53;
-    Result<DomainAddress>UNKNOWN_DOMAIN = new UnknownDomain("Unknown domain").result();
+    Result<DomainAddress> UNKNOWN_DOMAIN = new UnknownDomain("Unknown domain").result();
 
     /**
      * Resolve domain name, using cache if available.

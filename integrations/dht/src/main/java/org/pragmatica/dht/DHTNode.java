@@ -129,7 +129,7 @@ public final class DHTNode<N extends Comparable<N>> {
     public boolean isPrimaryFor(byte[] key) {
         return ring.primaryFor(key)
                    .map(nodeId::equals)
-                   .orElse(false);
+                   .or(false);
     }
 
     /**
@@ -160,7 +160,9 @@ public final class DHTNode<N extends Comparable<N>> {
                                  Consumer<DHTMessage.GetResponse> responseHandler) {
         storage.get(request.key())
                .onSuccess(value -> responseHandler.accept(new DHTMessage.GetResponse(request.requestId(),
-                                                                                     value)));
+                                                                                     value)))
+               .onFailure(_ -> responseHandler.accept(new DHTMessage.GetResponse(request.requestId(),
+                                                                                 Option.none())));
     }
 
     /**
@@ -183,7 +185,9 @@ public final class DHTNode<N extends Comparable<N>> {
                                     Consumer<DHTMessage.RemoveResponse> responseHandler) {
         storage.remove(request.key())
                .onSuccess(found -> responseHandler.accept(new DHTMessage.RemoveResponse(request.requestId(),
-                                                                                        found)));
+                                                                                        found)))
+               .onFailure(_ -> responseHandler.accept(new DHTMessage.RemoveResponse(request.requestId(),
+                                                                                    false)));
     }
 
     /**
@@ -193,6 +197,8 @@ public final class DHTNode<N extends Comparable<N>> {
                                     Consumer<DHTMessage.ExistsResponse> responseHandler) {
         storage.exists(request.key())
                .onSuccess(exists -> responseHandler.accept(new DHTMessage.ExistsResponse(request.requestId(),
-                                                                                         exists)));
+                                                                                         exists)))
+               .onFailure(_ -> responseHandler.accept(new DHTMessage.ExistsResponse(request.requestId(),
+                                                                                    false)));
     }
 }

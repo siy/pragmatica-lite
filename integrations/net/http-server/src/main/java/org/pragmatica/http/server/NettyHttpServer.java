@@ -80,23 +80,28 @@ final class NettyHttpServer implements HttpServer {
                                    LOG.info("Stopping HTTP server on port {}", port);
                                    if (serverChannel != null) {
                                        serverChannel.close()
-                                                    .addListener(_ -> {
-                                           cleanup();
-                                           promise.succeed(unit());
-                                       });
+                                                    .addListener(_ -> cleanupAndComplete(promise));
                                    } else {
-                                       cleanup();
-                                       promise.succeed(unit());
+                                       cleanupAndComplete(promise);
                                    }
                                });
     }
 
-    private void cleanup() {
-        if (workerGroup != null) {
-            workerGroup.shutdownGracefully();
-        }
-        if (bossGroup != null) {
-            bossGroup.shutdownGracefully();
+    private void cleanupAndComplete(Promise<Unit> promise) {
+        var workerFuture = workerGroup != null
+                           ? workerGroup.shutdownGracefully()
+                           : null;
+        var bossFuture = bossGroup != null
+                         ? bossGroup.shutdownGracefully()
+                         : null;
+        if (workerFuture != null && bossFuture != null) {
+            workerFuture.addListener(_ -> bossFuture.addListener(_ -> promise.succeed(unit())));
+        } else if (workerFuture != null) {
+            workerFuture.addListener(_ -> promise.succeed(unit()));
+        } else if (bossFuture != null) {
+            bossFuture.addListener(_ -> promise.succeed(unit()));
+        } else {
+            promise.succeed(unit());
         }
     }
 
@@ -192,7 +197,7 @@ final class NettyHttpServer implements HttpServer {
      */
     private static class HttpRequestHandler extends SimpleChannelInboundHandler<Object> {
         private static final Logger LOG = LoggerFactory.getLogger(HttpRequestHandler.class);
-        private static final AttributeKey<WebSocketState>WS_STATE = AttributeKey.valueOf("wsState");
+        private static final AttributeKey<WebSocketState> WS_STATE = AttributeKey.valueOf("wsState");
 
         private final BiConsumer<RequestContext, ResponseWriter> handler;
         private final Map<String, WebSocketEndpoint> wsEndpoints;
@@ -291,8 +296,10 @@ final class NettyHttpServer implements HttpServer {
         private RequestContext createRequestContext(String requestId, FullHttpRequest request) {
             var decoder = new QueryStringDecoder(request.uri());
             var path = decoder.path();
+            // Netty validates HTTP method before we receive it, so this will always succeed
             var method = HttpMethod.from(request.method()
-                                                .name());
+                                                .name())
+                                   .fold(_ -> HttpMethod.GET, v -> v);
             // Parse headers
             var headerMap = new HashMap<String, List<String>>();
             for (var entry : request.headers()) {

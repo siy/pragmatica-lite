@@ -128,6 +128,9 @@ public sealed interface JooqError extends Cause {
     /// @return Corresponding JooqError
     static JooqError fromException(Throwable throwable, String sql) {
         return switch (throwable) {
+            case TransactionFailedException e -> e.causeValue() instanceof JooqError jooqError
+                                                 ? jooqError
+                                                 : DatabaseFailure.databaseFailure(throwable);
             case JooqNoResultException _ -> new NoResult(sql);
             case JooqMultipleResultsException e -> new MultipleResults(sql, e.count());
             case SQLTimeoutException e -> new Timeout(e.getMessage());

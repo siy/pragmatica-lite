@@ -99,8 +99,8 @@ class ConsistentHashRingTest {
 
         var primary = ring.primaryFor("test-key");
 
-        assertThat(primary).isPresent();
-        assertThat(primary.get()).isEqualTo("node-1");
+        assertThat(primary.isPresent()).isTrue();
+        primary.onPresent(node -> assertThat(node).isEqualTo("node-1"));
     }
 
     @Test
@@ -109,7 +109,7 @@ class ConsistentHashRingTest {
 
         var primary = ring.primaryFor("test-key");
 
-        assertThat(primary).isEmpty();
+        assertThat(primary.isPresent()).isFalse();
     }
 
     @Test
@@ -162,8 +162,8 @@ class ConsistentHashRingTest {
         for (int i = 0; i < keyCount; i++) {
             String key = "key-" + i;
             var primary = ring.primaryFor(key);
-            assertThat(primary).isPresent();
-            distribution.merge(primary.get(), 1, Integer::sum);
+            assertThat(primary.isPresent()).isTrue();
+            primary.onPresent(node -> distribution.merge(node, 1, Integer::sum));
         }
 
         // All nodes should have keys

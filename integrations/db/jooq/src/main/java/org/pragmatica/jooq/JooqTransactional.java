@@ -32,6 +32,8 @@ import org.jooq.Record;
 import org.jooq.ResultQuery;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /// Transaction aspect for JOOQ operations.
 /// Provides automatic transaction management with commit on success and rollback on failure.
@@ -66,6 +68,8 @@ public interface JooqTransactional {
 
 /// DataSource-based implementation of JooqTransactional.
 final class DataSourceJooqTransactional implements JooqTransactional {
+    private static final Logger LOG = LoggerFactory.getLogger(DataSourceJooqTransactional.class);
+
     private final DataSource dataSource;
     private final SQLDialect dialect;
 
@@ -119,7 +123,9 @@ final class DataSourceJooqTransactional implements JooqTransactional {
         if (conn != null) {
             try{
                 conn.rollback();
-            } catch (SQLException e) {}
+            } catch (SQLException e) {
+                LOG.error("Failed to rollback transaction", e);
+            }
         }
     }
 
@@ -127,8 +133,14 @@ final class DataSourceJooqTransactional implements JooqTransactional {
         if (conn != null) {
             try{
                 conn.setAutoCommit(true);
+            } catch (SQLException e) {
+                LOG.warn("Failed to restore autoCommit", e);
+            }
+            try{
                 conn.close();
-            } catch (SQLException e) {}
+            } catch (SQLException e) {
+                LOG.error("Failed to close connection", e);
+            }
         }
     }
 }

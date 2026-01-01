@@ -764,7 +764,7 @@ public sealed interface Option<T> permits Some, None {
     /// @return Created instance
     @SuppressWarnings("unchecked")
     static <U> Option<U> empty() {
-        return (Option<U>) NONE;
+        return ( Option<U>) NONE;
     }
 
     /// Create an empty instance.
@@ -772,7 +772,7 @@ public sealed interface Option<T> permits Some, None {
     /// @return Created instance
     @SuppressWarnings("unchecked")
     static <U> Option<U> none() {
-        return (Option<U>) NONE;
+        return ( Option<U>) NONE;
     }
 
     /// Create a present instance with the passed value.
@@ -817,7 +817,7 @@ public sealed interface Option<T> permits Some, None {
         }
     }
 
-    @SuppressWarnings({"rawtypes"})
+    @ SuppressWarnings({"rawtypes"})
     None NONE = new None();
 
     /// This method allows "unwrapping" the value stored inside the Option instance. If the value is missing, then [IllegalStateException] is thrown.

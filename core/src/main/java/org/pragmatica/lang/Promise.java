@@ -1082,8 +1082,8 @@ public interface Promise<T> {
     /// @return A binary function that takes two parameters and returns a Promise
     static <U, T1, T2> Fn2<Promise<U>, T1, T2> liftFn2(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
                                                        ThrowingFn2<U, T1, T2> function) {
-        return (value1, value2) -> Promise.promise(() -> Result.lift(exceptionMapper,
-                                                                     () -> function.apply(value1, value2)));
+        return ( value1, value2) -> Promise.promise(() -> Result.lift(exceptionMapper,
+                                                                      () -> function.apply(value1, value2)));
     }
 
     /// Convenience method for creating a ternary function that wraps a throwing function and returns a Promise.
@@ -1099,8 +1099,10 @@ public interface Promise<T> {
     /// @return A ternary function that takes three parameters and returns a Promise
     static <U, T1, T2, T3> Fn3<Promise<U>, T1, T2, T3> liftFn3(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
                                                                ThrowingFn3<U, T1, T2, T3> function) {
-        return (value1, value2, value3) -> Promise.promise(() -> Result.lift(exceptionMapper,
-                                                                             () -> function.apply(value1, value2, value3)));
+        return ( value1, value2, value3) -> Promise.promise(() -> Result.lift(exceptionMapper,
+                                                                              () -> function.apply(value1,
+                                                                                                   value2,
+                                                                                                   value3)));
     }
 
     /// Same as [#liftFn1(Fn1, ThrowingFn1)] with [Causes#fromThrowable(Throwable)] used for exception mapping.
@@ -1920,9 +1922,9 @@ public interface Promise<T> {
                                  promise15);
     }
 
-    Promise<Unit>UNIT = Promise.resolved(unitResult());
+    Promise<Unit> UNIT = Promise.resolved(unitResult());
 
-    Result< ? >OTHER_SUCCEEDED = new CoreError.Cancelled("Cancelled because other Promise instance succeeded").result();
+    Result< ? > OTHER_SUCCEEDED = new CoreError.Cancelled("Cancelled because other Promise instance succeeded").result();
 
     CoreError.Cancelled PROMISE_CANCELLED = new CoreError.Cancelled("Promise cancelled");
 

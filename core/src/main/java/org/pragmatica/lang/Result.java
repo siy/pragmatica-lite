@@ -829,7 +829,7 @@ public sealed interface Result<T> permits Success, Failure {
     /// @return the result transformed by the one of the mappers.
     <U> U fold(Fn1< ? extends U, ? super Cause> failureMapper, Fn1< ? extends U, ? super T> successMapper);
 
-    Result<Unit>UNIT_RESULT = success(unit());
+    Result<Unit> UNIT_RESULT = success(unit());
 
     /// A constant instance of a successful instance holding [Unit] value.
     ///
@@ -1143,7 +1143,7 @@ public sealed interface Result<T> permits Success, Failure {
     /// @return A binary function that takes two parameters and returns a Result
     static <R, T1, T2> Fn2<Result<R>, T1, T2> liftFn2(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
                                                       ThrowingFn2<R, T1, T2> function) {
-        return (inputValue1, inputValue2) -> lift(exceptionMapper, () -> function.apply(inputValue1, inputValue2));
+        return ( inputValue1, inputValue2) -> lift(exceptionMapper, () -> function.apply(inputValue1, inputValue2));
     }
 
     /// Convenience method for creating a ternary function that wraps a throwing function and returns a Result.
@@ -1159,10 +1159,10 @@ public sealed interface Result<T> permits Success, Failure {
     /// @return A ternary function that takes three parameters and returns a Result
     static <R, T1, T2, T3> Fn3<Result<R>, T1, T2, T3> liftFn3(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
                                                               ThrowingFn3<R, T1, T2, T3> function) {
-        return (inputValue1, inputValue2, inputValue3) -> lift(exceptionMapper,
-                                                               () -> function.apply(inputValue1,
-                                                                                    inputValue2,
-                                                                                    inputValue3));
+        return ( inputValue1, inputValue2, inputValue3) -> lift(exceptionMapper,
+                                                                () -> function.apply(inputValue1,
+                                                                                     inputValue2,
+                                                                                     inputValue3));
     }
 
     /// Same as [#liftFn2(Fn1, ThrowingFn2)] with [Causes#fromThrowable(Throwable)] used for exception mapping.

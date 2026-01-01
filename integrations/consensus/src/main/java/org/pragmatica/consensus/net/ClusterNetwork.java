@@ -21,7 +21,6 @@ import org.pragmatica.consensus.ProtocolMessage;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.messaging.MessageReceiver;
-import org.pragmatica.messaging.MessageRouter;
 
 /**
  * Generalized Network API for cluster communication.
@@ -63,9 +62,4 @@ public interface ClusterNetwork {
      * Stop the network.
      */
     Promise<Unit> stop();
-
-    /**
-     * Configure message routing.
-     */
-    void configure(MessageRouter.MutableRouter router);
 }

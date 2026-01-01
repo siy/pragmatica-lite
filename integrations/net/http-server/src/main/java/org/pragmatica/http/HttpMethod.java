@@ -15,6 +15,10 @@
  */
 
 package org.pragmatica.http;
+
+import org.pragmatica.lang.Cause;
+import org.pragmatica.lang.Result;
+
 /**
  * HTTP request methods.
  */
@@ -30,19 +34,29 @@ public enum HttpMethod {
     CONNECT;
     /**
      * Parse HTTP method from string.
+     *
+     * @param method HTTP method string
+     * @return Result containing the HttpMethod or an error for unknown methods
      */
-    public static HttpMethod from(String method) {
+    public static Result<HttpMethod> from(String method) {
         return switch (method.toUpperCase()) {
-            case"GET" -> GET;
-            case"POST" -> POST;
-            case"PUT" -> PUT;
-            case"DELETE" -> DELETE;
-            case"PATCH" -> PATCH;
-            case"HEAD" -> HEAD;
-            case"OPTIONS" -> OPTIONS;
-            case"TRACE" -> TRACE;
-            case"CONNECT" -> CONNECT;
-            default -> throw new IllegalArgumentException("Unknown HTTP method: " + method);
+            case "GET" -> Result.success(GET);
+            case "POST" -> Result.success(POST);
+            case "PUT" -> Result.success(PUT);
+            case "DELETE" -> Result.success(DELETE);
+            case "PATCH" -> Result.success(PATCH);
+            case "HEAD" -> Result.success(HEAD);
+            case "OPTIONS" -> Result.success(OPTIONS);
+            case "TRACE" -> Result.success(TRACE);
+            case "CONNECT" -> Result.success(CONNECT);
+            default -> new UnknownMethod(method).result();
         };
+    }
+    /// Error for unknown HTTP method.
+    public record UnknownMethod(String method) implements Cause {
+        @Override
+        public String message() {
+            return "Unknown HTTP method: " + method;
+        }
     }
 }

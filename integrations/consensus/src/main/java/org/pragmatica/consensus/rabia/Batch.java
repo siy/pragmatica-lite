@@ -55,6 +55,6 @@ public record Batch<C extends Command>(BatchId id,
     }
 
     public boolean isNotEmpty() {
-        return !commands.isEmpty();
+        return ! commands.isEmpty();
     }
 }

@@ -97,10 +97,10 @@ public sealed interface HttpError extends Cause {
         @Override
         public String message() {
             var msg = cause.getMessage();
-            return "HTTP operation failed: " + (msg != null
-                                                ? msg
-                                                : cause.getClass()
-                                                       .getName());
+            return "HTTP operation failed: " + ( msg != null
+                                                 ? msg
+                                                 : cause.getClass()
+                                                        .getName());
         }
     }
 

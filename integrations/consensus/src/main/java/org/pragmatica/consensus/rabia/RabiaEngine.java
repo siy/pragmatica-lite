@@ -32,7 +32,6 @@ import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.utils.SharedScheduler;
 import org.pragmatica.messaging.MessageReceiver;
-import org.pragmatica.messaging.MessageRouter;
 
 import java.util.Comparator;
 import java.util.List;
@@ -111,22 +110,6 @@ public class RabiaEngine<C extends Command> {
         // Setup periodic tasks
         SharedScheduler.scheduleAtFixedRate(this::cleanupOldPhases, config.cleanupInterval());
         SharedScheduler.schedule(this::synchronize, config.syncRetryInterval());
-    }
-
-    public void configure(MessageRouter.MutableRouter router) {
-        // Subscribe to quorum events
-        router.addRoute(QuorumStateNotification.class, this::quorumState);
-        // Synchronous messages
-        router.addRoute(Propose.class, this::processPropose);
-        router.addRoute(VoteRound1.class, this::processVoteRound1);
-        router.addRoute(VoteRound2.class, this::processVoteRound2);
-        router.addRoute(Decision.class, this::processDecision);
-        router.addRoute(SyncResponse.class, this::processSyncResponse);
-        // Asynchronous messages
-        router.addRoute(SyncRequest.class, this::handleSyncRequest);
-        router.addRoute(NewBatch.class, this::handleNewBatch);
-        // Local command submission requests
-        router.addRoute(SubmitCommands.class, this::handleSubmit);
     }
 
     @MessageReceiver
@@ -627,17 +610,17 @@ public class RabiaEngine<C extends Command> {
         }
 
         public int countRound1VotesForValue(StateValue value) {
-            return (int) round1Votes.values()
-                                   .stream()
-                                   .filter(v -> v == value)
-                                   .count();
+            return ( int) round1Votes.values()
+                                    .stream()
+                                    .filter(v -> v == value)
+                                    .count();
         }
 
         public int countRound2VotesForValue(StateValue value) {
-            return (int) round2Votes.values()
-                                   .stream()
-                                   .filter(v -> v == value)
-                                   .count();
+            return ( int) round2Votes.values()
+                                    .stream()
+                                    .filter(v -> v == value)
+                                    .count();
         }
 
         public Decision<C> processRound2Completion(NodeId self, int fPlusOneSize) {
@@ -669,7 +652,7 @@ public class RabiaEngine<C extends Command> {
         private StateValue coinFlip(NodeId self) {
             long seed = phase.value() ^ self.id()
                                             .hashCode();
-            return (Math.abs(seed) % 2 == 0)
+            return ( Math.abs(seed) % 2 == 0)
                    ? StateValue.V0
                    : StateValue.V1;
         }

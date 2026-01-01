@@ -663,7 +663,7 @@ public sealed interface Verify {
         /// @param value the char sequence to check
         /// @return true if the char sequence is not empty, false otherwise
         static <T extends CharSequence> boolean notEmpty(T value) {
-            return !empty(value);
+            return ! empty(value);
         }
 
         /// Checks if a char sequence is blank (empty or contains only whitespace).
@@ -681,7 +681,7 @@ public sealed interface Verify {
         /// @param value the char sequence to check
         /// @return true if the char sequence is not blank, false otherwise
         static <T extends CharSequence> boolean notBlank(T value) {
-            return !blank(value);
+            return ! blank(value);
         }
 
         /// Checks if a character sequence length is within specified bounds (inclusive).
@@ -713,7 +713,7 @@ public sealed interface Verify {
         /// @param substring the substring to look for
         /// @return true if the String does not contain the substring, false otherwise
         static boolean notContains(String value, CharSequence substring) {
-            return !contains(value, substring);
+            return ! contains(value, substring);
         }
 
         /// Checks if a String matches a regular expression pattern.

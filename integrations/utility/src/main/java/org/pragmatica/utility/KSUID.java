@@ -32,6 +32,14 @@ import java.util.Arrays;
  * <p>
  * The text representation is 27 characters using base62 encoding
  * (0-9, A-Z, a-z), which preserves lexicographic ordering by timestamp.
+ * <p>
+ * TODO: Consider enhanced timestamp resolution for high-frequency event ordering.
+ * Current 1-second resolution may be insufficient for events happening in rapid succession.
+ * Proposed enhancement: 32-bit seconds + 8-bit sub-second fraction (~3.9ms resolution),
+ * stealing 8 bits from random payload (reducing from 128 to 120 bits).
+ * Structure would become: [4 bytes seconds][1 byte fraction][15 bytes random].
+ * This would deviate from standard KSUID spec but maintain same size and encoding.
+ * Cryptographic impact: minimal (120 bits still provides 2^60 birthday bound).
  *
  * @see <a href="https://github.com/segmentio/ksuid">KSUID Specification</a>
  */

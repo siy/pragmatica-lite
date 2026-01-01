@@ -259,23 +259,23 @@ public final class TomlParser {
             if (c == '\\' && i + 1 < s.length()) {
                 char next = s.charAt(i + 1);
                 switch (next) {
-                    case'\\' -> {
+                    case '\\' -> {
                         result.append('\\');
                         i++ ;
                     }
-                    case'"' -> {
+                    case '"' -> {
                         result.append('"');
                         i++ ;
                     }
-                    case'n' -> {
+                    case 'n' -> {
                         result.append('\n');
                         i++ ;
                     }
-                    case't' -> {
+                    case 't' -> {
                         result.append('\t');
                         i++ ;
                     }
-                    case'r' -> {
+                    case 'r' -> {
                         result.append('\r');
                         i++ ;
                     }

@@ -18,7 +18,6 @@ package org.pragmatica.consensus;
 
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
-import org.pragmatica.messaging.MessageRouter;
 
 import java.util.List;
 
@@ -68,9 +67,4 @@ public interface StateMachine<C extends Command> {
      * Reset state machine to its initial state.
      */
     void reset();
-
-    /**
-     * Configure message routing for state machine events.
-     */
-    void configure(MessageRouter.MutableRouter router);
 }

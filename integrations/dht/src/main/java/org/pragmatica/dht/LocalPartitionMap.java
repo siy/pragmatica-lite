@@ -58,7 +58,7 @@ public final class LocalPartitionMap<N extends Comparable<N>> implements Partiti
             Partition partition = Partition.partitionUnsafe(i);
             String partitionKey = "partition:" + i;
             ring.primaryFor(partitionKey)
-                .ifPresent(primary -> {
+                .onPresent(primary -> {
                     if (primary.equals(node)) {
                         partitions.add(partition);
                     }
