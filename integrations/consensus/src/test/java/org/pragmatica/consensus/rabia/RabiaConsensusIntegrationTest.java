@@ -150,10 +150,9 @@ class RabiaConsensusIntegrationTest {
             Thread.sleep(50);
 
             var decisions = cluster.getMessagesByType(Decision.class);
-            if (!decisions.isEmpty()) {
-                // With majority agreement, decision should be V1
-                assertThat(decisions.getFirst().stateValue()).isEqualTo(StateValue.V1);
-            }
+            assertThat(decisions).isNotEmpty();
+            // With majority agreement, decision should be V1
+            assertThat(decisions.getFirst().stateValue()).isEqualTo(StateValue.V1);
         }
     }
 
@@ -471,7 +470,7 @@ class RabiaConsensusIntegrationTest {
     }
 
     static class TestStateMachine implements StateMachine<TestCommand> {
-        private final List<TestCommand> processedCommands = new ArrayList<>();
+        private final List<TestCommand> processedCommands = new CopyOnWriteArrayList<>();
 
         @Override
         @SuppressWarnings("unchecked")

@@ -186,6 +186,7 @@ class RabiaEngineTest {
             // Check that round 1 vote was broadcast
             var hasVoteRound1 = network.getMessages().stream()
                 .anyMatch(m -> m instanceof VoteRound1);
+            assertThat(hasVoteRound1).isTrue();
 
             // Simulate round 1 votes from other nodes
             engine.processVoteRound1(new VoteRound1(NODE_2, Phase.ZERO, StateValue.V1));
@@ -222,9 +223,8 @@ class RabiaEngineTest {
                 .map(m -> (VoteRound1) m)
                 .findFirst();
 
-            if (vote.isPresent()) {
-                assertThat(vote.get().stateValue()).isEqualTo(StateValue.V0);
-            }
+            assertThat(vote).isPresent();
+            assertThat(vote.get().stateValue()).isEqualTo(StateValue.V0);
         }
     }
 
@@ -319,7 +319,7 @@ class RabiaEngineTest {
     }
 
     static class TestStateMachine implements StateMachine<TestCommand> {
-        private final List<TestCommand> processedCommands = new ArrayList<>();
+        private final List<TestCommand> processedCommands = new CopyOnWriteArrayList<>();
 
         @Override
         @SuppressWarnings("unchecked")
