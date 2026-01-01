@@ -88,8 +88,8 @@ public class RabiaEngine<C extends Command> {
     private final AtomicBoolean isInPhase = new AtomicBoolean(false);
     private final AtomicReference<Promise<Unit>> startPromise = new AtomicReference<>(Promise.promise());
     private final AtomicReference<Phase> lastCommittedPhase = new AtomicReference<>(Phase.ZERO);
-    private volatile ScheduledFuture< ? > cleanupTask;
-    private volatile ScheduledFuture< ? > syncTask;
+    private final ScheduledFuture< ? > cleanupTask;
+    private final ScheduledFuture< ? > syncTask;
 
     //--------------------------------- Node State End
     /**
@@ -110,15 +110,8 @@ public class RabiaEngine<C extends Command> {
         this.network = network;
         this.stateMachine = stateMachine;
         this.config = config;
-    }
-
-    /**
-     * Initialize scheduled tasks. Call after construction is complete.
-     */
-    public RabiaEngine<C> initialize() {
-        cleanupTask = SharedScheduler.scheduleAtFixedRate(this::cleanupOldPhases, config.cleanupInterval());
-        syncTask = SharedScheduler.schedule(this::synchronize, config.syncRetryInterval());
-        return this;
+        this.cleanupTask = SharedScheduler.scheduleAtFixedRate(this::cleanupOldPhases, config.cleanupInterval());
+        this.syncTask = SharedScheduler.schedule(this::synchronize, config.syncRetryInterval());
     }
 
     @MessageReceiver
