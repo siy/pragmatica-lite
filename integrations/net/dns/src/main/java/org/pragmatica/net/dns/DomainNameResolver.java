@@ -139,8 +139,11 @@ record Resolver(DnsClient client,
                                                domainAddress.ttl());
                                      var ttl = TimeSpan.fromDuration(domainAddress.ttl());
                                      promise.async(ttl,
-                                                   _ -> log.debug("TTL expired, removing {} from cache",
-                                                                  cache.remove(domainAddress.name())));
+                                                   _ -> {
+                                                       cache.remove(domainAddress.name());
+                                                       log.debug("TTL expired, removed {} from cache",
+                                                                 domainAddress.name());
+                                                   });
                                  });
     }
 

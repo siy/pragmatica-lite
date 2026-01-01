@@ -54,6 +54,13 @@ public record Batch<C extends Command>(BatchId id,
         return id.hashCode();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (! (o instanceof Batch< ? > batch)) return false;
+        return id.equals(batch.id);
+    }
+
     public boolean isNotEmpty() {
         return ! commands.isEmpty();
     }

@@ -81,8 +81,13 @@ public final class MemoryStorageEngine implements StorageEngine {
 
     /**
      * Wrapper for byte[] to use as HashMap key with proper equals/hashCode.
+     * Clones input array to prevent external mutation from corrupting keys.
      */
     private record ByteArrayKey(byte[] data) {
+        ByteArrayKey(byte[] data) {
+            this.data = data.clone();
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;

@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -87,6 +88,8 @@ public class RabiaEngine<C extends Command> {
     private final AtomicBoolean isInPhase = new AtomicBoolean(false);
     private final AtomicReference<Promise<Unit>> startPromise = new AtomicReference<>(Promise.promise());
     private final AtomicReference<Phase> lastCommittedPhase = new AtomicReference<>(Phase.ZERO);
+    private volatile ScheduledFuture< ? > cleanupTask;
+    private volatile ScheduledFuture< ? > syncTask;
 
     //--------------------------------- Node State End
     /**
@@ -107,9 +110,15 @@ public class RabiaEngine<C extends Command> {
         this.network = network;
         this.stateMachine = stateMachine;
         this.config = config;
-        // Setup periodic tasks
-        SharedScheduler.scheduleAtFixedRate(this::cleanupOldPhases, config.cleanupInterval());
-        SharedScheduler.schedule(this::synchronize, config.syncRetryInterval());
+    }
+
+    /**
+     * Initialize scheduled tasks. Call after construction is complete.
+     */
+    public RabiaEngine<C> initialize() {
+        cleanupTask = SharedScheduler.scheduleAtFixedRate(this::cleanupOldPhases, config.cleanupInterval());
+        syncTask = SharedScheduler.schedule(this::synchronize, config.syncRetryInterval());
+        return this;
     }
 
     @MessageReceiver
@@ -186,10 +195,16 @@ public class RabiaEngine<C extends Command> {
 
     public Promise<Unit> stop() {
         return Promise.promise(promise -> {
-            clusterDisconnected();
-            executor.shutdown();
-            promise.succeed(Unit.unit());
-        });
+                                   if (cleanupTask != null) {
+                                       cleanupTask.cancel(false);
+                                   }
+                                   if (syncTask != null) {
+                                       syncTask.cancel(false);
+                                   }
+                                   clusterDisconnected();
+                                   executor.shutdown();
+                                   promise.succeed(Unit.unit());
+                               });
     }
 
     @MessageReceiver
@@ -635,7 +650,7 @@ public class RabiaEngine<C extends Command> {
             // 3. Fallback: If none of the above conditions are met, use the coin flip.
             //    This covers the ambiguous cases (mixed votes, including VQUESTION,
             //    that don't meet thresholds) and the "all VQUESTION" case implicitly.
-            var decision = coinFlip(self);
+            var decision = coinFlip();
             // If coin flip is V1, we still need to try and find *an* agreed proposal.
             // The definition of findAgreedProposal might need review for this case,
             // but typically it would look for *any* proposal associated with V1 votes
@@ -647,11 +662,12 @@ public class RabiaEngine<C extends Command> {
         }
 
         /**
-         * Gets a coin flip value for a phase, creating one if needed.
+         * Gets a deterministic coin flip value for a phase.
+         * Must be deterministic across all nodes for consensus correctness.
          */
-        private StateValue coinFlip(NodeId self) {
-            long seed = phase.value() ^ self.id()
-                                            .hashCode();
+        private StateValue coinFlip() {
+            // Seed must be deterministic across all nodes - use only phase value
+            long seed = phase.value();
             return ( Math.abs(seed) % 2 == 0)
                    ? StateValue.V0
                    : StateValue.V1;

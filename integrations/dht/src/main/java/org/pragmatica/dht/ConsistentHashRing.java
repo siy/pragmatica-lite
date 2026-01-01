@@ -105,7 +105,8 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
      */
     public Partition partitionFor(byte[] key) {
         int hash = hash(key);
-        return Partition.partitionUnsafe(Math.abs(hash % Partition.MAX_PARTITIONS));
+        // Use bitwise AND to ensure non-negative result (Math.abs fails for Integer.MIN_VALUE)
+        return Partition.partitionUnsafe((hash & 0x7FFFFFFF) % Partition.MAX_PARTITIONS);
     }
 
     /**
