@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Crash-fault-tolerant (CFT) consensus algorithm
   - Batch-based command processing
   - Automatic state synchronization
+  - TCP network performance benchmark (~1400 decisions/sec on localhost)
 
 ## [0.9.2] - 2025-12-31
 

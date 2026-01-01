@@ -153,6 +153,10 @@ public class RabiaEngine<C extends Command> {
         correlationMap.clear();
     }
 
+    public boolean isActive() {
+        return active.get();
+    }
+
     public <R> Promise<List<R>> apply(List<C> commands) {
         var pendingAnswer = Promise.<List<R>>promise();
         return submitCommands(commands,
@@ -411,12 +415,22 @@ public class RabiaEngine<C extends Command> {
         // Potentially add check for proposals too far in the future
         var phaseData = getOrCreatePhaseData(propose.phase());
         // Ensure the phase state is correct. If we receive a proposal for the current
-        // phase value but aren't "in" it, enter it now.
+        // phase value but aren't "in" it, enter it now and broadcast our own proposal if we have pending batches.
         // This assumes the currentPhaseValue is correctly managed by sync/moveToNextPhase
         if (propose.phase()
                    .equals(currentPhaseValue) && !isInPhase.get()) {
             log.trace("Node {} entering phase {} triggered by proposal from {}", self, propose.phase(), propose.sender());
             isInPhase.set(true);
+            // Only broadcast our own proposal if we have pending batches
+            var ourBatchOpt = pendingBatches.values()
+                                            .stream()
+                                            .sorted()
+                                            .findFirst();
+            if (ourBatchOpt.isPresent()) {
+                var ourBatch = ourBatchOpt.get();
+                phaseData.registerProposal(self, ourBatch);
+                network.broadcast(new Propose<>(self, propose.phase(), ourBatch));
+            }
         }
         phaseData.registerProposal(propose.sender(), propose.value());
         var quorumSize = topologyManager.quorumSize();

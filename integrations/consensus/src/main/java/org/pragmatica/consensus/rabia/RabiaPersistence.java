@@ -72,39 +72,36 @@ public interface RabiaPersistence<C extends Command> {
     /**
      * Saved consensus state.
      */
-    interface SavedState<C extends Command> {
-        byte[] snapshot();
-
-        Phase lastCommittedPhase();
-
-        List<Batch<C>> pendingBatches();
-
-        static <C extends Command> SavedState<C> savedState(byte[] snapshot,
-                                                            Phase lastCommittedPhase,
-                                                            Collection<Batch<C>> pendingBatches) {
-            record savedState <C extends Command>(byte[] snapshot,
-                                                  Phase lastCommittedPhase,
-                                                  List<Batch<C>> pendingBatches) implements SavedState<C> {
-                @Override
-                public boolean equals(Object o) {
-                    if (! (o instanceof savedState < ? >( byte[] snapshot1, Phase committedPhase, List< ? > batches))) {
-                        return false;
-                    }
-                    return Objects.deepEquals(snapshot(), snapshot1) &&
-                    Objects.equals(lastCommittedPhase(), committedPhase) &&
-                    Objects.equals(pendingBatches(), batches);
-                }
-
-                @Override
-                public int hashCode() {
-                    return Objects.hash(Arrays.hashCode(snapshot()), lastCommittedPhase(), pendingBatches());
-                }
-            }
-            return new savedState <>(snapshot, lastCommittedPhase, List.copyOf(pendingBatches));
+    record SavedState<C extends Command>(byte[] snapshot,
+                                         Phase lastCommittedPhase,
+                                         List<Batch<C>> pendingBatches) {
+        public SavedState(byte[] snapshot, Phase lastCommittedPhase, Collection<Batch<C>> pendingBatches) {
+            this(snapshot, lastCommittedPhase, List.copyOf(pendingBatches));
         }
 
-        static <C extends Command> SavedState<C> empty() {
-            return savedState(new byte[0], Phase.ZERO, List.of());
+        public static <C extends Command> SavedState<C> savedState(byte[] snapshot,
+                                                                   Phase lastCommittedPhase,
+                                                                   Collection<Batch<C>> pendingBatches) {
+            return new SavedState<>(snapshot, lastCommittedPhase, pendingBatches);
+        }
+
+        public static <C extends Command> SavedState<C> empty() {
+            return new SavedState<>(new byte[0], Phase.ZERO, List.of());
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (! (o instanceof SavedState< ? >(byte[] snapshot1, Phase committedPhase, List< ? > batches))) {
+                return false;
+            }
+            return Objects.deepEquals(snapshot(), snapshot1) &&
+            Objects.equals(lastCommittedPhase(), committedPhase) &&
+            Objects.equals(pendingBatches(), batches);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(Arrays.hashCode(snapshot()), lastCommittedPhase(), pendingBatches());
         }
     }
 }
