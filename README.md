@@ -2,7 +2,7 @@
 
 ![License](https://img.shields.io/badge/license-Apache%202-blue.svg)
 ![Java](https://img.shields.io/badge/Java-25-orange.svg)
-![Maven Central](https://img.shields.io/badge/Maven-0.9.2-blue.svg)
+![Maven Central](https://img.shields.io/badge/Maven-0.9.3-blue.svg)
 
 ## Modern Functional Programming for Java 25
 
@@ -97,14 +97,14 @@ Pragmatica Lite is available on Maven Central. Simply add the dependency to your
 <dependency>
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>core</artifactId>
-    <version>0.9.2</version>
+    <version>0.9.3</version>
 </dependency>
 ```
 
 For Gradle users:
 
 ```gradle
-implementation 'org.pragmatica-lite:core:0.9.2'
+implementation 'org.pragmatica-lite:core:0.9.3'
 ```
 
 ### Your First Pragmatica Application
@@ -184,14 +184,27 @@ Explore comprehensive examples in the [examples](examples) directory:
 | Module | Description |
 |--------|-------------|
 | **core** | Core monadic types: Result, Option, Promise |
-| **integrations/net/http-client** | Promise-based HTTP client (JDK HttpClient wrapper) |
-| **integrations/db/jdbc** | Promise-based JDBC with HikariCP support |
-| **integrations/db/r2dbc** | Promise-based R2DBC for reactive database access |
-| **integrations/db/jooq-r2dbc** | Promise-based JOOQ with R2DBC |
-| **integrations/db/jpa** | JPA integration with Promise-based operations |
-| **integrations/json/jackson** | Jackson 3.0 integration for JSON serialization |
-| **integrations/metrics/micrometer** | Micrometer metrics for Result/Option/Promise |
 | **examples** | Sample applications and usage patterns |
+
+### Integration Modules
+
+| Category | Module | Description | Docs |
+|----------|--------|-------------|------|
+| **Config** | [toml](integrations/config/toml) | Zero-dependency TOML parser | [README](integrations/config/toml/README.md) |
+| **Consensus** | [consensus](integrations/consensus) | Rabia consensus protocol (CFT) | [README](integrations/consensus/README.md) |
+| **Database** | [jdbc](integrations/db/jdbc) | Promise-based JDBC with HikariCP | [README](integrations/db/jdbc/README.md) |
+| | [jpa](integrations/db/jpa) | JPA/Hibernate integration | [README](integrations/db/jpa/README.md) |
+| | [r2dbc](integrations/db/r2dbc) | Reactive database access | [README](integrations/db/r2dbc/README.md) |
+| | [jooq](integrations/db/jooq) | Promise-based JOOQ with JDBC | — |
+| | [jooq-r2dbc](integrations/db/jooq-r2dbc) | Promise-based JOOQ with R2DBC | [README](integrations/db/jooq-r2dbc/README.md) |
+| **Distributed** | [dht](integrations/dht) | Distributed Hash Table | [README](integrations/dht/README.md) |
+| **JSON** | [jackson](integrations/json/jackson) | Jackson 3.0 serialization | [README](integrations/json/jackson/README.md) |
+| **Messaging** | [messaging](integrations/messaging) | Message queue abstractions | [README](integrations/messaging/README.md) |
+| **Metrics** | [micrometer](integrations/metrics/micrometer) | Micrometer observability | [README](integrations/metrics/micrometer/README.md) |
+| **Network** | [http-client](integrations/net/http-client) | Promise-based HTTP client | [README](integrations/net/http-client/README.md) |
+| | [tcp](integrations/net/tcp) | TCP networking utilities | [README](integrations/net/tcp/README.md) |
+| | [dns](integrations/net/dns) | DNS client | [README](integrations/net/dns/README.md) |
+| **Serialization** | [serialization](integrations/serialization) | Binary serialization (Fury, Kryo) | [README](integrations/serialization/README.md) |
 
 ## Integrations
 
@@ -203,7 +216,7 @@ Serialize and deserialize Result, Option, and Promise types:
 <dependency>
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>jackson</artifactId>
-    <version>0.9.2</version>
+    <version>0.9.3</version>
 </dependency>
 ```
 
@@ -230,7 +243,7 @@ Promise-based JPA operations with typed errors:
 <dependency>
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>jpa</artifactId>
-    <version>0.9.2</version>
+    <version>0.9.3</version>
 </dependency>
 ```
 
@@ -262,7 +275,7 @@ Monitor Result, Option, and Promise operations:
 <dependency>
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>micrometer</artifactId>
-    <version>0.9.2</version>
+    <version>0.9.3</version>
 </dependency>
 ```
 
