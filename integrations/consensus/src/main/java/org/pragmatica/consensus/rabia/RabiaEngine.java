@@ -474,10 +474,11 @@ public class RabiaEngine<C extends Command> {
         var phaseData = getOrCreatePhaseData(vote.phase());
         phaseData.registerRound2Vote(vote.sender(), vote.stateValue());
         // If we're active and in this phase, check if we can make a decision
+        var quorumSize = topologyManager.quorumSize();
         if (isInPhase.get() && currentPhase.get()
                                            .equals(vote.phase()) && !phaseData.isDecided()) {
-            if (phaseData.hasRound2MajorityVotes(topologyManager.quorumSize())) {
-                var decision = phaseData.processRound2Completion(self, topologyManager.fPlusOne());
+            if (phaseData.hasRound2MajorityVotes(quorumSize)) {
+                var decision = phaseData.processRound2Completion(self, topologyManager.fPlusOne(), quorumSize);
                 network.broadcast(decision);
                 processDecision(decision);
             }

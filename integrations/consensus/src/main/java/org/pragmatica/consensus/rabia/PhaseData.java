@@ -21,6 +21,7 @@ import org.pragmatica.consensus.NodeId;
 import org.pragmatica.consensus.rabia.RabiaProtocolMessage.Synchronous.Decision;
 import org.pragmatica.consensus.rabia.RabiaProtocolMessage.Synchronous.VoteRound1;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -134,22 +135,29 @@ final class PhaseData<C extends Command> {
 
     /**
      * Finds the agreed proposal when a V1 decision is made.
-     * Returns the batch that has majority support, or empty batch if none found.
+     * Returns the batch that has the most proposals (quorum support expected),
+     * with deterministic tiebreaker by correlationId for consistency across nodes.
      */
-    Batch<C> findAgreedProposal(NodeId self) {
-        // If all proposals are the same, return that one
-        long distinctProposals = proposals.values()
-                                          .stream()
-                                          .map(Batch::correlationId)
-                                          .distinct()
-                                          .count();
-        if (distinctProposals == 1) {
-            return proposals.values()
-                            .iterator()
-                            .next();
+    Batch<C> findAgreedProposal(int quorumSize) {
+        if (proposals.isEmpty()) {
+            return emptyBatch();
         }
-        // Otherwise, just use our own proposal or an empty one
-        return proposals.getOrDefault(self, emptyBatch());
+        // Group batches by correlationId and count
+        var batchesByCorrelationId = proposals.values()
+                                              .stream()
+                                              .filter(Batch::isNotEmpty)
+                                              .collect(Collectors.groupingBy(Batch::correlationId));
+        // Find the correlationId with most proposals (should have quorum for V1 decision)
+        // Use correlationId as tiebreaker for determinism across nodes
+        return batchesByCorrelationId.entrySet()
+                                     .stream()
+                                     .max(Comparator.<Map.Entry<CorrelationId, List<Batch<C>>>> comparingInt(e -> e.getValue()
+                                                                                                                   .size())
+                                                    .thenComparing(e -> e.getKey()
+                                                                         .id()))
+                                     .map(e -> e.getValue()
+                                                .getFirst())
+                                     .orElse(emptyBatch());
     }
 
     /**
@@ -215,16 +223,16 @@ final class PhaseData<C extends Command> {
      * 2. If f+1 nodes voted V0, decide V0
      * 3. Otherwise, use deterministic coin flip
      */
-    Decision<C> processRound2Completion(NodeId self, int fPlusOneSize) {
+    Decision<C> processRound2Completion(NodeId self, int fPlusOneSize, int quorumSize) {
         if (countRound2VotesForValue(StateValue.V1) >= fPlusOneSize) {
-            return new Decision<>(self, phase, StateValue.V1, findAgreedProposal(self));
+            return new Decision<>(self, phase, StateValue.V1, findAgreedProposal(quorumSize));
         }
         if (countRound2VotesForValue(StateValue.V0) >= fPlusOneSize) {
             return new Decision<>(self, phase, StateValue.V0, emptyBatch());
         }
         var decision = coinFlip();
         var batch = decision == StateValue.V1
-                    ? findAgreedProposal(self)
+                    ? findAgreedProposal(quorumSize)
                     : Batch.<C>emptyBatch();
         return new Decision<>(self, phase, decision, batch);
     }
