@@ -24,12 +24,20 @@ import org.pragmatica.messaging.MessageReceiver;
 
 /**
  * Generalized Network API for cluster communication.
+ * <p>
+ * <b>Implementation contract:</b> All methods must be exception-safe.
+ * Network failures should be logged internally, not thrown to callers.
+ * The consensus protocol handles message loss through timeouts and retries.
  */
 public interface ClusterNetwork {
     /**
      * Broadcast a message to all nodes in the cluster.
+     * <p>
      * Note that actual implementation may just send messages directly,
      * not necessarily use broadcasting in underlying protocol.
+     * <p>
+     * Implementations must not throw exceptions. Failed sends should be
+     * logged and silently ignored - the protocol handles message loss.
      */
     <M extends ProtocolMessage> void broadcast(M message);
 
@@ -50,6 +58,9 @@ public interface ClusterNetwork {
 
     /**
      * Send a message to a specific node.
+     * <p>
+     * Implementations must not throw exceptions. Failed sends should be
+     * logged and silently ignored - the protocol handles message loss.
      */
     <M extends ProtocolMessage> void send(NodeId nodeId, M message);
 

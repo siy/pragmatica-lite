@@ -38,8 +38,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -74,7 +76,15 @@ public class RabiaEngine<C extends Command> {
     private final ClusterNetwork network;
     private final StateMachine<C> stateMachine;
     private final ProtocolConfig config;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ConsensusMetrics metrics;
+
+    // Single-thread executor with DiscardPolicy to silently drop tasks after shutdown
+    private final ExecutorService executor = new ThreadPoolExecutor(1,
+                                                                    1,
+                                                                    0L,
+                                                                    TimeUnit.MILLISECONDS,
+                                                                    new LinkedBlockingQueue<>(),
+                                                                    new ThreadPoolExecutor.DiscardPolicy());
     private final Map<CorrelationId, Batch<C>> pendingBatches = new ConcurrentHashMap<>();
     private final Map<NodeId, SavedState<C>> syncResponses = new ConcurrentHashMap<>();
     private final RabiaPersistence<C> persistence = RabiaPersistence.inMemory();
@@ -96,7 +106,7 @@ public class RabiaEngine<C extends Command> {
 
     //--------------------------------- Node State End
     /**
-     * Creates a new Rabia consensus engine.
+     * Creates a new Rabia consensus engine without metrics.
      *
      * @param topologyManager The topology manager for node communication
      * @param network         The network implementation
@@ -107,12 +117,32 @@ public class RabiaEngine<C extends Command> {
                        ClusterNetwork network,
                        StateMachine<C> stateMachine,
                        ProtocolConfig config) {
+        this(topologyManager, network, stateMachine, config, ConsensusMetrics.noop());
+    }
+
+    /**
+     * Creates a new Rabia consensus engine with metrics.
+     *
+     * @param topologyManager The topology manager for node communication
+     * @param network         The network implementation
+     * @param stateMachine    The state machine to apply commands to
+     * @param config          Configuration for the consensus engine
+     * @param metrics         Metrics collector for observability
+     */
+    public RabiaEngine(TopologyManager topologyManager,
+                       ClusterNetwork network,
+                       StateMachine<C> stateMachine,
+                       ProtocolConfig config,
+                       ConsensusMetrics metrics) {
         this.self = topologyManager.self()
                                    .id();
         this.topologyManager = topologyManager;
         this.network = network;
         this.stateMachine = stateMachine;
         this.config = config;
+        this.metrics = metrics != null
+                       ? metrics
+                       : ConsensusMetrics.noop();
         this.cleanupTask = SharedScheduler.scheduleAtFixedRate(this::cleanupOldPhases, config.cleanupInterval());
         this.syncTask = SharedScheduler.schedule(this::synchronize, config.syncRetryInterval());
     }
@@ -184,6 +214,7 @@ public class RabiaEngine<C extends Command> {
         var batch = batch(commands);
         log.trace("Node {}: client submitted {} command(s). Prepared batch: {}", self, commands.size(), batch);
         pendingBatches.put(batch.correlationId(), batch);
+        metrics.updatePendingBatches(self, pendingBatches.size());
         onBatchPrepared.accept(batch);
         network.broadcast(new NewBatch<>(self, batch));
         if (!isInPhase.get()) {
@@ -353,6 +384,7 @@ public class RabiaEngine<C extends Command> {
         startPromise.get()
                     .succeed(Unit.unit());
         syncResponses.clear();
+        metrics.recordSyncAttempt(self, true);
         log.info("Node {} activated in phase {}", self, currentPhase.get());
         executor.execute(this::startPhase);
     }
@@ -433,6 +465,7 @@ public class RabiaEngine<C extends Command> {
             }
         }
         phaseData.registerProposal(propose.sender(), propose.value());
+        metrics.recordProposal(propose.sender(), propose.phase());
         var quorumSize = topologyManager.quorumSize();
         // Only vote once we have quorum proposals and haven't voted yet
         if (isInPhase.get() && currentPhase.get()
@@ -471,6 +504,7 @@ public class RabiaEngine<C extends Command> {
                   vote.stateValue());
         var phaseData = getOrCreatePhaseData(vote.phase());
         phaseData.registerRound1Vote(vote.sender(), vote.stateValue());
+        metrics.recordVoteRound1(vote.sender(), vote.phase(), vote.stateValue());
         // If we're active and in this phase, check if we can proceed to round 2
         if (isInPhase.get() && currentPhase.get()
                                            .equals(vote.phase()) && !phaseData.hasVotedRound2(self)) {
@@ -499,6 +533,7 @@ public class RabiaEngine<C extends Command> {
                   vote.stateValue());
         var phaseData = getOrCreatePhaseData(vote.phase());
         phaseData.registerRound2Vote(vote.sender(), vote.stateValue());
+        metrics.recordVoteRound2(vote.sender(), vote.phase(), vote.stateValue());
         // If we're active and in this phase, check if we can make a decision
         var quorumSize = topologyManager.quorumSize();
         if (isInPhase.get() && currentPhase.get()
@@ -513,6 +548,7 @@ public class RabiaEngine<C extends Command> {
 
     private void commitDecision(PhaseData<C> phaseData, Decision<C> decision) {
         if (phaseData.tryMarkDecided()) {
+            metrics.recordDecision(self, phaseData.phase(), decision.stateValue(), 0L);
             // Apply commands to state machine ONLY if it was a V1 decision with a non-empty batch
             if (decision.stateValue() == StateValue.V1 && !decision.value()
                                                                    .commands()
@@ -531,6 +567,7 @@ public class RabiaEngine<C extends Command> {
         lastCommittedPhase.set(phaseData.phase());
         pendingBatches.remove(decision.value()
                                       .correlationId());
+        metrics.updatePendingBatches(self, pendingBatches.size());
         correlationMap.computeIfPresent(decision.value()
                                                 .correlationId(),
                                         (_, promise) -> {

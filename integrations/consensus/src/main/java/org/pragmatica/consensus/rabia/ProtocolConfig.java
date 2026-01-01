@@ -16,16 +16,48 @@
 
 package org.pragmatica.consensus.rabia;
 
+import org.pragmatica.lang.Cause;
+import org.pragmatica.lang.Result;
 import org.pragmatica.lang.io.TimeSpan;
 
 import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 
 /**
  * Configuration for the Rabia consensus engine.
+ *
+ * @param cleanupInterval      Interval for cleaning up old phase data
+ * @param syncRetryInterval    Interval for retrying synchronization attempts
+ * @param removeOlderThanPhases Number of phases to retain before cleanup
  */
 public record ProtocolConfig(TimeSpan cleanupInterval,
                              TimeSpan syncRetryInterval,
                              long removeOlderThanPhases) {
+    /**
+     * Validates and creates a ProtocolConfig.
+     */
+    public static Result<ProtocolConfig> protocolConfig(TimeSpan cleanupInterval,
+                                                        TimeSpan syncRetryInterval,
+                                                        long removeOlderThanPhases) {
+        return Result.all(validatePositive(cleanupInterval, "cleanupInterval"),
+                          validatePositive(syncRetryInterval, "syncRetryInterval"),
+                          validatePositive(removeOlderThanPhases, "removeOlderThanPhases"))
+                     .map((cleanup, sync, phases) -> new ProtocolConfig(cleanup, sync, phases));
+    }
+
+    private static Result<TimeSpan> validatePositive(TimeSpan value, String name) {
+        return value != null && value.nanos() > 0
+               ? Result.success(value)
+               : ConfigError.invalidTimeSpan(name)
+                            .result();
+    }
+
+    private static Result<Long> validatePositive(long value, String name) {
+        return value > 0
+               ? Result.success(value)
+               : ConfigError.invalidValue(name, value)
+                            .result();
+    }
+
     /**
      * Creates a default (production) configuration.
      */
@@ -42,5 +74,32 @@ public record ProtocolConfig(TimeSpan cleanupInterval,
         return new ProtocolConfig(timeSpan(60)
                                           .seconds(), timeSpan(100)
                                                               .millis(), 100);
+    }
+
+    /**
+     * Configuration validation errors.
+     */
+    public sealed interface ConfigError extends Cause {
+        record InvalidTimeSpan(String field) implements ConfigError {
+            @Override
+            public String message() {
+                return field + " must be a positive duration";
+            }
+        }
+
+        record InvalidValue(String field, long value) implements ConfigError {
+            @Override
+            public String message() {
+                return field + " must be positive, got: " + value;
+            }
+        }
+
+        static ConfigError invalidTimeSpan(String field) {
+            return new InvalidTimeSpan(field);
+        }
+
+        static ConfigError invalidValue(String field, long value) {
+            return new InvalidValue(field, value);
+        }
     }
 }
