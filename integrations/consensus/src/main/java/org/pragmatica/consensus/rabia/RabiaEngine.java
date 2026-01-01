@@ -407,25 +407,26 @@ public class RabiaEngine<C extends Command> {
             isInPhase.set(true);
         }
         phaseData.registerProposal(propose.sender(), propose.value());
+        var quorumSize = topologyManager.quorumSize();
+        // Only vote once we have quorum proposals and haven't voted yet
         if (isInPhase.get() && currentPhase.get()
-                                           .equals(propose.phase()) && !phaseData.hasVotedRound1(self)) {
-            var vote = phaseData.evaluateInitialVote(self, propose);
-            log.trace("Node {} broadcasting R1 vote {} for phase {} based on received proposal from {}",
+                                           .equals(propose.phase()) && !phaseData.hasVotedRound1(self) && phaseData.hasQuorumProposals(quorumSize)) {
+            var vote = phaseData.evaluateInitialVote(self, quorumSize);
+            log.trace("Node {} broadcasting R1 vote {} for phase {} after collecting quorum proposals",
                       self,
                       vote,
-                      propose.phase(),
-                      propose.sender());
+                      propose.phase());
             network.broadcast(vote);
             phaseData.registerRound1Vote(self, vote.stateValue());
         } else {
-            log.trace("Node {} conditions not met to vote R1 on proposal from {} for phase {}. Active: {}, InPhase: {}, CurrentPhase: {}, HasVotedR1: {}",
+            log.trace("Node {} conditions not met to vote R1 for phase {}. InPhase: {}, CurrentPhase: {}, HasVotedR1: {}, ProposalCount: {}/{}",
                       self,
-                      propose.sender(),
                       propose.phase(),
-                      active.get(),
                       isInPhase.get(),
                       currentPhase.get(),
-                      phaseData.hasVotedRound1(self));
+                      phaseData.hasVotedRound1(self),
+                      phaseData.proposalCount(),
+                      quorumSize);
         }
     }
 

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static org.pragmatica.consensus.rabia.Batch.emptyBatch;
 
@@ -109,6 +110,13 @@ final class PhaseData<C extends Command> {
         return proposals.size();
     }
 
+    /**
+     * Checks if we have collected proposals from a majority of nodes.
+     */
+    boolean hasQuorumProposals(int quorumSize) {
+        return proposals.size() >= quorumSize;
+    }
+
     // ==================== Voting Logic ====================
     /**
      * Checks if we have collected votes from a majority of nodes in round 1.
@@ -145,22 +153,26 @@ final class PhaseData<C extends Command> {
     }
 
     /**
-     * Evaluates the initial round 1 vote based on received proposals.
-     * Per Rabia spec: vote V1 if majority has same proposal, else V0.
+     * Evaluates the initial round 1 vote based on collected proposals.
+     * Per Rabia spec: vote V1 if a majority of nodes proposed the same batch, else V0.
+     * <p>
+     * This should only be called after hasQuorumProposals() returns true.
      */
-    VoteRound1 evaluateInitialVote(NodeId self, RabiaProtocolMessage.Synchronous.Propose<C> propose) {
-        var existingProposal = proposals.values()
-                                        .stream()
-                                        .filter(Batch::isNotEmpty)
-                                        .map(Batch::correlationId)
-                                        .filter(correlationId -> correlationId.equals(propose.value()
-                                                                                             .correlationId()))
-                                        .count();
-        if (existingProposal > 1L) {
-            return new VoteRound1(self, propose.phase(), StateValue.V0);
-        }
-        proposals.put(self, propose.value());
-        return new VoteRound1(self, propose.phase(), StateValue.V1);
+    VoteRound1 evaluateInitialVote(NodeId self, int quorumSize) {
+        // Count proposals by correlationId to find if any batch has quorum support
+        var countByCorrelationId = proposals.values()
+                                            .stream()
+                                            .filter(Batch::isNotEmpty)
+                                            .collect(Collectors.groupingBy(Batch::correlationId,
+                                                                           Collectors.counting()));
+        // Check if any correlationId has quorum support
+        boolean hasQuorumAgreement = countByCorrelationId.values()
+                                                         .stream()
+                                                         .anyMatch(count -> count >= quorumSize);
+        var stateValue = hasQuorumAgreement
+                         ? StateValue.V1
+                         : StateValue.V0;
+        return new VoteRound1(self, phase, stateValue);
     }
 
     /**
