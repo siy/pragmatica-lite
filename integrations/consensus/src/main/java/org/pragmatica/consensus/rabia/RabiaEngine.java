@@ -88,6 +88,9 @@ public class RabiaEngine<C extends Command> {
     private final AtomicBoolean isInPhase = new AtomicBoolean(false);
     private final AtomicReference<Promise<Unit>> startPromise = new AtomicReference<>(Promise.promise());
     private final AtomicReference<Phase> lastCommittedPhase = new AtomicReference<>(Phase.ZERO);
+
+    // Per Rabia spec: after a decision, the next phase inherits this value for round 1 vote
+    private final AtomicReference<StateValue> lockedValue = new AtomicReference<>(null);
     private final ScheduledFuture< ? > cleanupTask;
     private final ScheduledFuture< ? > syncTask;
 
@@ -142,6 +145,7 @@ public class RabiaEngine<C extends Command> {
         phases.clear();
         currentPhase.set(Phase.ZERO);
         isInPhase.set(false);
+        lockedValue.set(null);
         stateMachine.reset();
         startPromise.set(Promise.promise());
         pendingBatches.clear();
@@ -258,6 +262,14 @@ public class RabiaEngine<C extends Command> {
         var phaseData = getOrCreatePhaseData(phase);
         phaseData.registerProposal(self, batch);
         network.broadcast(new Propose<>(self, phase, batch));
+        // Per Rabia spec: if we have a locked value from previous phase, vote it immediately
+        var locked = lockedValue.getAndSet(null);
+        if (locked != null) {
+            var vote = new VoteRound1(self, phase, locked);
+            log.trace("Node {} immediately voting locked value {} for phase {}", self, locked, phase);
+            network.broadcast(vote);
+            phaseData.registerRound1Vote(self, locked);
+        }
     }
 
     /**
@@ -493,7 +505,7 @@ public class RabiaEngine<C extends Command> {
                                                                    .isEmpty()) {
                 commitChanges(phaseData, decision);
             }
-            moveToNextPhase(phaseData.phase());
+            moveToNextPhase(phaseData.phase(), decision.stateValue());
         }
     }
 
@@ -527,12 +539,15 @@ public class RabiaEngine<C extends Command> {
 
     /**
      * Moves to the next phase after a decision.
+     * Per Rabia spec: the decision value is carried forward as the round 1 vote for the next phase.
      */
-    private void moveToNextPhase(Phase currentPhase) {
+    private void moveToNextPhase(Phase currentPhase, StateValue decidedValue) {
         var nextPhase = currentPhase.successor();
         this.currentPhase.set(nextPhase);
         isInPhase.set(false);
-        log.trace("Node {} moving to phase {}", self, nextPhase);
+        // Lock the value for the next phase's round 1 vote
+        lockedValue.set(decidedValue);
+        log.trace("Node {} moving to phase {} with locked value {}", self, nextPhase, decidedValue);
         // If we have more commands to process, start a new phase
         if (!pendingBatches.isEmpty()) {
             executor.execute(this::startPhase);
