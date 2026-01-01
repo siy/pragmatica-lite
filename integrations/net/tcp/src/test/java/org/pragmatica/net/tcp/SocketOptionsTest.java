@@ -28,6 +28,7 @@ class SocketOptionsTest {
 
         assertThat(options.soBacklog()).isEqualTo(128);
         assertThat(options.soKeepalive()).isTrue();
+        assertThat(options.tcpNoDelay()).isTrue();
     }
 
     @Test
@@ -36,6 +37,7 @@ class SocketOptionsTest {
 
         assertThat(options.soBacklog()).isEqualTo(128);
         assertThat(options.soKeepalive()).isTrue();
+        assertThat(options.tcpNoDelay()).isTrue();
     }
 
     @Test
@@ -45,7 +47,8 @@ class SocketOptionsTest {
 
         assertThat(modified.soBacklog()).isEqualTo(256);
         assertThat(modified.soKeepalive()).isTrue();
-        assertThat(original.soBacklog()).isEqualTo(128); // Original unchanged
+        assertThat(modified.tcpNoDelay()).isTrue();
+        assertThat(original.soBacklog()).isEqualTo(128);
     }
 
     @Test
@@ -55,16 +58,30 @@ class SocketOptionsTest {
 
         assertThat(modified.soKeepalive()).isFalse();
         assertThat(modified.soBacklog()).isEqualTo(128);
-        assertThat(original.soKeepalive()).isTrue(); // Original unchanged
+        assertThat(modified.tcpNoDelay()).isTrue();
+        assertThat(original.soKeepalive()).isTrue();
+    }
+
+    @Test
+    void withTcpNoDelay_returns_new_instance() {
+        var original = SocketOptions.socketOptions();
+        var modified = original.withTcpNoDelay(false);
+
+        assertThat(modified.tcpNoDelay()).isFalse();
+        assertThat(modified.soBacklog()).isEqualTo(128);
+        assertThat(modified.soKeepalive()).isTrue();
+        assertThat(original.tcpNoDelay()).isTrue();
     }
 
     @Test
     void chained_modifications_work() {
         var options = SocketOptions.socketOptions()
             .withSoBacklog(512)
-            .withSoKeepalive(false);
+            .withSoKeepalive(false)
+            .withTcpNoDelay(false);
 
         assertThat(options.soBacklog()).isEqualTo(512);
         assertThat(options.soKeepalive()).isFalse();
+        assertThat(options.tcpNoDelay()).isFalse();
     }
 }

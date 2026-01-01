@@ -20,10 +20,11 @@ package org.pragmatica.net.tcp;
  *
  * @param soBacklog   maximum queue length for incoming connection requests (SO_BACKLOG)
  * @param soKeepalive whether to enable TCP keepalive probes (SO_KEEPALIVE)
+ * @param tcpNoDelay  whether to disable Nagle's algorithm for low-latency (TCP_NODELAY)
  */
-public record SocketOptions(int soBacklog, boolean soKeepalive) {
-    public static SocketOptions socketOptions(int soBacklog, boolean soKeepalive) {
-        return new SocketOptions(soBacklog, soKeepalive);
+public record SocketOptions(int soBacklog, boolean soKeepalive, boolean tcpNoDelay) {
+    public static SocketOptions socketOptions(int soBacklog, boolean soKeepalive, boolean tcpNoDelay) {
+        return new SocketOptions(soBacklog, soKeepalive, tcpNoDelay);
     }
 
     public static SocketOptions socketOptions() {
@@ -31,14 +32,18 @@ public record SocketOptions(int soBacklog, boolean soKeepalive) {
     }
 
     public static SocketOptions defaults() {
-        return new SocketOptions(128, true);
+        return new SocketOptions(128, true, true);
     }
 
     public SocketOptions withSoBacklog(int soBacklog) {
-        return new SocketOptions(soBacklog, soKeepalive);
+        return new SocketOptions(soBacklog, soKeepalive, tcpNoDelay);
     }
 
     public SocketOptions withSoKeepalive(boolean soKeepalive) {
-        return new SocketOptions(soBacklog, soKeepalive);
+        return new SocketOptions(soBacklog, soKeepalive, tcpNoDelay);
+    }
+
+    public SocketOptions withTcpNoDelay(boolean tcpNoDelay) {
+        return new SocketOptions(soBacklog, soKeepalive, tcpNoDelay);
     }
 }
