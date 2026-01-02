@@ -15,7 +15,6 @@ import org.pragmatica.consensus.topology.TopologyManager;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
-import org.pragmatica.lang.io.TimeSpan;
 import org.pragmatica.lang.utils.Causes;
 import org.pragmatica.lang.utils.SharedScheduler;
 import org.pragmatica.messaging.Message;
@@ -66,7 +65,6 @@ public class NettyClusterNetwork implements ClusterNetwork {
     private final Map<Channel, ScheduledFuture< ? >> helloTimeouts = new ConcurrentHashMap<>();
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final TopologyManager topologyManager;
-    private final TimeSpan helloTimeout;
     private final Supplier<List<ChannelHandler>> handlers;
     private final MessageRouter router;
     private final AtomicReference<Server> server = new AtomicReference<>();
@@ -79,7 +77,6 @@ public class NettyClusterNetwork implements ClusterNetwork {
     }
 
     public NettyClusterNetwork(TopologyManager topologyManager,
-                               TimeSpan helloTimeout,
                                Serializer serializer,
                                Deserializer deserializer,
                                MessageRouter router) {
@@ -90,7 +87,6 @@ public class NettyClusterNetwork implements ClusterNetwork {
                                                      : 2);
         this.self = topologyManager.self();
         this.topologyManager = topologyManager;
-        this.helloTimeout = helloTimeout;
         this.router = router;
         this.handlers = () -> List.of(new LengthFieldBasedFrameDecoder(1048576,
                                                                        0,
@@ -156,7 +152,7 @@ public class NettyClusterNetwork implements ClusterNetwork {
     }
 
     private void scheduleHelloTimeout(Channel channel) {
-        var timeout = SharedScheduler.schedule(() -> onHelloTimeout(channel), helloTimeout);
+        var timeout = SharedScheduler.schedule(() -> onHelloTimeout(channel), topologyManager.helloTimeout());
         helloTimeouts.put(channel, timeout);
     }
 

@@ -285,7 +285,7 @@ class RabiaNetworkPerformanceTest {
             router.addRoute(NetworkManagementOperation.ConnectedNodesList.class, topologyManager::reconcile);
 
             // Create network
-            network = new NettyClusterNetwork(topologyManager, config.helloTimeout(), serializer, deserializer, router);
+            network = new NettyClusterNetwork(topologyManager, serializer, deserializer, router);
 
             // Wire up network message routes
             router.addRoute(NetworkManagementOperation.ConnectNode.class, network::connect);

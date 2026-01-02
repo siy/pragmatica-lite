@@ -186,6 +186,12 @@ public interface TcpTopologyManager extends TopologyManager {
             }
 
             @Override
+            public TimeSpan helloTimeout() {
+                return config()
+                             .helloTimeout();
+            }
+
+            @Override
             public Option<TlsConfig> tls() {
                 return config()
                              .tls();
