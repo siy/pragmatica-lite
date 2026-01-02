@@ -16,44 +16,33 @@
 
 package org.pragmatica.consensus.rabia;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
-import io.netty.handler.codec.LengthFieldPrepender;
-import io.netty.handler.codec.MessageToByteEncoder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.consensus.Command;
 import org.pragmatica.consensus.NodeId;
-import org.pragmatica.consensus.ProtocolMessage;
 import org.pragmatica.consensus.StateMachine;
-import org.pragmatica.consensus.net.ClusterNetwork;
 import org.pragmatica.consensus.net.NetworkManagementOperation;
 import org.pragmatica.consensus.net.NetworkMessage;
 import org.pragmatica.consensus.net.NodeInfo;
+import org.pragmatica.consensus.net.netty.NettyClusterNetwork;
 import org.pragmatica.consensus.rabia.RabiaPersistence.SavedState;
 import org.pragmatica.consensus.rabia.RabiaProtocolMessage.Synchronous.SyncResponse;
 import org.pragmatica.consensus.topology.QuorumStateNotification;
-import org.pragmatica.consensus.topology.TopologyManager;
-import org.pragmatica.lang.Option;
+import org.pragmatica.consensus.topology.TcpTopologyManager;
+import org.pragmatica.consensus.topology.TopologyConfig;
+import org.pragmatica.consensus.topology.TopologyManagementMessage;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
-import org.pragmatica.lang.io.TimeSpan;
+import org.pragmatica.messaging.MessageRouter;
+import org.pragmatica.messaging.MessageRouter.MutableRouter;
 import org.pragmatica.net.tcp.NodeAddress;
-import org.pragmatica.net.tcp.Server;
 import org.pragmatica.serialization.fury.FuryDeserializer;
 import org.pragmatica.serialization.fury.FurySerializer;
 
-import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -87,29 +76,24 @@ class RabiaNetworkPerformanceTest {
         nodes = new ArrayList<>();
         decisionsReached = new AtomicInteger(0);
 
-        // Create node ID to port mapping for all nodes
-        var nodePortMap = new ConcurrentHashMap<NodeId, Integer>();
+        // Create node info list for all nodes
+        var nodeInfos = new ArrayList<NodeInfo>();
         for (int i = 0; i < CLUSTER_SIZE; i++) {
-            nodePortMap.put(nodeId("node-" + i), basePort + i);
+            var id = nodeId("node-" + i);
+            var port = basePort + i;
+            nodeInfos.add(NodeInfo.nodeInfo(id, NodeAddress.nodeAddress("127.0.0.1", port)));
         }
 
         // Create all nodes
         for (int i = 0; i < CLUSTER_SIZE; i++) {
             var id = nodeId("node-" + i);
-            var port = basePort + i;
-            var node = new NetworkNode(id, port, CLUSTER_SIZE, nodePortMap, this::onDecision);
+            var node = new NetworkNode(id, nodeInfos, this::onDecision);
             nodes.add(node);
         }
 
-        // Start all servers
+        // Start all nodes
         Promise.allOf(nodes.stream().map(NetworkNode::start).toList()).await();
-        Thread.sleep(200);
-
-        // Connect all nodes to each other
-        for (var node : nodes) {
-            node.connectToAllPeers();
-        }
-        Thread.sleep(300);
+        Thread.sleep(500);
 
         // Activate all engines
         for (var node : nodes) {
@@ -240,25 +224,22 @@ class RabiaNetworkPerformanceTest {
 
     static class NetworkNode {
         final NodeId nodeId;
-        final int port;
-        private final int clusterSize;
-        private final Map<NodeId, Integer> nodePortMap;
+        private final List<NodeInfo> allNodes;
         private final Runnable onDecision;
-        private final Map<NodeId, Channel> connections = new ConcurrentHashMap<>();
         private final FurySerializer serializer;
         private final FuryDeserializer deserializer;
-        private Server server;
+        private final MutableRouter router;
         private RabiaEngine<TestCommand> engine;
-        private TcpClusterNetwork network;
+        private NettyClusterNetwork network;
+        private TcpTopologyManager topologyManager;
 
-        NetworkNode(NodeId nodeId, int port, int clusterSize, Map<NodeId, Integer> nodePortMap, Runnable onDecision) {
+        NetworkNode(NodeId nodeId, List<NodeInfo> allNodes, Runnable onDecision) {
             this.nodeId = nodeId;
-            this.port = port;
-            this.clusterSize = clusterSize;
-            this.nodePortMap = nodePortMap;
+            this.allNodes = allNodes;
             this.onDecision = onDecision;
             this.serializer = FurySerializer.furySerializer(this::registerClasses);
             this.deserializer = FuryDeserializer.furyDeserializer(this::registerClasses);
+            this.router = MessageRouter.mutable();
         }
 
         private void registerClasses(Consumer<Class<?>> register) {
@@ -269,6 +250,8 @@ class RabiaNetworkPerformanceTest {
             register.accept(RabiaProtocolMessage.Synchronous.SyncResponse.class);
             register.accept(RabiaProtocolMessage.Asynchronous.SyncRequest.class);
             register.accept(RabiaProtocolMessage.Asynchronous.NewBatch.class);
+            register.accept(NetworkMessage.Ping.class);
+            register.accept(NetworkMessage.Pong.class);
             register.accept(SavedState.class);
             register.accept(Batch.class);
             register.accept(BatchId.class);
@@ -280,46 +263,67 @@ class RabiaNetworkPerformanceTest {
             register.accept(ArrayList.class);
         }
 
+        @SuppressWarnings("unchecked")
         Promise<Unit> start() {
-            network = new TcpClusterNetwork();
-            var topology = new SimpleTopologyManager(nodeId, clusterSize, nodePortMap);
-            engine = new RabiaEngine<>(topology, network, new SimpleStateMachine(), ProtocolConfig.testConfig());
+            // Create topology config
+            var config = new TopologyConfig(
+                nodeId,
+                timeSpan(100).hours(),  // Long reconciliation interval for tests
+                timeSpan(10).seconds(), // Ping interval
+                allNodes
+            );
 
-            return Server.server("node-" + port, port, this::createHandlers)
-                         .map(s -> {
-                             this.server = s;
-                             return Unit.unit();
-                         });
-        }
+            // Create topology manager and wire up routes
+            topologyManager = TcpTopologyManager.tcpTopologyManager(config, router);
 
-        void connectToAllPeers() {
-            var connectionPromises = new ArrayList<Promise<Unit>>();
-            for (var entry : nodePortMap.entrySet()) {
-                if (!entry.getKey().equals(nodeId)) {
-                    var peerPort = entry.getValue();
-                    var peerId = entry.getKey();
-                    var promise = server.connectTo(NodeAddress.nodeAddress("127.0.0.1", peerPort))
-                          .map(ch -> {
-                              connections.put(peerId, ch);
-                              return Unit.unit();
-                          })
-                          .onFailure(e -> System.err.println("Failed to connect to " + peerId + ": " + e));
-                    connectionPromises.add(promise);
-                }
-            }
-            // Wait for all connections
-            Promise.allOf(connectionPromises).await();
+            // Wire up topology manager message routes
+            router.addRoute(TopologyManagementMessage.AddNode.class, topologyManager::handleAddNodeMessage);
+            router.addRoute(TopologyManagementMessage.RemoveNode.class, topologyManager::handleRemoveNodeMessage);
+            router.addRoute(TopologyManagementMessage.DiscoverNodes.class, topologyManager::handleDiscoverNodesMessage);
+            router.addRoute(TopologyManagementMessage.DiscoveredNodes.class, topologyManager::handleMergeNodesMessage);
+            router.addRoute(NetworkManagementOperation.ConnectedNodesList.class, topologyManager::reconcile);
+
+            // Create network
+            network = new NettyClusterNetwork(topologyManager, serializer, deserializer, router);
+
+            // Wire up network message routes
+            router.addRoute(NetworkManagementOperation.ConnectNode.class, network::connect);
+            router.addRoute(NetworkManagementOperation.DisconnectNode.class, network::disconnect);
+            router.addRoute(NetworkManagementOperation.ListConnectedNodes.class, network::listNodes);
+            router.addRoute(NetworkMessage.Ping.class, network::handlePing);
+            router.addRoute(NetworkMessage.Pong.class, network::handlePong);
+
+            // Create engine
+            engine = new RabiaEngine<>(topologyManager, network, new SimpleStateMachine(), ProtocolConfig.testConfig());
+
+            // Wire up engine message routes
+            router.addRoute(RabiaProtocolMessage.Synchronous.Propose.class,
+                            msg -> engine.processPropose((RabiaProtocolMessage.Synchronous.Propose<TestCommand>) msg));
+            router.addRoute(RabiaProtocolMessage.Synchronous.VoteRound1.class, engine::processVoteRound1);
+            router.addRoute(RabiaProtocolMessage.Synchronous.VoteRound2.class, engine::processVoteRound2);
+            router.addRoute(RabiaProtocolMessage.Synchronous.Decision.class, msg -> {
+                engine.processDecision((RabiaProtocolMessage.Synchronous.Decision<TestCommand>) msg);
+                onDecision.run();
+            });
+            router.addRoute(RabiaProtocolMessage.Synchronous.SyncResponse.class,
+                            msg -> engine.processSyncResponse((SyncResponse<TestCommand>) msg));
+            router.addRoute(RabiaProtocolMessage.Asynchronous.SyncRequest.class, engine::handleSyncRequest);
+            router.addRoute(RabiaProtocolMessage.Asynchronous.NewBatch.class,
+                            msg -> engine.handleNewBatch((RabiaProtocolMessage.Asynchronous.NewBatch<TestCommand>) msg));
+            router.addRoute(QuorumStateNotification.class, engine::quorumState);
+
+            // Start network first, then topology manager (order matters!)
+            return network.start()
+                          .onSuccessRun(topologyManager::start);
         }
 
         void activateEngine() throws InterruptedException {
-            // Trigger quorum established
-            engine.quorumState(QuorumStateNotification.ESTABLISHED);
-            Thread.sleep(100); // Allow sync request to be sent
+            Thread.sleep(200); // Allow connections to establish
 
             // Send sync responses from all other nodes to activate
-            for (var otherId : nodePortMap.keySet()) {
-                if (!otherId.equals(nodeId)) {
-                    engine.processSyncResponse(new SyncResponse<>(otherId, SavedState.empty()));
+            for (var nodeInfo : allNodes) {
+                if (!nodeInfo.id().equals(nodeId)) {
+                    engine.processSyncResponse(new SyncResponse<>(nodeInfo.id(), SavedState.empty()));
                 }
             }
             Thread.sleep(100); // Allow activation to complete
@@ -329,150 +333,16 @@ class RabiaNetworkPerformanceTest {
             engine.handleSubmit(new RabiaEngineIO.SubmitCommands<>(commands));
         }
 
-        boolean isActive() {
-            return engine.isActive();
-        }
-
         void stop() {
             if (engine != null) {
                 engine.stop().await();
             }
-            if (server != null) {
-                server.stop(() -> Promise.success(Unit.unit())).await();
+            if (topologyManager != null) {
+                topologyManager.stop();
             }
-            connections.values().forEach(Channel::close);
-            connections.clear();
-        }
-
-        private List<ChannelHandler> createHandlers() {
-            return List.of(
-                new LengthFieldBasedFrameDecoder(1024 * 1024, 0, 4, 0, 4),
-                new LengthFieldPrepender(4),
-                new MessageEncoder(),
-                new MessageDecoder()
-            );
-        }
-
-        class TcpClusterNetwork implements ClusterNetwork {
-            @Override
-            public <M extends ProtocolMessage> void broadcast(M message) {
-                for (var entry : connections.entrySet()) {
-                    var channel = entry.getValue();
-                    if (channel != null && channel.isActive()) {
-                        channel.writeAndFlush(message);
-                    }
-                }
+            if (network != null) {
+                network.stop().await();
             }
-
-            @Override
-            public <M extends ProtocolMessage> void send(NodeId targetId, M message) {
-                var channel = connections.get(targetId);
-                if (channel != null && channel.isActive()) {
-                    channel.writeAndFlush(message);
-                }
-            }
-
-            @Override
-            public void connect(NetworkManagementOperation.ConnectNode c) {}
-            @Override
-            public void disconnect(NetworkManagementOperation.DisconnectNode d) {}
-            @Override
-            public void listNodes(NetworkManagementOperation.ListConnectedNodes l) {}
-            @Override
-            public void handlePing(NetworkMessage.Ping p) {}
-            @Override
-            public void handlePong(NetworkMessage.Pong p) {}
-            @Override
-            public Promise<Unit> start() { return Promise.success(Unit.unit()); }
-            @Override
-            public Promise<Unit> stop() { return Promise.success(Unit.unit()); }
-        }
-
-        class MessageEncoder extends MessageToByteEncoder<ProtocolMessage> {
-            @Override
-            protected void encode(ChannelHandlerContext ctx, ProtocolMessage msg, ByteBuf out) {
-                serializer.write(out, msg);
-            }
-        }
-
-        class MessageDecoder extends ChannelInboundHandlerAdapter {
-            @Override
-            @SuppressWarnings("unchecked")
-            public void channelRead(ChannelHandlerContext ctx, Object msg) {
-                if (msg instanceof ByteBuf buf) {
-                    try {
-                        var message = deserializer.<ProtocolMessage>read(buf);
-                        routeMessage(message);
-                    } finally {
-                        buf.release();
-                    }
-                }
-            }
-
-            @SuppressWarnings("unchecked")
-            private void routeMessage(ProtocolMessage message) {
-                switch (message) {
-                    case RabiaProtocolMessage.Synchronous.Propose<?> p ->
-                        engine.processPropose((RabiaProtocolMessage.Synchronous.Propose<TestCommand>) p);
-                    case RabiaProtocolMessage.Synchronous.VoteRound1 v ->
-                        engine.processVoteRound1(v);
-                    case RabiaProtocolMessage.Synchronous.VoteRound2 v ->
-                        engine.processVoteRound2(v);
-                    case RabiaProtocolMessage.Synchronous.Decision<?> d -> {
-                        engine.processDecision((RabiaProtocolMessage.Synchronous.Decision<TestCommand>) d);
-                        onDecision.run();
-                    }
-                    case RabiaProtocolMessage.Synchronous.SyncResponse<?> s ->
-                        engine.processSyncResponse((SyncResponse<TestCommand>) s);
-                    case RabiaProtocolMessage.Asynchronous.SyncRequest s ->
-                        engine.handleSyncRequest(s);
-                    case RabiaProtocolMessage.Asynchronous.NewBatch<?> b ->
-                        engine.handleNewBatch((RabiaProtocolMessage.Asynchronous.NewBatch<TestCommand>) b);
-                    default -> {}
-                }
-            }
-
-            @Override
-            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-                System.err.println("Channel error on " + nodeId + ": " + cause.getMessage());
-            }
-        }
-
-        static class SimpleTopologyManager implements TopologyManager {
-            private final NodeInfo self;
-            private final int clusterSize;
-            private final Map<NodeId, Integer> nodePortMap;
-
-            SimpleTopologyManager(NodeId selfId, int clusterSize, Map<NodeId, Integer> nodePortMap) {
-                var port = nodePortMap.getOrDefault(selfId, 5000);
-                this.self = NodeInfo.nodeInfo(selfId, NodeAddress.nodeAddress("127.0.0.1", port));
-                this.clusterSize = clusterSize;
-                this.nodePortMap = nodePortMap;
-            }
-
-            @Override
-            public NodeInfo self() { return self; }
-
-            @Override
-            public Option<NodeInfo> get(NodeId id) {
-                var port = nodePortMap.getOrDefault(id, 5000);
-                return Option.option(NodeInfo.nodeInfo(id, NodeAddress.nodeAddress("127.0.0.1", port)));
-            }
-
-            @Override
-            public int clusterSize() { return clusterSize; }
-
-            @Override
-            public Option<NodeId> reverseLookup(SocketAddress addr) { return Option.empty(); }
-
-            @Override
-            public void start() {}
-
-            @Override
-            public void stop() {}
-
-            @Override
-            public TimeSpan pingInterval() { return timeSpan(1).seconds(); }
         }
 
         static class SimpleStateMachine implements StateMachine<TestCommand> {
