@@ -26,6 +26,7 @@ import java.util.function.Supplier;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.SocketChannel;
@@ -97,6 +98,8 @@ public interface Server {
             public Promise<Channel> connectTo(NodeAddress address) {
                 var bootstrap = new Bootstrap().group(workerGroup)
                                                .channel(NioSocketChannel.class)
+                                               .option(ChannelOption.TCP_NODELAY, true)
+                                               .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                                                .handler(createChildHandler(channelHandlers,
                                                                            Option.none()));
                 var promise = Promise.<Channel>promise();
@@ -140,15 +143,18 @@ public interface Server {
                                              .childHandler(server.createChildHandler(channelHandlers, sslContext))
                                              .option(ChannelOption.SO_BACKLOG,
                                                      socketOptions.soBacklog())
+                                             .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                                              .childOption(ChannelOption.SO_KEEPALIVE,
-                                                          socketOptions.soKeepalive());
+                                                          socketOptions.soKeepalive())
+                                             .childOption(ChannelOption.TCP_NODELAY,
+                                                          socketOptions.tcpNoDelay())
+                                             .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
         var promise = Promise.<Server>promise();
         bootstrap.bind(config.port())
                  .addListener((ChannelFutureListener) future -> {
                                   if (future.isSuccess()) {
-                                      var protocol = sslContext.isPresent()
-                                                     ? "TLS"
-                                                     : "TCP";
+                                      var protocol = sslContext.map(_ -> "TLS")
+                                                               .or("TCP");
                                       server.log.info("Server {} started on port {} ({})",
                                                       config.name(),
                                                       config.port(),
@@ -169,7 +175,7 @@ public interface Server {
     }
 
     /**
-     * Create a server with simple configuration.
+     * Create a server with the simple configuration.
      *
      * @param name            server name for logging
      * @param port            port to bind to

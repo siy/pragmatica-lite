@@ -70,6 +70,11 @@ public interface TopologyManager {
     TimeSpan pingInterval();
 
     /**
+     * Timeout for Hello handshake on new connections.
+     */
+    TimeSpan helloTimeout();
+
+    /**
      * TLS configuration for cluster communication (empty for plain TCP).
      */
     default Option<TlsConfig> tls() {

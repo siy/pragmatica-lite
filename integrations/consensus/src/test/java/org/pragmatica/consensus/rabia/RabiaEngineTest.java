@@ -269,6 +269,11 @@ class RabiaEngineTest {
         public TimeSpan pingInterval() {
             return timeSpan(1).seconds();
         }
+
+        @Override
+        public TimeSpan helloTimeout() {
+            return timeSpan(5).seconds();
+        }
     }
 
     static class TestClusterNetwork implements ClusterNetwork {

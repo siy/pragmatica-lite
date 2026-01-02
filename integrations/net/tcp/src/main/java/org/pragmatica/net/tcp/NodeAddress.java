@@ -36,6 +36,9 @@ public interface NodeAddress {
     }
 
     static NodeAddress nodeAddress(InetSocketAddress socketAddress) {
-        return nodeAddress(socketAddress.getHostName(), socketAddress.getPort());
+        // Use getHostAddress() to get consistent IP representation (e.g., "127.0.0.1" not "localhost")
+        return nodeAddress(socketAddress.getAddress()
+                                        .getHostAddress(),
+                           socketAddress.getPort());
     }
 }
