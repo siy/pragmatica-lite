@@ -229,28 +229,30 @@ public class NettyClusterNetwork implements ClusterNetwork {
                            .name());
             processViewChange(SHUTDOWN, self.id());
             return server.get()
-                         .stop(() -> {
-                                   log.info("Stopping {}: closing peer connections",
-                                            server.get()
-                                                  .name());
-                                   var promises = new ArrayList<Promise<Unit>>();
-                                   for (var link : peerLinks.values()) {
-                                       var promise = Promise.<Unit>promise();
-                                       link.close()
-                                           .addListener(future -> {
-                                                            if (future.isSuccess()) {
-                                                                promise.succeed(Unit.unit());
-                                                            } else {
-                                                                promise.fail(Causes.fromThrowable(future.cause()));
-                                                            }
-                                                        });
-                                       promises.add(promise);
-                                   }
-                                   return Promise.allOf(promises)
-                                                 .mapToUnit();
-                               });
+                         .stop(this::onStop);
         }
         return Promise.unitPromise();
+    }
+
+    private Promise<Unit> onStop() {
+        log.info("Stopping {}: closing peer connections",
+                 server.get()
+                       .name());
+        var promises = new ArrayList<Promise<Unit>>();
+        for (var link : peerLinks.values()) {
+            var promise = Promise.<Unit>promise();
+            link.close()
+                .addListener(future -> {
+                                 if (future.isSuccess()) {
+                                     promise.succeed(Unit.unit());
+                                 } else {
+                                     promise.fail(Causes.fromThrowable(future.cause()));
+                                 }
+                             });
+            promises.add(promise);
+        }
+        return Promise.allOf(promises)
+                      .mapToUnit();
     }
 
     @Override

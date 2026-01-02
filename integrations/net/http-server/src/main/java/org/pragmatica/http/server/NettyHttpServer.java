@@ -16,11 +16,8 @@
 
 package org.pragmatica.http.server;
 
-import org.pragmatica.http.Headers;
+import org.pragmatica.http.*;
 import org.pragmatica.http.HttpMethod;
-import org.pragmatica.http.HttpStatus;
-import org.pragmatica.http.QueryParams;
-import org.pragmatica.http.ContentType;
 import org.pragmatica.http.websocket.WebSocketEndpoint;
 import org.pragmatica.http.websocket.WebSocketHandler;
 import org.pragmatica.http.websocket.WebSocketMessage;
@@ -128,29 +125,32 @@ final class NettyHttpServer implements HttpServer {
                                                      socketOptions.soBacklog())
                                              .childOption(ChannelOption.SO_KEEPALIVE,
                                                           socketOptions.soKeepalive());
-        return Promise.promise(promise -> {
-                                   bootstrap.bind(config.port())
-                                            .addListener((ChannelFutureListener) future -> {
-                                                             if (future.isSuccess()) {
-                                                                 var protocol = sslContext != null
-                                                                                ? "HTTPS"
-                                                                                : "HTTP";
-                                                                 LOG.info("{} server '{}' started on port {}",
-                                                                          protocol,
-                                                                          config.name(),
-                                                                          config.port());
-                                                                 promise.succeed(new NettyHttpServer(config.port(),
-                                                                                                     bossGroup,
-                                                                                                     workerGroup,
-                                                                                                     future.channel()));
-                                                             } else {
-                                                                 bossGroup.shutdownGracefully();
-                                                                 workerGroup.shutdownGracefully();
-                                                                 promise.fail(new HttpServerError.BindFailed(config.port(),
-                                                                                                             future.cause()));
-                                                             }
-                                                         });
-                               });
+        return Promise.promise(promise -> bootstrap.bind(config.port())
+                                                   .addListener((ChannelFuture future) -> onBind(config,
+                                                                                                 promise,
+                                                                                                 future,
+                                                                                                 sslContext,
+                                                                                                 bossGroup,
+                                                                                                 workerGroup)));
+    }
+
+    private static void onBind(HttpServerConfig config,
+                               Promise<HttpServer> promise,
+                               ChannelFuture future,
+                               SslContext sslContext,
+                               MultiThreadIoEventLoopGroup bossGroup,
+                               MultiThreadIoEventLoopGroup workerGroup) {
+        if (future.isSuccess()) {
+            var protocol = sslContext != null
+                           ? "HTTPS"
+                           : "HTTP";
+            LOG.info("{} server '{}' started on port {}", protocol, config.name(), config.port());
+            promise.succeed(new NettyHttpServer(config.port(), bossGroup, workerGroup, future.channel()));
+        } else {
+            bossGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
+            promise.fail(new HttpServerError.BindFailed(config.port(), future.cause()));
+        }
     }
 
     private static class HttpServerInitializer extends ChannelInitializer<SocketChannel> {
