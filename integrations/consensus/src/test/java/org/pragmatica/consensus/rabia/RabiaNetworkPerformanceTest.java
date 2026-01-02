@@ -250,6 +250,7 @@ class RabiaNetworkPerformanceTest {
             register.accept(RabiaProtocolMessage.Synchronous.SyncResponse.class);
             register.accept(RabiaProtocolMessage.Asynchronous.SyncRequest.class);
             register.accept(RabiaProtocolMessage.Asynchronous.NewBatch.class);
+            register.accept(NetworkMessage.Hello.class);
             register.accept(NetworkMessage.Ping.class);
             register.accept(NetworkMessage.Pong.class);
             register.accept(SavedState.class);
@@ -284,7 +285,7 @@ class RabiaNetworkPerformanceTest {
             router.addRoute(NetworkManagementOperation.ConnectedNodesList.class, topologyManager::reconcile);
 
             // Create network
-            network = new NettyClusterNetwork(topologyManager, serializer, deserializer, router);
+            network = new NettyClusterNetwork(topologyManager, config.helloTimeout(), serializer, deserializer, router);
 
             // Wire up network message routes
             router.addRoute(NetworkManagementOperation.ConnectNode.class, network::connect);

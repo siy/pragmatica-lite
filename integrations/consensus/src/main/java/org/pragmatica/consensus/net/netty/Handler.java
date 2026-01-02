@@ -1,7 +1,9 @@
 package org.pragmatica.consensus.net.netty;
 
+import org.pragmatica.consensus.net.NetworkMessage.Hello;
 import org.pragmatica.messaging.Message;
 
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import io.netty.channel.Channel;
@@ -14,13 +16,16 @@ public class Handler extends SimpleChannelInboundHandler<Message.Wired> {
     private static final Logger log = LoggerFactory.getLogger(Handler.class);
     private final Consumer<Channel> peerConnected;
     private final Consumer<Channel> peerDisconnected;
+    private final BiConsumer<Hello, Channel> helloHandler;
     private final Consumer<Message.Wired> messageHandler;
 
     public Handler(Consumer<Channel> peerConnected,
                    Consumer<Channel> peerDisconnected,
+                   BiConsumer<Hello, Channel> helloHandler,
                    Consumer<Message.Wired> messageHandler) {
         this.peerConnected = peerConnected;
         this.peerDisconnected = peerDisconnected;
+        this.helloHandler = helloHandler;
         this.messageHandler = messageHandler;
     }
 
@@ -28,7 +33,11 @@ public class Handler extends SimpleChannelInboundHandler<Message.Wired> {
     protected void channelRead0(ChannelHandlerContext ctx, Message.Wired msg) {
         log.trace("Received message: {}", msg);
         try{
-            messageHandler.accept(msg);
+            if (msg instanceof Hello hello) {
+                helloHandler.accept(hello, ctx.channel());
+            } else {
+                messageHandler.accept(msg);
+            }
         } catch (Exception e) {
             log.error("Error handling message: {}", msg, e);
         }

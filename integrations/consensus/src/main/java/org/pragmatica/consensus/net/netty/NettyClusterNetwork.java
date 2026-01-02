@@ -4,6 +4,7 @@ import org.pragmatica.consensus.ProtocolMessage;
 import org.pragmatica.consensus.net.ClusterNetwork;
 import org.pragmatica.consensus.net.NetworkManagementOperation;
 import org.pragmatica.consensus.net.NetworkManagementOperation.ListConnectedNodes;
+import org.pragmatica.consensus.net.NetworkMessage.Hello;
 import org.pragmatica.consensus.net.NetworkMessage.Ping;
 import org.pragmatica.consensus.net.NetworkMessage.Pong;
 import org.pragmatica.consensus.NodeId;
@@ -14,6 +15,7 @@ import org.pragmatica.consensus.topology.TopologyManager;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
+import org.pragmatica.lang.io.TimeSpan;
 import org.pragmatica.lang.utils.Causes;
 import org.pragmatica.lang.utils.SharedScheduler;
 import org.pragmatica.messaging.Message;
@@ -27,9 +29,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -57,8 +61,12 @@ public class NettyClusterNetwork implements ClusterNetwork {
 
     private final NodeInfo self;
     private final Map<NodeId, Channel> peerLinks = new ConcurrentHashMap<>();
+    private final Map<Channel, NodeId> channelToNodeId = new ConcurrentHashMap<>();
+    private final Set<Channel> pendingChannels = ConcurrentHashMap.newKeySet();
+    private final Map<Channel, ScheduledFuture< ? >> helloTimeouts = new ConcurrentHashMap<>();
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final TopologyManager topologyManager;
+    private final TimeSpan helloTimeout;
     private final Supplier<List<ChannelHandler>> handlers;
     private final MessageRouter router;
     private final AtomicReference<Server> server = new AtomicReference<>();
@@ -71,6 +79,7 @@ public class NettyClusterNetwork implements ClusterNetwork {
     }
 
     public NettyClusterNetwork(TopologyManager topologyManager,
+                               TimeSpan helloTimeout,
                                Serializer serializer,
                                Deserializer deserializer,
                                MessageRouter router) {
@@ -81,6 +90,7 @@ public class NettyClusterNetwork implements ClusterNetwork {
                                                      : 2);
         this.self = topologyManager.self();
         this.topologyManager = topologyManager;
+        this.helloTimeout = helloTimeout;
         this.router = router;
         this.handlers = () -> List.of(new LengthFieldBasedFrameDecoder(1048576,
                                                                        0,
@@ -90,7 +100,10 @@ public class NettyClusterNetwork implements ClusterNetwork {
                                       new LengthFieldPrepender(LENGTH_FIELD_LEN),
                                       new Decoder(deserializer),
                                       new Encoder(serializer),
-                                      new Handler(this::peerConnected, this::peerDisconnected, router::route));
+                                      new Handler(this::peerConnected,
+                                                  this::peerDisconnected,
+                                                  this::handleHello,
+                                                  router::route));
         schedulePing();
     }
 
@@ -136,24 +149,59 @@ public class NettyClusterNetwork implements ClusterNetwork {
     }
 
     private void peerConnected(Channel channel) {
-        topologyManager.reverseLookup(channel.remoteAddress())
-                       .orElse(() -> topologyManager.reverseLookup(channel.localAddress()))
-                       .onPresent(nodeId -> peerLinks.put(nodeId, channel))
-                       .onPresent(nodeId -> log.debug("Node {} connected", nodeId))
-                       .onPresent(nodeId -> processViewChange(ADD, nodeId))
-                       .onEmpty(() -> log.warn("Unknown node {}, disconnecting",
-                                               channel.remoteAddress()))
-                       .onEmpty(() -> channel.close()
-                                             .addListener(_ -> log.info("Host {} disconnected",
-                                                                        channel.remoteAddress())));
+        pendingChannels.add(channel);
+        channel.writeAndFlush(new Hello(self.id()));
+        scheduleHelloTimeout(channel);
+        log.debug("Channel active, sent Hello and waiting for response: {}", channel.remoteAddress());
+    }
+
+    private void scheduleHelloTimeout(Channel channel) {
+        var timeout = SharedScheduler.schedule(() -> onHelloTimeout(channel), helloTimeout);
+        helloTimeouts.put(channel, timeout);
+    }
+
+    private void onHelloTimeout(Channel channel) {
+        helloTimeouts.remove(channel);
+        if (pendingChannels.remove(channel)) {
+            log.warn("Hello timeout for channel {}, closing", channel.remoteAddress());
+            channel.close();
+        }
+    }
+
+    private void handleHello(Hello hello, Channel channel) {
+        var timeout = helloTimeouts.remove(channel);
+        if (timeout != null) {
+            timeout.cancel(false);
+        }
+        if (!pendingChannels.remove(channel)) {
+            log.debug("Received Hello from {} on already established channel", hello.sender());
+            return;
+        }
+        if (topologyManager.get(hello.sender())
+                           .isEmpty()) {
+            log.warn("Received Hello from unknown node {}, closing", hello.sender());
+            channel.close();
+            return;
+        }
+        var existing = peerLinks.putIfAbsent(hello.sender(), channel);
+        if (existing != null) {
+            log.debug("Duplicate connection from {}, closing new channel", hello.sender());
+            channel.close();
+            return;
+        }
+        channelToNodeId.put(channel, hello.sender());
+        processViewChange(ADD, hello.sender());
+        log.debug("Node {} connected via Hello handshake", hello.sender());
     }
 
     private void peerDisconnected(Channel channel) {
-        topologyManager.reverseLookup(channel.remoteAddress())
-                       .orElse(() -> topologyManager.reverseLookup(channel.localAddress()))
-                       .onPresent(peerLinks::remove)
-                       .onPresent(nodeId -> processViewChange(REMOVE, nodeId))
-                       .onPresent(nodeId -> log.debug("Node {} disconnected", nodeId));
+        helloTimeouts.remove(channel);
+        pendingChannels.remove(channel);
+        var nodeId = channelToNodeId.remove(channel);
+        if (nodeId != null && peerLinks.remove(nodeId, channel)) {
+            processViewChange(REMOVE, nodeId);
+            log.debug("Node {} disconnected", nodeId);
+        }
     }
 
     @Override
@@ -162,7 +210,6 @@ public class NettyClusterNetwork implements ClusterNetwork {
             var serverConfig = ServerConfig.serverConfig("NettyClusterNetwork",
                                                          self.address()
                                                              .port());
-            // Apply TLS if configured
             var effectiveConfig = topologyManager.tls()
                                                  .map(serverConfig::withTls)
                                                  .or(serverConfig);
@@ -229,10 +276,6 @@ public class NettyClusterNetwork implements ClusterNetwork {
         }
         server.get()
               .connectTo(nodeInfo.address())
-              .onSuccess(channel -> {
-                  peerLinks.put(peerId, channel);
-                  processViewChange(ADD, peerId);
-              })
               .onFailure(cause -> log.warn("Failed to connect to {}: {}", peerId, cause));
     }
 
@@ -242,8 +285,8 @@ public class NettyClusterNetwork implements ClusterNetwork {
         if (channel == null) {
             return;
         }
+        channelToNodeId.remove(channel);
         processViewChange(REMOVE, disconnectNode.nodeId());
-        // Executed asynchronously to avoid blocking the main thread
         channel.close()
                .addListener(future -> {
                                 if (future.isSuccess()) {
@@ -271,6 +314,7 @@ public class NettyClusterNetwork implements ClusterNetwork {
         }
         if (!channel.isActive()) {
             peerLinks.remove(peerId);
+            channelToNodeId.remove(channel);
             processViewChange(REMOVE, peerId);
             log.warn("Node {} is not active", peerId);
             return;

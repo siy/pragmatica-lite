@@ -14,21 +14,26 @@ import java.util.List;
  * @param self                   This node's ID
  * @param reconciliationInterval How often to reconcile cluster state
  * @param pingInterval           How often to ping other nodes
+ * @param helloTimeout           Timeout for Hello handshake on new connections
  * @param coreNodes              Initial cluster members
  * @param tls                    TLS configuration for cluster communication (empty for plain TCP)
  */
 public record TopologyConfig(NodeId self,
                              TimeSpan reconciliationInterval,
                              TimeSpan pingInterval,
+                             TimeSpan helloTimeout,
                              List<NodeInfo> coreNodes,
                              Option<TlsConfig> tls) {
+    private static final TimeSpan DEFAULT_HELLO_TIMEOUT = TimeSpan.timeSpan(5)
+                                                                 .seconds();
+
     /**
-     * Create TopologyConfig without TLS (backward compatible).
+     * Create TopologyConfig without TLS and default hello timeout.
      */
     public TopologyConfig(NodeId self,
                           TimeSpan reconciliationInterval,
                           TimeSpan pingInterval,
                           List<NodeInfo> coreNodes) {
-        this(self, reconciliationInterval, pingInterval, coreNodes, Option.empty());
+        this(self, reconciliationInterval, pingInterval, DEFAULT_HELLO_TIMEOUT, coreNodes, Option.empty());
     }
 }

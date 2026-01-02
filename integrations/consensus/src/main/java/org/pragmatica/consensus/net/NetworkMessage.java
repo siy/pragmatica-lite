@@ -21,6 +21,11 @@ import org.pragmatica.messaging.Message;
 
 public sealed interface NetworkMessage extends Message.Wired {
     /**
+     * Hello - connection handshake, sent by both sides on channel activation
+     */
+    record Hello(NodeId sender) implements NetworkMessage {}
+
+    /**
      * Ping - test connection request
      */
     record Ping(NodeId sender) implements NetworkMessage {}
