@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TCP Server optimizations for low-latency networking
   - `TCP_NODELAY` socket option enabled by default (disables Nagle's algorithm)
   - `PooledByteBufAllocator` for efficient buffer management
+- Consensus Netty network layer
+  - `NettyClusterNetwork` - TCP-based cluster networking with Netty
+  - Hello protocol handshake for reliable connection identification
+  - Configurable hello timeout (default 5 seconds)
+  - Channel-to-NodeId tracking (eliminates address-based lookup issues)
 
 ## [0.9.3] - 2026-01-01
 
