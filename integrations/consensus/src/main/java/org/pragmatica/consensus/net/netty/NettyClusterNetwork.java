@@ -150,6 +150,7 @@ public class NettyClusterNetwork implements ClusterNetwork {
 
     private void peerDisconnected(Channel channel) {
         topologyManager.reverseLookup(channel.remoteAddress())
+                       .orElse(() -> topologyManager.reverseLookup(channel.localAddress()))
                        .onPresent(peerLinks::remove)
                        .onPresent(nodeId -> processViewChange(REMOVE, nodeId))
                        .onPresent(nodeId -> log.debug("Node {} disconnected", nodeId));
@@ -224,20 +225,15 @@ public class NettyClusterNetwork implements ClusterNetwork {
     private void connectPeer(NodeInfo nodeInfo) {
         var peerId = nodeInfo.id();
         if (peerLinks.containsKey(peerId)) {
-            log.warn("Node {} already connected", peerId);
             return;
         }
-        // Executed asynchronously to avoid blocking the main thread
         server.get()
               .connectTo(nodeInfo.address())
               .onSuccess(channel -> {
                   peerLinks.put(peerId, channel);
                   processViewChange(ADD, peerId);
               })
-              .onFailure(cause -> log.warn("Node {} failed to connect to {}: {}",
-                                           peerId,
-                                           nodeInfo.id(),
-                                           cause));
+              .onFailure(cause -> log.warn("Failed to connect to {}: {}", peerId, cause));
     }
 
     @Override
