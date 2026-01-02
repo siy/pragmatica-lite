@@ -153,9 +153,8 @@ public interface Server {
         bootstrap.bind(config.port())
                  .addListener((ChannelFutureListener) future -> {
                                   if (future.isSuccess()) {
-                                      var protocol = sslContext.isPresent()
-                                                     ? "TLS"
-                                                     : "TCP";
+                                      var protocol = sslContext.map(_ -> "TLS")
+                                                               .or("TCP");
                                       server.log.info("Server {} started on port {} ({})",
                                                       config.name(),
                                                       config.port(),
@@ -176,7 +175,7 @@ public interface Server {
     }
 
     /**
-     * Create a server with simple configuration.
+     * Create a server with the simple configuration.
      *
      * @param name            server name for logging
      * @param port            port to bind to

@@ -22,6 +22,7 @@ import org.pragmatica.http.websocket.WebSocketEndpoint;
 import org.pragmatica.http.websocket.WebSocketHandler;
 import org.pragmatica.http.websocket.WebSocketMessage;
 import org.pragmatica.http.websocket.WebSocketSession;
+import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.net.tcp.TlsContextFactory;
@@ -104,17 +105,10 @@ final class NettyHttpServer implements HttpServer {
 
     static Promise<HttpServer> create(HttpServerConfig config, BiConsumer<RequestContext, ResponseWriter> handler) {
         // Handle TLS
-        var sslContextResult = config.tls()
-                                     .map(TlsContextFactory::create)
-                                     .fold(() -> null,
-                                           r -> r);
-        if (sslContextResult != null && sslContextResult.isFailure()) {
-            return sslContextResult.<HttpServer> map(_ -> null)
-                                   .async();
-        }
-        var sslContext = sslContextResult != null
-                         ? sslContextResult.fold(_ -> null, ctx -> ctx)
-                         : null;
+        var sslContext = config.tls()
+                               .await()
+                               .flatMap(TlsContextFactory::create)
+                               .option();
         var bossGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
         var workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         var socketOptions = config.socketOptions();
@@ -137,13 +131,12 @@ final class NettyHttpServer implements HttpServer {
     private static void onBind(HttpServerConfig config,
                                Promise<HttpServer> promise,
                                ChannelFuture future,
-                               SslContext sslContext,
+                               Option<SslContext> sslContext,
                                MultiThreadIoEventLoopGroup bossGroup,
                                MultiThreadIoEventLoopGroup workerGroup) {
         if (future.isSuccess()) {
-            var protocol = sslContext != null
-                           ? "HTTPS"
-                           : "HTTP";
+            var protocol = sslContext.map(_ -> "HTTPS")
+                                     .or("HTTP");
             LOG.info("{} server '{}' started on port {}", protocol, config.name(), config.port());
             promise.succeed(new NettyHttpServer(config.port(), bossGroup, workerGroup, future.channel()));
         } else {
@@ -156,12 +149,12 @@ final class NettyHttpServer implements HttpServer {
     private static class HttpServerInitializer extends ChannelInitializer<SocketChannel> {
         private final HttpServerConfig config;
         private final BiConsumer<RequestContext, ResponseWriter> handler;
-        private final SslContext sslContext;
+        private final Option<SslContext> sslContext;
         private final Map<String, WebSocketEndpoint> wsEndpoints;
 
         HttpServerInitializer(HttpServerConfig config,
                               BiConsumer<RequestContext, ResponseWriter> handler,
-                              SslContext sslContext) {
+                              Option<SslContext> sslContext) {
             this.config = config;
             this.handler = handler;
             this.sslContext = sslContext;
@@ -174,9 +167,7 @@ final class NettyHttpServer implements HttpServer {
         @Override
         protected void initChannel(SocketChannel ch) {
             var pipeline = ch.pipeline();
-            if (sslContext != null) {
-                pipeline.addLast(sslContext.newHandler(ch.alloc()));
-            }
+            sslContext.onPresent(ctx -> pipeline.addLast(ctx.newHandler(ch.alloc())));
             pipeline.addLast(new HttpServerCodec());
             pipeline.addLast(new HttpObjectAggregator(config.maxContentLength()));
             if (config.chunkedWriteEnabled()) {
@@ -186,7 +177,7 @@ final class NettyHttpServer implements HttpServer {
             for (var endpoint : config.webSocketEndpoints()) {
                 pipeline.addLast(new WebSocketServerProtocolHandler(endpoint.path(), null, true));
             }
-            // Create new handler instance per channel (not @Sharable)
+            // Create a new handler instance per channel (not @Sharable)
             pipeline.addLast(new HttpRequestHandler(handler, wsEndpoints));
         }
     }
@@ -296,7 +287,7 @@ final class NettyHttpServer implements HttpServer {
         private RequestContext createRequestContext(String requestId, FullHttpRequest request) {
             var decoder = new QueryStringDecoder(request.uri());
             var path = decoder.path();
-            // Netty validates HTTP method before we receive it, so this will always succeed
+            // Netty validates the HTTP method before we receive it, so this will always succeed
             var method = HttpMethod.from(request.method()
                                                 .name())
                                    .fold(_ -> HttpMethod.GET, v -> v);
