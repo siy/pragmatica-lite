@@ -348,9 +348,16 @@ public class NettyClusterNetwork implements ClusterNetwork {
     }
 
     private List<NodeId> currentView() {
-        return peerLinks.keySet()
-                        .stream()
-                        .sorted()
-                        .toList();
+        // Include self in the view so leader election considers all nodes
+        return java.util.stream.Stream.concat(java.util.stream.Stream.of(self.id()),
+                                              peerLinks.keySet()
+                                                       .stream())
+                   .sorted()
+                   .toList();
+    }
+
+    @Override
+    public int connectedNodeCount() {
+        return peerLinks.size();
     }
 }

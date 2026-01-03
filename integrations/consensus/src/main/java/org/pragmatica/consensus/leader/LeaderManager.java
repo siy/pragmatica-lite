@@ -23,6 +23,7 @@ import org.pragmatica.consensus.topology.TopologyChangeNotification.NodeDown;
 import org.pragmatica.consensus.topology.TopologyChangeNotification.NodeRemoved;
 import org.pragmatica.messaging.MessageReceiver;
 import org.pragmatica.messaging.MessageRouter;
+import org.pragmatica.lang.Option;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,11 +37,32 @@ import static org.pragmatica.lang.Option.option;
  * source of truth for the cluster management. The leader node can be used for this purpose.
  */
 public interface LeaderManager {
+    /**
+     * Get the current leader node ID.
+     * @return the current leader, or empty if no leader is elected
+     */
+    Option<NodeId> leader();
+
+    /**
+     * Check if this node is the current leader.
+     */
+    boolean isLeader();
+
     static LeaderManager leaderManager(NodeId self, MessageRouter router) {
         record leaderManager(NodeId self,
                              MessageRouter router,
                              AtomicBoolean active,
                              AtomicReference<NodeId> currentLeader) implements LeaderManager {
+            @Override
+            public Option<NodeId> leader() {
+                return option(currentLeader.get());
+            }
+
+            @Override
+            public boolean isLeader() {
+                return self.equals(currentLeader.get());
+            }
+
             @Override
             public void nodeAdded(NodeAdded nodeAdded) {
                 tryElect(nodeAdded.topology()

@@ -73,4 +73,10 @@ public interface ClusterNetwork {
      * Stop the network.
      */
     Promise<Unit> stop();
+
+    /**
+     * Get the number of currently connected peer nodes.
+     * This count does NOT include self - only remote peers with active connections.
+     */
+    int connectedNodeCount();
 }

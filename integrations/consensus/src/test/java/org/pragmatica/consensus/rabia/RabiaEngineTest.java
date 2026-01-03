@@ -314,6 +314,11 @@ class RabiaEngineTest {
             return Promise.success(Unit.unit());
         }
 
+        @Override
+        public int connectedNodeCount() {
+            return 0; // Test network has no real connections
+        }
+
         List<ProtocolMessage> getMessages() {
             return Collections.unmodifiableList(messages);
         }

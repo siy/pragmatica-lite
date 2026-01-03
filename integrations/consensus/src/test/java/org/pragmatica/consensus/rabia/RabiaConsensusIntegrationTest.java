@@ -415,6 +415,11 @@ class RabiaConsensusIntegrationTest {
             return Promise.success(Unit.unit());
         }
 
+        @Override
+        public int connectedNodeCount() {
+            return cluster.nodeIds.size() - 1; // All nodes except self
+        }
+
         List<ProtocolMessage> getAllMessages() {
             return Collections.unmodifiableList(allMessages);
         }
