@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `TlsError` variants: `PrivateKeyLoadFailed`, `TrustStoreLoadFailed`, `ContextBuildFailed`, `WrongMode`
 - Client TLS support in `Server.connectTo()` for secure outgoing connections
 - mTLS support in `NettyClusterNetwork` for secure cluster communication
+- `NettyClusterNetwork` constructor with `additionalHandlers` parameter for custom pipeline handlers (e.g., metrics)
 
 ### Changed
 - TCP README updated with comprehensive TLS documentation and examples
