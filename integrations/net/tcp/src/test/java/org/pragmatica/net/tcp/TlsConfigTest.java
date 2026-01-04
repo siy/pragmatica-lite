@@ -25,59 +25,146 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TlsConfigTest {
 
     @Test
-    void selfSigned_creates_correct_type() {
-        var config = TlsConfig.selfSigned();
+    void selfSignedServer_creates_server_with_self_signed_identity() {
+        var config = TlsConfig.selfSignedServer();
 
-        assertThat(config).isInstanceOf(TlsConfig.SelfSigned.class);
+        assertThat(config).isInstanceOf(TlsConfig.Server.class);
+        var server = (TlsConfig.Server) config;
+        assertThat(server.identity()).isInstanceOf(TlsConfig.Identity.SelfSigned.class);
+        assertThat(server.clientAuth().isEmpty()).isTrue();
     }
 
     @Test
-    void fromFiles_creates_config_without_password() {
+    void server_creates_config_from_pem_files() {
         var certPath = Path.of("/path/to/cert.pem");
         var keyPath = Path.of("/path/to/key.pem");
 
-        var config = TlsConfig.fromFiles(certPath, keyPath);
+        var config = TlsConfig.server(certPath, keyPath);
 
-        assertThat(config).isInstanceOf(TlsConfig.FromFiles.class);
-        var fromFiles = (TlsConfig.FromFiles) config;
+        assertThat(config).isInstanceOf(TlsConfig.Server.class);
+        var server = (TlsConfig.Server) config;
+        assertThat(server.identity()).isInstanceOf(TlsConfig.Identity.FromFiles.class);
+        var fromFiles = (TlsConfig.Identity.FromFiles) server.identity();
         assertThat(fromFiles.certificatePath()).isEqualTo(certPath);
         assertThat(fromFiles.privateKeyPath()).isEqualTo(keyPath);
         assertThat(fromFiles.keyPassword().isEmpty()).isTrue();
     }
 
     @Test
-    void fromFiles_creates_config_with_password() {
+    void server_creates_config_with_password() {
         var certPath = Path.of("/path/to/cert.pem");
         var keyPath = Path.of("/path/to/key.pem");
         var password = "secret123";
 
-        var config = TlsConfig.fromFiles(certPath, keyPath, password);
+        var config = TlsConfig.server(certPath, keyPath, password);
 
-        assertThat(config).isInstanceOf(TlsConfig.FromFiles.class);
-        var fromFiles = (TlsConfig.FromFiles) config;
-        assertThat(fromFiles.certificatePath()).isEqualTo(certPath);
-        assertThat(fromFiles.privateKeyPath()).isEqualTo(keyPath);
+        assertThat(config).isInstanceOf(TlsConfig.Server.class);
+        var server = (TlsConfig.Server) config;
+        assertThat(server.identity()).isInstanceOf(TlsConfig.Identity.FromFiles.class);
+        var fromFiles = (TlsConfig.Identity.FromFiles) server.identity();
         fromFiles.keyPassword()
             .onEmpty(() -> assertThat(true).isFalse())
             .onPresent(pwd -> assertThat(pwd).isEqualTo(password));
     }
 
     @Test
-    void sealed_interface_covers_all_types() {
-        TlsConfig selfSigned = TlsConfig.selfSigned();
-        TlsConfig fromFiles = TlsConfig.fromFiles(Path.of("c"), Path.of("k"));
+    void client_creates_client_with_system_default_trust() {
+        var config = TlsConfig.client();
+
+        assertThat(config).isInstanceOf(TlsConfig.Client.class);
+        var client = (TlsConfig.Client) config;
+        assertThat(client.trust()).isInstanceOf(TlsConfig.Trust.SystemDefault.class);
+        assertThat(client.identity().isEmpty()).isTrue();
+    }
+
+    @Test
+    void insecureClient_creates_client_with_insecure_trust() {
+        var config = TlsConfig.insecureClient();
+
+        assertThat(config).isInstanceOf(TlsConfig.Client.class);
+        var client = (TlsConfig.Client) config;
+        assertThat(client.trust()).isInstanceOf(TlsConfig.Trust.InsecureTrustAll.class);
+    }
+
+    @Test
+    void clientWithCa_creates_client_with_custom_ca() {
+        var caPath = Path.of("/path/to/ca.pem");
+
+        var config = TlsConfig.clientWithCa(caPath);
+
+        assertThat(config).isInstanceOf(TlsConfig.Client.class);
+        var client = (TlsConfig.Client) config;
+        assertThat(client.trust()).isInstanceOf(TlsConfig.Trust.FromCaFile.class);
+        var fromCa = (TlsConfig.Trust.FromCaFile) client.trust();
+        assertThat(fromCa.caCertificatePath()).isEqualTo(caPath);
+    }
+
+    @Test
+    void mutual_creates_mtls_config() {
+        var certPath = Path.of("/path/to/cert.pem");
+        var keyPath = Path.of("/path/to/key.pem");
+        var caPath = Path.of("/path/to/ca.pem");
+
+        var config = TlsConfig.mutual(certPath, keyPath, caPath);
+
+        assertThat(config).isInstanceOf(TlsConfig.Mutual.class);
+        var mutual = (TlsConfig.Mutual) config;
+        assertThat(mutual.identity()).isInstanceOf(TlsConfig.Identity.FromFiles.class);
+        assertThat(mutual.trust()).isInstanceOf(TlsConfig.Trust.FromCaFile.class);
+    }
+
+    @Test
+    void selfSignedMutual_creates_dev_mtls_config() {
+        var config = TlsConfig.selfSignedMutual();
+
+        assertThat(config).isInstanceOf(TlsConfig.Mutual.class);
+        var mutual = (TlsConfig.Mutual) config;
+        assertThat(mutual.identity()).isInstanceOf(TlsConfig.Identity.SelfSigned.class);
+        assertThat(mutual.trust()).isInstanceOf(TlsConfig.Trust.InsecureTrustAll.class);
+    }
+
+    @Test
+    void sealed_interface_covers_all_modes() {
+        TlsConfig server = TlsConfig.selfSignedServer();
+        TlsConfig client = TlsConfig.client();
+        TlsConfig mutual = TlsConfig.selfSignedMutual();
 
         // Pattern matching works
-        var result = switch (selfSigned) {
-            case TlsConfig.SelfSigned() -> "self-signed";
-            case TlsConfig.FromFiles(var c, var k, var p) -> "from-files";
+        var result = switch (server) {
+            case TlsConfig.Server _ -> "server";
+            case TlsConfig.Client _ -> "client";
+            case TlsConfig.Mutual _ -> "mutual";
         };
-        assertThat(result).isEqualTo("self-signed");
+        assertThat(result).isEqualTo("server");
 
-        result = switch (fromFiles) {
-            case TlsConfig.SelfSigned() -> "self-signed";
-            case TlsConfig.FromFiles(var c, var k, var p) -> "from-files";
+        result = switch (client) {
+            case TlsConfig.Server _ -> "server";
+            case TlsConfig.Client _ -> "client";
+            case TlsConfig.Mutual _ -> "mutual";
         };
-        assertThat(result).isEqualTo("from-files");
+        assertThat(result).isEqualTo("client");
+
+        result = switch (mutual) {
+            case TlsConfig.Server _ -> "server";
+            case TlsConfig.Client _ -> "client";
+            case TlsConfig.Mutual _ -> "mutual";
+        };
+        assertThat(result).isEqualTo("mutual");
+    }
+
+    @Test
+    void deprecated_selfSigned_delegates_to_selfSignedServer() {
+        @SuppressWarnings("deprecation")
+        var config = TlsConfig.selfSigned();
+
+        assertThat(config).isInstanceOf(TlsConfig.Server.class);
+    }
+
+    @Test
+    void deprecated_fromFiles_delegates_to_server() {
+        @SuppressWarnings("deprecation")
+        var config = TlsConfig.fromFiles(Path.of("c"), Path.of("k"));
+
+        assertThat(config).isInstanceOf(TlsConfig.Server.class);
     }
 }

@@ -23,26 +23,38 @@ import org.pragmatica.lang.Option;
  *
  * @param name          server name for logging
  * @param port          port to bind to
- * @param tls           optional TLS configuration for secure connections
+ * @param tls           optional TLS configuration for incoming connections (server-side TLS)
+ * @param clientTls     optional TLS configuration for outgoing connections (client-side TLS)
  * @param socketOptions socket-level options
  */
 public record ServerConfig(String name,
                            int port,
                            Option<TlsConfig> tls,
+                           Option<TlsConfig> clientTls,
                            SocketOptions socketOptions) {
     public static ServerConfig serverConfig(String name, int port) {
-        return new ServerConfig(name, port, Option.empty(), SocketOptions.defaults());
+        return new ServerConfig(name, port, Option.empty(), Option.empty(), SocketOptions.defaults());
     }
 
     public static ServerConfig serverConfig(String name, int port, TlsConfig tls) {
-        return new ServerConfig(name, port, Option.some(tls), SocketOptions.defaults());
+        return new ServerConfig(name, port, Option.some(tls), Option.empty(), SocketOptions.defaults());
     }
 
     public ServerConfig withTls(TlsConfig tls) {
-        return new ServerConfig(name, port, Option.some(tls), socketOptions);
+        return new ServerConfig(name, port, Option.some(tls), clientTls, socketOptions);
+    }
+
+    /**
+     * Configure TLS for outgoing connections (when this server connects to other servers).
+     *
+     * @param clientTls TLS configuration for client-side connections
+     * @return new config with client TLS
+     */
+    public ServerConfig withClientTls(TlsConfig clientTls) {
+        return new ServerConfig(name, port, tls, Option.some(clientTls), socketOptions);
     }
 
     public ServerConfig withSocketOptions(SocketOptions socketOptions) {
-        return new ServerConfig(name, port, tls, socketOptions);
+        return new ServerConfig(name, port, tls, clientTls, socketOptions);
     }
 }

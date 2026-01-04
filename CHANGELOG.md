@@ -7,8 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.9.7] - 2026-01-04
 
+### Added
+- Unified TLS configuration API with server, client, and mutual TLS support
+  - `TlsConfig.Identity` sealed interface with `SelfSigned` and `FromFiles` variants
+  - `TlsConfig.Trust` sealed interface with `SystemDefault`, `FromCaFile`, `InsecureTrustAll` variants
+  - `TlsConfig.Server` for server-side TLS with optional client authentication
+  - `TlsConfig.Client` for client-side TLS with optional identity
+  - `TlsConfig.Mutual` for bidirectional mTLS authentication
+- New TLS factory methods:
+  - `TlsConfig.selfSignedServer()` - self-signed server certificate
+  - `TlsConfig.server(cert, key)` - server from PEM files
+  - `TlsConfig.serverWithClientAuth(cert, key, ca)` - server requiring client certs
+  - `TlsConfig.client()` - client using system CAs
+  - `TlsConfig.clientWithCa(ca)` - client with custom CA
+  - `TlsConfig.insecureClient()` - development client trusting all certs
+  - `TlsConfig.mutual(cert, key, ca)` - mutual TLS configuration
+  - `TlsConfig.selfSignedMutual()` - development mTLS configuration
+- `ServerConfig.withClientTls(TlsConfig)` - configure TLS for outgoing connections
+- `TlsContextFactory.createServer(TlsConfig)` - create server-side SSL context
+- `TlsContextFactory.createClient(TlsConfig)` - create client-side SSL context
+- New `TlsError` variants: `PrivateKeyLoadFailed`, `TrustStoreLoadFailed`, `ContextBuildFailed`, `WrongMode`
+- Client TLS support in `Server.connectTo()` for secure outgoing connections
+- mTLS support in `NettyClusterNetwork` for secure cluster communication
+
 ### Changed
-- TBD
+- TCP README updated with comprehensive TLS documentation and examples
+
+### Deprecated
+- `TlsConfig.selfSigned()` - use `selfSignedServer()` instead
+- `TlsConfig.fromFiles()` - use `server()` instead
+- `TlsContextFactory.create()` - use `createServer()` or `createClient()` instead
 
 ## [0.9.6] - 2026-01-04
 

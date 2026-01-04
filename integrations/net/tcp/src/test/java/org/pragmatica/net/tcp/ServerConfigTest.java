@@ -30,12 +30,13 @@ class ServerConfigTest {
         assertThat(config.name()).isEqualTo("test-server");
         assertThat(config.port()).isEqualTo(8080);
         assertThat(config.tls().isEmpty()).isTrue();
+        assertThat(config.clientTls().isEmpty()).isTrue();
         assertThat(config.socketOptions()).isEqualTo(SocketOptions.defaults());
     }
 
     @Test
     void serverConfig_creates_with_tls() {
-        var tls = TlsConfig.selfSigned();
+        var tls = TlsConfig.selfSignedServer();
         var config = serverConfig("secure-server", 8443, tls);
 
         assertThat(config.name()).isEqualTo("secure-server");
@@ -46,13 +47,23 @@ class ServerConfigTest {
     }
 
     @Test
-    void withTls_adds_tls_configuration() {
+    void withTls_adds_server_tls_configuration() {
         var config = serverConfig("server", 8080)
-            .withTls(TlsConfig.selfSigned());
+            .withTls(TlsConfig.selfSignedServer());
 
         config.tls()
             .onEmpty(() -> assertThat(true).isFalse())
-            .onPresent(t -> assertThat(t).isInstanceOf(TlsConfig.SelfSigned.class));
+            .onPresent(t -> assertThat(t).isInstanceOf(TlsConfig.Server.class));
+    }
+
+    @Test
+    void withClientTls_adds_client_tls_configuration() {
+        var config = serverConfig("server", 8080)
+            .withClientTls(TlsConfig.client());
+
+        config.clientTls()
+            .onEmpty(() -> assertThat(true).isFalse())
+            .onPresent(t -> assertThat(t).isInstanceOf(TlsConfig.Client.class));
     }
 
     @Test
@@ -71,12 +82,29 @@ class ServerConfigTest {
     @Test
     void chained_configuration_works() {
         var config = serverConfig("full-config", 9000)
-            .withTls(TlsConfig.selfSigned())
+            .withTls(TlsConfig.selfSignedServer())
+            .withClientTls(TlsConfig.insecureClient())
             .withSocketOptions(SocketOptions.socketOptions().withSoBacklog(512));
 
         assertThat(config.name()).isEqualTo("full-config");
         assertThat(config.port()).isEqualTo(9000);
         assertThat(config.tls().isPresent()).isTrue();
+        assertThat(config.clientTls().isPresent()).isTrue();
         assertThat(config.socketOptions().soBacklog()).isEqualTo(512);
+    }
+
+    @Test
+    void mutual_tls_can_be_used_for_both_server_and_client() {
+        var mtls = TlsConfig.selfSignedMutual();
+        var config = serverConfig("mtls-server", 9000)
+            .withTls(mtls)
+            .withClientTls(mtls);
+
+        config.tls()
+            .onEmpty(() -> assertThat(true).isFalse())
+            .onPresent(t -> assertThat(t).isInstanceOf(TlsConfig.Mutual.class));
+        config.clientTls()
+            .onEmpty(() -> assertThat(true).isFalse())
+            .onPresent(t -> assertThat(t).isInstanceOf(TlsConfig.Mutual.class));
     }
 }
