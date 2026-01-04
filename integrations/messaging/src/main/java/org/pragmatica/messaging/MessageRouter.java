@@ -67,6 +67,32 @@ public sealed interface MessageRouter {
         Promise.async(() -> route(messageSupplier.get()));
     }
 
+    /// This class is necessary to solve chicken-and-egg problem: many classes which handle messages
+    /// need an instance of MessageRouter for construction. Instance of this class is passed to them.
+    /// Actual delegate is set when the MessageRouter instance is constructed.
+    sealed interface DelegateRouter extends MessageRouter {
+        void replaceDelegate(MessageRouter delegate);
+
+        static DelegateRouter delegate() {
+            return new DelegateRouterImpl();
+        }
+
+        // WARNING: implementation is not thread-safe. It meant to be configured before use.
+        final class DelegateRouterImpl implements DelegateRouter {
+            private MessageRouter delegate;
+
+            @Override
+            public void replaceDelegate(MessageRouter delegate) {
+                this.delegate = delegate;
+            }
+
+            @Override
+            public <T extends Message> void route(T message) {
+                delegate.route(message);
+            }
+        }
+    }
+
     /**
      * Create a new mutable router.
      */

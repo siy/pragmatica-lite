@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.9.6] - 2026-01-04
 
+### Added
+- `MessageRouter.DelegateRouter` - solves circular dependency when classes need MessageRouter during construction
+
 ### Changed
-- TBD
+- Remove unnecessary executor from `NettyClusterNetwork.broadcast()` - Netty's `writeAndFlush` is already non-blocking
 
 ## [0.9.5] - 2026-01-03
 
