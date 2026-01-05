@@ -35,6 +35,26 @@ public sealed interface TlsError extends Cause {
     }
 
     /**
+     * Failed to load private key from file.
+     */
+    record PrivateKeyLoadFailed(Path path, Throwable cause) implements TlsError {
+        @Override
+        public String message() {
+            return "Failed to load private key from " + path + ": " + cause.getMessage();
+        }
+    }
+
+    /**
+     * Failed to load CA certificate (trust store) from file.
+     */
+    record TrustStoreLoadFailed(Path path, Throwable cause) implements TlsError {
+        @Override
+        public String message() {
+            return "Failed to load CA certificate from " + path + ": " + cause.getMessage();
+        }
+    }
+
+    /**
      * Failed to generate self-signed certificate.
      */
     record SelfSignedGenerationFailed(Throwable cause) implements TlsError {
@@ -42,5 +62,32 @@ public sealed interface TlsError extends Cause {
         public String message() {
             return "Failed to generate self-signed certificate: " + cause.getMessage();
         }
+    }
+
+    /**
+     * Failed to build SSL context.
+     */
+    record ContextBuildFailed(Throwable cause) implements TlsError {
+        @Override
+        public String message() {
+            return "Failed to build SSL context: " + cause.getMessage();
+        }
+    }
+
+    /**
+     * Invalid TLS mode for the requested operation.
+     */
+    record WrongMode(String details) implements TlsError {
+        @Override
+        public String message() {
+            return "Invalid TLS mode: " + details;
+        }
+    }
+
+    /**
+     * Create a WrongMode error with the given details.
+     */
+    static TlsError wrongMode(String details) {
+        return new WrongMode(details);
     }
 }

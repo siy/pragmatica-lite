@@ -77,21 +77,27 @@ public class NettyClusterNetwork implements ClusterNetwork {
                                Serializer serializer,
                                Deserializer deserializer,
                                MessageRouter router) {
+        this(topologyManager, serializer, deserializer, router, List.of());
+    }
+
+    public NettyClusterNetwork(TopologyManager topologyManager,
+                               Serializer serializer,
+                               Deserializer deserializer,
+                               MessageRouter router,
+                               List<ChannelHandler> additionalHandlers) {
         this.self = topologyManager.self();
         this.topologyManager = topologyManager;
         this.router = router;
-        this.handlers = () -> List.of(new LengthFieldBasedFrameDecoder(1048576,
-                                                                       0,
-                                                                       LENGTH_FIELD_LEN,
-                                                                       0,
-                                                                       INITIAL_BYTES_TO_STRIP),
-                                      new LengthFieldPrepender(LENGTH_FIELD_LEN),
-                                      new Decoder(deserializer),
-                                      new Encoder(serializer),
-                                      new Handler(this::peerConnected,
-                                                  this::peerDisconnected,
-                                                  this::handleHello,
-                                                  router::route));
+        this.handlers = () -> {
+            var result = new ArrayList<ChannelHandler>();
+            result.add(new LengthFieldBasedFrameDecoder(1048576, 0, LENGTH_FIELD_LEN, 0, INITIAL_BYTES_TO_STRIP));
+            result.add(new LengthFieldPrepender(LENGTH_FIELD_LEN));
+            result.add(new Decoder(deserializer));
+            result.add(new Encoder(serializer));
+            result.addAll(additionalHandlers);
+            result.add(new Handler(this::peerConnected, this::peerDisconnected, this::handleHello, router::route));
+            return result;
+        };
         schedulePing();
     }
 
@@ -198,8 +204,10 @@ public class NettyClusterNetwork implements ClusterNetwork {
             var serverConfig = ServerConfig.serverConfig("NettyClusterNetwork",
                                                          self.address()
                                                              .port());
+            // Apply TLS for both incoming (server) and outgoing (client) connections
             var effectiveConfig = topologyManager.tls()
-                                                 .map(serverConfig::withTls)
+                                                 .map(tls -> serverConfig.withTls(tls)
+                                                                         .withClientTls(tls))
                                                  .or(serverConfig);
             return Server.server(effectiveConfig, handlers)
                          .onSuccess(NettyClusterNetwork.this.server::set)

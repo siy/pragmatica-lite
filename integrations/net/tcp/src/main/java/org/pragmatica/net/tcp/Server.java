@@ -71,7 +71,8 @@ public interface Server {
                       EventLoopGroup bossGroup,
                       EventLoopGroup workerGroup,
                       Channel serverChannel,
-                      Supplier<List<ChannelHandler>> channelHandlers) implements Server {
+                      Supplier<List<ChannelHandler>> channelHandlers,
+                      Option<SslContext> clientSslContext) implements Server {
             private static final Logger log = LoggerFactory.getLogger(Server.class);
 
             @Override
@@ -93,15 +94,13 @@ public interface Server {
                 log.info("Server {} stopped", name());
             }
 
-            //TODO: add support for TLS 
             @Override
             public Promise<Channel> connectTo(NodeAddress address) {
                 var bootstrap = new Bootstrap().group(workerGroup)
                                                .channel(NioSocketChannel.class)
                                                .option(ChannelOption.TCP_NODELAY, true)
                                                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-                                               .handler(createChildHandler(channelHandlers,
-                                                                           Option.none()));
+                                               .handler(createChildHandler(channelHandlers, clientSslContext));
                 var promise = Promise.<Channel>promise();
                 bootstrap.connect(address.host(),
                                   address.port())
@@ -129,11 +128,16 @@ public interface Server {
                 };
             }
         }
-        // Handle TLS configuration
+        // Handle TLS configuration for server (incoming connections)
         var sslContext = config.tls()
                                .await()
-                               .flatMap(TlsContextFactory::create)
+                               .flatMap(TlsContextFactory::createServer)
                                .option();
+        // Handle TLS configuration for client (outgoing connections)
+        var clientSslContext = config.clientTls()
+                                     .await()
+                                     .flatMap(TlsContextFactory::createClient)
+                                     .option();
         var bossGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
         var workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         var socketOptions = config.socketOptions();
@@ -164,7 +168,8 @@ public interface Server {
                                                                  bossGroup,
                                                                  workerGroup,
                                                                  future.channel(),
-                                                                 channelHandlers));
+                                                                 channelHandlers,
+                                                                 clientSslContext));
                                   } else {
                                       bossGroup.shutdownGracefully();
                                       workerGroup.shutdownGracefully();
