@@ -21,9 +21,9 @@ if [ -n "$(git status --porcelain)" ]; then
     exit 1
 fi
 
-# Verify tests pass
+# Verify tests pass (use verify to install locally before testing)
 echo "🧪 Running tests..."
-mvn clean test -q
+mvn clean verify -q
 
 # Verify GPG setup
 echo "🔐 Checking GPG configuration..."
