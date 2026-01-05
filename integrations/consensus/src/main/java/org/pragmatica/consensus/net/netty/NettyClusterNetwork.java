@@ -272,9 +272,13 @@ public class NettyClusterNetwork implements ClusterNetwork {
         if (peerLinks.containsKey(peerId)) {
             return;
         }
-        server.get()
-              .connectTo(nodeInfo.address())
-              .onFailure(cause -> log.warn("Failed to connect to {}: {}", peerId, cause));
+        var serverRef = server.get();
+        if (serverRef == null) {
+            log.debug("Server not yet initialized, skipping connection to {}", peerId);
+            return;
+        }
+        serverRef.connectTo(nodeInfo.address())
+                 .onFailure(cause -> log.warn("Failed to connect to {}: {}", peerId, cause));
     }
 
     @Override

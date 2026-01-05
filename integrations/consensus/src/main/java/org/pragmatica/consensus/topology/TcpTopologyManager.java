@@ -119,7 +119,11 @@ public interface TcpTopologyManager extends TopologyManager {
                     nodeIdsByAddress()
                                     .putIfAbsent(nodeInfo.address(),
                                                  nodeInfo.id());
-                    requestConnection(nodeInfo.id());
+                    // Only request connection if topology manager is active (router is ready)
+                    if (active()
+                              .get()) {
+                        requestConnection(nodeInfo.id());
+                    }
                 }
             }
 
