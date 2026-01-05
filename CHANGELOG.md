@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.8] - 2026-01-05
+
+### Fixed
+- Simplify peer connection null check in `NettyClusterNetwork` to prevent NPE when connecting before server is ready
+
 ## [0.9.7] - 2026-01-04
 
 ### Added
