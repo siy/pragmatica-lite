@@ -24,17 +24,15 @@ import org.pragmatica.net.tcp.TlsConfig;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Configuration for HTTP server.
- *
- * @param name                 server name for logging
- * @param port                 port to bind to
- * @param tls                  optional TLS configuration
- * @param maxContentLength     maximum content length for requests
- * @param webSocketEndpoints   WebSocket endpoints
- * @param chunkedWriteEnabled  whether to enable chunked transfer encoding
- * @param socketOptions        socket-level options
- */
+/// Configuration for HTTP server.
+///
+/// @param name                 server name for logging
+/// @param port                 port to bind to
+/// @param tls                  optional TLS configuration
+/// @param maxContentLength     maximum content length for requests
+/// @param webSocketEndpoints   WebSocket endpoints
+/// @param chunkedWriteEnabled  whether to enable chunked transfer encoding
+/// @param socketOptions        socket-level options
 public record HttpServerConfig(String name,
                                int port,
                                Option<TlsConfig> tls,

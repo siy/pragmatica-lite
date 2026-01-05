@@ -41,60 +41,46 @@ import static org.pragmatica.lang.Promise.success;
 import static org.pragmatica.net.dns.DomainAddress.domainAddress;
 import static org.pragmatica.net.dns.DomainName.domainName;
 
-/**
- * Asynchronous domain name resolver with TTL-based caching.
- * <p>
- * The cache uses promise mechanics for automatic TTL expiry - no background threads required.
- * Each successful resolution schedules its own eviction via {@code promise.async(ttl, ...)}.
- */
+/// Asynchronous domain name resolver with TTL-based caching.
+///
+/// The cache uses promise mechanics for automatic TTL expiry - no background threads required.
+/// Each successful resolution schedules its own eviction via `promise.async(ttl, ...)`.
 public interface DomainNameResolver extends AsyncCloseable {
     int DNS_UDP_PORT = 53;
     Result<DomainAddress> UNKNOWN_DOMAIN = new UnknownDomain("Unknown domain").result();
 
-    /**
-     * Resolve domain name, using cache if available.
-     */
+    /// Resolve domain name, using cache if available.
     default Promise<DomainAddress> resolve(String name) {
         return resolve(domainName(name));
     }
 
-    /**
-     * Resolve domain name, using cache if available.
-     */
+    /// Resolve domain name, using cache if available.
     Promise<DomainAddress> resolve(DomainName name);
 
-    /**
-     * Get cached resolution result without triggering new resolution.
-     */
+    /// Get cached resolution result without triggering new resolution.
     default Promise<DomainAddress> resolveCached(String name) {
         return resolveCached(domainName(name));
     }
 
-    /**
-     * Get cached resolution result without triggering new resolution.
-     */
+    /// Get cached resolution result without triggering new resolution.
     Promise<DomainAddress> resolveCached(DomainName name);
 
-    /**
-     * Create resolver with provided DNS servers, using own event loop.
-     * The event loop will be shut down when the resolver is closed.
-     *
-     * @param servers list of DNS server addresses
-     * @return new resolver instance
-     */
+    /// Create resolver with provided DNS servers, using own event loop.
+    /// The event loop will be shut down when the resolver is closed.
+    ///
+    /// @param servers list of DNS server addresses
+    /// @return new resolver instance
     static DomainNameResolver domainNameResolver(List<InetAddress> servers) {
         var eventLoop = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
         return new Resolver(DnsClient.dnsClient(eventLoop), prepareServers(servers), buildDnsCache(), eventLoop, true);
     }
 
-    /**
-     * Create resolver with provided DNS servers, sharing the given event loop.
-     * The event loop will NOT be shut down when the resolver is closed.
-     *
-     * @param servers    list of DNS server addresses
-     * @param eventLoop  event loop group to use for DNS queries
-     * @return new resolver instance
-     */
+    /// Create resolver with provided DNS servers, sharing the given event loop.
+    /// The event loop will NOT be shut down when the resolver is closed.
+    ///
+    /// @param servers    list of DNS server addresses
+    /// @param eventLoop  event loop group to use for DNS queries
+    /// @return new resolver instance
     static DomainNameResolver domainNameResolver(List<InetAddress> servers, EventLoopGroup eventLoop) {
         return new Resolver(DnsClient.dnsClient(eventLoop), prepareServers(servers), buildDnsCache(), eventLoop, false);
     }

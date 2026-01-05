@@ -26,16 +26,12 @@ import org.apache.fury.io.FuryInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Apache Fury-based deserializer implementation.
- */
+/// Apache Fury-based deserializer implementation.
 public interface FuryDeserializer extends Deserializer {
-    /**
-     * Create a Fury deserializer with the given class registrators.
-     *
-     * @param registrators class registrators to apply
-     * @return a thread-safe Fury deserializer
-     */
+    /// Create a Fury deserializer with the given class registrators.
+    ///
+    /// @param registrators class registrators to apply
+    /// @return a thread-safe Fury deserializer
     static FuryDeserializer furyDeserializer(ClassRegistrator... registrators) {
         record furyDeserializer(ThreadSafeFury fury) implements FuryDeserializer {
             private static final Logger log = LoggerFactory.getLogger(FuryDeserializer.class);

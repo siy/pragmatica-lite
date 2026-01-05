@@ -54,19 +54,16 @@ import static org.pragmatica.consensus.rabia.Batch.emptyBatch;
 import static org.pragmatica.consensus.rabia.RabiaPersistence.SavedState.savedState;
 import static org.pragmatica.consensus.rabia.RabiaProtocolMessage.Asynchronous.SyncRequest;
 
-/**
- * Implementation of the Rabia consensus protocol.
- * <p>
- * Rabia is a crash-fault-tolerant (CFT) consensus algorithm that provides:
- * <ul>
- *   <li>No persistent event log required</li>
- *   <li>Batch-based command processing</li>
- *   <li>Automatic state synchronization</li>
- *   <li>Deterministic decision-making with coin-flip fallback</li>
- * </ul>
- *
- * @param <C> Command type
- */
+/// Implementation of the Rabia consensus protocol.
+///
+/// Rabia is a crash-fault-tolerant (CFT) consensus algorithm that provides:
+///
+///   - No persistent event log required
+///   - Batch-based command processing
+///   - Automatic state synchronization
+///   - Deterministic decision-making with coin-flip fallback
+///
+/// @param <C> Command type
 public class RabiaEngine<C extends Command> {
     private static final Logger log = LoggerFactory.getLogger(RabiaEngine.class);
     private static final double SCALE = 0.5d;
@@ -105,14 +102,12 @@ public class RabiaEngine<C extends Command> {
     private final ScheduledFuture< ? > syncTask;
 
     //--------------------------------- Node State End
-    /**
-     * Creates a new Rabia consensus engine without metrics.
-     *
-     * @param topologyManager The topology manager for node communication
-     * @param network         The network implementation
-     * @param stateMachine    The state machine to apply commands to
-     * @param config          Configuration for the consensus engine
-     */
+    /// Creates a new Rabia consensus engine without metrics.
+    ///
+    /// @param topologyManager The topology manager for node communication
+    /// @param network         The network implementation
+    /// @param stateMachine    The state machine to apply commands to
+    /// @param config          Configuration for the consensus engine
     public RabiaEngine(TopologyManager topologyManager,
                        ClusterNetwork network,
                        StateMachine<C> stateMachine,
@@ -120,15 +115,13 @@ public class RabiaEngine<C extends Command> {
         this(topologyManager, network, stateMachine, config, ConsensusMetrics.noop());
     }
 
-    /**
-     * Creates a new Rabia consensus engine with metrics.
-     *
-     * @param topologyManager The topology manager for node communication
-     * @param network         The network implementation
-     * @param stateMachine    The state machine to apply commands to
-     * @param config          Configuration for the consensus engine
-     * @param metrics         Metrics collector for observability
-     */
+    /// Creates a new Rabia consensus engine with metrics.
+    ///
+    /// @param topologyManager The topology manager for node communication
+    /// @param network         The network implementation
+    /// @param stateMachine    The state machine to apply commands to
+    /// @param config          Configuration for the consensus engine
+    /// @param metrics         Metrics collector for observability
     public RabiaEngine(TopologyManager topologyManager,
                        ClusterNetwork network,
                        StateMachine<C> stateMachine,
@@ -274,9 +267,7 @@ public class RabiaEngine<C extends Command> {
                            (Batch<C>) newBatch.batch());
     }
 
-    /**
-     * Starts a new phase with pending commands.
-     */
+    /// Starts a new phase with pending commands.
     private void startPhase() {
         // Use compareAndSet to atomically check and set - prevents race condition
         if (!isInPhase.compareAndSet(false, true)) {
@@ -307,9 +298,7 @@ public class RabiaEngine<C extends Command> {
         }
     }
 
-    /**
-     * Synchronizes with other nodes to catch up if needed.
-     */
+    /// Synchronizes with other nodes to catch up if needed.
     private void synchronize() {
         if (active.get()) {
             return;
@@ -324,9 +313,7 @@ public class RabiaEngine<C extends Command> {
                                        .randomize(SCALE));
     }
 
-    /**
-     * Handles a synchronization response from another node.
-     */
+    /// Handles a synchronization response from another node.
     private void handleSyncResponse(SyncResponse<C> response) {
         if (active.get()) {
             log.trace("Node {} ignoring synchronization response {}. Node is active", self, response);
@@ -376,9 +363,7 @@ public class RabiaEngine<C extends Command> {
                     .onFailure(cause -> log.error("Node {} failed to restore state: {}", self, cause));
     }
 
-    /**
-     * Activate node and adjust phase, if necessary.
-     */
+    /// Activate node and adjust phase, if necessary.
     private void activate() {
         active.set(true);
         startPromise.get()
@@ -389,9 +374,7 @@ public class RabiaEngine<C extends Command> {
         executor.execute(this::startPhase);
     }
 
-    /**
-     * Handles a synchronization request from another node.
-     */
+    /// Handles a synchronization request from another node.
     @MessageReceiver
     public void handleSyncRequest(SyncRequest request) {
         if (active.get()) {
@@ -412,9 +395,7 @@ public class RabiaEngine<C extends Command> {
         }
     }
 
-    /**
-     * Cleans up old phase data to prevent memory leaks.
-     */
+    /// Cleans up old phase data to prevent memory leaks.
     private void cleanupOldPhases() {
         if (!active.get()) {
             return;
@@ -428,9 +409,7 @@ public class RabiaEngine<C extends Command> {
         return phase.compareTo(current) < 0 && current.value() - phase.value() > config.removeOlderThanPhases();
     }
 
-    /**
-     * Handles a Propose message from another node.
-     */
+    /// Handles a Propose message from another node.
     private void handlePropose(Propose<C> propose) {
         if (!active.get()) {
             log.warn("Node {} ignores proposal {}. Node is dormant", self, propose);
@@ -489,9 +468,7 @@ public class RabiaEngine<C extends Command> {
         }
     }
 
-    /**
-     * Handles a round 1 vote from another node.
-     */
+    /// Handles a round 1 vote from another node.
     private void handleVoteRound1(VoteRound1 vote) {
         if (!active.get()) {
             log.warn("Node {} ignores vote1 {}. Node is dormant", self, vote);
@@ -518,9 +495,7 @@ public class RabiaEngine<C extends Command> {
         }
     }
 
-    /**
-     * Handles a round 2 vote from another node.
-     */
+    /// Handles a round 2 vote from another node.
     private void handleVoteRound2(VoteRound2 vote) {
         if (!active.get()) {
             log.warn("Node {} ignores vote2 {}. Node is dormant", self, vote);
@@ -576,9 +551,7 @@ public class RabiaEngine<C extends Command> {
                                         });
     }
 
-    /**
-     * Handles a decision message from another node.
-     */
+    /// Handles a decision message from another node.
     private void handleDecision(Decision<C> decision) {
         if (!active.get()) {
             log.warn("Node {} ignores decision {}. Node is dormant", self, decision);
@@ -588,10 +561,8 @@ public class RabiaEngine<C extends Command> {
         commitDecision(getOrCreatePhaseData(decision.phase()), decision);
     }
 
-    /**
-     * Moves to the next phase after a decision.
-     * Per Rabia spec: the decision value is carried forward as the round 1 vote for the next phase.
-     */
+    /// Moves to the next phase after a decision.
+    /// Per Rabia spec: the decision value is carried forward as the round 1 vote for the next phase.
     private void moveToNextPhase(Phase currentPhase, StateValue decidedValue) {
         var nextPhase = currentPhase.successor();
         this.currentPhase.set(nextPhase);
@@ -605,9 +576,7 @@ public class RabiaEngine<C extends Command> {
         }
     }
 
-    /**
-     * Gets or creates phase data for a specific phase.
-     */
+    /// Gets or creates phase data for a specific phase.
     private PhaseData<C> getOrCreatePhaseData(Phase phase) {
         return phases.computeIfAbsent(phase, PhaseData::new);
     }

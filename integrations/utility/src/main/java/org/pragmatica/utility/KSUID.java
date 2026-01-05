@@ -21,28 +21,25 @@ import org.pragmatica.lang.Result;
 import java.security.SecureRandom;
 import java.util.Arrays;
 
-/**
- * K-Sortable Unique Identifier (KSUID) implementation.
- * <p>
- * A KSUID is a 20-byte identifier consisting of:
- * <ul>
- *   <li>4 bytes: 32-bit unsigned timestamp (seconds since KSUID epoch)</li>
- *   <li>16 bytes: 128-bit cryptographically random payload</li>
- * </ul>
- * <p>
- * The text representation is 27 characters using base62 encoding
- * (0-9, A-Z, a-z), which preserves lexicographic ordering by timestamp.
- * <p>
- * TODO: Consider enhanced timestamp resolution for high-frequency event ordering.
- * Current 1-second resolution may be insufficient for events happening in rapid succession.
- * Proposed enhancement: 32-bit seconds + 8-bit sub-second fraction (~3.9ms resolution),
- * stealing 8 bits from random payload (reducing from 128 to 120 bits).
- * Structure would become: [4 bytes seconds][1 byte fraction][15 bytes random].
- * This would deviate from standard KSUID spec but maintain same size and encoding.
- * Cryptographic impact: minimal (120 bits still provides 2^60 birthday bound).
- *
- * @see <a href="https://github.com/segmentio/ksuid">KSUID Specification</a>
- */
+/// K-Sortable Unique Identifier (KSUID) implementation.
+///
+/// A KSUID is a 20-byte identifier consisting of:
+///
+///   - 4 bytes: 32-bit unsigned timestamp (seconds since KSUID epoch)
+///   - 16 bytes: 128-bit cryptographically random payload
+///
+///// The text representation is 27 characters using base62 encoding
+/// (0-9, A-Z, a-z), which preserves lexicographic ordering by timestamp.
+///
+/// TODO: Consider enhanced timestamp resolution for high-frequency event ordering.
+/// Current 1-second resolution may be insufficient for events happening in rapid succession.
+/// Proposed enhancement: 32-bit seconds + 8-bit sub-second fraction (~3.9ms resolution),
+/// stealing 8 bits from random payload (reducing from 128 to 120 bits).
+/// Structure would become: [4 bytes seconds][1 byte fraction][15 bytes random].
+/// This would deviate from standard KSUID spec but maintain same size and encoding.
+/// Cryptographic impact: minimal (120 bits still provides 2^60 birthday bound).
+///
+/// @see <a href="https://github.com/segmentio/ksuid">KSUID Specification</a>
 public final class KSUID implements Comparable<KSUID> {
     /// KSUID epoch: May 13, 2014 18:53:20 UTC (Unix timestamp 1400000000)
     public static final long EPOCH = 1_400_000_000L;

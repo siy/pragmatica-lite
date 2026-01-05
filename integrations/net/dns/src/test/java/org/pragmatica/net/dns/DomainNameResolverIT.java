@@ -30,12 +30,10 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.pragmatica.net.dns.DomainNameResolver.domainNameResolver;
 
-/**
- * Integration tests for DNS resolution using real DNS servers.
- * <p>
- * These tests require network access and may be flaky if DNS servers are unreachable.
- * Enable by setting environment variable: DNS_INTEGRATION_TESTS=true
- */
+/// Integration tests for DNS resolution using real DNS servers.
+///
+/// These tests require network access and may be flaky if DNS servers are unreachable.
+/// Enable by setting environment variable: DNS_INTEGRATION_TESTS=true
 @EnabledIfEnvironmentVariable(named = "DNS_INTEGRATION_TESTS", matches = "true")
 class DomainNameResolverIT {
 

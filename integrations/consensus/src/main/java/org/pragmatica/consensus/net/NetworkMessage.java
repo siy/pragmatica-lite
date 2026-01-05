@@ -20,18 +20,12 @@ import org.pragmatica.consensus.NodeId;
 import org.pragmatica.messaging.Message;
 
 public sealed interface NetworkMessage extends Message.Wired {
-    /**
-     * Hello - connection handshake, sent by both sides on channel activation
-     */
+    /// Hello - connection handshake, sent by both sides on channel activation
     record Hello(NodeId sender) implements NetworkMessage {}
 
-    /**
-     * Ping - test connection request
-     */
+    /// Ping - test connection request
     record Ping(NodeId sender) implements NetworkMessage {}
 
-    /**
-     * Pong - test connection response
-     */
+    /// Pong - test connection response
     record Pong(NodeId sender) implements NetworkMessage {}
 }

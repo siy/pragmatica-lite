@@ -22,9 +22,7 @@ import org.pragmatica.messaging.Message;
 
 import java.util.List;
 
-/**
- * Notification related to topology change and discovery.
- */
+/// Notification related to topology change and discovery.
 sealed public interface TopologyManagementMessage extends Message.Local {
     record AddNode(NodeInfo nodeInfo) implements TopologyManagementMessage {}
 

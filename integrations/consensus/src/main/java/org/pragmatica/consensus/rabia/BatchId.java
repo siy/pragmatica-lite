@@ -18,9 +18,7 @@ package org.pragmatica.consensus.rabia;
 
 import org.pragmatica.utility.IdGenerator;
 
-/**
- * Unique identifier for a command batch.
- */
+/// Unique identifier for a command batch.
 public record BatchId(String id) {
     public static BatchId batchId(String id) {
         return new BatchId(id);

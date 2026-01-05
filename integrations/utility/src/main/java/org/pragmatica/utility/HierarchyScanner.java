@@ -22,13 +22,9 @@ import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Stream;
 
-/**
- * Utility for scanning class hierarchies, particularly useful for sealed interfaces.
- */
+/// Utility for scanning class hierarchies, particularly useful for sealed interfaces.
 public sealed interface HierarchyScanner {
-    /**
-     * Find all concrete subtypes of a sealed interface or class.
-     */
+    /// Find all concrete subtypes of a sealed interface or class.
     @SuppressWarnings("unchecked")
     static <T> Set<Class< ? extends T>> concreteSubtypes(Class<T> type) {
         var result = new HashSet<Class< ? extends T>>();
@@ -54,9 +50,7 @@ public sealed interface HierarchyScanner {
         return result;
     }
 
-    /**
-     * Walk up the type hierarchy from a collection of classes.
-     */
+    /// Walk up the type hierarchy from a collection of classes.
     static <T> Set<Class< ? extends T>> walkUpTheTree(Collection<Class< ? extends T>> classes) {
         var interfaces = new HashSet<Class< ? >>();
         var collected = new HashSet<Class< ? extends T>>();

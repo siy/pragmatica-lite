@@ -15,9 +15,7 @@
  */
 
 package org.pragmatica.utility;
-/**
- * ID generator using KSUID for unique, time-sortable identifiers.
- */
+/// ID generator using KSUID for unique, time-sortable identifiers.
 public sealed interface IdGenerator {
     /// Generate a unique ID with the given prefix.
     ///

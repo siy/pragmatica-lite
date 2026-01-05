@@ -49,9 +49,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.pragmatica.lang.Unit.unit;
 
-/**
- * Netty-based HTTP server implementation.
- */
+/// Netty-based HTTP server implementation.
 final class NettyHttpServer implements HttpServer {
     private static final Logger LOG = LoggerFactory.getLogger(NettyHttpServer.class);
 
@@ -182,10 +180,8 @@ final class NettyHttpServer implements HttpServer {
         }
     }
 
-    /**
-     * Per-channel HTTP request handler.
-     * NOT @Sharable - each channel gets its own instance to maintain WebSocket state safely.
-     */
+    /// Per-channel HTTP request handler.
+    /// NOT @Sharable - each channel gets its own instance to maintain WebSocket state safely.
     private static class HttpRequestHandler extends SimpleChannelInboundHandler<Object> {
         private static final Logger LOG = LoggerFactory.getLogger(HttpRequestHandler.class);
         private static final AttributeKey<WebSocketState> WS_STATE = AttributeKey.valueOf("wsState");
@@ -310,9 +306,7 @@ final class NettyHttpServer implements HttpServer {
         }
     }
 
-    /**
-     * WebSocket state stored per channel.
-     */
+    /// WebSocket state stored per channel.
     private record WebSocketState(WebSocketHandler handler, NettyWebSocketSession session) {}
 
     private record NettyRequestContext(String requestId,

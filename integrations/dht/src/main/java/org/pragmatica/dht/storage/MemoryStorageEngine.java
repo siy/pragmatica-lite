@@ -23,11 +23,9 @@ import org.pragmatica.lang.Unit;
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * In-memory storage engine backed by ConcurrentHashMap.
- * Thread-safe and suitable for development and testing.
- * Data is not persisted across restarts.
- */
+/// In-memory storage engine backed by ConcurrentHashMap.
+/// Thread-safe and suitable for development and testing.
+/// Data is not persisted across restarts.
 public final class MemoryStorageEngine implements StorageEngine {
     private final ConcurrentHashMap<ByteArrayKey, byte[]> data = new ConcurrentHashMap<>();
 
@@ -79,10 +77,8 @@ public final class MemoryStorageEngine implements StorageEngine {
         return Promise.success(Unit.unit());
     }
 
-    /**
-     * Wrapper for byte[] to use as HashMap key with proper equals/hashCode.
-     * Clones input array to prevent external mutation from corrupting keys.
-     */
+    /// Wrapper for byte[] to use as HashMap key with proper equals/hashCode.
+    /// Clones input array to prevent external mutation from corrupting keys.
     private record ByteArrayKey(byte[] data) {
         ByteArrayKey(byte[] data) {
             this.data = data.clone();

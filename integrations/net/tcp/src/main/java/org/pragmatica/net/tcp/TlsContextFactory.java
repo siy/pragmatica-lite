@@ -29,25 +29,21 @@ import io.netty.handler.ssl.util.SelfSignedCertificate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Factory for creating Netty SSL contexts from TLS configuration.
- * <p>
- * Supports creating both server-side and client-side SSL contexts from the unified
- * {@link TlsConfig} hierarchy.
- *
- * @see TlsConfig
- */
+/// Factory for creating Netty SSL contexts from TLS configuration.
+///
+/// Supports creating both server-side and client-side SSL contexts from the unified
+/// [TlsConfig] hierarchy.
+///
+/// @see TlsConfig
 public final class TlsContextFactory {
     private static final Logger LOG = LoggerFactory.getLogger(TlsContextFactory.class);
 
     private TlsContextFactory() {}
 
-    /**
-     * Create server-side SSL context from TLS configuration.
-     *
-     * @param config TLS configuration (must be Server or Mutual mode)
-     * @return SSL context or error
-     */
+    /// Create server-side SSL context from TLS configuration.
+    ///
+    /// @param config TLS configuration (must be Server or Mutual mode)
+    /// @return SSL context or error
     public static Result<SslContext> createServer(TlsConfig config) {
         return switch (config) {
             case TlsConfig.Server(var identity, var clientAuth) ->
@@ -60,12 +56,10 @@ public final class TlsContextFactory {
         };
     }
 
-    /**
-     * Create client-side SSL context from TLS configuration.
-     *
-     * @param config TLS configuration (must be Client or Mutual mode)
-     * @return SSL context or error
-     */
+    /// Create client-side SSL context from TLS configuration.
+    ///
+    /// @param config TLS configuration (must be Client or Mutual mode)
+    /// @return SSL context or error
     public static Result<SslContext> createClient(TlsConfig config) {
         return switch (config) {
             case TlsConfig.Client(var trust, var identity) ->
@@ -78,13 +72,11 @@ public final class TlsContextFactory {
         };
     }
 
-    /**
-     * Create SSL context from TLS configuration.
-     *
-     * @param config TLS configuration
-     * @return SSL context or error
-     * @deprecated Use {@link #createServer(TlsConfig)} or {@link #createClient(TlsConfig)} instead
-     */
+    /// Create SSL context from TLS configuration.
+    ///
+    /// @param config TLS configuration
+    /// @return SSL context or error
+    /// @deprecated Use [#createServer(TlsConfig)] or [#createClient(TlsConfig)] instead
     @Deprecated(forRemoval = true)
     public static Result<SslContext> create(TlsConfig config) {
         return createServer(config);

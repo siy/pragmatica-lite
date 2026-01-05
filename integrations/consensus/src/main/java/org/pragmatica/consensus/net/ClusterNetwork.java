@@ -24,23 +24,19 @@ import org.pragmatica.lang.Unit;
 import org.pragmatica.messaging.MessageReceiver;
 import org.pragmatica.net.tcp.Server;
 
-/**
- * Generalized Network API for cluster communication.
- * <p>
- * <b>Implementation contract:</b> All methods must be exception-safe.
- * Network failures should be logged internally, not thrown to callers.
- * The consensus protocol handles message loss through timeouts and retries.
- */
+/// Generalized Network API for cluster communication.
+///
+/// **Implementation contract:** All methods must be exception-safe.
+/// Network failures should be logged internally, not thrown to callers.
+/// The consensus protocol handles message loss through timeouts and retries.
 public interface ClusterNetwork {
-    /**
-     * Broadcast a message to all nodes in the cluster.
-     * <p>
-     * Note that actual implementation may just send messages directly,
-     * not necessarily use broadcasting in underlying protocol.
-     * <p>
-     * Implementations must not throw exceptions. Failed sends should be
-     * logged and silently ignored - the protocol handles message loss.
-     */
+    /// Broadcast a message to all nodes in the cluster.
+    ///
+    /// Note that actual implementation may just send messages directly,
+    /// not necessarily use broadcasting in underlying protocol.
+    ///
+    /// Implementations must not throw exceptions. Failed sends should be
+    /// logged and silently ignored - the protocol handles message loss.
     <M extends ProtocolMessage> void broadcast(M message);
 
     @MessageReceiver
@@ -58,33 +54,23 @@ public interface ClusterNetwork {
     @MessageReceiver
     void handlePong(NetworkMessage.Pong pong);
 
-    /**
-     * Send a message to a specific node.
-     * <p>
-     * Implementations must not throw exceptions. Failed sends should be
-     * logged and silently ignored - the protocol handles message loss.
-     */
+    /// Send a message to a specific node.
+    ///
+    /// Implementations must not throw exceptions. Failed sends should be
+    /// logged and silently ignored - the protocol handles message loss.
     <M extends ProtocolMessage> void send(NodeId nodeId, M message);
 
-    /**
-     * Start the network.
-     */
+    /// Start the network.
     Promise<Unit> start();
 
-    /**
-     * Stop the network.
-     */
+    /// Stop the network.
     Promise<Unit> stop();
 
-    /**
-     * Get the number of currently connected peer nodes.
-     * This count does NOT include self - only remote peers with active connections.
-     */
+    /// Get the number of currently connected peer nodes.
+    /// This count does NOT include self - only remote peers with active connections.
     int connectedNodeCount();
 
-    /**
-     * Get the underlying server instance for metrics collection.
-     * Returns empty if the network has not been started yet.
-     */
+    /// Get the underlying server instance for metrics collection.
+    /// Returns empty if the network has not been started yet.
     Option<Server> server();
 }

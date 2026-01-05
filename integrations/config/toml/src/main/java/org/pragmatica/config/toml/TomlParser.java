@@ -27,53 +27,46 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-/**
- * Zero-dependency TOML parser supporting a practical subset of TOML 1.0.
- * <p>
- * Supported features:
- * <ul>
- *   <li>Sections: {@code [section]} and {@code [section.subsection]}</li>
- *   <li>Properties: {@code key = value}</li>
- *   <li>Quoted strings: {@code "hello world"}</li>
- *   <li>Unquoted strings: {@code hello}</li>
- *   <li>Booleans: {@code true} / {@code false}</li>
- *   <li>Integers: {@code 123}, {@code -456}</li>
- *   <li>Arrays: {@code ["a", "b", "c"]}</li>
- *   <li>Comments: {@code # comment}</li>
- * </ul>
- * <p>
- * Not yet supported:
- * <ul>
- *   <li>Inline tables: {@code {key = value}}</li>
- *   <li>Multi-line strings</li>
- *   <li>Floating point numbers</li>
- *   <li>Dates and times</li>
- *   <li>Array of tables: {@code [[array]]}</li>
- * </ul>
- *
- * <p>
- * Example usage:
- * <pre>{@code
- * TomlParser.parse(content)
- *     .onSuccess(doc -> {
- *         doc.getString("database", "host").onPresent(System.out::println);
- *         doc.getInt("server", "port").orElse(8080);
- *     })
- *     .onFailure(error -> System.err.println(error.message()));
- * }</pre>
- */
+/// Zero-dependency TOML parser supporting a practical subset of TOML 1.0.
+///
+/// Supported features:
+///
+///   - Sections: `[section]` and `[section.subsection]`
+///   - Properties: `key = value`
+///   - Quoted strings: `"hello world"`
+///   - Unquoted strings: `hello`
+///   - Booleans: `true` / `false`
+///   - Integers: `123`, `-456`
+///   - Arrays: `["a", "b", "c"]`
+///   - Comments: `# comment`
+///
+///// Not yet supported:
+///
+///   - Inline tables: `{key = value`}
+///   - Multi-line strings
+///   - Floating point numbers
+///   - Dates and times
+///   - Array of tables: `[[array]]`
+///
+/// Example usage:
+/// <pre>{@code
+/// TomlParser.parse(content)
+///     .onSuccess(doc -> {
+///         doc.getString("database", "host").onPresent(System.out::println);
+///         doc.getInt("server", "port").orElse(8080);
+///     })
+///     .onFailure(error -> System.err.println(error.message()));
+/// }</pre>
 public final class TomlParser {
     private static final Pattern SECTION_PATTERN = Pattern.compile("^\\[([a-zA-Z0-9_.]+)]$");
     private static final Pattern KEY_VALUE_PATTERN = Pattern.compile("^([a-zA-Z0-9_-]+)\\s*=\\s*(.+)$");
 
     private TomlParser() {}
 
-    /**
-     * Parse TOML content from a string.
-     *
-     * @param content the TOML content to parse
-     * @return Result containing the parsed TomlDocument, or an error
-     */
+    /// Parse TOML content from a string.
+    ///
+    /// @param content the TOML content to parse
+    /// @return Result containing the parsed TomlDocument, or an error
     public static Result<TomlDocument> parse(String content) {
         if (content == null || content.isBlank()) {
             return Result.success(TomlDocument.EMPTY);
@@ -120,12 +113,10 @@ public final class TomlParser {
         return Result.success(new TomlDocument(Map.copyOf(sections)));
     }
 
-    /**
-     * Parse TOML content from a file.
-     *
-     * @param path the path to the TOML file
-     * @return Result containing the parsed TomlDocument, or an error
-     */
+    /// Parse TOML content from a file.
+    ///
+    /// @param path the path to the TOML file
+    /// @return Result containing the parsed TomlDocument, or an error
     public static Result<TomlDocument> parseFile(Path path) {
         try{
             return parse(Files.readString(path));

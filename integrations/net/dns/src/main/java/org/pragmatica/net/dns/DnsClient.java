@@ -46,18 +46,14 @@ import static org.pragmatica.lang.Option.option;
 import static org.pragmatica.lang.Unit.unit;
 import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 
-/**
- * Asynchronous DNS client using Netty UDP.
- */
+/// Asynchronous DNS client using Netty UDP.
 public interface DnsClient extends AsyncCloseable {
     Logger log = LoggerFactory.getLogger(DnsClient.class);
 
     Promise<DomainAddress> resolve(DomainName domainName, InetSocketAddress serverAddress);
 
-    /**
-     * Create DNS client with provided event loop group.
-     * The event loop group will NOT be shut down when the client is closed.
-     */
+    /// Create DNS client with provided event loop group.
+    /// The event loop group will NOT be shut down when the client is closed.
     static DnsClient dnsClient(EventLoopGroup eventLoopGroup) {
         var bootstrap = new Bootstrap().group(eventLoopGroup)
                                        .channel(NioDatagramChannel.class);

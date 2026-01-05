@@ -15,8 +15,6 @@
  */
 
 package org.pragmatica.consensus;
-/**
- * Marker interface for state machine commands.
- * Commands must be immutable and their execution must be deterministic.
- */
+/// Marker interface for state machine commands.
+/// Commands must be immutable and their execution must be deterministic.
 public interface Command {}

@@ -18,9 +18,7 @@ package org.pragmatica.consensus;
 
 import org.pragmatica.lang.Cause;
 
-/**
- * Error types for consensus operations.
- */
+/// Error types for consensus operations.
 public sealed interface ConsensusErrors extends Cause {
     record CommandBatchIsEmpty() implements ConsensusErrors {
         @Override

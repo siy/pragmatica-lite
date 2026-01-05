@@ -28,6 +28,8 @@ import org.pragmatica.consensus.net.ClusterNetwork;
 import org.pragmatica.consensus.net.NetworkManagementOperation;
 import org.pragmatica.consensus.net.NetworkMessage;
 import org.pragmatica.consensus.net.NodeInfo;
+import org.pragmatica.lang.Option;
+import org.pragmatica.net.tcp.Server;
 import org.pragmatica.consensus.rabia.RabiaPersistence.SavedState;
 import org.pragmatica.consensus.rabia.RabiaProtocolMessage.Asynchronous.*;
 import org.pragmatica.consensus.rabia.RabiaProtocolMessage.Synchronous.*;
@@ -52,14 +54,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.pragmatica.consensus.NodeId.nodeId;
 import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 
-/**
- * Integration tests simulating multi-node consensus scenarios.
- * These tests verify the complete protocol flow including:
- * - Multi-node proposal agreement
- * - Voting rounds (R1 and R2)
- * - Decision agreement
- * - Value locking across phases
- */
+/// Integration tests simulating multi-node consensus scenarios.
+/// These tests verify the complete protocol flow including:
+/// - Multi-node proposal agreement
+/// - Voting rounds (R1 and R2)
+/// - Decision agreement
+/// - Value locking across phases
 class RabiaConsensusIntegrationTest {
 
     record TestCommand(String value) implements Command {}
@@ -418,6 +418,11 @@ class RabiaConsensusIntegrationTest {
         @Override
         public int connectedNodeCount() {
             return cluster.nodeIds.size() - 1; // All nodes except self
+        }
+
+        @Override
+        public Option<Server> server() {
+            return Option.none();
         }
 
         List<ProtocolMessage> getAllMessages() {

@@ -15,15 +15,11 @@
  */
 
 package org.pragmatica.consensus.rabia;
-/**
- * Represents a protocol phase as defined in the Rabia formal specification.
- */
+/// Represents a protocol phase as defined in the Rabia formal specification.
 public record Phase(long value) implements Comparable<Phase> {
     public static final Phase ZERO = new Phase(0);
 
-    /**
-     * Creates the successor phase to this phase.
-     */
+    /// Creates the successor phase to this phase.
     public Phase successor() {
         return new Phase(value + 1);
     }

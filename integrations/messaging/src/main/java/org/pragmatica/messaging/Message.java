@@ -15,25 +15,19 @@
  */
 
 package org.pragmatica.messaging;
-/**
- * Marker interface for all messages circulating inside the system.
- * <p>
- * Messages are divided into two categories:
- * <ul>
- *   <li>{@link Local} - messages that stay within a single process</li>
- *   <li>{@link Wired} - messages that can be serialized and sent over the network</li>
- * </ul>
- */
+/// Marker interface for all messages circulating inside the system.
+///
+/// Messages are divided into two categories:
+///
+///   - [Local] - messages that stay within a single process
+///   - [Wired] - messages that can be serialized and sent over the network
+///
 public sealed interface Message {
-    /**
-     * Local messages that stay within a single process.
-     * These messages don't need serialization support.
-     */
+    /// Local messages that stay within a single process.
+    /// These messages don't need serialization support.
     non-sealed interface Local extends Message {}
 
-    /**
-     * Wired messages that can be serialized and sent over the network.
-     * Implementations should be serializable by the chosen serialization framework.
-     */
+    /// Wired messages that can be serialized and sent over the network.
+    /// Implementations should be serializable by the chosen serialization framework.
     non-sealed interface Wired extends Message {}
 }

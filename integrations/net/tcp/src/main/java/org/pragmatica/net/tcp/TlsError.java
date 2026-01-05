@@ -20,13 +20,9 @@ import org.pragmatica.lang.Cause;
 
 import java.nio.file.Path;
 
-/**
- * Error types for TLS operations.
- */
+/// Error types for TLS operations.
 public sealed interface TlsError extends Cause {
-    /**
-     * Failed to load certificate from file.
-     */
+    /// Failed to load certificate from file.
     record CertificateLoadFailed(Path path, Throwable cause) implements TlsError {
         @Override
         public String message() {
@@ -34,9 +30,7 @@ public sealed interface TlsError extends Cause {
         }
     }
 
-    /**
-     * Failed to load private key from file.
-     */
+    /// Failed to load private key from file.
     record PrivateKeyLoadFailed(Path path, Throwable cause) implements TlsError {
         @Override
         public String message() {
@@ -44,9 +38,7 @@ public sealed interface TlsError extends Cause {
         }
     }
 
-    /**
-     * Failed to load CA certificate (trust store) from file.
-     */
+    /// Failed to load CA certificate (trust store) from file.
     record TrustStoreLoadFailed(Path path, Throwable cause) implements TlsError {
         @Override
         public String message() {
@@ -54,9 +46,7 @@ public sealed interface TlsError extends Cause {
         }
     }
 
-    /**
-     * Failed to generate self-signed certificate.
-     */
+    /// Failed to generate self-signed certificate.
     record SelfSignedGenerationFailed(Throwable cause) implements TlsError {
         @Override
         public String message() {
@@ -64,9 +54,7 @@ public sealed interface TlsError extends Cause {
         }
     }
 
-    /**
-     * Failed to build SSL context.
-     */
+    /// Failed to build SSL context.
     record ContextBuildFailed(Throwable cause) implements TlsError {
         @Override
         public String message() {
@@ -74,9 +62,7 @@ public sealed interface TlsError extends Cause {
         }
     }
 
-    /**
-     * Invalid TLS mode for the requested operation.
-     */
+    /// Invalid TLS mode for the requested operation.
     record WrongMode(String details) implements TlsError {
         @Override
         public String message() {
@@ -84,9 +70,7 @@ public sealed interface TlsError extends Cause {
         }
     }
 
-    /**
-     * Create a WrongMode error with the given details.
-     */
+    /// Create a WrongMode error with the given details.
     static TlsError wrongMode(String details) {
         return new WrongMode(details);
     }

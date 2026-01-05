@@ -18,16 +18,12 @@ package org.pragmatica.serialization;
 
 import java.util.function.Consumer;
 
-/**
- * Interface for registering classes with a serialization framework.
- * Implementations provide the set of classes that need to be pre-registered
- * for efficient serialization.
- */
+/// Interface for registering classes with a serialization framework.
+/// Implementations provide the set of classes that need to be pre-registered
+/// for efficient serialization.
 public interface ClassRegistrator {
-    /**
-     * Register classes with the serializer.
-     *
-     * @param consumer accepts each class to be registered
-     */
+    /// Register classes with the serializer.
+    ///
+    /// @param consumer accepts each class to be registered
     void registerClasses(Consumer<Class< ? >> consumer);
 }

@@ -23,16 +23,12 @@ import java.util.stream.Stream;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.util.Pool;
 
-/**
- * Factory for creating thread-safe Kryo instance pools.
- */
+/// Factory for creating thread-safe Kryo instance pools.
 public sealed interface KryoPoolFactory {
-    /**
-     * Create a Kryo pool with the given class registrators.
-     *
-     * @param registrators class registrators to apply to each Kryo instance
-     * @return a thread-safe Kryo pool
-     */
+    /// Create a Kryo pool with the given class registrators.
+    ///
+    /// @param registrators class registrators to apply to each Kryo instance
+    /// @return a thread-safe Kryo pool
     static Pool<Kryo> kryoPool(ClassRegistrator... registrators) {
         return new Pool<>(true,
                           false,

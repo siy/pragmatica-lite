@@ -21,36 +21,24 @@ import org.pragmatica.lang.Option;
 import java.util.List;
 import java.util.Map;
 
-/**
- * HTTP query parameters.
- */
+/// HTTP query parameters.
 public interface QueryParams {
-    /**
-     * Get the first value for a parameter.
-     */
+    /// Get the first value for a parameter.
     Option<String> get(String name);
 
-    /**
-     * Get all values for a parameter.
-     */
+    /// Get all values for a parameter.
     List<String> getAll(String name);
 
-    /**
-     * Get all parameters as a map.
-     */
+    /// Get all parameters as a map.
     Map<String, List<String>> asMap();
 
-    /**
-     * Check if parameter exists.
-     */
+    /// Check if parameter exists.
     default boolean has(String name) {
         return get(name)
                   .isPresent();
     }
 
-    /**
-     * Create query parameters from a map.
-     */
+    /// Create query parameters from a map.
     static QueryParams queryParams(Map<String, List<String>> raw) {
         record queryParams(Map<String, List<String>> params) implements QueryParams {
             @Override
@@ -77,9 +65,7 @@ public interface QueryParams {
         return new queryParams(Map.copyOf(raw));
     }
 
-    /**
-     * Empty query parameters.
-     */
+    /// Empty query parameters.
     static QueryParams empty() {
         return queryParams(Map.of());
     }

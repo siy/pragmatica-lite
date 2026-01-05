@@ -27,16 +27,12 @@ import io.netty.buffer.ByteBufInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Kryo-based deserializer implementation.
- */
+/// Kryo-based deserializer implementation.
 public interface KryoDeserializer extends Deserializer {
-    /**
-     * Create a Kryo deserializer with the given class registrators.
-     *
-     * @param registrators class registrators to apply
-     * @return a thread-safe Kryo deserializer
-     */
+    /// Create a Kryo deserializer with the given class registrators.
+    ///
+    /// @param registrators class registrators to apply
+    /// @return a thread-safe Kryo deserializer
     static KryoDeserializer kryoDeserializer(ClassRegistrator... registrators) {
         record kryoDeserializer(Pool<Kryo> pool) implements KryoDeserializer {
             private static final Logger log = LoggerFactory.getLogger(KryoDeserializer.class);

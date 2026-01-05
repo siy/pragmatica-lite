@@ -18,9 +18,7 @@ package org.pragmatica.net.dns;
 
 import org.pragmatica.lang.Cause;
 
-/**
- * DNS resolution errors.
- */
+/// DNS resolution errors.
 public sealed interface ResolverErrors extends Cause {
     record InvalidIpAddress(String message) implements ResolverErrors {}
 

@@ -22,12 +22,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Local partition map implementation using consistent hashing.
- * Suitable for single-process clusters or testing.
- *
- * @param <N> Node identifier type (must be Comparable for consistent ordering)
- */
+/// Local partition map implementation using consistent hashing.
+/// Suitable for single-process clusters or testing.
+///
+/// @param <N> Node identifier type (must be Comparable for consistent ordering)
 public final class LocalPartitionMap<N extends Comparable<N>> implements PartitionMap<N> {
     private final ConsistentHashRing<N> ring;
 
@@ -99,23 +97,17 @@ public final class LocalPartitionMap<N extends Comparable<N>> implements Partiti
         return Promise.success(null);
     }
 
-    /**
-     * Add a node to the partition map.
-     */
+    /// Add a node to the partition map.
     public void addNode(N node) {
         ring.addNode(node);
     }
 
-    /**
-     * Remove a node from the partition map.
-     */
+    /// Remove a node from the partition map.
     public void removeNode(N node) {
         ring.removeNode(node);
     }
 
-    /**
-     * Get all nodes in the map.
-     */
+    /// Get all nodes in the map.
     public Set<N> nodes() {
         return ring.nodes();
     }

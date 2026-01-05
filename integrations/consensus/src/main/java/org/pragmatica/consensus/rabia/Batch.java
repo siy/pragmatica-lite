@@ -20,9 +20,7 @@ import org.pragmatica.consensus.Command;
 
 import java.util.List;
 
-/**
- * Represents a proposal value (batch of commands) in the Rabia protocol.
- */
+/// Represents a proposal value (batch of commands) in the Rabia protocol.
 public record Batch<C extends Command>(BatchId id,
                                        CorrelationId correlationId,
                                        long timestamp,

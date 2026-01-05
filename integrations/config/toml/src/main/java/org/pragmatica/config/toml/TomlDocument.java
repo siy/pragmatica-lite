@@ -23,166 +23,138 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Immutable TOML document providing typed access to configuration values.
- * <p>
- * Values are accessed via fluent API that returns {@link Option} for nullable results:
- * <pre>{@code
- * document.getString("database", "host")     // Option<String>
- * document.getInt("server", "port")          // Option<Integer>
- * document.getBoolean("features", "enabled") // Option<Boolean>
- * document.getStringList("tags", "values")   // Option<List<String>>
- * }</pre>
- * <p>
- * Root-level properties use empty string as section:
- * <pre>{@code
- * document.getString("", "title")  // Root-level 'title' property
- * }</pre>
- *
- * @param sections Map of section names to their key-value pairs
- */
+/// Immutable TOML document providing typed access to configuration values.
+///
+/// Values are accessed via fluent API that returns [Option] for nullable results:
+/// <pre>{@code
+/// document.getString("database", "host")     // Option<String>
+/// document.getInt("server", "port")          // Option<Integer>
+/// document.getBoolean("features", "enabled") // Option<Boolean>
+/// document.getStringList("tags", "values")   // Option<List<String>>
+/// }</pre>
+///
+/// Root-level properties use empty string as section:
+/// <pre>{@code
+/// document.getString("", "title")  // Root-level 'title' property
+/// }</pre>
+///
+/// @param sections Map of section names to their key-value pairs
 public record TomlDocument(Map<String, Map<String, Object>> sections) {
-    /**
-     * Empty document constant.
-     */
+    /// Empty document constant.
     public static final TomlDocument EMPTY = new TomlDocument(Map.of("", Map.of()));
 
-    /**
-     * Get a string value from the document.
-     *
-     * @param section the section name (empty string for root)
-     * @param key     the property key
-     * @return Option containing the string value, or empty if not found
-     */
+    /// Get a string value from the document.
+    ///
+    /// @param section the section name (empty string for root)
+    /// @param key     the property key
+    /// @return Option containing the string value, or empty if not found
     public Option<String> getString(String section, String key) {
         return getValue(section, key)
                        .map(Object::toString);
     }
 
-    /**
-     * Get an integer value from the document.
-     *
-     * @param section the section name (empty string for root)
-     * @param key     the property key
-     * @return Option containing the integer value, or empty if not found or not an integer
-     */
+    /// Get an integer value from the document.
+    ///
+    /// @param section the section name (empty string for root)
+    /// @param key     the property key
+    /// @return Option containing the integer value, or empty if not found or not an integer
     public Option<Integer> getInt(String section, String key) {
         return getValue(section, key)
                        .flatMap(this::toInt);
     }
 
-    /**
-     * Get a long value from the document.
-     *
-     * @param section the section name (empty string for root)
-     * @param key     the property key
-     * @return Option containing the long value, or empty if not found or not a number
-     */
+    /// Get a long value from the document.
+    ///
+    /// @param section the section name (empty string for root)
+    /// @param key     the property key
+    /// @return Option containing the long value, or empty if not found or not a number
     public Option<Long> getLong(String section, String key) {
         return getValue(section, key)
                        .flatMap(this::toLong);
     }
 
-    /**
-     * Get a double value from the document.
-     *
-     * @param section the section name (empty string for root)
-     * @param key     the property key
-     * @return Option containing the double value, or empty if not found or not a number
-     */
+    /// Get a double value from the document.
+    ///
+    /// @param section the section name (empty string for root)
+    /// @param key     the property key
+    /// @return Option containing the double value, or empty if not found or not a number
     public Option<Double> getDouble(String section, String key) {
         return getValue(section, key)
                        .flatMap(this::toDouble);
     }
 
-    /**
-     * Get a boolean value from the document.
-     *
-     * @param section the section name (empty string for root)
-     * @param key     the property key
-     * @return Option containing the boolean value, or empty if not found or not a boolean
-     */
+    /// Get a boolean value from the document.
+    ///
+    /// @param section the section name (empty string for root)
+    /// @param key     the property key
+    /// @return Option containing the boolean value, or empty if not found or not a boolean
     public Option<Boolean> getBoolean(String section, String key) {
         return getValue(section, key)
                        .flatMap(this::toBoolean);
     }
 
-    /**
-     * Get a string list from the document.
-     *
-     * @param section the section name (empty string for root)
-     * @param key     the property key
-     * @return Option containing the string list, or empty if not found or not a list
-     */
+    /// Get a string list from the document.
+    ///
+    /// @param section the section name (empty string for root)
+    /// @param key     the property key
+    /// @return Option containing the string list, or empty if not found or not a list
     public Option<List<String>> getStringList(String section, String key) {
         return getValue(section, key)
                        .flatMap(this::toStringList);
     }
 
-    /**
-     * Get all keys in a section.
-     *
-     * @param section the section name (empty string for root)
-     * @return Set of keys in the section, or empty set if section not found
-     */
+    /// Get all keys in a section.
+    ///
+    /// @param section the section name (empty string for root)
+    /// @return Set of keys in the section, or empty set if section not found
     public Set<String> keys(String section) {
         return Option.option(sections.get(section))
                      .map(Map::keySet)
                      .or(Set.of());
     }
 
-    /**
-     * Get all section names in the document.
-     *
-     * @return Set of section names (includes empty string for root if it has properties)
-     */
+    /// Get all section names in the document.
+    ///
+    /// @return Set of section names (includes empty string for root if it has properties)
     public Set<String> sectionNames() {
         return sections.keySet();
     }
 
-    /**
-     * Check if a section exists.
-     *
-     * @param section the section name
-     * @return true if the section exists
-     */
+    /// Check if a section exists.
+    ///
+    /// @param section the section name
+    /// @return true if the section exists
     public boolean hasSection(String section) {
         return sections.containsKey(section);
     }
 
-    /**
-     * Check if a key exists in a section.
-     *
-     * @param section the section name
-     * @param key     the property key
-     * @return true if the key exists in the section
-     */
+    /// Check if a key exists in a section.
+    ///
+    /// @param section the section name
+    /// @param key     the property key
+    /// @return true if the key exists in the section
     public boolean hasKey(String section, String key) {
         return Option.option(sections.get(section))
                      .map(m -> m.containsKey(key))
                      .or(false);
     }
 
-    /**
-     * Get all key-value pairs from a section as strings.
-     *
-     * @param section the section name
-     * @return Map of key-value pairs, or empty map if section not found
-     */
+    /// Get all key-value pairs from a section as strings.
+    ///
+    /// @param section the section name
+    /// @return Map of key-value pairs, or empty map if section not found
     public Map<String, String> getSection(String section) {
         return Option.option(sections.get(section))
                      .map(this::toStringMap)
                      .or(Map.of());
     }
 
-    /**
-     * Create a new document with an additional or updated value.
-     *
-     * @param section the section name
-     * @param key     the property key
-     * @param value   the value to set
-     * @return new TomlDocument with the value set
-     */
+    /// Create a new document with an additional or updated value.
+    ///
+    /// @param section the section name
+    /// @param key     the property key
+    /// @param value   the value to set
+    /// @return new TomlDocument with the value set
     public TomlDocument with(String section, String key, Object value) {
         var newSections = new LinkedHashMap<>(sections);
         var sectionMap = new LinkedHashMap<>(newSections.getOrDefault(section, Map.of()));

@@ -18,20 +18,14 @@ package org.pragmatica.consensus;
 
 import org.pragmatica.utility.IdGenerator;
 
-/**
- * Unique identifier for a node in the consensus cluster.
- */
+/// Unique identifier for a node in the consensus cluster.
 public record NodeId(String id) implements Comparable<NodeId> {
-    /**
-     * Create a node ID from the given string.
-     */
+    /// Create a node ID from the given string.
     public static NodeId nodeId(String id) {
         return new NodeId(id);
     }
 
-    /**
-     * Generate a unique random node ID.
-     */
+    /// Generate a unique random node ID.
     public static NodeId randomNodeId() {
         return nodeId(IdGenerator.generate("node"));
     }

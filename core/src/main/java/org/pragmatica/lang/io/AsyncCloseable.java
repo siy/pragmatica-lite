@@ -19,17 +19,13 @@ package org.pragmatica.lang.io;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 
-/**
- * Interface for resources that can be closed asynchronously.
- * <p>
- * Unlike {@link java.io.Closeable}, this interface returns a {@link Promise}
- * that completes when the resource has been fully released.
- */
+/// Interface for resources that can be closed asynchronously.
+///
+/// Unlike [java.io.Closeable], this interface returns a [Promise]
+/// that completes when the resource has been fully released.
 public interface AsyncCloseable {
-    /**
-     * Asynchronously close this resource.
-     *
-     * @return a promise that completes when the resource is closed
-     */
+    /// Asynchronously close this resource.
+    ///
+    /// @return a promise that completes when the resource is closed
     Promise<Unit> close();
 }

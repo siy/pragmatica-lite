@@ -15,9 +15,7 @@
  */
 
 package org.pragmatica.http;
-/**
- * Common HTTP content types.
- */
+/// Common HTTP content types.
 public enum CommonContentType implements ContentType {
     TEXT_PLAIN("text/plain; charset=UTF-8", ContentCategory.TEXT),
     TEXT_HTML("text/html; charset=UTF-8", ContentCategory.TEXT),

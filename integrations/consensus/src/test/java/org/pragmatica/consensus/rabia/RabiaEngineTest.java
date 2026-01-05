@@ -28,6 +28,8 @@ import org.pragmatica.consensus.StateMachine;
 import org.pragmatica.consensus.net.ClusterNetwork;
 import org.pragmatica.consensus.net.NetworkManagementOperation;
 import org.pragmatica.consensus.net.NetworkMessage;
+import org.pragmatica.lang.Option;
+import org.pragmatica.net.tcp.Server;
 import org.pragmatica.consensus.net.NodeInfo;
 import org.pragmatica.consensus.rabia.RabiaProtocolMessage.Synchronous.*;
 import org.pragmatica.consensus.topology.QuorumStateNotification;
@@ -317,6 +319,11 @@ class RabiaEngineTest {
         @Override
         public int connectedNodeCount() {
             return 0; // Test network has no real connections
+        }
+
+        @Override
+        public Option<Server> server() {
+            return Option.none();
         }
 
         List<ProtocolMessage> getMessages() {

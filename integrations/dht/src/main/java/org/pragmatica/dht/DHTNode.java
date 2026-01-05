@@ -23,13 +23,11 @@ import org.pragmatica.lang.Unit;
 
 import java.util.function.Consumer;
 
-/**
- * Local DHT node that handles storage operations.
- * Provides local data access and can be integrated with MessageRouter
- * for handling remote requests.
- *
- * @param <N> Node identifier type
- */
+/// Local DHT node that handles storage operations.
+/// Provides local data access and can be integrated with MessageRouter
+/// for handling remote requests.
+///
+/// @param <N> Node identifier type
 public final class DHTNode<N extends Comparable<N>> {
     private final N nodeId;
     private final StorageEngine storage;
@@ -43,14 +41,12 @@ public final class DHTNode<N extends Comparable<N>> {
         this.config = config;
     }
 
-    /**
-     * Create a new DHT node.
-     *
-     * @param nodeId  this node's identifier
-     * @param storage storage engine for local data
-     * @param ring    consistent hash ring for routing
-     * @param config  DHT configuration
-     */
+    /// Create a new DHT node.
+    ///
+    /// @param nodeId  this node's identifier
+    /// @param storage storage engine for local data
+    /// @param ring    consistent hash ring for routing
+    /// @param config  DHT configuration
     public static <N extends Comparable<N>> DHTNode<N> dhtNode(N nodeId,
                                                                StorageEngine storage,
                                                                ConsistentHashRing<N> ring,
@@ -58,104 +54,76 @@ public final class DHTNode<N extends Comparable<N>> {
         return new DHTNode<>(nodeId, storage, ring, config);
     }
 
-    /**
-     * Get the node's identifier.
-     */
+    /// Get the node's identifier.
     public N nodeId() {
         return nodeId;
     }
 
-    /**
-     * Get the configuration.
-     */
+    /// Get the configuration.
     public DHTConfig config() {
         return config;
     }
 
-    /**
-     * Get the consistent hash ring.
-     */
+    /// Get the consistent hash ring.
     public ConsistentHashRing<N> ring() {
         return ring;
     }
 
-    /**
-     * Get a value from local storage.
-     */
+    /// Get a value from local storage.
     public Promise<Option<byte[]>> getLocal(byte[] key) {
         return storage.get(key);
     }
 
-    /**
-     * Put a value to local storage.
-     */
+    /// Put a value to local storage.
     public Promise<Unit> putLocal(byte[] key, byte[] value) {
         return storage.put(key, value);
     }
 
-    /**
-     * Remove a value from local storage.
-     */
+    /// Remove a value from local storage.
     public Promise<Boolean> removeLocal(byte[] key) {
         return storage.remove(key);
     }
 
-    /**
-     * Check if key exists in local storage.
-     */
+    /// Check if key exists in local storage.
     public Promise<Boolean> existsLocal(byte[] key) {
         return storage.exists(key);
     }
 
-    /**
-     * Get the partition for a key.
-     */
+    /// Get the partition for a key.
     public Partition partitionFor(byte[] key) {
         return ring.partitionFor(key);
     }
 
-    /**
-     * Check if this node is responsible for a key (as primary or replica).
-     */
+    /// Check if this node is responsible for a key (as primary or replica).
     public boolean isResponsibleFor(byte[] key) {
         return ring.nodesFor(key,
                              config.replicationFactor())
                    .contains(nodeId);
     }
 
-    /**
-     * Check if this node is the primary for a key.
-     */
+    /// Check if this node is the primary for a key.
     public boolean isPrimaryFor(byte[] key) {
         return ring.primaryFor(key)
                    .map(nodeId::equals)
                    .or(false);
     }
 
-    /**
-     * Get the local storage size.
-     */
+    /// Get the local storage size.
     public long localSize() {
         return storage.size();
     }
 
-    /**
-     * Clear local storage.
-     */
+    /// Clear local storage.
     public Promise<Unit> clearLocal() {
         return storage.clear();
     }
 
-    /**
-     * Shutdown the node and release resources.
-     */
+    /// Shutdown the node and release resources.
     public Promise<Unit> shutdown() {
         return storage.shutdown();
     }
 
-    /**
-     * Handle a get request (for message routing integration).
-     */
+    /// Handle a get request (for message routing integration).
     public void handleGetRequest(DHTMessage.GetRequest request,
                                  Consumer<DHTMessage.GetResponse> responseHandler) {
         storage.get(request.key())
@@ -165,9 +133,7 @@ public final class DHTNode<N extends Comparable<N>> {
                                                                                  Option.none())));
     }
 
-    /**
-     * Handle a put request (for message routing integration).
-     */
+    /// Handle a put request (for message routing integration).
     public void handlePutRequest(DHTMessage.PutRequest request,
                                  Consumer<DHTMessage.PutResponse> responseHandler) {
         storage.put(request.key(),
@@ -178,9 +144,7 @@ public final class DHTNode<N extends Comparable<N>> {
                                                                                  false)));
     }
 
-    /**
-     * Handle a remove request (for message routing integration).
-     */
+    /// Handle a remove request (for message routing integration).
     public void handleRemoveRequest(DHTMessage.RemoveRequest request,
                                     Consumer<DHTMessage.RemoveResponse> responseHandler) {
         storage.remove(request.key())
@@ -190,9 +154,7 @@ public final class DHTNode<N extends Comparable<N>> {
                                                                                     false)));
     }
 
-    /**
-     * Handle an exists request (for message routing integration).
-     */
+    /// Handle an exists request (for message routing integration).
     public void handleExistsRequest(DHTMessage.ExistsRequest request,
                                     Consumer<DHTMessage.ExistsResponse> responseHandler) {
         storage.exists(request.key())

@@ -21,25 +21,19 @@ import org.pragmatica.lang.Unit;
 
 import java.util.List;
 
-/**
- * Replicated state machine interface.
- * Implementations must ensure deterministic command execution.
- *
- * @param <C> Command type
- */
+/// Replicated state machine interface.
+/// Implementations must ensure deterministic command execution.
+///
+/// @param <C> Command type
 public interface StateMachine<C extends Command> {
-    /**
-     * Process a command and update the machine's state.
-     * The command must be immutable and its execution must be deterministic.
-     *
-     * @param command The command to process
-     * @return The result of processing the command
-     */
+    /// Process a command and update the machine's state.
+    /// The command must be immutable and its execution must be deterministic.
+    ///
+    /// @param command The command to process
+    /// @return The result of processing the command
     <R> R process(C command);
 
-    /**
-     * Process multiple commands in order.
-     */
+    /// Process multiple commands in order.
     @SuppressWarnings("unchecked")
     default <R> List<R> process(List<C> commands) {
         return commands.stream()
@@ -47,24 +41,18 @@ public interface StateMachine<C extends Command> {
                        .toList();
     }
 
-    /**
-     * Create a snapshot of the current state machine state.
-     * The snapshot should be serializable and capture the complete state.
-     *
-     * @return A Result containing the serialized state snapshot
-     */
+    /// Create a snapshot of the current state machine state.
+    /// The snapshot should be serializable and capture the complete state.
+    ///
+    /// @return A Result containing the serialized state snapshot
     Result<byte[]> makeSnapshot();
 
-    /**
-     * Restore the machine's state from a snapshot.
-     * This should completely replace the current state with the state from the snapshot.
-     *
-     * @return A Result indicating success or failure
-     */
+    /// Restore the machine's state from a snapshot.
+    /// This should completely replace the current state with the state from the snapshot.
+    ///
+    /// @return A Result indicating success or failure
     Result<Unit> restoreSnapshot(byte[] snapshot);
 
-    /**
-     * Reset state machine to its initial state.
-     */
+    /// Reset state machine to its initial state.
     void reset();
 }

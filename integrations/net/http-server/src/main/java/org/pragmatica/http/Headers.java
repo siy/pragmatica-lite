@@ -22,28 +22,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * HTTP headers with case-insensitive lookup (per HTTP specification).
- */
+/// HTTP headers with case-insensitive lookup (per HTTP specification).
 public interface Headers {
-    /**
-     * Get the first value for a header (case-insensitive lookup).
-     */
+    /// Get the first value for a header (case-insensitive lookup).
     Option<String> get(String name);
 
-    /**
-     * Get all values for a header (case-insensitive lookup).
-     */
+    /// Get all values for a header (case-insensitive lookup).
     List<String> getAll(String name);
 
-    /**
-     * Get all headers as a map (keys are lowercase).
-     */
+    /// Get all headers as a map (keys are lowercase).
     Map<String, List<String>> asMap();
 
-    /**
-     * Create headers from a raw map (will be normalized to lowercase keys).
-     */
+    /// Create headers from a raw map (will be normalized to lowercase keys).
     static Headers headers(Map<String, List<String>> raw) {
         record headers(Map<String, List<String>> normalized) implements Headers {
             @Override
@@ -72,18 +62,14 @@ public interface Headers {
         return new headers(Map.copyOf(normalized));
     }
 
-    /**
-     * Create headers from a single-value map (convenience for simple cases).
-     */
+    /// Create headers from a single-value map (convenience for simple cases).
     static Headers fromSingleValueMap(Map<String, String> raw) {
         var multi = new HashMap<String, List<String>>();
         raw.forEach((k, v) -> multi.put(k.toLowerCase(), List.of(v)));
         return headers(multi);
     }
 
-    /**
-     * Empty headers.
-     */
+    /// Empty headers.
     static Headers empty() {
         return headers(Map.of());
     }

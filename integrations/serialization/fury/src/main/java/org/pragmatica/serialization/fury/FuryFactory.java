@@ -24,16 +24,12 @@ import org.apache.fury.Fury;
 import org.apache.fury.ThreadSafeFury;
 import org.apache.fury.config.Language;
 
-/**
- * Factory for creating thread-safe Fury instances.
- */
+/// Factory for creating thread-safe Fury instances.
 public sealed interface FuryFactory {
-    /**
-     * Create a thread-safe Fury instance with the given class registrators.
-     *
-     * @param registrators class registrators to apply
-     * @return a thread-safe Fury instance
-     */
+    /// Create a thread-safe Fury instance with the given class registrators.
+    ///
+    /// @param registrators class registrators to apply
+    /// @return a thread-safe Fury instance
     static ThreadSafeFury fury(ClassRegistrator... registrators) {
         int coreCount = Runtime.getRuntime()
                                .availableProcessors();

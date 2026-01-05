@@ -18,9 +18,7 @@ package org.pragmatica.consensus.rabia;
 
 import org.pragmatica.utility.IdGenerator;
 
-/**
- * Correlation identifier for tracking command batches through consensus.
- */
+/// Correlation identifier for tracking command batches through consensus.
 public record CorrelationId(String id) {
     public static CorrelationId correlationId(String id) {
         return new CorrelationId(id);

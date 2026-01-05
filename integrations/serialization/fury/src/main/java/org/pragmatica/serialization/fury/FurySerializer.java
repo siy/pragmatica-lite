@@ -25,16 +25,12 @@ import org.apache.fury.ThreadSafeFury;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Apache Fury-based serializer implementation.
- */
+/// Apache Fury-based serializer implementation.
 public interface FurySerializer extends Serializer {
-    /**
-     * Create a Fury serializer with the given class registrators.
-     *
-     * @param registrators class registrators to apply
-     * @return a thread-safe Fury serializer
-     */
+    /// Create a Fury serializer with the given class registrators.
+    ///
+    /// @param registrators class registrators to apply
+    /// @return a thread-safe Fury serializer
     static FurySerializer furySerializer(ClassRegistrator... registrators) {
         record furySerializer(ThreadSafeFury fury) implements FurySerializer {
             private static final Logger log = LoggerFactory.getLogger(FurySerializer.class);
