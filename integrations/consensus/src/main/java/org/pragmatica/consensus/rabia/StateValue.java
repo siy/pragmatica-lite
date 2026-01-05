@@ -15,20 +15,12 @@
  */
 
 package org.pragmatica.consensus.rabia;
-/**
- * Represents the state values defined in the Rabia protocol (v0, v1, v?).
- */
+/// Represents the state values defined in the Rabia protocol (v0, v1, v?).
 public enum StateValue {
-    /**
-     * Negative vote (no agreement).
-     */
+    /// Negative vote (no agreement).
     V0,
-    /**
-     * Positive vote (agreement).
-     */
+    /// Positive vote (agreement).
     V1,
-    /**
-     * Uncertain/question (needs coin flip).
-     */
+    /// Uncertain/question (needs coin flip).
     VQUESTION
 }

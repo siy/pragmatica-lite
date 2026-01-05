@@ -18,15 +18,13 @@ package org.pragmatica.net.tcp;
 
 import org.pragmatica.lang.Option;
 
-/**
- * Configuration for TCP server.
- *
- * @param name          server name for logging
- * @param port          port to bind to
- * @param tls           optional TLS configuration for incoming connections (server-side TLS)
- * @param clientTls     optional TLS configuration for outgoing connections (client-side TLS)
- * @param socketOptions socket-level options
- */
+/// Configuration for TCP server.
+///
+/// @param name          server name for logging
+/// @param port          port to bind to
+/// @param tls           optional TLS configuration for incoming connections (server-side TLS)
+/// @param clientTls     optional TLS configuration for outgoing connections (client-side TLS)
+/// @param socketOptions socket-level options
 public record ServerConfig(String name,
                            int port,
                            Option<TlsConfig> tls,
@@ -44,12 +42,10 @@ public record ServerConfig(String name,
         return new ServerConfig(name, port, Option.some(tls), clientTls, socketOptions);
     }
 
-    /**
-     * Configure TLS for outgoing connections (when this server connects to other servers).
-     *
-     * @param clientTls TLS configuration for client-side connections
-     * @return new config with client TLS
-     */
+    /// Configure TLS for outgoing connections (when this server connects to other servers).
+    ///
+    /// @param clientTls TLS configuration for client-side connections
+    /// @return new config with client TLS
     public ServerConfig withClientTls(TlsConfig clientTls) {
         return new ServerConfig(name, port, tls, Option.some(clientTls), socketOptions);
     }

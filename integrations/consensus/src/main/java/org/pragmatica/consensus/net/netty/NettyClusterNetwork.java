@@ -46,9 +46,7 @@ import static org.pragmatica.consensus.net.NetworkManagementOperation.ConnectNod
 import static org.pragmatica.consensus.net.NetworkManagementOperation.DisconnectNode;
 import static org.pragmatica.consensus.net.netty.NettyClusterNetwork.ViewChangeOperation.*;
 
-/**
- * Manages network connections between nodes using Netty.
- */
+/// Manages network connections between nodes using Netty.
 public class NettyClusterNetwork implements ClusterNetwork {
     private static final Logger log = LoggerFactory.getLogger(NettyClusterNetwork.class);
     private static final double SCALE = 0.3d;
@@ -359,5 +357,10 @@ public class NettyClusterNetwork implements ClusterNetwork {
     @Override
     public int connectedNodeCount() {
         return peerLinks.size();
+    }
+
+    @Override
+    public Option<Server> server() {
+        return Option.option(server.get());
     }
 }

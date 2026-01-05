@@ -31,21 +31,15 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.pragmatica.consensus.leader.LeaderNotification.leaderChange;
 import static org.pragmatica.lang.Option.option;
 
-/**
- * Leader manager is responsible for choosing which node is the leader.
- * Although consensus is leaderless, it is often necessary to have a single
- * source of truth for the cluster management. The leader node can be used for this purpose.
- */
+/// Leader manager is responsible for choosing which node is the leader.
+/// Although consensus is leaderless, it is often necessary to have a single
+/// source of truth for the cluster management. The leader node can be used for this purpose.
 public interface LeaderManager {
-    /**
-     * Get the current leader node ID.
-     * @return the current leader, or empty if no leader is elected
-     */
+    /// Get the current leader node ID.
+    /// @return the current leader, or empty if no leader is elected
     Option<NodeId> leader();
 
-    /**
-     * Check if this node is the current leader.
-     */
+    /// Check if this node is the current leader.
     boolean isLeader();
 
     static LeaderManager leaderManager(NodeId self, MessageRouter router) {

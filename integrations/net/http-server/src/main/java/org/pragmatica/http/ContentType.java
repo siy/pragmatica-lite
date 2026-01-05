@@ -15,11 +15,9 @@
  */
 
 package org.pragmatica.http;
-/**
- * HTTP Content-Type abstraction.
- * <p>
- * Use {@link CommonContentType} for standard content types, or create custom ones via factory method.
- */
+/// HTTP Content-Type abstraction.
+///
+/// Use [CommonContentType] for standard content types, or create custom ones via factory method.
 public interface ContentType {
     String headerText();
 

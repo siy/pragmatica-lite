@@ -10,20 +10,16 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * Comprehensive examples demonstrating Promise monad usage patterns.
- * 
- * This class provides real-world examples of how to use Promise effectively
- * for asynchronous programming in Java, covering basic operations, error handling,
- * composition patterns, and integration with other monads.
- */
+/// Comprehensive examples demonstrating Promise monad usage patterns.
+///
+/// This class provides real-world examples of how to use Promise effectively
+/// for asynchronous programming in Java, covering basic operations, error handling,
+/// composition patterns, and integration with other monads.
 public class ComprehensivePromiseExamples {
     // ========================================
     // Basic Promise Operations
     // ========================================
-    /**
-     * Example 1: Creating and resolving promises
-     */
+    /// Example 1: Creating and resolving promises
     public void basicPromiseOperations() {
         // Create resolved promise
         Promise<String> resolved = Promise.resolved(Result.success("Hello, World!"));
@@ -45,9 +41,7 @@ public class ComprehensivePromiseExamples {
         Promise<String> chained = transformed.flatMap(str -> Promise.promise(() -> Result.success(str.toUpperCase())));
     }
 
-    /**
-     * Example 2: Error handling patterns
-     */
+    /// Example 2: Error handling patterns
     public void errorHandlingPatterns() {
         Promise<String> riskyOperation = Promise.promise(() -> {
                                                              if (Math.random() > 0.5) {
@@ -66,9 +60,7 @@ public class ComprehensivePromiseExamples {
     // ========================================
     // Composition Patterns
     // ========================================
-    /**
-     * Example 3: Promise composition - all, race, sequence
-     */
+    /// Example 3: Promise composition - all, race, sequence
     public void compositionPatterns() {
         List<Promise<String>> promises = List.of(Promise.promise(() -> {
                                                                      try{
@@ -106,9 +98,7 @@ public class ComprehensivePromiseExamples {
                                                                                                    + " -> Complete")));
     }
 
-    /**
-     * Example 4: Integration with Result and Option
-     */
+    /// Example 4: Integration with Result and Option
     public void monadIntegration() {
         // Promise<Result<T>> pattern for operations that can fail
         Promise<Result<String>> resultPromise = Promise.promise(() -> {
@@ -132,9 +122,7 @@ public class ComprehensivePromiseExamples {
     // ========================================
     // Real-World Scenarios
     // ========================================
-    /**
-     * Example 5: Async I/O operations
-     */
+    /// Example 5: Async I/O operations
     public void asyncIOOperations() {
         // Simulate async file reading
         Promise<String> fileContent = Promise.promise(() -> {
@@ -155,9 +143,7 @@ public class ComprehensivePromiseExamples {
                                                                              .toList());
     }
 
-    /**
-     * Example 6: Parallel processing
-     */
+    /// Example 6: Parallel processing
     public void parallelProcessing() {
         List<Integer> data = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         // Process items in parallel
@@ -180,9 +166,7 @@ public class ComprehensivePromiseExamples {
                                                                 .sum());
     }
 
-    /**
-     * Example 7: Timeout and cancellation
-     */
+    /// Example 7: Timeout and cancellation
     public void timeoutAndCancellation() {
         Promise<String> longRunningTask = Promise.promise(() -> {
                                                               try{
@@ -197,9 +181,7 @@ public class ComprehensivePromiseExamples {
         Promise<String> withTimeout = longRunningTask.recover(error -> "Task timed out");
     }
 
-    /**
-     * Example 8: Migration from CompletableFuture
-     */
+    /// Example 8: Migration from CompletableFuture
     public void migrationFromCompletableFuture() {
         // Old CompletableFuture approach
         CompletableFuture<String> oldWay = CompletableFuture.supplyAsync(() -> "Hello")

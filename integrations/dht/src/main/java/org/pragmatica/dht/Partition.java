@@ -20,10 +20,8 @@ import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.utils.Causes;
 
-/**
- * A partition identifier in the DHT consistent hash ring.
- * Partitions are numbered 0 to MAX_PARTITIONS-1 (default 1024 partitions).
- */
+/// A partition identifier in the DHT consistent hash ring.
+/// Partitions are numbered 0 to MAX_PARTITIONS-1 (default 1024 partitions).
 public record Partition(int value) implements Comparable<Partition> {
     public static final int MAX_PARTITIONS = 1024;
 
@@ -46,16 +44,12 @@ public record Partition(int value) implements Comparable<Partition> {
         return new Partition(value);
     }
 
-    /**
-     * Get the next partition in the ring (wraps around).
-     */
+    /// Get the next partition in the ring (wraps around).
     public Partition next() {
         return new Partition((value + 1) % MAX_PARTITIONS);
     }
 
-    /**
-     * Get the previous partition in the ring (wraps around).
-     */
+    /// Get the previous partition in the ring (wraps around).
     public Partition previous() {
         return new Partition((value - 1 + MAX_PARTITIONS) % MAX_PARTITIONS);
     }

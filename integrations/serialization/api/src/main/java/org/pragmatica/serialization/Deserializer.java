@@ -19,17 +19,13 @@ package org.pragmatica.serialization;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-/**
- * Basic deserialization interface for decoding objects from binary format.
- */
+/// Basic deserialization interface for decoding objects from binary format.
 public interface Deserializer {
-    /**
-     * Decode an object from a byte array.
-     *
-     * @param bytes the serialized bytes
-     * @param <T>   the type of the object
-     * @return the deserialized object
-     */
+    /// Decode an object from a byte array.
+    ///
+    /// @param bytes the serialized bytes
+    /// @param <T>   the type of the object
+    /// @return the deserialized object
     default <T> T decode(byte[] bytes) {
         var byteBuf = Unpooled.wrappedBuffer(bytes);
         try{
@@ -39,12 +35,10 @@ public interface Deserializer {
         }
     }
 
-    /**
-     * Read an object from a ByteBuf.
-     *
-     * @param byteBuf the buffer to read from
-     * @param <T>     the type of the object
-     * @return the deserialized object
-     */
+    /// Read an object from a ByteBuf.
+    ///
+    /// @param byteBuf the buffer to read from
+    /// @param <T>     the type of the object
+    /// @return the deserialized object
     <T> T read(ByteBuf byteBuf);
 }

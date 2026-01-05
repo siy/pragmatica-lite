@@ -15,27 +15,17 @@
  */
 
 package org.pragmatica.http.websocket;
-/**
- * WebSocket message types.
- */
+/// WebSocket message types.
 public sealed interface WebSocketMessage {
-    /**
-     * Connection opened.
-     */
+    /// Connection opened.
     record Open() implements WebSocketMessage {}
 
-    /**
-     * Text message received.
-     */
+    /// Text message received.
     record Text(String content) implements WebSocketMessage {}
 
-    /**
-     * Binary message received.
-     */
+    /// Binary message received.
     record Binary(byte[] content) implements WebSocketMessage {}
 
-    /**
-     * Connection closed.
-     */
+    /// Connection closed.
     record Close() implements WebSocketMessage {}
 }

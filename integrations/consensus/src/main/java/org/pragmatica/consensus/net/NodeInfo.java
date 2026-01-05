@@ -19,17 +19,13 @@ package org.pragmatica.consensus.net;
 import org.pragmatica.consensus.NodeId;
 import org.pragmatica.net.tcp.NodeAddress;
 
-/**
- * Node information: ID and address.
- */
+/// Node information: ID and address.
 public interface NodeInfo {
     NodeId id();
 
     NodeAddress address();
 
-    /**
-     * Create new node information.
-     */
+    /// Create new node information.
     static NodeInfo nodeInfo(NodeId id, NodeAddress address) {
         record nodeInfo(NodeId id, NodeAddress address) implements NodeInfo {}
         return new nodeInfo(id, address);

@@ -23,16 +23,14 @@ import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-/**
- * Consistent hash ring for distributing data across nodes.
- * Uses virtual nodes for even distribution and MurmurHash3-like hashing.
- * <p>
- * The ring maps keys to partitions (0-1023), and partitions to nodes.
- * Each physical node has multiple virtual nodes spread across the ring
- * for better load distribution.
- *
- * @param <N> Node identifier type
- */
+/// Consistent hash ring for distributing data across nodes.
+/// Uses virtual nodes for even distribution and MurmurHash3-like hashing.
+///
+/// The ring maps keys to partitions (0-1023), and partitions to nodes.
+/// Each physical node has multiple virtual nodes spread across the ring
+/// for better load distribution.
+///
+/// @param <N> Node identifier type
 public final class ConsistentHashRing<N extends Comparable<N>> {
     private static final int VIRTUAL_NODES_PER_PHYSICAL = 150;
 
@@ -45,23 +43,17 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
         this.virtualNodesPerPhysical = virtualNodesPerPhysical;
     }
 
-    /**
-     * Create a new empty consistent hash ring with default virtual node count.
-     */
+    /// Create a new empty consistent hash ring with default virtual node count.
     public static <N extends Comparable<N>> ConsistentHashRing<N> consistentHashRing() {
         return new ConsistentHashRing<>(VIRTUAL_NODES_PER_PHYSICAL);
     }
 
-    /**
-     * Create a new empty consistent hash ring with specified virtual node count.
-     */
+    /// Create a new empty consistent hash ring with specified virtual node count.
     public static <N extends Comparable<N>> ConsistentHashRing<N> consistentHashRing(int virtualNodesPerPhysical) {
         return new ConsistentHashRing<>(virtualNodesPerPhysical);
     }
 
-    /**
-     * Add a node to the ring.
-     */
+    /// Add a node to the ring.
     public void addNode(N node) {
         lock.writeLock()
             .lock();
@@ -82,9 +74,7 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
         }
     }
 
-    /**
-     * Remove a node from the ring.
-     */
+    /// Remove a node from the ring.
     public void removeNode(N node) {
         lock.writeLock()
             .lock();
@@ -99,27 +89,21 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
         }
     }
 
-    /**
-     * Get the partition for a given key.
-     * Note: This method does not require locking as it only uses the hash function.
-     */
+    /// Get the partition for a given key.
+    /// Note: This method does not require locking as it only uses the hash function.
     public Partition partitionFor(byte[] key) {
         int hash = hash(key);
         // Use bitwise AND to ensure non-negative result (Math.abs fails for Integer.MIN_VALUE)
         return Partition.partitionUnsafe((hash & 0x7FFFFFFF) % Partition.MAX_PARTITIONS);
     }
 
-    /**
-     * Get the partition for a given string key.
-     */
+    /// Get the partition for a given string key.
     public Partition partitionFor(String key) {
         return partitionFor(key.getBytes(StandardCharsets.UTF_8));
     }
 
-    /**
-     * Get the primary node for a given key.
-     * Returns empty if no nodes are in the ring.
-     */
+    /// Get the primary node for a given key.
+    /// Returns empty if no nodes are in the ring.
     public Option<N> primaryFor(byte[] key) {
         lock.readLock()
             .lock();
@@ -135,17 +119,13 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
         }
     }
 
-    /**
-     * Get the primary node for a given string key.
-     */
+    /// Get the primary node for a given string key.
     public Option<N> primaryFor(String key) {
         return primaryFor(key.getBytes(StandardCharsets.UTF_8));
     }
 
-    /**
-     * Get the primary and replica nodes for a given key.
-     * Returns up to replicaCount nodes, starting with primary.
-     */
+    /// Get the primary and replica nodes for a given key.
+    /// Returns up to replicaCount nodes, starting with primary.
     public List<N> nodesFor(byte[] key, int replicaCount) {
         lock.readLock()
             .lock();
@@ -178,16 +158,12 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
         }
     }
 
-    /**
-     * Get the primary and replica nodes for a given string key.
-     */
+    /// Get the primary and replica nodes for a given string key.
     public List<N> nodesFor(String key, int replicaCount) {
         return nodesFor(key.getBytes(StandardCharsets.UTF_8), replicaCount);
     }
 
-    /**
-     * Get all nodes currently in the ring.
-     */
+    /// Get all nodes currently in the ring.
     public Set<N> nodes() {
         lock.readLock()
             .lock();
@@ -199,9 +175,7 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
         }
     }
 
-    /**
-     * Get the number of nodes in the ring.
-     */
+    /// Get the number of nodes in the ring.
     public int nodeCount() {
         lock.readLock()
             .lock();
@@ -213,9 +187,7 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
         }
     }
 
-    /**
-     * Check if the ring is empty.
-     */
+    /// Check if the ring is empty.
     public boolean isEmpty() {
         lock.readLock()
             .lock();
@@ -235,10 +207,8 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
         return ring.get(key);
     }
 
-    /**
-     * MurmurHash3-like hash function.
-     * Provides good distribution for consistent hashing.
-     */
+    /// MurmurHash3-like hash function.
+    /// Provides good distribution for consistent hashing.
     private static int hash(byte[] data) {
         int h = 0x811c9dc5;
         for (byte b : data) {

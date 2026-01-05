@@ -24,9 +24,7 @@ import org.pragmatica.net.dns.ResolverErrors.UnknownError;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-/**
- * Utilities for working with InetAddress.
- */
+/// Utilities for working with InetAddress.
 public final class InetUtils {
     public static Result<InetAddress> forBytes(byte[] address) {
         return Result.lift(InetUtils::exceptionMapper, () -> InetAddress.getByAddress(address));

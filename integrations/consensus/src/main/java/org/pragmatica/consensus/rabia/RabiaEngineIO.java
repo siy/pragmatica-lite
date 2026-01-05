@@ -21,9 +21,7 @@ import org.pragmatica.messaging.Message;
 
 import java.util.List;
 
-/**
- * Input/Output types for the Rabia consensus engine.
- */
+/// Input/Output types for the Rabia consensus engine.
 public interface RabiaEngineIO extends Message.Local {
     record SubmitCommands<C extends Command>(List<C> commands) implements RabiaEngineIO {}
 }

@@ -21,59 +21,39 @@ import org.pragmatica.consensus.NodeId;
 import org.pragmatica.consensus.ProtocolMessage;
 import org.pragmatica.consensus.rabia.RabiaPersistence.SavedState;
 
-/**
- * Message types for the Rabia consensus protocol.
- */
+/// Message types for the Rabia consensus protocol.
 public sealed interface RabiaProtocolMessage extends ProtocolMessage {
-    /**
-     * Synchronous protocol messages (part of the consensus rounds).
-     */
+    /// Synchronous protocol messages (part of the consensus rounds).
     sealed interface Synchronous extends RabiaProtocolMessage {
-        /**
-         * Initial proposal from a node.
-         */
+        /// Initial proposal from a node.
         record Propose<C extends Command>(NodeId sender, Phase phase, Batch<C> value)
         implements Synchronous {}
 
-        /**
-         * Round 1 vote message.
-         */
+        /// Round 1 vote message.
         record VoteRound1(NodeId sender, Phase phase, StateValue stateValue)
         implements Synchronous {}
 
-        /**
-         * Round 2 vote message.
-         */
+        /// Round 2 vote message.
         record VoteRound2(NodeId sender, Phase phase, StateValue stateValue)
         implements Synchronous {}
 
-        /**
-         * Decision broadcast message.
-         */
+        /// Decision broadcast message.
         record Decision<C extends Command>(NodeId sender,
                                            Phase phase,
                                            StateValue stateValue,
                                            Batch<C> value)
         implements Synchronous {}
 
-        /**
-         * State synchronization response.
-         */
+        /// State synchronization response.
         record SyncResponse<C extends Command>(NodeId sender, SavedState<C> state) implements Synchronous {}
     }
 
-    /**
-     * Asynchronous protocol messages (outside consensus rounds).
-     */
+    /// Asynchronous protocol messages (outside consensus rounds).
     sealed interface Asynchronous extends RabiaProtocolMessage {
-        /**
-         * State synchronization request.
-         */
+        /// State synchronization request.
         record SyncRequest(NodeId sender) implements Asynchronous {}
 
-        /**
-         * Distribute a new batch to all nodes.
-         */
+        /// Distribute a new batch to all nodes.
         record NewBatch<C extends Command>(NodeId sender, Batch<C> batch) implements Asynchronous {}
     }
 }

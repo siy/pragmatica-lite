@@ -19,9 +19,7 @@ package org.pragmatica.config.toml;
 import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Result;
 
-/**
- * Typed errors for TOML parsing operations.
- */
+/// Typed errors for TOML parsing operations.
 public sealed interface TomlError extends Cause {
     record SyntaxError(int line, String details) implements TomlError {
         @Override

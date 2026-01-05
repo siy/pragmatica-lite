@@ -18,12 +18,8 @@ package org.pragmatica.consensus;
 
 import org.pragmatica.messaging.Message;
 
-/**
- * Base interface for all consensus protocol messages.
- */
+/// Base interface for all consensus protocol messages.
 public interface ProtocolMessage extends Message.Wired {
-    /**
-     * The node that sent this message.
-     */
+    /// The node that sent this message.
     NodeId sender();
 }

@@ -18,14 +18,10 @@ package org.pragmatica.utility;
 
 import org.pragmatica.lang.io.TimeSpan;
 
-/**
- * Simple sleep utility that handles interrupts gracefully.
- */
+/// Simple sleep utility that handles interrupts gracefully.
 public sealed interface Sleep {
-    /**
-     * Sleep for the specified time span.
-     * If interrupted, restores the interrupt flag.
-     */
+    /// Sleep for the specified time span.
+    /// If interrupted, restores the interrupt flag.
     static void sleep(TimeSpan span) {
         try{
             Thread.sleep(span.millis());

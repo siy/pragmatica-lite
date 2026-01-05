@@ -38,33 +38,33 @@ import io.netty.handler.ssl.SslContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Convenient wrapper for Netty server setup boilerplate.
- * Supports TLS, socket options, and client connections reusing the same channel handlers.
- */
+/// Convenient wrapper for Netty server setup boilerplate.
+/// Supports TLS, socket options, and client connections reusing the same channel handlers.
 public interface Server {
     String name();
 
     int port();
 
+    /// Get the boss EventLoopGroup for metrics collection.
+    EventLoopGroup bossGroup();
+
+    /// Get the worker EventLoopGroup for metrics collection.
+    EventLoopGroup workerGroup();
+
     Promise<Channel> connectTo(NodeAddress peerLocation);
 
-    /**
-     * Shutdown the server.
-     *
-     * @param intermediateOperation Operation to run between server channel shutdown and event loop groups shutdown.
-     *                              Enables graceful shutdown: stop accepting new connections, finish existing work, then shutdown.
-     */
+    /// Shutdown the server.
+    ///
+    /// @param intermediateOperation Operation to run between server channel shutdown and event loop groups shutdown.
+    ///                              Enables graceful shutdown: stop accepting new connections, finish existing work, then shutdown.
     Promise<Unit> stop(Supplier<Promise<Unit>> intermediateOperation);
 
-    /**
-     * Create a server with the given configuration.
-     *
-     * @param config          server configuration
-     * @param channelHandlers supplier for channel handlers (called for each new connection)
-     *
-     * @return promise of the running server
-     */
+    /// Create a server with the given configuration.
+    ///
+    /// @param config          server configuration
+    /// @param channelHandlers supplier for channel handlers (called for each new connection)
+    ///
+    /// @return promise of the running server
     static Promise<Server> server(ServerConfig config, Supplier<List<ChannelHandler>> channelHandlers) {
         record server(String name,
                       int port,
@@ -179,15 +179,13 @@ public interface Server {
         return promise;
     }
 
-    /**
-     * Create a server with the simple configuration.
-     *
-     * @param name            server name for logging
-     * @param port            port to bind to
-     * @param channelHandlers supplier for channel handlers
-     *
-     * @return promise of the running server
-     */
+    /// Create a server with the simple configuration.
+    ///
+    /// @param name            server name for logging
+    /// @param port            port to bind to
+    /// @param channelHandlers supplier for channel handlers
+    ///
+    /// @return promise of the running server
     static Promise<Server> server(String name, int port, Supplier<List<ChannelHandler>> channelHandlers) {
         return server(ServerConfig.serverConfig(name, port), channelHandlers);
     }

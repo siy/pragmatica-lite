@@ -19,9 +19,7 @@ package org.pragmatica.net.dns;
 import java.net.InetAddress;
 import java.time.Duration;
 
-/**
- * Resolved domain address with TTL.
- */
+/// Resolved domain address with TTL.
 public interface DomainAddress {
     DomainName name();
 

@@ -30,14 +30,12 @@ import java.util.stream.Collectors;
 
 import static org.pragmatica.consensus.rabia.Batch.emptyBatch;
 
-/**
- * Data structure to hold all state related to a specific consensus phase.
- * <p>
- * This class tracks proposals, round 1 votes, round 2 votes, and decision state
- * for a single phase of the Rabia consensus protocol.
- *
- * @param <C> Command type
- */
+/// Data structure to hold all state related to a specific consensus phase.
+///
+/// This class tracks proposals, round 1 votes, round 2 votes, and decision state
+/// for a single phase of the Rabia consensus protocol.
+///
+/// @param <C> Command type
 final class PhaseData<C extends Command> {
     private final Phase phase;
     private final Map<NodeId, Batch<C>> proposals = new ConcurrentHashMap<>();
@@ -54,90 +52,66 @@ final class PhaseData<C extends Command> {
     }
 
     // ==================== Intent-Revealing API ====================
-    /**
-     * Registers a proposal from a node. Idempotent - first proposal wins.
-     */
+    /// Registers a proposal from a node. Idempotent - first proposal wins.
     void registerProposal(NodeId node, Batch<C> batch) {
         proposals.putIfAbsent(node, batch);
     }
 
-    /**
-     * Checks if a node has already voted in round 1.
-     */
+    /// Checks if a node has already voted in round 1.
     boolean hasVotedRound1(NodeId node) {
         return round1Votes.containsKey(node);
     }
 
-    /**
-     * Registers a round 1 vote from a node.
-     */
+    /// Registers a round 1 vote from a node.
     void registerRound1Vote(NodeId node, StateValue value) {
         round1Votes.put(node, value);
     }
 
-    /**
-     * Checks if a node has already voted in round 2.
-     */
+    /// Checks if a node has already voted in round 2.
     boolean hasVotedRound2(NodeId node) {
         return round2Votes.containsKey(node);
     }
 
-    /**
-     * Registers a round 2 vote from a node.
-     */
+    /// Registers a round 2 vote from a node.
     void registerRound2Vote(NodeId node, StateValue value) {
         round2Votes.put(node, value);
     }
 
-    /**
-     * Checks if a decision has been made for this phase.
-     */
+    /// Checks if a decision has been made for this phase.
     boolean isDecided() {
         return decided.get();
     }
 
-    /**
-     * Attempts to mark this phase as decided. Returns true if successful
-     * (was not already decided), false if already decided.
-     */
+    /// Attempts to mark this phase as decided. Returns true if successful
+    /// (was not already decided), false if already decided.
     boolean tryMarkDecided() {
         return decided.compareAndSet(false, true);
     }
 
-    /**
-     * Returns the number of proposals collected.
-     */
+    /// Returns the number of proposals collected.
     int proposalCount() {
         return proposals.size();
     }
 
-    /**
-     * Checks if we have collected proposals from a majority of nodes.
-     */
+    /// Checks if we have collected proposals from a majority of nodes.
     boolean hasQuorumProposals(int quorumSize) {
         return proposals.size() >= quorumSize;
     }
 
     // ==================== Voting Logic ====================
-    /**
-     * Checks if we have collected votes from a majority of nodes in round 1.
-     */
+    /// Checks if we have collected votes from a majority of nodes in round 1.
     boolean hasRound1MajorityVotes(int quorumSize) {
         return round1Votes.size() >= quorumSize;
     }
 
-    /**
-     * Checks if we have collected votes from a majority of nodes in round 2.
-     */
+    /// Checks if we have collected votes from a majority of nodes in round 2.
     boolean hasRound2MajorityVotes(int quorumSize) {
         return round2Votes.size() >= quorumSize;
     }
 
-    /**
-     * Finds the agreed proposal when a V1 decision is made.
-     * Returns the batch that has the most proposals (quorum support expected),
-     * with deterministic tiebreaker by correlationId for consistency across nodes.
-     */
+    /// Finds the agreed proposal when a V1 decision is made.
+    /// Returns the batch that has the most proposals (quorum support expected),
+    /// with deterministic tiebreaker by correlationId for consistency across nodes.
     Batch<C> findAgreedProposal(int quorumSize) {
         if (proposals.isEmpty()) {
             return emptyBatch();
@@ -160,12 +134,10 @@ final class PhaseData<C extends Command> {
                                      .orElse(emptyBatch());
     }
 
-    /**
-     * Evaluates the initial round 1 vote based on collected proposals.
-     * Per Rabia spec: vote V1 if a majority of nodes proposed the same batch, else V0.
-     * <p>
-     * This should only be called after hasQuorumProposals() returns true.
-     */
+    /// Evaluates the initial round 1 vote based on collected proposals.
+    /// Per Rabia spec: vote V1 if a majority of nodes proposed the same batch, else V0.
+    ///
+    /// This should only be called after hasQuorumProposals() returns true.
     VoteRound1 evaluateInitialVote(NodeId self, int quorumSize) {
         // Count proposals by correlationId to find if any batch has quorum support
         var countByCorrelationId = proposals.values()
@@ -183,10 +155,8 @@ final class PhaseData<C extends Command> {
         return new VoteRound1(self, phase, stateValue);
     }
 
-    /**
-     * Evaluates the round 2 vote based on round 1 voting results.
-     * Per Rabia spec: if majority voted same value, vote that; else vote VQUESTION.
-     */
+    /// Evaluates the round 2 vote based on round 1 voting results.
+    /// Per Rabia spec: if majority voted same value, vote that; else vote VQUESTION.
     StateValue evaluateRound2Vote(int quorumSize) {
         for (var value : List.of(StateValue.V0, StateValue.V1)) {
             if (countRound1VotesForValue(value) >= quorumSize) {
@@ -196,9 +166,7 @@ final class PhaseData<C extends Command> {
         return StateValue.VQUESTION;
     }
 
-    /**
-     * Counts round 1 votes for a specific state value.
-     */
+    /// Counts round 1 votes for a specific state value.
     int countRound1VotesForValue(StateValue value) {
         return ( int) round1Votes.values()
                                 .stream()
@@ -206,9 +174,7 @@ final class PhaseData<C extends Command> {
                                 .count();
     }
 
-    /**
-     * Counts round 2 votes for a specific state value.
-     */
+    /// Counts round 2 votes for a specific state value.
     int countRound2VotesForValue(StateValue value) {
         return ( int) round2Votes.values()
                                 .stream()
@@ -216,13 +182,11 @@ final class PhaseData<C extends Command> {
                                 .count();
     }
 
-    /**
-     * Processes round 2 completion and determines the decision.
-     * Per Rabia spec:
-     * 1. If f+1 nodes voted V1, decide V1
-     * 2. If f+1 nodes voted V0, decide V0
-     * 3. Otherwise, use deterministic coin flip
-     */
+    /// Processes round 2 completion and determines the decision.
+    /// Per Rabia spec:
+    /// 1. If f+1 nodes voted V1, decide V1
+    /// 2. If f+1 nodes voted V0, decide V0
+    /// 3. Otherwise, use deterministic coin flip
     Decision<C> processRound2Completion(NodeId self, int fPlusOneSize, int quorumSize) {
         if (countRound2VotesForValue(StateValue.V1) >= fPlusOneSize) {
             return new Decision<>(self, phase, StateValue.V1, findAgreedProposal(quorumSize));
@@ -237,10 +201,8 @@ final class PhaseData<C extends Command> {
         return new Decision<>(self, phase, decision, batch);
     }
 
-    /**
-     * Gets a deterministic coin flip value for a phase.
-     * Must be deterministic across all nodes for consensus correctness.
-     */
+    /// Gets a deterministic coin flip value for a phase.
+    /// Must be deterministic across all nodes for consensus correctness.
     StateValue coinFlip() {
         long seed = phase.value();
         return ( Math.abs(seed) % 2 == 0)

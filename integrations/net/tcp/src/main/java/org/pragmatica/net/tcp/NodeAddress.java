@@ -18,9 +18,7 @@ package org.pragmatica.net.tcp;
 
 import java.net.InetSocketAddress;
 
-/**
- * Network node address (host and port).
- */
+/// Network node address (host and port).
 public interface NodeAddress {
     String host();
 

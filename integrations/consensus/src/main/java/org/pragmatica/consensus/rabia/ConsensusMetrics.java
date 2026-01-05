@@ -18,75 +18,57 @@ package org.pragmatica.consensus.rabia;
 
 import org.pragmatica.consensus.NodeId;
 
-/**
- * Metrics collection interface for consensus engine observability.
- * <p>
- * Implementations can integrate with monitoring systems like Micrometer.
- * Use {@link #noop()} for a no-op implementation when metrics are not needed.
- */
+/// Metrics collection interface for consensus engine observability.
+///
+/// Implementations can integrate with monitoring systems like Micrometer.
+/// Use [#noop()] for a no-op implementation when metrics are not needed.
 public interface ConsensusMetrics {
-    /**
-     * Record a decision being made.
-     *
-     * @param nodeId     The node making the decision
-     * @param phase      The phase number
-     * @param stateValue The decided value (V0 or V1)
-     * @param durationNs Duration from phase start to decision in nanoseconds
-     */
+    /// Record a decision being made.
+    ///
+    /// @param nodeId     The node making the decision
+    /// @param phase      The phase number
+    /// @param stateValue The decided value (V0 or V1)
+    /// @param durationNs Duration from phase start to decision in nanoseconds
     void recordDecision(NodeId nodeId, Phase phase, StateValue stateValue, long durationNs);
 
-    /**
-     * Record a proposal being sent or received.
-     *
-     * @param nodeId The node sending the proposal
-     * @param phase  The phase number
-     */
+    /// Record a proposal being sent or received.
+    ///
+    /// @param nodeId The node sending the proposal
+    /// @param phase  The phase number
     void recordProposal(NodeId nodeId, Phase phase);
 
-    /**
-     * Record a round 1 vote.
-     *
-     * @param nodeId     The voting node
-     * @param phase      The phase number
-     * @param stateValue The voted value
-     */
+    /// Record a round 1 vote.
+    ///
+    /// @param nodeId     The voting node
+    /// @param phase      The phase number
+    /// @param stateValue The voted value
     void recordVoteRound1(NodeId nodeId, Phase phase, StateValue stateValue);
 
-    /**
-     * Record a round 2 vote.
-     *
-     * @param nodeId     The voting node
-     * @param phase      The phase number
-     * @param stateValue The voted value
-     */
+    /// Record a round 2 vote.
+    ///
+    /// @param nodeId     The voting node
+    /// @param phase      The phase number
+    /// @param stateValue The voted value
     void recordVoteRound2(NodeId nodeId, Phase phase, StateValue stateValue);
 
-    /**
-     * Record a synchronization attempt.
-     *
-     * @param nodeId  The node requesting sync
-     * @param success Whether sync was successful
-     */
+    /// Record a synchronization attempt.
+    ///
+    /// @param nodeId  The node requesting sync
+    /// @param success Whether sync was successful
     void recordSyncAttempt(NodeId nodeId, boolean success);
 
-    /**
-     * Update the pending batch count gauge.
-     *
-     * @param nodeId The node
-     * @param count  Current number of pending batches
-     */
+    /// Update the pending batch count gauge.
+    ///
+    /// @param nodeId The node
+    /// @param count  Current number of pending batches
     void updatePendingBatches(NodeId nodeId, int count);
 
-    /**
-     * Returns a no-op implementation that does nothing.
-     */
+    /// Returns a no-op implementation that does nothing.
     static ConsensusMetrics noop() {
         return NoopMetrics.INSTANCE;
     }
 
-    /**
-     * No-op implementation for when metrics are disabled.
-     */
+    /// No-op implementation for when metrics are disabled.
     enum NoopMetrics implements ConsensusMetrics {
         INSTANCE;
         @Override

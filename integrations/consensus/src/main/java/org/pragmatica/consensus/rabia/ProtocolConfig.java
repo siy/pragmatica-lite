@@ -22,19 +22,15 @@ import org.pragmatica.lang.io.TimeSpan;
 
 import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 
-/**
- * Configuration for the Rabia consensus engine.
- *
- * @param cleanupInterval      Interval for cleaning up old phase data
- * @param syncRetryInterval    Interval for retrying synchronization attempts
- * @param removeOlderThanPhases Number of phases to retain before cleanup
- */
+/// Configuration for the Rabia consensus engine.
+///
+/// @param cleanupInterval      Interval for cleaning up old phase data
+/// @param syncRetryInterval    Interval for retrying synchronization attempts
+/// @param removeOlderThanPhases Number of phases to retain before cleanup
 public record ProtocolConfig(TimeSpan cleanupInterval,
                              TimeSpan syncRetryInterval,
                              long removeOlderThanPhases) {
-    /**
-     * Validates and creates a ProtocolConfig.
-     */
+    /// Validates and creates a ProtocolConfig.
     public static Result<ProtocolConfig> protocolConfig(TimeSpan cleanupInterval,
                                                         TimeSpan syncRetryInterval,
                                                         long removeOlderThanPhases) {
@@ -58,27 +54,21 @@ public record ProtocolConfig(TimeSpan cleanupInterval,
                             .result();
     }
 
-    /**
-     * Creates a default (production) configuration.
-     */
+    /// Creates a default (production) configuration.
     public static ProtocolConfig defaultConfig() {
         return new ProtocolConfig(timeSpan(60)
                                           .seconds(), timeSpan(5)
                                                               .seconds(), 100);
     }
 
-    /**
-     * Creates a test configuration with faster intervals.
-     */
+    /// Creates a test configuration with faster intervals.
     public static ProtocolConfig testConfig() {
         return new ProtocolConfig(timeSpan(60)
                                           .seconds(), timeSpan(100)
                                                               .millis(), 100);
     }
 
-    /**
-     * Configuration validation errors.
-     */
+    /// Configuration validation errors.
     public sealed interface ConfigError extends Cause {
         record InvalidTimeSpan(String field) implements ConfigError {
             @Override

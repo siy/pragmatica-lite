@@ -28,23 +28,15 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * Persistence interface for Rabia consensus state.
- */
+/// Persistence interface for Rabia consensus state.
 public interface RabiaPersistence<C extends Command> {
-    /**
-     * Save the current state.
-     */
+    /// Save the current state.
     Result<Unit> save(StateMachine<C> stateMachine, Phase lastCommittedPhase, Collection<Batch<C>> pendingBatches);
 
-    /**
-     * Load the persisted state.
-     */
+    /// Load the persisted state.
     Option<SavedState<C>> load();
 
-    /**
-     * Create an in-memory persistence implementation (for testing or single-session use).
-     */
+    /// Create an in-memory persistence implementation (for testing or single-session use).
     static <C extends Command> RabiaPersistence<C> inMemory() {
         record inMemory <C extends Command>(AtomicReference<SavedState<C>> state) implements RabiaPersistence<C> {
             @Override
@@ -69,9 +61,7 @@ public interface RabiaPersistence<C extends Command> {
         return new inMemory <>(new AtomicReference<>());
     }
 
-    /**
-     * Saved consensus state.
-     */
+    /// Saved consensus state.
     record SavedState<C extends Command>(byte[] snapshot,
                                          Phase lastCommittedPhase,
                                          List<Batch<C>> pendingBatches) {

@@ -15,13 +15,11 @@
  */
 
 package org.pragmatica.net.tcp;
-/**
- * Socket-level options for server configuration.
- *
- * @param soBacklog   maximum queue length for incoming connection requests (SO_BACKLOG)
- * @param soKeepalive whether to enable TCP keepalive probes (SO_KEEPALIVE)
- * @param tcpNoDelay  whether to disable Nagle's algorithm for low-latency (TCP_NODELAY)
- */
+/// Socket-level options for server configuration.
+///
+/// @param soBacklog   maximum queue length for incoming connection requests (SO_BACKLOG)
+/// @param soKeepalive whether to enable TCP keepalive probes (SO_KEEPALIVE)
+/// @param tcpNoDelay  whether to disable Nagle's algorithm for low-latency (TCP_NODELAY)
 public record SocketOptions(int soBacklog, boolean soKeepalive, boolean tcpNoDelay) {
     public static SocketOptions socketOptions(int soBacklog, boolean soKeepalive, boolean tcpNoDelay) {
         return new SocketOptions(soBacklog, soKeepalive, tcpNoDelay);

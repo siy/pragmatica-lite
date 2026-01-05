@@ -36,33 +36,26 @@ import org.slf4j.LoggerFactory;
 
 import static org.pragmatica.lang.Tuple.tuple;
 
-/**
- * Type-safe message router with support for sealed interface validation.
- * <p>
- * This router supports two modes:
- * <ul>
- *   <li>Mutable - routes can be added dynamically at runtime</li>
- *   <li>Immutable - routes are fixed at construction time with compile-time validation</li>
- * </ul>
- * <p>
- * <b>NOTE</b>: The mutable implementation assumes that the instance is configured and then used
- * without changes.
- */
+/// Type-safe message router with support for sealed interface validation.
+///
+/// This router supports two modes:
+///
+///   - Mutable - routes can be added dynamically at runtime
+///   - Immutable - routes are fixed at construction time with compile-time validation
+///
+///// **NOTE**: The mutable implementation assumes that the instance is configured and then used
+/// without changes.
 public sealed interface MessageRouter {
-    /**
-     * Route a message to its registered handlers.
-     *
-     * @param message the message to route
-     * @param <T>     the message type
-     */
+    /// Route a message to its registered handlers.
+    ///
+    /// @param message the message to route
+    /// @param <T>     the message type
     <T extends Message> void route(T message);
 
-    /**
-     * Route a message asynchronously.
-     *
-     * @param messageSupplier supplier that creates the message
-     * @param <T>             the message type
-     */
+    /// Route a message asynchronously.
+    ///
+    /// @param messageSupplier supplier that creates the message
+    /// @param <T>             the message type
     default <T extends Message> void routeAsync(Supplier<T> messageSupplier) {
         Promise.async(() -> route(messageSupplier.get()));
     }
@@ -93,25 +86,19 @@ public sealed interface MessageRouter {
         }
     }
 
-    /**
-     * Create a new mutable router.
-     */
+    /// Create a new mutable router.
     static MutableRouter mutable() {
         return new MutableRouter.SimpleMutableRouter<>(new ConcurrentHashMap<>());
     }
 
-    /**
-     * Mutable router that allows adding routes at runtime.
-     */
+    /// Mutable router that allows adding routes at runtime.
     sealed interface MutableRouter extends MessageRouter {
-        /**
-         * Add a route for a message type.
-         *
-         * @param messageType the message class
-         * @param receiver    the handler for messages of this type
-         * @param <T>         the message type
-         * @return this router for chaining
-         */
+        /// Add a route for a message type.
+        ///
+        /// @param messageType the message class
+        /// @param receiver    the handler for messages of this type
+        /// @param <T>         the message type
+        /// @return this router for chaining
         <T extends Message> MessageRouter addRoute(Class< ? extends T> messageType, Consumer< ? extends T> receiver);
 
         record SimpleMutableRouter<T extends Message>(ConcurrentMap<Class<T>, List<Consumer<T>>> routingTable) implements MutableRouter {
@@ -139,9 +126,7 @@ public sealed interface MessageRouter {
         }
     }
 
-    /**
-     * Immutable router with fixed routes.
-     */
+    /// Immutable router with fixed routes.
     non-sealed interface ImmutableRouter<T extends Message> extends MessageRouter {
         Map<Class<T>, List<Consumer<T>>> routingTable();
 
@@ -154,12 +139,10 @@ public sealed interface MessageRouter {
         }
     }
 
-    /**
-     * Entry in a route configuration.
-     * Used for building immutable routers with compile-time validation.
-     *
-     * @param <T> the message type
-     */
+    /// Entry in a route configuration.
+    /// Used for building immutable routers with compile-time validation.
+    ///
+    /// @param <T> the message type
     interface Entry<T extends Message> {
         Stream<Tuple2<Class< ? extends T>, Consumer< ? extends T>>> entries();
 
@@ -194,10 +177,8 @@ public sealed interface MessageRouter {
             return list;
         }
 
-        /**
-         * Builder for sealed interface hierarchies.
-         * Validates that all permitted subclasses have routes.
-         */
+        /// Builder for sealed interface hierarchies.
+        /// Validates that all permitted subclasses have routes.
         interface SealedBuilder<T extends Message> extends Entry<T> {
             static <T extends Message> SealedBuilder<T> from(Class<T> clazz) {
                 record sealedBuilder <T extends Message>(Class<T> type,
@@ -247,9 +228,7 @@ public sealed interface MessageRouter {
             Entry<T> route(Entry<? extends T>... routes);
         }
 
-        /**
-         * Create a simple route entry for a specific message type.
-         */
+        /// Create a simple route entry for a specific message type.
         static <T extends Message> Entry<T> route(Class<T> type, Consumer<T> receiver) {
             record entry <T extends Message>(Class<T> type, Consumer<T> receiver) implements Entry<T> {
                 @Override
@@ -266,8 +245,6 @@ public sealed interface MessageRouter {
         }
     }
 
-    /**
-     * Error for invalid router configuration.
-     */
+    /// Error for invalid router configuration.
     record InvalidMessageRouterConfiguration(String message) implements Cause {}
 }

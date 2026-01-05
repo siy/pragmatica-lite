@@ -18,13 +18,9 @@ package org.pragmatica.http.server;
 
 import org.pragmatica.lang.Cause;
 
-/**
- * Error types for HTTP server operations.
- */
+/// Error types for HTTP server operations.
 public sealed interface HttpServerError extends Cause {
-    /**
-     * Failed to bind to the specified port.
-     */
+    /// Failed to bind to the specified port.
     record BindFailed(int port, Throwable cause) implements HttpServerError {
         @Override
         public String message() {
@@ -32,9 +28,7 @@ public sealed interface HttpServerError extends Cause {
         }
     }
 
-    /**
-     * Failed to start server.
-     */
+    /// Failed to start server.
     record StartFailed(String reason) implements HttpServerError {
         @Override
         public String message() {

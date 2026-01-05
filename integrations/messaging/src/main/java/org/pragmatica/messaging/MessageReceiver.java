@@ -18,12 +18,10 @@ package org.pragmatica.messaging;
 
 import java.lang.annotation.*;
 
-/**
- * Marks methods that handle messages from {@link MessageRouter}.
- * <p>
- * This annotation is currently used for documentation purposes only,
- * helping developers identify message handler methods in the codebase.
- */
+/// Marks methods that handle messages from [MessageRouter].
+///
+/// This annotation is currently used for documentation purposes only,
+/// helping developers identify message handler methods in the codebase.
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.METHOD)

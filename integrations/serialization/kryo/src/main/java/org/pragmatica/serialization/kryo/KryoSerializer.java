@@ -27,16 +27,12 @@ import io.netty.buffer.ByteBufOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Kryo-based serializer implementation.
- */
+/// Kryo-based serializer implementation.
 public interface KryoSerializer extends Serializer {
-    /**
-     * Create a Kryo serializer with the given class registrators.
-     *
-     * @param registrators class registrators to apply
-     * @return a thread-safe Kryo serializer
-     */
+    /// Create a Kryo serializer with the given class registrators.
+    ///
+    /// @param registrators class registrators to apply
+    /// @return a thread-safe Kryo serializer
     static KryoSerializer kryoSerializer(ClassRegistrator... registrators) {
         record kryoSerializer(Pool<Kryo> pool) implements KryoSerializer {
             private static final Logger log = LoggerFactory.getLogger(KryoSerializer.class);

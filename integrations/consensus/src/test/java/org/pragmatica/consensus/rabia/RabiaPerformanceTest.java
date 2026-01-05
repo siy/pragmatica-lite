@@ -50,12 +50,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.pragmatica.consensus.NodeId.nodeId;
 import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 
-/**
- * Performance tests for Rabia consensus.
- * Measures throughput in two scenarios:
- * 1. Single proposer (leader-like pattern)
- * 2. Multiple proposers (contention pattern)
- */
+/// Performance tests for Rabia consensus.
+/// Measures throughput in two scenarios:
+/// 1. Single proposer (leader-like pattern)
+/// 2. Multiple proposers (contention pattern)
 @Tag("Benchmark")
 class RabiaPerformanceTest {
 

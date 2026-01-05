@@ -15,9 +15,7 @@
  */
 
 package org.pragmatica.http;
-/**
- * HTTP response status codes.
- */
+/// HTTP response status codes.
 public enum HttpStatus {
     // 2xx Success
     OK(200, "OK"),

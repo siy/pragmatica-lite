@@ -19,9 +19,7 @@ package org.pragmatica.http;
 import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Result;
 
-/**
- * HTTP request methods.
- */
+/// HTTP request methods.
 public enum HttpMethod {
     GET,
     POST,
@@ -32,12 +30,10 @@ public enum HttpMethod {
     OPTIONS,
     TRACE,
     CONNECT;
-    /**
-     * Parse HTTP method from string.
-     *
-     * @param method HTTP method string
-     * @return Result containing the HttpMethod or an error for unknown methods
-     */
+    /// Parse HTTP method from string.
+    ///
+    /// @param method HTTP method string
+    /// @return Result containing the HttpMethod or an error for unknown methods
     public static Result<HttpMethod> from(String method) {
         return switch (method.toUpperCase()) {
             case "GET" -> Result.success(GET);

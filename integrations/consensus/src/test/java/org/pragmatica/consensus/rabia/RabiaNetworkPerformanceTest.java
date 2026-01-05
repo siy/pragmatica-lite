@@ -52,10 +52,8 @@ import java.util.function.Consumer;
 import static org.pragmatica.consensus.NodeId.nodeId;
 import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 
-/**
- * Performance tests for Rabia consensus using real TCP networking.
- * All nodes run in the same process but communicate over localhost TCP.
- */
+/// Performance tests for Rabia consensus using real TCP networking.
+/// All nodes run in the same process but communicate over localhost TCP.
 class RabiaNetworkPerformanceTest {
 
     record TestCommand(int id) implements Command {}
