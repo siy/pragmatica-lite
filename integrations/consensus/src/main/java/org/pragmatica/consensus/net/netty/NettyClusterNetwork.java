@@ -360,4 +360,9 @@ public class NettyClusterNetwork implements ClusterNetwork {
     public int connectedNodeCount() {
         return peerLinks.size();
     }
+
+    @Override
+    public Option<Server> server() {
+        return Option.option(server.get());
+    }
 }

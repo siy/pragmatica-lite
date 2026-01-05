@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.9] - 2026-01-05
 
 ### Added
-- TBD
+- `Server.bossGroup()` and `Server.workerGroup()` accessors for EventLoopGroup metrics collection
+- `ClusterNetwork.server()` accessor to expose underlying Server instance for metrics
 
 ## [0.9.8] - 2026-01-05
 

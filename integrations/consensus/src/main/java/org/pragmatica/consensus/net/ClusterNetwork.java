@@ -18,9 +18,11 @@ package org.pragmatica.consensus.net;
 
 import org.pragmatica.consensus.NodeId;
 import org.pragmatica.consensus.ProtocolMessage;
+import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.messaging.MessageReceiver;
+import org.pragmatica.net.tcp.Server;
 
 /**
  * Generalized Network API for cluster communication.
@@ -79,4 +81,10 @@ public interface ClusterNetwork {
      * This count does NOT include self - only remote peers with active connections.
      */
     int connectedNodeCount();
+
+    /**
+     * Get the underlying server instance for metrics collection.
+     * Returns empty if the network has not been started yet.
+     */
+    Option<Server> server();
 }

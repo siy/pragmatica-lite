@@ -47,6 +47,16 @@ public interface Server {
 
     int port();
 
+    /**
+     * Get the boss EventLoopGroup for metrics collection.
+     */
+    EventLoopGroup bossGroup();
+
+    /**
+     * Get the worker EventLoopGroup for metrics collection.
+     */
+    EventLoopGroup workerGroup();
+
     Promise<Channel> connectTo(NodeAddress peerLocation);
 
     /**
