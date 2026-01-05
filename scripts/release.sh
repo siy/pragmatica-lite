@@ -37,18 +37,11 @@ fi
 echo "📦 Building release artifacts..."
 mvn clean package -DperformRelease=true -q
 
-# Deploy to staging repository
-echo "📤 Deploying to staging repository..."
+# Deploy with auto-publish enabled
+echo "📤 Deploying to Maven Central (auto-publish enabled)..."
 mvn deploy -DperformRelease=true
 
-echo "✅ Release deployed to staging repository!"
+echo "✅ Release published to Maven Central!"
 echo ""
-echo "Next steps:"
-echo "1. Log into https://central.sonatype.com/"
-echo "2. Go to 'Staging Repositories'"
-echo "3. Find your staging repository"
-echo "4. Click 'Close' to validate the release"
-echo "5. If validation passes, click 'Release' to publish to Maven Central"
-echo ""
-echo "📚 For more information, see:"
-echo "https://central.sonatype.org/publish/release/"
+echo "Artifacts will be available at:"
+echo "https://central.sonatype.com/artifact/org.pragmatica-lite/core"
