@@ -8,7 +8,7 @@ Promise-based JOOQ with R2DBC for type-safe reactive database access.
 <dependency>
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>jooq-r2dbc</artifactId>
-    <version>0.9.7</version>
+    <version>0.9.8</version>
 </dependency>
 ```
 
