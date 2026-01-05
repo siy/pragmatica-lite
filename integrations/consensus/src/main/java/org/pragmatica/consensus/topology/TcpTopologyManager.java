@@ -1,7 +1,7 @@
 package org.pragmatica.consensus.topology;
 
-import org.pragmatica.consensus.net.NetworkManagementOperation;
 import org.pragmatica.consensus.NodeId;
+import org.pragmatica.consensus.net.NetworkManagementOperation;
 import org.pragmatica.consensus.net.NodeInfo;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.io.TimeSpan;

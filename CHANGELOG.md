@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.9.8] - 2026-01-05
 
-### Changed
-- Version bump
+### Fixed
+- Simplify peer connection null check in `NettyClusterNetwork` to prevent NPE when connecting before server is ready
 
 ## [0.9.7] - 2026-01-04
 

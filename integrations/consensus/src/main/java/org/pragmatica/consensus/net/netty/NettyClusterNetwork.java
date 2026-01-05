@@ -253,7 +253,7 @@ public class NettyClusterNetwork implements ClusterNetwork {
 
     @Override
     public void connect(ConnectNode connectNode) {
-        if (!isRunning.get()) {
+        if (server.get() == null) {
             log.error("Attempt to connect {} while node is not running", connectNode.node());
             return;
         }
@@ -272,13 +272,9 @@ public class NettyClusterNetwork implements ClusterNetwork {
         if (peerLinks.containsKey(peerId)) {
             return;
         }
-        var serverRef = server.get();
-        if (serverRef == null) {
-            log.debug("Server not yet initialized, skipping connection to {}", peerId);
-            return;
-        }
-        serverRef.connectTo(nodeInfo.address())
-                 .onFailure(cause -> log.warn("Failed to connect to {}: {}", peerId, cause));
+        server.get()
+              .connectTo(nodeInfo.address())
+              .onFailure(cause -> log.warn("Failed to connect to {}: {}", peerId, cause));
     }
 
     @Override
