@@ -8,7 +8,7 @@ Zero-dependency TOML parser with Result-based error handling and Option-based ac
 <dependency>
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>toml</artifactId>
-    <version>0.9.9</version>
+    <version>0.9.10</version>
 </dependency>
 ```
 
@@ -101,6 +101,14 @@ doc.keys("database")                      // Set<String>
 doc.getSection("database")                // Map<String, String>
 ```
 
+#### Array of Tables
+
+```java
+doc.getTableArray("products")             // Option<List<Map<String, Object>>>
+doc.hasTableArray("products")             // boolean
+doc.tableArrayNames()                     // Set<String>
+```
+
 #### Immutable Updates
 
 ```java
@@ -117,16 +125,80 @@ TomlDocument updated = doc.with("server", "port", 9090);
 | Quoted strings | `key = "value"` | Yes |
 | Unquoted strings | `key = value` | Yes |
 | Escape sequences | `key = "line1\nline2"` | Yes |
+| Multi-line basic strings | `"""..."""` | Yes |
+| Multi-line literal strings | `'''...'''` | Yes |
 | Integers | `port = 8080` | Yes |
 | Negative integers | `offset = -100` | Yes |
 | Booleans | `enabled = true` | Yes |
 | Arrays | `tags = ["a", "b"]` | Yes |
 | Comments | `# comment` | Yes |
 | Inline comments | `port = 8080 # default` | Yes |
-| Inline tables | `{key = value}` | No |
-| Multi-line strings | `"""..."""` | No |
 | Floating point | `pi = 3.14` | Yes |
+| Array of tables | `[[products]]` | Yes |
+| Inline tables | `{key = value}` | No |
 | Dates | `date = 2024-01-01` | No |
+
+### Multi-line Strings
+
+Multi-line basic strings use triple double quotes and support escape sequences:
+
+```toml
+description = """
+The quick brown \
+    fox jumps over \
+    the lazy dog."""
+# Result: "The quick brown fox jumps over the lazy dog."
+# Line-ending backslash trims newline and following whitespace
+```
+
+Multi-line literal strings use triple single quotes and preserve content literally:
+
+```toml
+regex = '''
+C:\Users\.*\.txt
+No \n escape processing
+'''
+# Result: "C:\Users\.*\.txt\nNo \n escape processing\n"
+# Backslashes are preserved as-is
+```
+
+Per TOML spec, a newline immediately following the opening delimiter is trimmed.
+
+### Array of Tables
+
+Array of tables use double brackets and create arrays of table objects:
+
+```toml
+[[products]]
+name = "Hammer"
+price = 10
+
+[[products]]
+name = "Nail"
+price = 1
+```
+
+Access via `getTableArray()`:
+
+```java
+doc.getTableArray("products")
+   .onPresent(products -> {
+       for (var product : products) {
+           System.out.println(product.get("name") + ": $" + product.get("price"));
+       }
+   });
+```
+
+Sub-tables within array elements are supported:
+
+```toml
+[[products]]
+name = "Hammer"
+
+[products.details]
+weight = 500
+material = "steel"
+```
 
 ## Error Handling
 
@@ -142,10 +214,18 @@ TomlParser.parse(content)
                 log.error("Unterminated string at line {}", e.line());
             case TomlError.UnterminatedArray e ->
                 log.error("Unterminated array at line {}", e.line());
+            case TomlError.UnterminatedMultilineString e ->
+                log.error("Unterminated multiline string starting at line {}", e.line());
             case TomlError.InvalidValue e ->
                 log.error("Invalid {} at line {}: {}", e.expectedType(), e.line(), e.value());
             case TomlError.FileReadFailed e ->
                 log.error("Failed to read file: {}", e.message());
+            case TomlError.DuplicateKey e ->
+                log.error("Duplicate key at line {}: {}", e.line(), e.key());
+            case TomlError.InvalidEscapeSequence e ->
+                log.error("Invalid escape sequence at line {}: \\{}", e.line(), e.sequence());
+            case TomlError.TableTypeMismatch e ->
+                log.error("Table type mismatch at line {}: {}", e.line(), e.name());
         }
     });
 ```

@@ -38,10 +38,29 @@ import java.util.Set;
 /// document.getString("", "title")  // Root-level 'title' property
 /// }</pre>
 ///
-/// @param sections Map of section names to their key-value pairs
-public record TomlDocument(Map<String, Map<String, Object>> sections) {
+/// Array of tables (TOML `[[section]]` syntax) are accessed via:
+/// <pre>{@code
+/// document.getTableArray("products")  // Option<List<Map<String, Object>>>
+/// }</pre>
+///
+/// @param sections     Map of section names to their key-value pairs
+/// @param tableArrays  Map of array table names to list of table maps
+public record TomlDocument(Map<String, Map<String, Object>> sections,
+                           Map<String, List<Map<String, Object>>> tableArrays) {
     /// Empty document constant.
-    public static final TomlDocument EMPTY = new TomlDocument(Map.of("", Map.of()));
+    public static final TomlDocument EMPTY = new TomlDocument(Map.of("", Map.of()),
+                                                              Map.of());
+
+    /// Canonical constructor ensuring immutable storage.
+    public TomlDocument {
+        sections = Map.copyOf(sections);
+        tableArrays = Map.copyOf(tableArrays);
+    }
+
+    /// Compatibility constructor for documents without array tables.
+    public TomlDocument(Map<String, Map<String, Object>> sections) {
+        this(sections, Map.of());
+    }
 
     /// Get a string value from the document.
     ///
@@ -160,7 +179,32 @@ public record TomlDocument(Map<String, Map<String, Object>> sections) {
         var sectionMap = new LinkedHashMap<>(newSections.getOrDefault(section, Map.of()));
         sectionMap.put(key, value);
         newSections.put(section, sectionMap);
-        return new TomlDocument(Map.copyOf(newSections));
+        return new TomlDocument(Map.copyOf(newSections), tableArrays);
+    }
+
+    /// Get an array of tables by name.
+    ///
+    /// Each `[[name]]` occurrence in TOML creates a new table in the array.
+    ///
+    /// @param name the array table name
+    /// @return Option containing list of table maps, or empty if not found
+    public Option<List<Map<String, Object>>> getTableArray(String name) {
+        return Option.option(tableArrays.get(name));
+    }
+
+    /// Check if an array of tables exists.
+    ///
+    /// @param name the array table name
+    /// @return true if the array of tables exists
+    public boolean hasTableArray(String name) {
+        return tableArrays.containsKey(name);
+    }
+
+    /// Get all array table names in the document.
+    ///
+    /// @return Set of array table names
+    public Set<String> tableArrayNames() {
+        return tableArrays.keySet();
     }
 
     private Option<Object> getValue(String section, String key) {

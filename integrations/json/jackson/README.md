@@ -8,7 +8,7 @@ Result-based JSON serialization/deserialization with Jackson 3.0.
 <dependency>
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>jackson</artifactId>
-    <version>0.9.9</version>
+    <version>0.9.10</version>
 </dependency>
 ```
 

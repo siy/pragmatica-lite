@@ -49,10 +49,38 @@ public sealed interface TomlError extends Cause {
         }
     }
 
+    record UnterminatedMultilineString(int line) implements TomlError {
+        @Override
+        public String message() {
+            return "Unterminated multiline string starting at line " + line;
+        }
+    }
+
     record FileReadFailed(String path, String details) implements TomlError {
         @Override
         public String message() {
             return "Failed to read file '" + path + "': " + details;
+        }
+    }
+
+    record DuplicateKey(int line, String key) implements TomlError {
+        @Override
+        public String message() {
+            return "Duplicate key at line " + line + ": '" + key + "'";
+        }
+    }
+
+    record InvalidEscapeSequence(int line, String sequence) implements TomlError {
+        @Override
+        public String message() {
+            return "Invalid escape sequence at line " + line + ": '\\" + sequence + "'";
+        }
+    }
+
+    record TableTypeMismatch(int line, String name, String existingType) implements TomlError {
+        @Override
+        public String message() {
+            return "Table type mismatch at line " + line + ": '" + name + "' was previously defined as " + existingType;
         }
     }
 
@@ -72,8 +100,69 @@ public sealed interface TomlError extends Cause {
         return new UnterminatedArray(line);
     }
 
+    static TomlError unterminatedMultilineString(int line) {
+        return new UnterminatedMultilineString(line);
+    }
+
     static TomlError fileReadFailed(String path, String details) {
         return new FileReadFailed(path, details);
+    }
+
+    static TomlError duplicateKey(int line, String key) {
+        return new DuplicateKey(line, key);
+    }
+
+    static TomlError invalidEscapeSequence(int line, String sequence) {
+        return new InvalidEscapeSequence(line, sequence);
+    }
+
+    static TomlError tableTypeMismatch(int line, String name, String existingType) {
+        return new TableTypeMismatch(line, name, existingType);
+    }
+
+    record DuplicateSection(int line, String name) implements TomlError {
+        @Override
+        public String message() {
+            return "Duplicate section at line " + line + ": '" + name + "'";
+        }
+    }
+
+    static TomlError duplicateSection(int line, String name) {
+        return new DuplicateSection(line, name);
+    }
+
+    record UnsupportedFeature(int line, String feature) implements TomlError {
+        @Override
+        public String message() {
+            return "Unsupported TOML feature at line " + line + ": " + feature;
+        }
+    }
+
+    static TomlError unsupportedFeature(int line, String feature) {
+        return new UnsupportedFeature(line, feature);
+    }
+
+    record InvalidSurrogate(int line, String codepoint) implements TomlError {
+        @Override
+        public String message() {
+            return "Invalid Unicode surrogate at line " + line + ": \\u" + codepoint;
+        }
+    }
+
+    static TomlError invalidSurrogate(int line, String codepoint) {
+        return new InvalidSurrogate(line, codepoint);
+    }
+
+    record DottedKeyConflict(int line, String key, String existingPath) implements TomlError {
+        @Override
+        public String message() {
+            return "Cannot define '" + key + "' at line " + line + ": '" + existingPath
+                   + "' is already defined as a value";
+        }
+    }
+
+    static TomlError dottedKeyConflict(int line, String key, String existingPath) {
+        return new DottedKeyConflict(line, key, existingPath);
     }
 
     default <T> Result<T> result() {
