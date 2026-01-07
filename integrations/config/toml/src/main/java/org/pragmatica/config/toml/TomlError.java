@@ -77,6 +77,13 @@ public sealed interface TomlError extends Cause {
         }
     }
 
+    record TableTypeMismatch(int line, String name, String existingType) implements TomlError {
+        @Override
+        public String message() {
+            return "Table type mismatch at line " + line + ": '" + name + "' was previously defined as " + existingType;
+        }
+    }
+
     static TomlError syntaxError(int line, String details) {
         return new SyntaxError(line, details);
     }
@@ -107,6 +114,10 @@ public sealed interface TomlError extends Cause {
 
     static TomlError invalidEscapeSequence(int line, String sequence) {
         return new InvalidEscapeSequence(line, sequence);
+    }
+
+    static TomlError tableTypeMismatch(int line, String name, String existingType) {
+        return new TableTypeMismatch(line, name, existingType);
     }
 
     default <T> Result<T> result() {

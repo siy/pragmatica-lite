@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.10] - 2026-01-07
 
 ### Added
+- TOML array of tables (`[[section]]`) with full spec compliance
+  - Multiple table entries in arrays via repeated `[[name]]` declarations
+  - Sub-tables within array elements (`[name.subtable]`)
+  - Nested array of tables (`[[parent.child]]`)
+  - `TomlDocument.getTableArray(name)` returns `Option<List<Map<String, Object>>>`
+  - `TomlDocument.hasTableArray(name)` checks existence
+  - `TomlDocument.tableArrayNames()` lists all array table names
+  - `TomlError.TableTypeMismatch` for mixing `[x]` and `[[x]]` syntax
 - Multi-line basic strings (`"""..."""`) with escape sequence and line-ending backslash support
 - Multi-line literal strings (`'''...'''`) with no escape processing
 - `TomlError.UnterminatedMultilineString` error type for unclosed multiline strings

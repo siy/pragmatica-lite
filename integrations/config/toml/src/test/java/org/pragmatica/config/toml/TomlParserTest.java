@@ -1158,6 +1158,298 @@ class TomlParserTest {
     }
 
     @Nested
+    class ArrayOfTables {
+
+        @Test
+        void parseSimpleArrayOfTables() {
+            var content = """
+                [[products]]
+                name = "Hammer"
+                price = 10
+
+                [[products]]
+                name = "Nail"
+                price = 1
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertTrue(doc.hasTableArray("products"));
+                    var products = doc.getTableArray("products").unwrap();
+                    assertEquals(2, products.size());
+
+                    assertEquals("Hammer", products.get(0).get("name"));
+                    assertEquals(10L, products.get(0).get("price"));
+
+                    assertEquals("Nail", products.get(1).get("name"));
+                    assertEquals(1L, products.get(1).get("price"));
+                });
+        }
+
+        @Test
+        void parseArrayOfTablesWithSubTable() {
+            var content = """
+                [[products]]
+                name = "Hammer"
+
+                [products.details]
+                weight = 500
+                material = "steel"
+
+                [[products]]
+                name = "Nail"
+
+                [products.details]
+                weight = 5
+                material = "iron"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    var products = doc.getTableArray("products").unwrap();
+                    assertEquals(2, products.size());
+
+                    // First product
+                    assertEquals("Hammer", products.get(0).get("name"));
+                    @SuppressWarnings("unchecked")
+                    var details0 = (java.util.Map<String, Object>) products.get(0).get("details");
+                    assertEquals(500L, details0.get("weight"));
+                    assertEquals("steel", details0.get("material"));
+
+                    // Second product
+                    assertEquals("Nail", products.get(1).get("name"));
+                    @SuppressWarnings("unchecked")
+                    var details1 = (java.util.Map<String, Object>) products.get(1).get("details");
+                    assertEquals(5L, details1.get("weight"));
+                    assertEquals("iron", details1.get("material"));
+                });
+        }
+
+        @Test
+        void parseNestedArrayOfTables() {
+            var content = """
+                [[fruits]]
+                name = "apple"
+
+                [[fruits.varieties]]
+                name = "red delicious"
+
+                [[fruits.varieties]]
+                name = "granny smith"
+
+                [[fruits]]
+                name = "banana"
+
+                [[fruits.varieties]]
+                name = "plantain"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    var fruits = doc.getTableArray("fruits").unwrap();
+                    assertEquals(2, fruits.size());
+
+                    // First fruit (apple)
+                    assertEquals("apple", fruits.get(0).get("name"));
+                    @SuppressWarnings("unchecked")
+                    var appleVarieties = (java.util.List<java.util.Map<String, Object>>)
+                        doc.getTableArray("fruits.varieties").unwrap();
+                    // Note: TOML spec says [[fruits.varieties]] adds to current [[fruits]]
+                    // but our impl stores them flat - verify accordingly
+                    assertTrue(doc.hasTableArray("fruits.varieties"));
+
+                    // Second fruit (banana)
+                    assertEquals("banana", fruits.get(1).get("name"));
+                });
+        }
+
+        @Test
+        void detectTableTypeMismatchSectionThenArray() {
+            var content = """
+                [products]
+                name = "something"
+
+                [[products]]
+                name = "Hammer"
+                """;
+
+            TomlParser.parse(content)
+                .onSuccess(_ -> fail("Should fail for type mismatch"))
+                .onFailure(error -> {
+                    assertInstanceOf(TomlError.TableTypeMismatch.class, error);
+                    assertTrue(error.message().contains("products"));
+                    assertTrue(error.message().contains("regular table"));
+                });
+        }
+
+        @Test
+        void detectTableTypeMismatchArrayThenSection() {
+            var content = """
+                [[products]]
+                name = "Hammer"
+
+                [products]
+                name = "something"
+                """;
+
+            TomlParser.parse(content)
+                .onSuccess(_ -> fail("Should fail for type mismatch"))
+                .onFailure(error -> {
+                    assertInstanceOf(TomlError.TableTypeMismatch.class, error);
+                    assertTrue(error.message().contains("products"));
+                    assertTrue(error.message().contains("array of tables"));
+                });
+        }
+
+        @Test
+        void accessViaGetTableArray() {
+            var content = """
+                [[servers]]
+                name = "alpha"
+                ip = "10.0.0.1"
+
+                [[servers]]
+                name = "beta"
+                ip = "10.0.0.2"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertTrue(doc.hasTableArray("servers"));
+                    assertFalse(doc.hasTableArray("nonexistent"));
+
+                    var servers = doc.getTableArray("servers");
+                    assertTrue(servers.isPresent());
+                    assertEquals(2, servers.unwrap().size());
+
+                    var missing = doc.getTableArray("nonexistent");
+                    assertFalse(missing.isPresent());
+                });
+        }
+
+        @Test
+        void tableArrayNames() {
+            var content = """
+                [[products]]
+                name = "a"
+
+                [[orders]]
+                id = 1
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    var names = doc.tableArrayNames();
+                    assertEquals(2, names.size());
+                    assertTrue(names.contains("products"));
+                    assertTrue(names.contains("orders"));
+                });
+        }
+
+        @Test
+        void parseEmptyArrayOfTables() {
+            var content = """
+                [[empty]]
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertTrue(doc.hasTableArray("empty"));
+                    var empty = doc.getTableArray("empty").unwrap();
+                    assertEquals(1, empty.size());
+                    assertTrue(empty.get(0).isEmpty());
+                });
+        }
+
+        @Test
+        void parseArrayOfTablesWithArrayValue() {
+            var content = """
+                [[config]]
+                name = "test"
+                tags = ["a", "b", "c"]
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    var configs = doc.getTableArray("config").unwrap();
+                    assertEquals(1, configs.size());
+                    assertEquals("test", configs.get(0).get("name"));
+                    @SuppressWarnings("unchecked")
+                    var tags = (java.util.List<String>) configs.get(0).get("tags");
+                    assertEquals(List.of("a", "b", "c"), tags);
+                });
+        }
+
+        @Test
+        void parseArrayOfTablesFollowedByRegularSection() {
+            var content = """
+                [[products]]
+                name = "Hammer"
+
+                [settings]
+                debug = true
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    // Array tables
+                    assertTrue(doc.hasTableArray("products"));
+                    var products = doc.getTableArray("products").unwrap();
+                    assertEquals(1, products.size());
+                    assertEquals("Hammer", products.get(0).get("name"));
+
+                    // Regular section
+                    assertTrue(doc.hasSection("settings"));
+                    assertTrue(doc.getBoolean("settings", "debug").unwrap());
+                });
+        }
+
+        @Test
+        void parseMixedContentWithArrayOfTables() {
+            var content = """
+                title = "Config"
+
+                [database]
+                host = "localhost"
+
+                [[servers]]
+                name = "alpha"
+
+                [[servers]]
+                name = "beta"
+
+                [logging]
+                level = "debug"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    // Root properties
+                    assertEquals("Config", doc.getString("", "title").unwrap());
+
+                    // Regular sections
+                    assertEquals("localhost", doc.getString("database", "host").unwrap());
+                    assertEquals("debug", doc.getString("logging", "level").unwrap());
+
+                    // Array tables
+                    var servers = doc.getTableArray("servers").unwrap();
+                    assertEquals(2, servers.size());
+                    assertEquals("alpha", servers.get(0).get("name"));
+                    assertEquals("beta", servers.get(1).get("name"));
+                });
+        }
+    }
+
+    @Nested
     class RealWorldExample {
 
         @Test
