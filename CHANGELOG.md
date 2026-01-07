@@ -20,25 +20,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multi-line literal strings (`'''...'''`) with no escape processing
 - `TomlError.UnterminatedMultilineString` error type for unclosed multiline strings
 - Single-quote literal strings (`'...'`) with no escape processing
-- Quoted keys (`"key with spaces"` and `'literal key'`) support
+- Quoted keys (`"key with spaces"` and `'literal key'`) support including empty keys
 - Dotted keys (`server.host = "value"`) that create implicit sections
-- Multi-line array support with continuation across lines
+- Multi-line array support with continuation across lines and inline comment stripping
 - Hyphen support in section names (`[my-section]`)
-- Unicode escape sequences (`\u03B1` and `\U0001F600`)
+- Unicode escape sequences (`\u03B1` and `\U0001F600`) with surrogate validation
 - Backspace (`\b`) and form feed (`\f`) escape sequences
 - `TomlError.DuplicateKey` error for detecting duplicate keys
-- `TomlError.InvalidEscapeSequence` error for invalid escape sequences
+- `TomlError.InvalidEscapeSequence` error for invalid escape sequences (now actively enforced)
+- `TomlError.DuplicateSection` error for detecting repeated section headers
+- `TomlError.UnsupportedFeature` error for inline tables and date/time values
+- `TomlError.InvalidSurrogate` error for invalid Unicode surrogate code points (D800-DFFF)
+- `TomlError.DottedKeyConflict` error for detecting value/table conflicts in dotted keys
+- Support for underscores in numbers (`1_000_000`, `1_000.5`, `0xDEAD_BEEF`)
+- Support for special float values: `inf`, `+inf`, `-inf`, `nan`, `+nan`, `-nan`
+- Support for hexadecimal integers (`0xDEADBEEF`)
+- Support for octal integers (`0o755`)
+- Support for binary integers (`0b11010110`)
+- Escape sequence processing for quoted keys (`"key\nwith\nnewlines"`)
 
 ### Changed
 - Pre-compile regex patterns (FLOAT_PATTERN, INTEGER_PATTERN) for better performance
 - Refactor `stripInlineComment` to properly track quote state and bracket depth
 - Simplify `MultilineStartResult` to use pattern matching instead of boolean accessors
 - Extract shared escape processing method for consistent handling
-- Encapsulate multiline parsing state into `MultilineState` record
+- Encapsulate multiline parsing state into `MultilineState` regular class (for mutable StringBuilder)
+- `MultilineState` changed from record to class to fix JBCT pattern violation (mutable field in record)
+- `parseFile()` now uses `Result.lift` for consistent exception handling
+- Quote tracking in `isArrayComplete()`, `parseArray()`, and `stripInlineComment()` now correctly distinguishes double vs single quotes
 
 ### Fixed
 - Comment stripping now correctly preserves `#` inside quoted strings
 - Section names with hyphens now parse correctly
+- Invalid escape sequences (`\x`, `\q`, `\z`) now produce `TomlError.InvalidEscapeSequence` instead of being silently accepted
+- Leading zeros in integers (`007`) now correctly rejected with descriptive error
+- Empty quoted keys (`"" = "value"`) now accepted as per TOML spec
+- Duplicate section definitions now detected and reported with `TomlError.DuplicateSection`
+- Unicode surrogate code points (D800-DFFF) now rejected in escape sequences
+- Inline tables and dates now produce explicit "unsupported feature" errors instead of silent failures
+- Escape sequences only applied to double-quoted strings, not single-quoted literals
+- `putValue()` potential NPE fixed by using `computeIfAbsent` pattern
+- Typo fixed: `tablArrays` renamed to `tableArrays` in `TomlDocument`
+- `TomlDocument` now makes defensive copies in canonical constructor for true immutability
 
 ## [0.9.9] - 2026-01-05
 

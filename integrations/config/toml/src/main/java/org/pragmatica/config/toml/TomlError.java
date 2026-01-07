@@ -120,6 +120,51 @@ public sealed interface TomlError extends Cause {
         return new TableTypeMismatch(line, name, existingType);
     }
 
+    record DuplicateSection(int line, String name) implements TomlError {
+        @Override
+        public String message() {
+            return "Duplicate section at line " + line + ": '" + name + "'";
+        }
+    }
+
+    static TomlError duplicateSection(int line, String name) {
+        return new DuplicateSection(line, name);
+    }
+
+    record UnsupportedFeature(int line, String feature) implements TomlError {
+        @Override
+        public String message() {
+            return "Unsupported TOML feature at line " + line + ": " + feature;
+        }
+    }
+
+    static TomlError unsupportedFeature(int line, String feature) {
+        return new UnsupportedFeature(line, feature);
+    }
+
+    record InvalidSurrogate(int line, String codepoint) implements TomlError {
+        @Override
+        public String message() {
+            return "Invalid Unicode surrogate at line " + line + ": \\u" + codepoint;
+        }
+    }
+
+    static TomlError invalidSurrogate(int line, String codepoint) {
+        return new InvalidSurrogate(line, codepoint);
+    }
+
+    record DottedKeyConflict(int line, String key, String existingPath) implements TomlError {
+        @Override
+        public String message() {
+            return "Cannot define '" + key + "' at line " + line + ": '" + existingPath
+                   + "' is already defined as a value";
+        }
+    }
+
+    static TomlError dottedKeyConflict(int line, String key, String existingPath) {
+        return new DottedKeyConflict(line, key, existingPath);
+    }
+
     default <T> Result<T> result() {
         return Result.failure(this);
     }

@@ -1510,4 +1510,382 @@ class TomlParserTest {
                 });
         }
     }
+
+    @Nested
+    class InvalidEscapeSequences {
+
+        @Test
+        void rejectsInvalidEscapeX() {
+            var content = """
+                text = "hello\\xworld"
+                """;
+
+            TomlParser.parse(content)
+                .onSuccess(_ -> fail("Should fail for invalid escape"))
+                .onFailure(error -> {
+                    assertInstanceOf(TomlError.InvalidEscapeSequence.class, error);
+                    assertTrue(error.message().contains("\\x"));
+                });
+        }
+
+        @Test
+        void rejectsInvalidEscapeQ() {
+            var content = """
+                text = "hello\\qworld"
+                """;
+
+            TomlParser.parse(content)
+                .onSuccess(_ -> fail("Should fail for invalid escape"))
+                .onFailure(error -> assertInstanceOf(TomlError.InvalidEscapeSequence.class, error));
+        }
+
+        @Test
+        void rejectsInvalidEscapeZ() {
+            var content = """
+                text = "test\\z"
+                """;
+
+            TomlParser.parse(content)
+                .onSuccess(_ -> fail("Should fail for invalid escape"))
+                .onFailure(error -> assertInstanceOf(TomlError.InvalidEscapeSequence.class, error));
+        }
+    }
+
+    @Nested
+    class LeadingZeros {
+
+        @Test
+        void rejectsLeadingZerosInInteger() {
+            var content = """
+                value = 007
+                """;
+
+            TomlParser.parse(content)
+                .onSuccess(_ -> fail("Should fail for leading zeros"))
+                .onFailure(error -> {
+                    assertInstanceOf(TomlError.InvalidValue.class, error);
+                    assertTrue(error.message().contains("leading zeros"));
+                });
+        }
+
+        @Test
+        void acceptsZeroAlone() {
+            var content = """
+                value = 0
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail for zero"))
+                .onSuccess(doc -> assertEquals(0L, doc.getLong("", "value").unwrap()));
+        }
+
+        @Test
+        void acceptsNegativeZero() {
+            var content = """
+                value = -0
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail for -0"))
+                .onSuccess(doc -> assertEquals(0L, doc.getLong("", "value").unwrap()));
+        }
+    }
+
+    @Nested
+    class UnderscoresInNumbers {
+
+        @Test
+        void parseIntegerWithUnderscores() {
+            var content = """
+                million = 1_000_000
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> assertEquals(1000000L, doc.getLong("", "million").unwrap()));
+        }
+
+        @Test
+        void parseFloatWithUnderscores() {
+            var content = """
+                value = 1_000.000_5
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> assertEquals(1000.0005, doc.getDouble("", "value").unwrap(), 0.0001));
+        }
+
+        @Test
+        void parseHexWithUnderscores() {
+            var content = """
+                value = 0xDEAD_BEEF
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> assertEquals(0xDEADBEEFL, doc.getLong("", "value").unwrap()));
+        }
+    }
+
+    @Nested
+    class SpecialFloatValues {
+
+        @Test
+        void parsePositiveInfinity() {
+            var content = """
+                value = inf
+                positive = +inf
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals(Double.POSITIVE_INFINITY, doc.getDouble("", "value").unwrap());
+                    assertEquals(Double.POSITIVE_INFINITY, doc.getDouble("", "positive").unwrap());
+                });
+        }
+
+        @Test
+        void parseNegativeInfinity() {
+            var content = """
+                value = -inf
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> assertEquals(Double.NEGATIVE_INFINITY, doc.getDouble("", "value").unwrap()));
+        }
+
+        @Test
+        void parseNaN() {
+            var content = """
+                value = nan
+                positive = +nan
+                negative = -nan
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertTrue(Double.isNaN(doc.getDouble("", "value").unwrap()));
+                    assertTrue(Double.isNaN(doc.getDouble("", "positive").unwrap()));
+                    assertTrue(Double.isNaN(doc.getDouble("", "negative").unwrap()));
+                });
+        }
+    }
+
+    @Nested
+    class AlternativeIntegerBases {
+
+        @Test
+        void parseHexadecimal() {
+            var content = """
+                hex = 0xDEADBEEF
+                lower = 0xdeadbeef
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals(0xDEADBEEFL, doc.getLong("", "hex").unwrap());
+                    assertEquals(0xDEADBEEFL, doc.getLong("", "lower").unwrap());
+                });
+        }
+
+        @Test
+        void parseOctal() {
+            var content = """
+                value = 0o755
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> assertEquals(0755L, doc.getLong("", "value").unwrap()));
+        }
+
+        @Test
+        void parseBinary() {
+            var content = """
+                value = 0b11010110
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> assertEquals(0b11010110L, doc.getLong("", "value").unwrap()));
+        }
+    }
+
+    @Nested
+    class EmptyQuotedKeys {
+
+        @Test
+        void parseEmptyDoubleQuotedKey() {
+            var content = """
+                "" = "empty key"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> assertEquals("empty key", doc.getString("", "").unwrap()));
+        }
+
+        @Test
+        void parseEmptySingleQuotedKey() {
+            var content = """
+                '' = "empty literal key"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> assertEquals("empty literal key", doc.getString("", "").unwrap()));
+        }
+    }
+
+    @Nested
+    class DuplicateSectionDetection {
+
+        @Test
+        void detectsDuplicateSection() {
+            var content = """
+                [database]
+                host = "localhost"
+
+                [database]
+                port = 5432
+                """;
+
+            TomlParser.parse(content)
+                .onSuccess(_ -> fail("Should fail for duplicate section"))
+                .onFailure(error -> {
+                    assertInstanceOf(TomlError.DuplicateSection.class, error);
+                    assertTrue(error.message().contains("database"));
+                });
+        }
+    }
+
+    @Nested
+    class UnicodeSurrogateValidation {
+
+        @Test
+        void rejectsHighSurrogate() {
+            var content = "text = \"\\uD800\"";
+
+            TomlParser.parse(content)
+                .onSuccess(_ -> fail("Should fail for surrogate"))
+                .onFailure(error -> {
+                    assertInstanceOf(TomlError.InvalidSurrogate.class, error);
+                    assertTrue(error.message().contains("D800"));
+                });
+        }
+
+        @Test
+        void rejectsLowSurrogate() {
+            var content = "text = \"\\uDFFF\"";
+
+            TomlParser.parse(content)
+                .onSuccess(_ -> fail("Should fail for surrogate"))
+                .onFailure(error -> assertInstanceOf(TomlError.InvalidSurrogate.class, error));
+        }
+    }
+
+    @Nested
+    class UnsupportedFeatureErrors {
+
+        @Test
+        void rejectsInlineTable() {
+            var content = """
+                config = {key = "value"}
+                """;
+
+            TomlParser.parse(content)
+                .onSuccess(_ -> fail("Should fail for inline table"))
+                .onFailure(error -> {
+                    assertInstanceOf(TomlError.UnsupportedFeature.class, error);
+                    assertTrue(error.message().contains("inline tables"));
+                });
+        }
+
+        @Test
+        void rejectsDateTime() {
+            var content = """
+                date = 2024-01-15
+                """;
+
+            TomlParser.parse(content)
+                .onSuccess(_ -> fail("Should fail for date"))
+                .onFailure(error -> {
+                    assertInstanceOf(TomlError.UnsupportedFeature.class, error);
+                    assertTrue(error.message().contains("dates"));
+                });
+        }
+    }
+
+    @Nested
+    class LiteralStringArrays {
+
+        @Test
+        void parseLiteralStringsWithCommas() {
+            var content = """
+                paths = ['C:\\Users\\test', 'D:\\Data\\files']
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    var paths = doc.getStringList("", "paths").unwrap();
+                    assertEquals(2, paths.size());
+                    assertEquals("C:\\Users\\test", paths.get(0));
+                    assertEquals("D:\\Data\\files", paths.get(1));
+                });
+        }
+    }
+
+    @Nested
+    class MultilineArrayComments {
+
+        @Test
+        void stripCommentsFromMultilineArray() {
+            var content = """
+                items = [
+                    "first", # comment 1
+                    "second", # comment 2
+                    "third"
+                ]
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    var items = doc.getStringList("", "items").unwrap();
+                    assertEquals(List.of("first", "second", "third"), items);
+                });
+        }
+    }
+
+    @Nested
+    class EscapeSequencesInKeys {
+
+        @Test
+        void parseKeyWithNewlineEscape() {
+            var content = """
+                "key\\nwith\\nnewlines" = "value"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> assertEquals("value", doc.getString("", "key\nwith\nnewlines").unwrap()));
+        }
+
+        @Test
+        void parseKeyWithTabEscape() {
+            var content = """
+                "key\\twith\\ttabs" = "value"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> assertEquals("value", doc.getString("", "key\twith\ttabs").unwrap()));
+        }
+    }
 }

@@ -22,9 +22,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /// Zero-dependency TOML parser supporting a practical subset of TOML 1.0.
@@ -34,13 +36,13 @@ import java.util.regex.Pattern;
 ///   - Sections: `[section]` and `[section.subsection]`
 ///   - Array of tables: `[[array]]` with nested sub-tables
 ///   - Properties: `key = value`
-///   - Quoted strings: `"hello world"`
+///   - Quoted strings: `"hello world"` with escape sequences
+///   - Literal strings: `'hello world'` without escape processing
 ///   - Multi-line basic strings: `"""..."""` with escape sequences
 ///   - Multi-line literal strings: `'''...'''` without escape processing
-///   - Unquoted strings: `hello`
 ///   - Booleans: `true` / `false`
-///   - Integers: `123`, `-456`
-///   - Floating point numbers: `3.14`, `-0.5e10`
+///   - Integers: `123`, `-456`, `1_000_000`, `0xDEAD`, `0o755`, `0b1101`
+///   - Floating point numbers: `3.14`, `-0.5e10`, `inf`, `-inf`, `nan`
 ///   - Arrays: `["a", "b", "c"]`
 ///   - Comments: `# comment`
 ///
@@ -50,44 +52,88 @@ import java.util.regex.Pattern;
 ///   - Dates and times
 ///
 /// Example usage:
-/// <pre>{@code
+/// ```java
 /// TomlParser.parse(content)
 ///     .onSuccess(doc -> {
 ///         doc.getString("database", "host").onPresent(System.out::println);
 ///         doc.getInt("server", "port").orElse(8080);
 ///     })
 ///     .onFailure(error -> System.err.println(error.message()));
-/// }</pre>
+/// ```
 public final class TomlParser {
-    private static final Pattern SECTION_PATTERN = Pattern.compile("^\\[([a-zA-Z0-9_.\\-]+)]$");
-    private static final Pattern ARRAY_TABLE_PATTERN = Pattern.compile("^\\[\\[([a-zA-Z0-9_.\\-]+)]]$");
+    // Section patterns - support quoted keys in section headers
+    private static final Pattern SECTION_PATTERN = Pattern.compile("^\\[([a-zA-Z0-9_.\\-]+|\"[^\"]*\"|'[^']*')]$");
+    private static final Pattern ARRAY_TABLE_PATTERN = Pattern.compile("^\\[\\[([a-zA-Z0-9_.\\-]+|\"[^\"]*\"|'[^']*')]]$");
+
+    // Key patterns - support empty quoted keys
     private static final Pattern BARE_KEY_VALUE_PATTERN = Pattern.compile("^([a-zA-Z0-9_-]+)\\s*=\\s*(.+)$");
-    private static final Pattern QUOTED_KEY_VALUE_PATTERN = Pattern.compile("^\"([^\"]+)\"\\s*=\\s*(.+)$");
-    private static final Pattern LITERAL_KEY_VALUE_PATTERN = Pattern.compile("^'([^']+)'\\s*=\\s*(.+)$");
+    private static final Pattern QUOTED_KEY_VALUE_PATTERN = Pattern.compile("^\"([^\"]*)\"\\s*=\\s*(.+)$");
+    private static final Pattern LITERAL_KEY_VALUE_PATTERN = Pattern.compile("^'([^']*)'\\s*=\\s*(.+)$");
     private static final Pattern DOTTED_KEY_VALUE_PATTERN = Pattern.compile("^([a-zA-Z0-9_.\\-]+)\\s*=\\s*(.+)$");
-    private static final Pattern FLOAT_PATTERN = Pattern.compile("-?\\d+\\.\\d+([eE][+-]?\\d+)?");
-    private static final Pattern FLOAT_EXP_PATTERN = Pattern.compile("-?\\d+[eE][+-]?\\d+");
-    private static final Pattern INTEGER_PATTERN = Pattern.compile("-?\\d+");
+
+    // Number patterns with underscore support
+    private static final Pattern FLOAT_PATTERN = Pattern.compile("-?[0-9][0-9_]*\\.[0-9_]+([eE][+-]?[0-9_]+)?");
+    private static final Pattern FLOAT_EXP_PATTERN = Pattern.compile("-?[0-9][0-9_]*[eE][+-]?[0-9_]+");
+    private static final Pattern INTEGER_PATTERN = Pattern.compile("-?(?:0|[1-9][0-9_]*)");
+    private static final Pattern HEX_PATTERN = Pattern.compile("0x[0-9a-fA-F_]+");
+    private static final Pattern OCTAL_PATTERN = Pattern.compile("0o[0-7_]+");
+    private static final Pattern BINARY_PATTERN = Pattern.compile("0b[01_]+");
+
+    // Special float values
+    private static final Pattern SPECIAL_FLOAT_PATTERN = Pattern.compile("[+-]?(inf|nan)");
+
+    // Inline table pattern for detection
+    private static final Pattern INLINE_TABLE_PATTERN = Pattern.compile("^\\{.*}$");
+
+    // Date patterns for detection
+    private static final Pattern DATE_PATTERN = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}.*");
 
     private TomlParser() {}
 
-    /// Encapsulates state for parsing multiline constructs (strings and arrays).
-    private record MultilineState(String pendingKey,
-                                  String pendingSection,
-                                  StringBuilder builder,
-                                  boolean isLiteral,
-                                  boolean isArray,
-                                  int startLine) {
-        static MultilineState forString(String key,
-                                        String section,
-                                        String initial,
-                                        boolean literal,
-                                        int line) {
-            return new MultilineState(key, section, new StringBuilder(initial), literal, false, line);
+    /// Encapsulates mutable state for parsing multiline constructs (strings and arrays).
+    private static final class MultilineState {
+        private final String pendingKey;
+        private final String pendingSection;
+        private final StringBuilder builder;
+        private final boolean isLiteral;
+        private final boolean isArray;
+        private final int startLine;
+
+        private MultilineState(String key, String section, String initial, boolean literal, boolean array, int line) {
+            this.pendingKey = key;
+            this.pendingSection = section;
+            this.builder = new StringBuilder(initial);
+            this.isLiteral = literal;
+            this.isArray = array;
+            this.startLine = line;
+        }
+
+        static MultilineState forString(String key, String section, String initial, boolean literal, int line) {
+            return new MultilineState(key, section, initial, literal, false, line);
         }
 
         static MultilineState forArray(String key, String section, String initial, int line) {
-            return new MultilineState(key, section, new StringBuilder(initial), false, true, line);
+            return new MultilineState(key, section, initial, false, true, line);
+        }
+
+        String pendingKey() {
+            return pendingKey;
+        }
+
+        String pendingSection() {
+            return pendingSection;
+        }
+
+        boolean isLiteral() {
+            return isLiteral;
+        }
+
+        boolean isArray() {
+            return isArray;
+        }
+
+        int startLine() {
+            return startLine;
         }
 
         void append(String s) {
@@ -114,14 +160,13 @@ public final class TomlParser {
         }
         Map<String, Map<String, Object>> sections = new LinkedHashMap<>();
         Map<String, List<Map<String, Object>>> arrayTables = new LinkedHashMap<>();
+        Set<String> definedSections = new HashSet<>();
         sections.put("", new LinkedHashMap<>());
         String currentSection = "";
-        // Track current array table context for sub-tables
         String currentArrayTableBase = null;
         Map<String, Object> currentArrayTableElement = null;
         int lineNumber = 0;
         MultilineState multiline = null;
-        // -1 keeps trailing empty strings
         String[] lines = content.split("\n", - 1);
         for (String rawLine : lines) {
             lineNumber++ ;
@@ -147,12 +192,16 @@ public final class TomlParser {
                 String delimiter = multiline.isLiteral()
                                    ? "'''"
                                    : "\"\"\"";
-                int endIndex = rawLine.indexOf(delimiter);
+                int endIndex = findClosingDelimiter(rawLine, delimiter);
                 if (endIndex >= 0) {
                     multiline.append(rawLine.substring(0, endIndex));
-                    String processed = multiline.isLiteral()
-                                       ? processLiteralMultiline(multiline.content())
-                                       : processBasicMultiline(multiline.content());
+                    var processResult = multiline.isLiteral()
+                                        ? Result.success(processLiteralMultiline(multiline.content()))
+                                        : processBasicMultiline(multiline.content(), multiline.startLine());
+                    if (processResult.isFailure()) {
+                        return processResult.map(_ -> null);
+                    }
+                    String processed = processResult.fold(_ -> "", s -> s);
                     putValue(sections,
                              arrayTables,
                              currentArrayTableBase,
@@ -174,7 +223,7 @@ public final class TomlParser {
             // Check for array of tables header [[name]]
             var arrayTableMatcher = ARRAY_TABLE_PATTERN.matcher(line);
             if (arrayTableMatcher.matches()) {
-                String tableName = arrayTableMatcher.group(1);
+                String tableName = normalizeTableName(arrayTableMatcher.group(1));
                 // Check for type mismatch - section already defined as regular table
                 if (sections.containsKey(tableName)) {
                     return TomlError.tableTypeMismatch(lineNumber, tableName, "regular table")
@@ -193,13 +242,10 @@ public final class TomlParser {
             // Check for section header [name]
             var sectionMatcher = SECTION_PATTERN.matcher(line);
             if (sectionMatcher.matches()) {
-                String sectionName = sectionMatcher.group(1);
+                String sectionName = normalizeTableName(sectionMatcher.group(1));
                 // Check if this is a sub-table within an array element
                 if (currentArrayTableBase != null && sectionName.startsWith(currentArrayTableBase + ".")) {
-                    // This is a sub-table of the current array element
-                    // e.g., [fruits.details] when inside [[fruits]]
                     currentSection = sectionName;
-                    // No need to create in sections - we'll put values into the current array element
                     continue;
                 }
                 // Check for type mismatch - section already defined as array table
@@ -207,6 +253,12 @@ public final class TomlParser {
                     return TomlError.tableTypeMismatch(lineNumber, sectionName, "array of tables")
                                     .result();
                 }
+                // Check for duplicate section definition
+                if (definedSections.contains(sectionName)) {
+                    return TomlError.duplicateSection(lineNumber, sectionName)
+                                    .result();
+                }
+                definedSections.add(sectionName);
                 // Regular section - exit array table context
                 currentArrayTableBase = null;
                 currentArrayTableElement = null;
@@ -215,7 +267,7 @@ public final class TomlParser {
                 continue;
             }
             // Try to parse key = value with different key formats
-            var keyValueResult = parseKeyValue(line);
+            var keyValueResult = parseKeyValue(line, lineNumber);
             if (keyValueResult != null) {
                 String key = keyValueResult.key();
                 String targetSection = keyValueResult.targetSection();
@@ -228,6 +280,11 @@ public final class TomlParser {
                                        ? targetSection
                                        : currentSection + "." + targetSection;
                     if (currentArrayTableBase == null) {
+                        // Check for dotted key conflict
+                        var conflictResult = checkDottedKeyConflict(sections, currentSection, targetSection, lineNumber);
+                        if (conflictResult.isFailure()) {
+                            return conflictResult.map(_ -> null);
+                        }
                         sections.putIfAbsent(effectiveSection, new LinkedHashMap<>());
                     }
                 }
@@ -245,16 +302,20 @@ public final class TomlParser {
                 if (rawValue.startsWith("\"\"\"")) {
                     var result = handleMultilineStart(rawValue, "\"\"\"", false, lineNumber);
                     switch (result) {
-                        case MultilineStartResult.Complete c ->
-                        putValue(sections,
-                                 arrayTables,
-                                 currentArrayTableBase,
-                                 currentArrayTableElement,
-                                 effectiveSection,
-                                 effectiveKey,
-                                 c.value());
-                        case MultilineStartResult.Error e ->
-                        {
+                        case MultilineStartResult.Complete c -> {
+                            var processResult = processBasicMultilineContent(c.rawValue(), lineNumber);
+                            if (processResult.isFailure()) {
+                                return processResult.map(_ -> null);
+                            }
+                            putValue(sections,
+                                     arrayTables,
+                                     currentArrayTableBase,
+                                     currentArrayTableElement,
+                                     effectiveSection,
+                                     effectiveKey,
+                                     processResult.fold(_ -> "", s -> s));
+                        }
+                        case MultilineStartResult.Error e -> {
                             return e.error();
                         }
                         case MultilineStartResult.Partial p ->
@@ -276,9 +337,8 @@ public final class TomlParser {
                                  currentArrayTableElement,
                                  effectiveSection,
                                  effectiveKey,
-                                 c.value());
-                        case MultilineStartResult.Error e ->
-                        {
+                                 c.rawValue());
+                        case MultilineStartResult.Error e -> {
                             return e.error();
                         }
                         case MultilineStartResult.Partial p ->
@@ -321,7 +381,68 @@ public final class TomlParser {
                    : TomlError.unterminatedMultilineString(multiline.startLine())
                               .result();
         }
-        return Result.success(new TomlDocument(Map.copyOf(sections), copyArrayTables(arrayTables)));
+        return Result.success(new TomlDocument(sections, copyArrayTables(arrayTables)));
+    }
+
+    /// Normalize a table name - handle quoted parts.
+    private static String normalizeTableName(String name) {
+        // Remove quotes from quoted key
+        if (name.startsWith("\"") && name.endsWith("\"")) {
+            return name.substring(1, name.length() - 1);
+        }
+        if (name.startsWith("'") && name.endsWith("'")) {
+            return name.substring(1, name.length() - 1);
+        }
+        return name;
+    }
+
+    /// Check for dotted key conflicts where a value blocks a table path.
+    private static Result<Void> checkDottedKeyConflict(Map<String, Map<String, Object>> sections,
+                                                       String currentSection,
+                                                       String targetSection,
+                                                       int lineNumber) {
+        String[] parts = targetSection.split("\\.");
+        StringBuilder path = new StringBuilder(currentSection);
+        for (int i = 0; i < parts.length - 1; i++ ) {
+            if (!path.isEmpty()) {
+                path.append(".");
+            }
+            path.append(parts[i]);
+            String pathStr = path.toString();
+            var section = sections.get(pathStr.isEmpty()
+                                       ? ""
+                                       : pathStr.substring(0,
+                                                           pathStr.lastIndexOf('.') < 0
+                                                           ? pathStr.length()
+                                                           : pathStr.lastIndexOf('.')));
+            if (section != null && section.containsKey(parts[i]) && !(section.get(parts[i]) instanceof Map)) {
+                return TomlError.dottedKeyConflict(lineNumber, targetSection, pathStr)
+                                .result();
+            }
+        }
+        return Result.success(null);
+    }
+
+    /// Find closing delimiter handling quotes before it.
+    private static int findClosingDelimiter(String line, String delimiter) {
+        int idx = line.indexOf(delimiter);
+        if (idx < 0) {
+            return - 1;
+        }
+        // For """, check if there are extra quotes
+        if (delimiter.equals("\"\"\"")) {
+            // Count consecutive quotes
+            int end = idx + 3;
+            while (end < line.length() && line.charAt(end) == '"') {
+                end++ ;
+            }
+            // Up to 2 extra quotes allowed before closing
+            int extraQuotes = end - idx - 3;
+            if (extraQuotes <= 2) {
+                return idx + extraQuotes;
+            }
+        }
+        return idx;
     }
 
     /// Put a value into the appropriate location (regular section or array table element).
@@ -333,18 +454,16 @@ public final class TomlParser {
                                  String key,
                                  Object value) {
         if (currentArrayTableBase != null && section.startsWith(currentArrayTableBase)) {
-            // Determine the nested key path within the array element
             if (section.equals(currentArrayTableBase)) {
-                // Direct property of the array element
                 currentArrayTableElement.put(key, value);
             } else {
-                // Sub-table within the array element (e.g., [fruits.details] -> "details.key")
                 String subPath = section.substring(currentArrayTableBase.length() + 1);
                 getOrCreateNestedMap(currentArrayTableElement, subPath)
                                     .put(key, value);
             }
         } else {
-            sections.get(section)
+            sections.computeIfAbsent(section,
+                                     _ -> new LinkedHashMap<>())
                     .put(key, value);
         }
     }
@@ -407,11 +526,15 @@ public final class TomlParser {
     private record KeyValue(String key, String targetSection, String value) {}
 
     /// Try to parse a line as key = value using various key formats.
-    private static KeyValue parseKeyValue(String line) {
+    private static KeyValue parseKeyValue(String line, int lineNumber) {
         // Try quoted key: "key" = value
         var quotedMatcher = QUOTED_KEY_VALUE_PATTERN.matcher(line);
         if (quotedMatcher.matches()) {
-            return new KeyValue(quotedMatcher.group(1),
+            String quotedKey = quotedMatcher.group(1);
+            // Process escape sequences in quoted keys
+            var unescaped = unescapeBasicString(quotedKey, lineNumber);
+            String key = unescaped.fold(_ -> quotedKey, s -> s);
+            return new KeyValue(key,
                                 null,
                                 quotedMatcher.group(2)
                                              .trim());
@@ -454,20 +577,20 @@ public final class TomlParser {
     /// Check if an array value is complete (balanced brackets).
     private static boolean isArrayComplete(String value) {
         int depth = 0;
-        boolean inQuotes = false;
+        boolean inDoubleQuotes = false;
         boolean inSingleQuotes = false;
         for (int i = 0; i < value.length(); i++ ) {
             char c = value.charAt(i);
-            if (c == '\\' && i + 1 < value.length() && (inQuotes || inSingleQuotes)) {
+            // Handle escape sequences only in double-quoted strings
+            if (c == '\\' && i + 1 < value.length() && inDoubleQuotes) {
                 i++ ;
-                // Skip escaped character
                 continue;
             }
             if (c == '"' && !inSingleQuotes) {
-                inQuotes = !inQuotes;
-            } else if (c == '\'' && !inQuotes) {
+                inDoubleQuotes = !inDoubleQuotes;
+            } else if (c == '\'' && !inDoubleQuotes) {
                 inSingleQuotes = !inSingleQuotes;
-            } else if (!inQuotes && !inSingleQuotes) {
+            } else if (!inDoubleQuotes && !inSingleQuotes) {
                 if (c == '[') depth++ ;else if (c == ']') depth-- ;
             }
         }
@@ -482,7 +605,9 @@ public final class TomlParser {
                                                                     Map<String, List<Map<String, Object>>> arrayTables,
                                                                     String currentArrayTableBase,
                                                                     Map<String, Object> currentArrayTableElement) {
-        state.appendLine(rawLine);
+        // Strip comments from array lines
+        String processedLine = stripArrayLineComment(rawLine);
+        state.appendLine(processedLine);
         String accumulated = state.content()
                                   .trim();
         if (isArrayComplete(accumulated)) {
@@ -503,10 +628,31 @@ public final class TomlParser {
         return Result.success(false);
     }
 
+    /// Strip comment from array line (outside of quotes).
+    private static String stripArrayLineComment(String line) {
+        boolean inDoubleQuotes = false;
+        boolean inSingleQuotes = false;
+        for (int i = 0; i < line.length(); i++ ) {
+            char c = line.charAt(i);
+            if (c == '\\' && i + 1 < line.length() && inDoubleQuotes) {
+                i++ ;
+                continue;
+            }
+            if (c == '"' && !inSingleQuotes) {
+                inDoubleQuotes = !inDoubleQuotes;
+            } else if (c == '\'' && !inDoubleQuotes) {
+                inSingleQuotes = !inSingleQuotes;
+            } else if (c == '#' && !inDoubleQuotes && !inSingleQuotes) {
+                return line.substring(0, i)
+                           .trim();
+            }
+        }
+        return line;
+    }
+
     /// Result of attempting to parse a multiline string start.
-    /// Use pattern matching to extract values - no accessor methods needed.
     private sealed interface MultilineStartResult {
-        record Complete(String value) implements MultilineStartResult {}
+        record Complete(String rawValue) implements MultilineStartResult {}
 
         record Partial(String partial) implements MultilineStartResult {}
 
@@ -518,28 +664,23 @@ public final class TomlParser {
                                                              boolean isLiteral,
                                                              int lineNumber) {
         String afterOpen = rawValue.substring(3);
-        int closeIndex = afterOpen.indexOf(delimiter);
+        int closeIndex = findClosingDelimiter(afterOpen, delimiter);
         if (closeIndex >= 0) {
             // Same-line close: """content""" or '''content'''
             String content = afterOpen.substring(0, closeIndex);
-            String processed = isLiteral
-                               ? content
-                               : processBasicMultilineContent(content);
-            return new MultilineStartResult.Complete(processed);
+            return new MultilineStartResult.Complete(content);
         }
         // Multiline continues on next line
         return new MultilineStartResult.Partial(afterOpen + "\n");
     }
 
     /// Process multi-line basic string content (with escape sequences and line-ending backslash).
-    private static String processBasicMultiline(String raw) {
-        // Trim leading newline per TOML spec
+    private static Result<String> processBasicMultiline(String raw, int startLine) {
         String content = trimLeadingNewline(raw);
-        return processBasicMultilineContent(content);
+        return processBasicMultilineContent(content, startLine);
     }
 
-    private static String processBasicMultilineContent(String content) {
-        // Handle line-ending backslash and escape sequences
+    private static Result<String> processBasicMultilineContent(String content, int startLine) {
         StringBuilder result = new StringBuilder();
         int i = 0;
         while (i < content.length()) {
@@ -557,20 +698,20 @@ public final class TomlParser {
                     }
                     continue;
                 }
-                // Regular escape sequence - use shared processing
-                int consumed = processEscapeSequence(content, i, result);
-                if (consumed < 0) {
-                    result.append(c);
-                    i++ ;
-                } else {
-                    i += consumed;
+                // Regular escape sequence
+                var escapeResult = processEscapeSequence(content, i, startLine);
+                if (escapeResult.isFailure()) {
+                    return escapeResult.map(_ -> "");
                 }
+                var pair = escapeResult.fold(_ -> new EscapeResult("", 1), p -> p);
+                result.append(pair.value());
+                i += pair.consumed();
             } else {
                 result.append(c);
                 i++ ;
             }
         }
-        return result.toString();
+        return Result.success(result.toString());
     }
 
     private static boolean isWhitespaceOrNewline(char c) {
@@ -579,7 +720,6 @@ public final class TomlParser {
 
     /// Process multi-line literal string content (no escape processing).
     private static String processLiteralMultiline(String raw) {
-        // Trim leading newline per TOML spec
         return trimLeadingNewline(raw);
     }
 
@@ -598,13 +738,10 @@ public final class TomlParser {
     /// @param path the path to the TOML file
     /// @return Result containing the parsed TomlDocument, or an error
     public static Result<TomlDocument> parseFile(Path path) {
-        try{
-            return parse(Files.readString(path));
-        } catch (IOException e) {
-            return TomlError.fileReadFailed(path.toString(),
-                                            e.getMessage())
-                            .result();
-        }
+        return Result.lift(e -> TomlError.fileReadFailed(path.toString(),
+                                                         e.getMessage()),
+                           () -> Files.readString(path))
+                     .flatMap(TomlParser::parse);
     }
 
     /// Strip inline comment while properly tracking quote state and bracket depth.
@@ -614,10 +751,9 @@ public final class TomlParser {
         int bracketDepth = 0;
         for (int i = 0; i < value.length(); i++ ) {
             char c = value.charAt(i);
-            // Handle escape sequences in quoted strings
-            if ((inDoubleQuotes || inSingleQuotes) && c == '\\' && i + 1 < value.length()) {
+            // Handle escape sequences only in double-quoted strings
+            if (inDoubleQuotes && c == '\\' && i + 1 < value.length()) {
                 i++ ;
-                // Skip next character
                 continue;
             }
             if (c == '"' && !inSingleQuotes) {
@@ -646,13 +782,19 @@ public final class TomlParser {
         if ("false".equals(value)) {
             return Result.success(false);
         }
+        // Special float values (inf, nan)
+        if (SPECIAL_FLOAT_PATTERN.matcher(value)
+                                 .matches()) {
+            return Result.success(parseSpecialFloat(value));
+        }
         // Double-quoted string (with escape processing)
         if (value.startsWith("\"")) {
             if (!value.endsWith("\"") || value.length() < 2) {
                 return TomlError.unterminatedString(lineNumber)
                                 .result();
             }
-            return Result.success(unescapeString(value.substring(1, value.length() - 1)));
+            return unescapeString(value.substring(1, value.length() - 1),
+                                  lineNumber);
         }
         // Single-quoted literal string (no escape processing)
         if (value.startsWith("'")) {
@@ -661,6 +803,18 @@ public final class TomlParser {
                                 .result();
             }
             return Result.success(value.substring(1, value.length() - 1));
+        }
+        // Inline table detection
+        if (INLINE_TABLE_PATTERN.matcher(value)
+                                .matches()) {
+            return TomlError.unsupportedFeature(lineNumber, "inline tables")
+                            .result();
+        }
+        // Date/time detection
+        if (DATE_PATTERN.matcher(value)
+                        .matches()) {
+            return TomlError.unsupportedFeature(lineNumber, "dates and times")
+                            .result();
         }
         // Array
         if (value.startsWith("[")) {
@@ -671,29 +825,103 @@ public final class TomlParser {
             return parseArray(value.substring(1, value.length() - 1),
                               lineNumber);
         }
+        // Hex integer
+        if (HEX_PATTERN.matcher(value)
+                       .matches()) {
+            return parseHexInteger(value, lineNumber);
+        }
+        // Octal integer
+        if (OCTAL_PATTERN.matcher(value)
+                         .matches()) {
+            return parseOctalInteger(value, lineNumber);
+        }
+        // Binary integer
+        if (BINARY_PATTERN.matcher(value)
+                          .matches()) {
+            return parseBinaryInteger(value, lineNumber);
+        }
         // Float (including negative, with decimal point or exponent)
         if (FLOAT_PATTERN.matcher(value)
                          .matches() || FLOAT_EXP_PATTERN.matcher(value)
                                                         .matches()) {
-            try{
-                return Result.success(Double.parseDouble(value));
-            } catch (NumberFormatException _) {
-                return TomlError.invalidValue(lineNumber, value, "float")
-                                .result();
-            }
+            return parseFloat(value, lineNumber);
         }
-        // Integer (including negative)
+        // Integer (including negative) - check for leading zeros
         if (INTEGER_PATTERN.matcher(value)
                            .matches()) {
-            try{
-                return Result.success(Long.parseLong(value));
-            } catch (NumberFormatException _) {
-                return TomlError.invalidValue(lineNumber, value, "integer")
-                                .result();
-            }
+            return parseInteger(value, lineNumber);
+        }
+        // Check for invalid leading zeros
+        if (value.matches("-?0\\d+")) {
+            return TomlError.invalidValue(lineNumber,
+                                          value,
+                                          "integer (leading zeros not allowed)")
+                            .result();
         }
         // Unquoted string (identifier-like)
         return Result.success(value);
+    }
+
+    private static Double parseSpecialFloat(String value) {
+        return switch (value) {
+            case "inf", "+inf" -> Double.POSITIVE_INFINITY;
+            case "-inf" -> Double.NEGATIVE_INFINITY;
+            case "nan", "+nan", "-nan" -> Double.NaN;
+            default -> Double.NaN;
+        };
+    }
+
+    private static Result<Object> parseFloat(String value, int lineNumber) {
+        try{
+            String cleaned = value.replace("_", "");
+            return Result.success(Double.parseDouble(cleaned));
+        } catch (NumberFormatException _) {
+            return TomlError.invalidValue(lineNumber, value, "float")
+                            .result();
+        }
+    }
+
+    private static Result<Object> parseInteger(String value, int lineNumber) {
+        try{
+            String cleaned = value.replace("_", "");
+            return Result.success(Long.parseLong(cleaned));
+        } catch (NumberFormatException _) {
+            return TomlError.invalidValue(lineNumber, value, "integer")
+                            .result();
+        }
+    }
+
+    private static Result<Object> parseHexInteger(String value, int lineNumber) {
+        try{
+            String cleaned = value.substring(2)
+                                  .replace("_", "");
+            return Result.success(Long.parseLong(cleaned, 16));
+        } catch (NumberFormatException _) {
+            return TomlError.invalidValue(lineNumber, value, "hexadecimal integer")
+                            .result();
+        }
+    }
+
+    private static Result<Object> parseOctalInteger(String value, int lineNumber) {
+        try{
+            String cleaned = value.substring(2)
+                                  .replace("_", "");
+            return Result.success(Long.parseLong(cleaned, 8));
+        } catch (NumberFormatException _) {
+            return TomlError.invalidValue(lineNumber, value, "octal integer")
+                            .result();
+        }
+    }
+
+    private static Result<Object> parseBinaryInteger(String value, int lineNumber) {
+        try{
+            String cleaned = value.substring(2)
+                                  .replace("_", "");
+            return Result.success(Long.parseLong(cleaned, 2));
+        } catch (NumberFormatException _) {
+            return TomlError.invalidValue(lineNumber, value, "binary integer")
+                            .result();
+        }
     }
 
     private static Result<Object> parseArray(String content, int lineNumber) {
@@ -703,20 +931,31 @@ public final class TomlParser {
             return Result.success(items);
         }
         StringBuilder current = new StringBuilder();
-        boolean inQuotes = false;
+        boolean inDoubleQuotes = false;
+        boolean inSingleQuotes = false;
         int bracketDepth = 0;
         for (int i = 0; i < content.length(); i++ ) {
             char c = content.charAt(i);
-            if (c == '"' && (i == 0 || content.charAt(i - 1) != '\\')) {
-                inQuotes = !inQuotes;
+            // Handle escapes only in double-quoted strings
+            if (c == '\\' && i + 1 < content.length() && inDoubleQuotes) {
                 current.append(c);
-            } else if (c == '[' && !inQuotes) {
+                current.append(content.charAt(i + 1));
+                i++ ;
+                continue;
+            }
+            if (c == '"' && !inSingleQuotes) {
+                inDoubleQuotes = !inDoubleQuotes;
+                current.append(c);
+            } else if (c == '\'' && !inDoubleQuotes) {
+                inSingleQuotes = !inSingleQuotes;
+                current.append(c);
+            } else if (c == '[' && !inDoubleQuotes && !inSingleQuotes) {
                 bracketDepth++ ;
                 current.append(c);
-            } else if (c == ']' && !inQuotes) {
+            } else if (c == ']' && !inDoubleQuotes && !inSingleQuotes) {
                 bracketDepth-- ;
                 current.append(c);
-            } else if (c == ',' && !inQuotes && bracketDepth == 0) {
+            } else if (c == ',' && !inDoubleQuotes && !inSingleQuotes && bracketDepth == 0) {
                 var itemResult = parseValue(current.toString()
                                                    .trim(),
                                             lineNumber);
@@ -742,83 +981,82 @@ public final class TomlParser {
         return Result.success(items);
     }
 
-    /// Shared escape sequence processing for basic strings.
-    /// Returns the number of characters consumed, or -1 on error.
-    private static int processEscapeSequence(String s, int i, StringBuilder result) {
+    /// Result of processing an escape sequence.
+    private record EscapeResult(String value, int consumed) {}
+
+    /// Process escape sequence and return the result with characters consumed.
+    private static Result<EscapeResult> processEscapeSequence(String s, int i, int lineNumber) {
         if (i + 1 >= s.length()) {
-            return - 1;
+            return TomlError.invalidEscapeSequence(lineNumber, "\\")
+                            .result();
         }
         char next = s.charAt(i + 1);
         return switch (next) {
-            case '\\' -> {
-                result.append('\\');
-                yield 2;
-            }
-            case '"' -> {
-                result.append('"');
-                yield 2;
-            }
-            case 'n' -> {
-                result.append('\n');
-                yield 2;
-            }
-            case 't' -> {
-                result.append('\t');
-                yield 2;
-            }
-            case 'r' -> {
-                result.append('\r');
-                yield 2;
-            }
-            case 'b' -> {
-                result.append('\b');
-                yield 2;
-            }
-            case 'f' -> {
-                result.append('\f');
-                yield 2;
-            }
-            case 'u' -> processUnicodeEscape(s, i, 4, result);
-            case 'U' -> processUnicodeEscape(s, i, 8, result);
-            default -> - 1;
+            case '\\' -> Result.success(new EscapeResult("\\", 2));
+            case '"' -> Result.success(new EscapeResult("\"", 2));
+            case 'n' -> Result.success(new EscapeResult("\n", 2));
+            case 't' -> Result.success(new EscapeResult("\t", 2));
+            case 'r' -> Result.success(new EscapeResult("\r", 2));
+            case 'b' -> Result.success(new EscapeResult("\b", 2));
+            case 'f' -> Result.success(new EscapeResult("\f", 2));
+            case 'u' -> processUnicodeEscape(s, i, 4, lineNumber);
+            case 'U' -> processUnicodeEscape(s, i, 8, lineNumber);
+            default -> TomlError.invalidEscapeSequence(lineNumber,
+                                                       String.valueOf(next))
+                                .result();
         };
     }
 
     /// Process unicode escape sequences (4 or 8 hex digits).
-    private static int processUnicodeEscape(String s, int i, int digits, StringBuilder result) {
-        // Need: \ + u/U + digits
+    private static Result<EscapeResult> processUnicodeEscape(String s, int i, int digits, int lineNumber) {
         if (i + 2 + digits > s.length()) {
-            return - 1;
+            return TomlError.invalidEscapeSequence(lineNumber,
+                                                   s.substring(i,
+                                                               Math.min(i + 2 + digits,
+                                                                        s.length())))
+                            .result();
         }
         String hex = s.substring(i + 2, i + 2 + digits);
         try{
             int codePoint = Integer.parseInt(hex, 16);
-            result.appendCodePoint(codePoint);
-            return 2 + digits;
+            // Check for invalid surrogates (D800-DFFF)
+            if (codePoint >= 0xD800 && codePoint <= 0xDFFF) {
+                return TomlError.invalidSurrogate(lineNumber, hex)
+                                .result();
+            }
+            return Result.success(new EscapeResult(Character.toString(codePoint), 2 + digits));
         } catch (NumberFormatException _) {
-            return - 1;
+            return TomlError.invalidEscapeSequence(lineNumber,
+                                                   s.substring(i, i + 2 + digits))
+                            .result();
         }
     }
 
-    private static String unescapeString(String s) {
+    /// Unescape a basic string and return the result as String (for keys).
+    private static Result<String> unescapeBasicString(String s, int lineNumber) {
         var result = new StringBuilder();
         int i = 0;
         while (i < s.length()) {
             char c = s.charAt(i);
             if (c == '\\') {
-                int consumed = processEscapeSequence(s, i, result);
-                if (consumed < 0) {
-                    // Invalid escape - append backslash and continue
-                    result.append(c);
-                    i++ ;
-                } else {
-                    i += consumed;
+                var escapeResult = processEscapeSequence(s, i, lineNumber);
+                if (escapeResult.isFailure()) {
+                    return escapeResult.map(_ -> "");
                 }
+                var pair = escapeResult.fold(_ -> new EscapeResult("", 1), p -> p);
+                result.append(pair.value());
+                i += pair.consumed();
             } else {
                 result.append(c);
                 i++ ;
             }
         }
-        return result.toString();
+        return Result.success(result.toString());
+    }
+
+    /// Unescape a string value and return as Object (for values).
+    private static Result<Object> unescapeString(String s, int lineNumber) {
+        return unescapeBasicString(s, lineNumber)
+                                  .map(str -> str);
     }
 }
