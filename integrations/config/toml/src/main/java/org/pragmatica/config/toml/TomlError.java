@@ -49,10 +49,31 @@ public sealed interface TomlError extends Cause {
         }
     }
 
+    record UnterminatedMultilineString(int line) implements TomlError {
+        @Override
+        public String message() {
+            return "Unterminated multiline string starting at line " + line;
+        }
+    }
+
     record FileReadFailed(String path, String details) implements TomlError {
         @Override
         public String message() {
             return "Failed to read file '" + path + "': " + details;
+        }
+    }
+
+    record DuplicateKey(int line, String key) implements TomlError {
+        @Override
+        public String message() {
+            return "Duplicate key at line " + line + ": '" + key + "'";
+        }
+    }
+
+    record InvalidEscapeSequence(int line, String sequence) implements TomlError {
+        @Override
+        public String message() {
+            return "Invalid escape sequence at line " + line + ": '\\" + sequence + "'";
         }
     }
 
@@ -72,8 +93,20 @@ public sealed interface TomlError extends Cause {
         return new UnterminatedArray(line);
     }
 
+    static TomlError unterminatedMultilineString(int line) {
+        return new UnterminatedMultilineString(line);
+    }
+
     static TomlError fileReadFailed(String path, String details) {
         return new FileReadFailed(path, details);
+    }
+
+    static TomlError duplicateKey(int line, String key) {
+        return new DuplicateKey(line, key);
+    }
+
+    static TomlError invalidEscapeSequence(int line, String sequence) {
+        return new InvalidEscapeSequence(line, sequence);
     }
 
     default <T> Result<T> result() {

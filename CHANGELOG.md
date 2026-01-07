@@ -8,10 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.10] - 2026-01-07
 
 ### Added
+- Multi-line basic strings (`"""..."""`) with escape sequence and line-ending backslash support
+- Multi-line literal strings (`'''...'''`) with no escape processing
+- `TomlError.UnterminatedMultilineString` error type for unclosed multiline strings
+- Single-quote literal strings (`'...'`) with no escape processing
+- Quoted keys (`"key with spaces"` and `'literal key'`) support
+- Dotted keys (`server.host = "value"`) that create implicit sections
+- Multi-line array support with continuation across lines
+- Hyphen support in section names (`[my-section]`)
+- Unicode escape sequences (`\u03B1` and `\U0001F600`)
+- Backspace (`\b`) and form feed (`\f`) escape sequences
+- `TomlError.DuplicateKey` error for detecting duplicate keys
+- `TomlError.InvalidEscapeSequence` error for invalid escape sequences
 
 ### Changed
+- Pre-compile regex patterns (FLOAT_PATTERN, INTEGER_PATTERN) for better performance
+- Refactor `stripInlineComment` to properly track quote state and bracket depth
+- Simplify `MultilineStartResult` to use pattern matching instead of boolean accessors
+- Extract shared escape processing method for consistent handling
+- Encapsulate multiline parsing state into `MultilineState` record
 
 ### Fixed
+- Comment stripping now correctly preserves `#` inside quoted strings
+- Section names with hyphens now parse correctly
 
 ## [0.9.9] - 2026-01-05
 

@@ -123,6 +123,209 @@ class TomlParserTest {
     }
 
     @Nested
+    class MultilineBasicStrings {
+
+        @Test
+        void parseSimpleMultilineBasicString() {
+            var content = """
+                text = \"\"\"
+                Hello
+                World
+                \"\"\"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("Hello\nWorld\n", doc.getString("", "text").unwrap());
+                });
+        }
+
+        @Test
+        void parseMultilineBasicStringTrimsLeadingNewline() {
+            // Per TOML spec: newline immediately after opening """ is trimmed
+            var content = "text = \"\"\"\nHello\"\"\"";
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("Hello", doc.getString("", "text").unwrap());
+                });
+        }
+
+        @Test
+        void parseMultilineBasicStringWithEscapeSequences() {
+            var content = """
+                text = \"\"\"
+                Tab:\\there
+                Newline:\\nhere
+                Quote:\\"here
+                \"\"\"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("Tab:\there\nNewline:\nhere\nQuote:\"here\n", doc.getString("", "text").unwrap());
+                });
+        }
+
+        @Test
+        void parseMultilineBasicStringWithLineEndingBackslash() {
+            // Line-ending backslash trims newline and following whitespace
+            var content = "text = \"\"\"\nThe quick brown \\\n    fox jumps over \\\n    the lazy dog.\"\"\"";
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("The quick brown fox jumps over the lazy dog.", doc.getString("", "text").unwrap());
+                });
+        }
+
+        @Test
+        void parseMultilineBasicStringSameLine() {
+            var content = """
+                text = \"\"\"inline content\"\"\"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("inline content", doc.getString("", "text").unwrap());
+                });
+        }
+
+        @Test
+        void parseMultilineBasicStringPreservesInternalNewlines() {
+            var content = "text = \"\"\"\nLine 1\n\nLine 3\"\"\"";
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("Line 1\n\nLine 3", doc.getString("", "text").unwrap());
+                });
+        }
+    }
+
+    @Nested
+    class MultilineLiteralStrings {
+
+        @Test
+        void parseSimpleMultilineLiteralString() {
+            var content = """
+                text = '''
+                Hello
+                World
+                '''
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("Hello\nWorld\n", doc.getString("", "text").unwrap());
+                });
+        }
+
+        @Test
+        void parseMultilineLiteralStringTrimsLeadingNewline() {
+            var content = "text = '''\nHello'''";
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("Hello", doc.getString("", "text").unwrap());
+                });
+        }
+
+        @Test
+        void parseMultilineLiteralStringNoEscapeProcessing() {
+            // Literal strings don't process escape sequences
+            var content = """
+                text = '''
+                C:\\Users\\test
+                No \\n newline
+                '''
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("C:\\Users\\test\nNo \\n newline\n", doc.getString("", "text").unwrap());
+                });
+        }
+
+        @Test
+        void parseMultilineLiteralStringSameLine() {
+            var content = """
+                text = '''inline literal'''
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("inline literal", doc.getString("", "text").unwrap());
+                });
+        }
+
+        @Test
+        void parseMultilineLiteralStringPreservesBackslashAtEndOfLine() {
+            // Unlike basic strings, literal strings preserve backslash at end of line
+            var content = "text = '''\nLine 1 \\\nLine 2'''";
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("Line 1 \\\nLine 2", doc.getString("", "text").unwrap());
+                });
+        }
+    }
+
+    @Nested
+    class MultilineStringsInSections {
+
+        @Test
+        void parseMultilineStringInSection() {
+            var content = """
+                [config]
+                description = \"\"\"
+                This is a
+                multi-line description
+                \"\"\"
+                enabled = true
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("This is a\nmulti-line description\n", doc.getString("config", "description").unwrap());
+                    assertTrue(doc.getBoolean("config", "enabled").unwrap());
+                });
+        }
+
+        @Test
+        void parseMultipleSectionsWithMultilineStrings() {
+            var content = """
+                [section1]
+                text = \"\"\"
+                First
+                \"\"\"
+
+                [section2]
+                text = '''
+                Second
+                '''
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("First\n", doc.getString("section1", "text").unwrap());
+                    assertEquals("Second\n", doc.getString("section2", "text").unwrap());
+                });
+        }
+    }
+
+    @Nested
     class NumericValues {
 
         @Test
@@ -567,6 +770,21 @@ class TomlParserTest {
                     assertInstanceOf(TomlError.UnterminatedArray.class, error);
                 });
         }
+
+        @Test
+        void unterminatedMultilineString() {
+            var content = """
+                text = \"\"\"
+                This is not closed
+                """;
+
+            TomlParser.parse(content)
+                .onSuccess(_ -> fail("Should fail"))
+                .onFailure(error -> {
+                    assertInstanceOf(TomlError.UnterminatedMultilineString.class, error);
+                    assertTrue(error.message().contains("line 1"));
+                });
+        }
     }
 
     @Nested
@@ -602,6 +820,339 @@ class TomlParserTest {
                 .onFailure(error -> {
                     assertInstanceOf(TomlError.FileReadFailed.class, error);
                     assertTrue(error.message().contains("does-not-exist.toml"));
+                });
+        }
+    }
+
+    @Nested
+    class QuotedKeys {
+
+        @Test
+        void parseDoubleQuotedKey() {
+            var content = """
+                "quoted key" = "value"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("value", doc.getString("", "quoted key").unwrap());
+                });
+        }
+
+        @Test
+        void parseSingleQuotedKey() {
+            var content = """
+                'literal key' = "value"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("value", doc.getString("", "literal key").unwrap());
+                });
+        }
+
+        @Test
+        void parseKeyWithSpecialCharacters() {
+            var content = """
+                "key with spaces" = "works"
+                "key-with-dashes" = "also works"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("works", doc.getString("", "key with spaces").unwrap());
+                    assertEquals("also works", doc.getString("", "key-with-dashes").unwrap());
+                });
+        }
+    }
+
+    @Nested
+    class DottedKeys {
+
+        @Test
+        void parseDottedKeyCreatesImplicitSection() {
+            var content = """
+                server.host = "localhost"
+                server.port = 8080
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("localhost", doc.getString("server", "host").unwrap());
+                    assertEquals(8080, doc.getInt("server", "port").unwrap());
+                });
+        }
+
+        @Test
+        void parseDottedKeyWithMultipleLevels() {
+            var content = """
+                database.connection.host = "localhost"
+                database.connection.port = 5432
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("localhost", doc.getString("database.connection", "host").unwrap());
+                    assertEquals(5432, doc.getInt("database.connection", "port").unwrap());
+                });
+        }
+
+        @Test
+        void parseDottedKeyInSection() {
+            var content = """
+                [app]
+                server.host = "localhost"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("localhost", doc.getString("app.server", "host").unwrap());
+                });
+        }
+    }
+
+    @Nested
+    class DuplicateKeyDetection {
+
+        @Test
+        void detectsDuplicateKey() {
+            var content = """
+                name = "first"
+                name = "second"
+                """;
+
+            TomlParser.parse(content)
+                .onSuccess(_ -> fail("Should fail for duplicate key"))
+                .onFailure(error -> {
+                    assertInstanceOf(TomlError.DuplicateKey.class, error);
+                    assertTrue(error.message().contains("name"));
+                });
+        }
+
+        @Test
+        void detectsDuplicateKeyInSection() {
+            var content = """
+                [database]
+                host = "localhost"
+                host = "127.0.0.1"
+                """;
+
+            TomlParser.parse(content)
+                .onSuccess(_ -> fail("Should fail for duplicate key"))
+                .onFailure(error -> {
+                    assertInstanceOf(TomlError.DuplicateKey.class, error);
+                });
+        }
+    }
+
+    @Nested
+    class SingleQuoteLiteralStrings {
+
+        @Test
+        void parseSingleQuoteLiteralString() {
+            var content = """
+                path = 'C:\\Users\\test'
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    // No escape processing - backslashes preserved
+                    assertEquals("C:\\Users\\test", doc.getString("", "path").unwrap());
+                });
+        }
+
+        @Test
+        void parseSingleQuoteWithNoEscapes() {
+            var content = """
+                text = 'Hello\\nWorld'
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    // Literal - no escape processing
+                    assertEquals("Hello\\nWorld", doc.getString("", "text").unwrap());
+                });
+        }
+    }
+
+    @Nested
+    class HyphenatedSections {
+
+        @Test
+        void parseHyphenatedSectionName() {
+            var content = """
+                [my-section]
+                key = "value"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("value", doc.getString("my-section", "key").unwrap());
+                });
+        }
+
+        @Test
+        void parseNestedHyphenatedSection() {
+            var content = """
+                [my-app.sub-section]
+                key = "value"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("value", doc.getString("my-app.sub-section", "key").unwrap());
+                });
+        }
+    }
+
+    @Nested
+    class MultilineArrays {
+
+        @Test
+        void parseMultilineArray() {
+            var content = """
+                items = [
+                    "first",
+                    "second",
+                    "third"
+                ]
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    var items = doc.getStringList("", "items").unwrap();
+                    assertEquals(List.of("first", "second", "third"), items);
+                });
+        }
+
+        @Test
+        void parseMultilineArrayWithTrailingComma() {
+            var content = """
+                items = [
+                    "first",
+                    "second",
+                ]
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    var items = doc.getStringList("", "items").unwrap();
+                    assertEquals(2, items.size());
+                });
+        }
+
+        @Test
+        void parseMultilineNestedArray() {
+            var content = """
+                matrix = [
+                    [1, 2, 3],
+                    [4, 5, 6]
+                ]
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertTrue(doc.hasKey("", "matrix"));
+                });
+        }
+    }
+
+    @Nested
+    class UnicodeEscapes {
+
+        @Test
+        void parseUnicode4Digit() {
+            // Greek small letter alpha
+            var content = "symbol = \"\\u03B1\"";
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("\u03B1", doc.getString("", "symbol").unwrap());
+                });
+        }
+
+        @Test
+        void parseUnicode8Digit() {
+            // Emoji (grinning face)
+            var content = "emoji = \"\\U0001F600\"";
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("\uD83D\uDE00", doc.getString("", "emoji").unwrap());
+                });
+        }
+
+        @Test
+        void parseBackspaceAndFormFeed() {
+            var content = """
+                bs = "before\\bafter"
+                ff = "before\\fafter"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("before\bafter", doc.getString("", "bs").unwrap());
+                    assertEquals("before\fafter", doc.getString("", "ff").unwrap());
+                });
+        }
+    }
+
+    @Nested
+    class CommentStripping {
+
+        @Test
+        void preserveHashInQuotedString() {
+            var content = """
+                text = "value with # hash"
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("value with # hash", doc.getString("", "text").unwrap());
+                });
+        }
+
+        @Test
+        void preserveHashInSingleQuotedString() {
+            var content = """
+                text = 'value with # hash'
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    assertEquals("value with # hash", doc.getString("", "text").unwrap());
+                });
+        }
+
+        @Test
+        void preserveHashInArrayString() {
+            var content = """
+                tags = ["a#b", "c#d"] # comment
+                """;
+
+            TomlParser.parse(content)
+                .onFailure(_ -> fail("Should not fail"))
+                .onSuccess(doc -> {
+                    var tags = doc.getStringList("", "tags").unwrap();
+                    assertEquals(List.of("a#b", "c#d"), tags);
                 });
         }
     }
