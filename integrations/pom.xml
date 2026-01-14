@@ -26,5 +26,6 @@
         <module>dht</module>
         <module>consensus</module>
         <module>config</module>
+        <module>http-routing</module>
     </modules>
 </project>

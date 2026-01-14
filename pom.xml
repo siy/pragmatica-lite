@@ -119,6 +119,11 @@
                 <artifactId>jooq</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.pragmatica-lite</groupId>
+                <artifactId>http-routing</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- Logging -->
             <dependency>
