@@ -598,18 +598,19 @@ public sealed interface Result<T> permits Success, Failure {
     }
 
     /// Chain twelve dependent operations with access to this Result's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(Fn1<Result<T1>, T> fn1,
-                                                                                                                                Fn1<Result<T2>, T> fn2,
-                                                                                                                                Fn1<Result<T3>, T> fn3,
-                                                                                                                                Fn1<Result<T4>, T> fn4,
-                                                                                                                                Fn1<Result<T5>, T> fn5,
-                                                                                                                                Fn1<Result<T6>, T> fn6,
-                                                                                                                                Fn1<Result<T7>, T> fn7,
-                                                                                                                                Fn1<Result<T8>, T> fn8,
-                                                                                                                                Fn1<Result<T9>, T> fn9,
-                                                                                                                                Fn1<Result<T10>, T> fn10,
-                                                                                                                                Fn1<Result<T11>, T> fn11,
-                                                                                                                                Fn1<Result<T12>, T> fn12) {
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>
+    Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(Fn1<Result<T1>, T> fn1,
+                                                                    Fn1<Result<T2>, T> fn2,
+                                                                    Fn1<Result<T3>, T> fn3,
+                                                                    Fn1<Result<T4>, T> fn4,
+                                                                    Fn1<Result<T5>, T> fn5,
+                                                                    Fn1<Result<T6>, T> fn6,
+                                                                    Fn1<Result<T7>, T> fn7,
+                                                                    Fn1<Result<T8>, T> fn8,
+                                                                    Fn1<Result<T9>, T> fn9,
+                                                                    Fn1<Result<T10>, T> fn10,
+                                                                    Fn1<Result<T11>, T> fn11,
+                                                                    Fn1<Result<T12>, T> fn12) {
         return () -> flatMap(v -> fn1.apply(v)
                                      .flatMap(v1 -> fn2.apply(v)
                                                        .flatMap(v2 -> fn3.apply(v)
@@ -637,19 +638,20 @@ public sealed interface Result<T> permits Success, Failure {
     }
 
     /// Chain thirteen dependent operations with access to this Result's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(Fn1<Result<T1>, T> fn1,
-                                                                                                                                          Fn1<Result<T2>, T> fn2,
-                                                                                                                                          Fn1<Result<T3>, T> fn3,
-                                                                                                                                          Fn1<Result<T4>, T> fn4,
-                                                                                                                                          Fn1<Result<T5>, T> fn5,
-                                                                                                                                          Fn1<Result<T6>, T> fn6,
-                                                                                                                                          Fn1<Result<T7>, T> fn7,
-                                                                                                                                          Fn1<Result<T8>, T> fn8,
-                                                                                                                                          Fn1<Result<T9>, T> fn9,
-                                                                                                                                          Fn1<Result<T10>, T> fn10,
-                                                                                                                                          Fn1<Result<T11>, T> fn11,
-                                                                                                                                          Fn1<Result<T12>, T> fn12,
-                                                                                                                                          Fn1<Result<T13>, T> fn13) {
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>
+    Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(Fn1<Result<T1>, T> fn1,
+                                                                         Fn1<Result<T2>, T> fn2,
+                                                                         Fn1<Result<T3>, T> fn3,
+                                                                         Fn1<Result<T4>, T> fn4,
+                                                                         Fn1<Result<T5>, T> fn5,
+                                                                         Fn1<Result<T6>, T> fn6,
+                                                                         Fn1<Result<T7>, T> fn7,
+                                                                         Fn1<Result<T8>, T> fn8,
+                                                                         Fn1<Result<T9>, T> fn9,
+                                                                         Fn1<Result<T10>, T> fn10,
+                                                                         Fn1<Result<T11>, T> fn11,
+                                                                         Fn1<Result<T12>, T> fn12,
+                                                                         Fn1<Result<T13>, T> fn13) {
         return () -> flatMap(v -> fn1.apply(v)
                                      .flatMap(v1 -> fn2.apply(v)
                                                        .flatMap(v2 -> fn3.apply(v)
@@ -679,20 +681,21 @@ public sealed interface Result<T> permits Success, Failure {
     }
 
     /// Chain fourteen dependent operations with access to this Result's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(Fn1<Result<T1>, T> fn1,
-                                                                                                                                                    Fn1<Result<T2>, T> fn2,
-                                                                                                                                                    Fn1<Result<T3>, T> fn3,
-                                                                                                                                                    Fn1<Result<T4>, T> fn4,
-                                                                                                                                                    Fn1<Result<T5>, T> fn5,
-                                                                                                                                                    Fn1<Result<T6>, T> fn6,
-                                                                                                                                                    Fn1<Result<T7>, T> fn7,
-                                                                                                                                                    Fn1<Result<T8>, T> fn8,
-                                                                                                                                                    Fn1<Result<T9>, T> fn9,
-                                                                                                                                                    Fn1<Result<T10>, T> fn10,
-                                                                                                                                                    Fn1<Result<T11>, T> fn11,
-                                                                                                                                                    Fn1<Result<T12>, T> fn12,
-                                                                                                                                                    Fn1<Result<T13>, T> fn13,
-                                                                                                                                                    Fn1<Result<T14>, T> fn14) {
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>
+    Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(Fn1<Result<T1>, T> fn1,
+                                                                              Fn1<Result<T2>, T> fn2,
+                                                                              Fn1<Result<T3>, T> fn3,
+                                                                              Fn1<Result<T4>, T> fn4,
+                                                                              Fn1<Result<T5>, T> fn5,
+                                                                              Fn1<Result<T6>, T> fn6,
+                                                                              Fn1<Result<T7>, T> fn7,
+                                                                              Fn1<Result<T8>, T> fn8,
+                                                                              Fn1<Result<T9>, T> fn9,
+                                                                              Fn1<Result<T10>, T> fn10,
+                                                                              Fn1<Result<T11>, T> fn11,
+                                                                              Fn1<Result<T12>, T> fn12,
+                                                                              Fn1<Result<T13>, T> fn13,
+                                                                              Fn1<Result<T14>, T> fn14) {
         return () -> flatMap(v -> fn1.apply(v)
                                      .flatMap(v1 -> fn2.apply(v)
                                                        .flatMap(v2 -> fn3.apply(v)
@@ -724,21 +727,22 @@ public sealed interface Result<T> permits Success, Failure {
     }
 
     /// Chain fifteen dependent operations with access to this Result's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(Fn1<Result<T1>, T> fn1,
-                                                                                                                                                              Fn1<Result<T2>, T> fn2,
-                                                                                                                                                              Fn1<Result<T3>, T> fn3,
-                                                                                                                                                              Fn1<Result<T4>, T> fn4,
-                                                                                                                                                              Fn1<Result<T5>, T> fn5,
-                                                                                                                                                              Fn1<Result<T6>, T> fn6,
-                                                                                                                                                              Fn1<Result<T7>, T> fn7,
-                                                                                                                                                              Fn1<Result<T8>, T> fn8,
-                                                                                                                                                              Fn1<Result<T9>, T> fn9,
-                                                                                                                                                              Fn1<Result<T10>, T> fn10,
-                                                                                                                                                              Fn1<Result<T11>, T> fn11,
-                                                                                                                                                              Fn1<Result<T12>, T> fn12,
-                                                                                                                                                              Fn1<Result<T13>, T> fn13,
-                                                                                                                                                              Fn1<Result<T14>, T> fn14,
-                                                                                                                                                              Fn1<Result<T15>, T> fn15) {
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>
+    Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(Fn1<Result<T1>, T> fn1,
+                                                                                   Fn1<Result<T2>, T> fn2,
+                                                                                   Fn1<Result<T3>, T> fn3,
+                                                                                   Fn1<Result<T4>, T> fn4,
+                                                                                   Fn1<Result<T5>, T> fn5,
+                                                                                   Fn1<Result<T6>, T> fn6,
+                                                                                   Fn1<Result<T7>, T> fn7,
+                                                                                   Fn1<Result<T8>, T> fn8,
+                                                                                   Fn1<Result<T9>, T> fn9,
+                                                                                   Fn1<Result<T10>, T> fn10,
+                                                                                   Fn1<Result<T11>, T> fn11,
+                                                                                   Fn1<Result<T12>, T> fn12,
+                                                                                   Fn1<Result<T13>, T> fn13,
+                                                                                   Fn1<Result<T14>, T> fn14,
+                                                                                   Fn1<Result<T15>, T> fn15) {
         return () -> flatMap(v -> fn1.apply(v)
                                      .flatMap(v1 -> fn2.apply(v)
                                                        .flatMap(v2 -> fn3.apply(v)
@@ -1490,18 +1494,19 @@ public sealed interface Result<T> permits Success, Failure {
                            .mapError(causes::replace);
     }
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(Result<T1> value1,
-                                                                                                                               Result<T2> value2,
-                                                                                                                               Result<T3> value3,
-                                                                                                                               Result<T4> value4,
-                                                                                                                               Result<T5> value5,
-                                                                                                                               Result<T6> value6,
-                                                                                                                               Result<T7> value7,
-                                                                                                                               Result<T8> value8,
-                                                                                                                               Result<T9> value9,
-                                                                                                                               Result<T10> value10,
-                                                                                                                               Result<T11> value11,
-                                                                                                                               Result<T12> value12) {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>
+    Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(Result<T1> value1,
+                                                                    Result<T2> value2,
+                                                                    Result<T3> value3,
+                                                                    Result<T4> value4,
+                                                                    Result<T5> value5,
+                                                                    Result<T6> value6,
+                                                                    Result<T7> value7,
+                                                                    Result<T8> value8,
+                                                                    Result<T9> value9,
+                                                                    Result<T10> value10,
+                                                                    Result<T11> value11,
+                                                                    Result<T12> value12) {
         var causes = Causes.composite(value1,
                                       value2,
                                       value3,
@@ -1529,19 +1534,20 @@ public sealed interface Result<T> permits Success, Failure {
                            .mapError(causes::replace);
     }
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(Result<T1> value1,
-                                                                                                                                         Result<T2> value2,
-                                                                                                                                         Result<T3> value3,
-                                                                                                                                         Result<T4> value4,
-                                                                                                                                         Result<T5> value5,
-                                                                                                                                         Result<T6> value6,
-                                                                                                                                         Result<T7> value7,
-                                                                                                                                         Result<T8> value8,
-                                                                                                                                         Result<T9> value9,
-                                                                                                                                         Result<T10> value10,
-                                                                                                                                         Result<T11> value11,
-                                                                                                                                         Result<T12> value12,
-                                                                                                                                         Result<T13> value13) {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>
+    Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(Result<T1> value1,
+                                                                         Result<T2> value2,
+                                                                         Result<T3> value3,
+                                                                         Result<T4> value4,
+                                                                         Result<T5> value5,
+                                                                         Result<T6> value6,
+                                                                         Result<T7> value7,
+                                                                         Result<T8> value8,
+                                                                         Result<T9> value9,
+                                                                         Result<T10> value10,
+                                                                         Result<T11> value11,
+                                                                         Result<T12> value12,
+                                                                         Result<T13> value13) {
         var causes = Causes.composite(value1,
                                       value2,
                                       value3,
@@ -1571,20 +1577,21 @@ public sealed interface Result<T> permits Success, Failure {
                            .mapError(causes::replace);
     }
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(Result<T1> value1,
-                                                                                                                                                   Result<T2> value2,
-                                                                                                                                                   Result<T3> value3,
-                                                                                                                                                   Result<T4> value4,
-                                                                                                                                                   Result<T5> value5,
-                                                                                                                                                   Result<T6> value6,
-                                                                                                                                                   Result<T7> value7,
-                                                                                                                                                   Result<T8> value8,
-                                                                                                                                                   Result<T9> value9,
-                                                                                                                                                   Result<T10> value10,
-                                                                                                                                                   Result<T11> value11,
-                                                                                                                                                   Result<T12> value12,
-                                                                                                                                                   Result<T13> value13,
-                                                                                                                                                   Result<T14> value14) {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>
+    Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(Result<T1> value1,
+                                                                              Result<T2> value2,
+                                                                              Result<T3> value3,
+                                                                              Result<T4> value4,
+                                                                              Result<T5> value5,
+                                                                              Result<T6> value6,
+                                                                              Result<T7> value7,
+                                                                              Result<T8> value8,
+                                                                              Result<T9> value9,
+                                                                              Result<T10> value10,
+                                                                              Result<T11> value11,
+                                                                              Result<T12> value12,
+                                                                              Result<T13> value13,
+                                                                              Result<T14> value14) {
         var causes = Causes.composite(value1,
                                       value2,
                                       value3,
@@ -1616,21 +1623,22 @@ public sealed interface Result<T> permits Success, Failure {
                            .mapError(causes::replace);
     }
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(Result<T1> value1,
-                                                                                                                                                             Result<T2> value2,
-                                                                                                                                                             Result<T3> value3,
-                                                                                                                                                             Result<T4> value4,
-                                                                                                                                                             Result<T5> value5,
-                                                                                                                                                             Result<T6> value6,
-                                                                                                                                                             Result<T7> value7,
-                                                                                                                                                             Result<T8> value8,
-                                                                                                                                                             Result<T9> value9,
-                                                                                                                                                             Result<T10> value10,
-                                                                                                                                                             Result<T11> value11,
-                                                                                                                                                             Result<T12> value12,
-                                                                                                                                                             Result<T13> value13,
-                                                                                                                                                             Result<T14> value14,
-                                                                                                                                                             Result<T15> value15) {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>
+    Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(Result<T1> value1,
+                                                                                   Result<T2> value2,
+                                                                                   Result<T3> value3,
+                                                                                   Result<T4> value4,
+                                                                                   Result<T5> value5,
+                                                                                   Result<T6> value6,
+                                                                                   Result<T7> value7,
+                                                                                   Result<T8> value8,
+                                                                                   Result<T9> value9,
+                                                                                   Result<T10> value10,
+                                                                                   Result<T11> value11,
+                                                                                   Result<T12> value12,
+                                                                                   Result<T13> value13,
+                                                                                   Result<T14> value14,
+                                                                                   Result<T15> value15) {
         var causes = Causes.composite(value1,
                                       value2,
                                       value3,
@@ -1911,17 +1919,18 @@ public sealed interface Result<T> permits Success, Failure {
     /// Short-circuits on first failure.
     ///
     /// @return Mapper11 for further transformation
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> Mapper11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> sequence(Supplier<Result<T1>> supplier1,
-                                                                                                                          Supplier<Result<T2>> supplier2,
-                                                                                                                          Supplier<Result<T3>> supplier3,
-                                                                                                                          Supplier<Result<T4>> supplier4,
-                                                                                                                          Supplier<Result<T5>> supplier5,
-                                                                                                                          Supplier<Result<T6>> supplier6,
-                                                                                                                          Supplier<Result<T7>> supplier7,
-                                                                                                                          Supplier<Result<T8>> supplier8,
-                                                                                                                          Supplier<Result<T9>> supplier9,
-                                                                                                                          Supplier<Result<T10>> supplier10,
-                                                                                                                          Supplier<Result<T11>> supplier11) {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>
+    Mapper11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> sequence(Supplier<Result<T1>> supplier1,
+                                                                    Supplier<Result<T2>> supplier2,
+                                                                    Supplier<Result<T3>> supplier3,
+                                                                    Supplier<Result<T4>> supplier4,
+                                                                    Supplier<Result<T5>> supplier5,
+                                                                    Supplier<Result<T6>> supplier6,
+                                                                    Supplier<Result<T7>> supplier7,
+                                                                    Supplier<Result<T8>> supplier8,
+                                                                    Supplier<Result<T9>> supplier9,
+                                                                    Supplier<Result<T10>> supplier10,
+                                                                    Supplier<Result<T11>> supplier11) {
         return () -> supplier1.get()
                               .flatMap(v1 -> supplier2.get()
                                                       .flatMap(v2 -> supplier3.get()
@@ -1951,18 +1960,19 @@ public sealed interface Result<T> permits Success, Failure {
     /// Short-circuits on first failure.
     ///
     /// @return Mapper12 for further transformation
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> sequence(Supplier<Result<T1>> supplier1,
-                                                                                                                                    Supplier<Result<T2>> supplier2,
-                                                                                                                                    Supplier<Result<T3>> supplier3,
-                                                                                                                                    Supplier<Result<T4>> supplier4,
-                                                                                                                                    Supplier<Result<T5>> supplier5,
-                                                                                                                                    Supplier<Result<T6>> supplier6,
-                                                                                                                                    Supplier<Result<T7>> supplier7,
-                                                                                                                                    Supplier<Result<T8>> supplier8,
-                                                                                                                                    Supplier<Result<T9>> supplier9,
-                                                                                                                                    Supplier<Result<T10>> supplier10,
-                                                                                                                                    Supplier<Result<T11>> supplier11,
-                                                                                                                                    Supplier<Result<T12>> supplier12) {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>
+    Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> sequence(Supplier<Result<T1>> supplier1,
+                                                                         Supplier<Result<T2>> supplier2,
+                                                                         Supplier<Result<T3>> supplier3,
+                                                                         Supplier<Result<T4>> supplier4,
+                                                                         Supplier<Result<T5>> supplier5,
+                                                                         Supplier<Result<T6>> supplier6,
+                                                                         Supplier<Result<T7>> supplier7,
+                                                                         Supplier<Result<T8>> supplier8,
+                                                                         Supplier<Result<T9>> supplier9,
+                                                                         Supplier<Result<T10>> supplier10,
+                                                                         Supplier<Result<T11>> supplier11,
+                                                                         Supplier<Result<T12>> supplier12) {
         return () -> supplier1.get()
                               .flatMap(v1 -> supplier2.get()
                                                       .flatMap(v2 -> supplier3.get()
@@ -1994,19 +2004,20 @@ public sealed interface Result<T> permits Success, Failure {
     /// Short-circuits on first failure.
     ///
     /// @return Mapper13 for further transformation
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> sequence(Supplier<Result<T1>> supplier1,
-                                                                                                                                              Supplier<Result<T2>> supplier2,
-                                                                                                                                              Supplier<Result<T3>> supplier3,
-                                                                                                                                              Supplier<Result<T4>> supplier4,
-                                                                                                                                              Supplier<Result<T5>> supplier5,
-                                                                                                                                              Supplier<Result<T6>> supplier6,
-                                                                                                                                              Supplier<Result<T7>> supplier7,
-                                                                                                                                              Supplier<Result<T8>> supplier8,
-                                                                                                                                              Supplier<Result<T9>> supplier9,
-                                                                                                                                              Supplier<Result<T10>> supplier10,
-                                                                                                                                              Supplier<Result<T11>> supplier11,
-                                                                                                                                              Supplier<Result<T12>> supplier12,
-                                                                                                                                              Supplier<Result<T13>> supplier13) {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>
+    Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> sequence(Supplier<Result<T1>> supplier1,
+                                                                              Supplier<Result<T2>> supplier2,
+                                                                              Supplier<Result<T3>> supplier3,
+                                                                              Supplier<Result<T4>> supplier4,
+                                                                              Supplier<Result<T5>> supplier5,
+                                                                              Supplier<Result<T6>> supplier6,
+                                                                              Supplier<Result<T7>> supplier7,
+                                                                              Supplier<Result<T8>> supplier8,
+                                                                              Supplier<Result<T9>> supplier9,
+                                                                              Supplier<Result<T10>> supplier10,
+                                                                              Supplier<Result<T11>> supplier11,
+                                                                              Supplier<Result<T12>> supplier12,
+                                                                              Supplier<Result<T13>> supplier13) {
         return () -> supplier1.get()
                               .flatMap(v1 -> supplier2.get()
                                                       .flatMap(v2 -> supplier3.get()
@@ -2040,20 +2051,21 @@ public sealed interface Result<T> permits Success, Failure {
     /// Short-circuits on first failure.
     ///
     /// @return Mapper14 for further transformation
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> sequence(Supplier<Result<T1>> supplier1,
-                                                                                                                                                        Supplier<Result<T2>> supplier2,
-                                                                                                                                                        Supplier<Result<T3>> supplier3,
-                                                                                                                                                        Supplier<Result<T4>> supplier4,
-                                                                                                                                                        Supplier<Result<T5>> supplier5,
-                                                                                                                                                        Supplier<Result<T6>> supplier6,
-                                                                                                                                                        Supplier<Result<T7>> supplier7,
-                                                                                                                                                        Supplier<Result<T8>> supplier8,
-                                                                                                                                                        Supplier<Result<T9>> supplier9,
-                                                                                                                                                        Supplier<Result<T10>> supplier10,
-                                                                                                                                                        Supplier<Result<T11>> supplier11,
-                                                                                                                                                        Supplier<Result<T12>> supplier12,
-                                                                                                                                                        Supplier<Result<T13>> supplier13,
-                                                                                                                                                        Supplier<Result<T14>> supplier14) {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>
+    Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> sequence(Supplier<Result<T1>> supplier1,
+                                                                                   Supplier<Result<T2>> supplier2,
+                                                                                   Supplier<Result<T3>> supplier3,
+                                                                                   Supplier<Result<T4>> supplier4,
+                                                                                   Supplier<Result<T5>> supplier5,
+                                                                                   Supplier<Result<T6>> supplier6,
+                                                                                   Supplier<Result<T7>> supplier7,
+                                                                                   Supplier<Result<T8>> supplier8,
+                                                                                   Supplier<Result<T9>> supplier9,
+                                                                                   Supplier<Result<T10>> supplier10,
+                                                                                   Supplier<Result<T11>> supplier11,
+                                                                                   Supplier<Result<T12>> supplier12,
+                                                                                   Supplier<Result<T13>> supplier13,
+                                                                                   Supplier<Result<T14>> supplier14) {
         return () -> supplier1.get()
                               .flatMap(v1 -> supplier2.get()
                                                       .flatMap(v2 -> supplier3.get()
@@ -2089,21 +2101,22 @@ public sealed interface Result<T> permits Success, Failure {
     /// Short-circuits on first failure.
     ///
     /// @return Mapper15 for further transformation
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> sequence(Supplier<Result<T1>> supplier1,
-                                                                                                                                                                  Supplier<Result<T2>> supplier2,
-                                                                                                                                                                  Supplier<Result<T3>> supplier3,
-                                                                                                                                                                  Supplier<Result<T4>> supplier4,
-                                                                                                                                                                  Supplier<Result<T5>> supplier5,
-                                                                                                                                                                  Supplier<Result<T6>> supplier6,
-                                                                                                                                                                  Supplier<Result<T7>> supplier7,
-                                                                                                                                                                  Supplier<Result<T8>> supplier8,
-                                                                                                                                                                  Supplier<Result<T9>> supplier9,
-                                                                                                                                                                  Supplier<Result<T10>> supplier10,
-                                                                                                                                                                  Supplier<Result<T11>> supplier11,
-                                                                                                                                                                  Supplier<Result<T12>> supplier12,
-                                                                                                                                                                  Supplier<Result<T13>> supplier13,
-                                                                                                                                                                  Supplier<Result<T14>> supplier14,
-                                                                                                                                                                  Supplier<Result<T15>> supplier15) {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>
+    Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> sequence(Supplier<Result<T1>> supplier1,
+                                                                                        Supplier<Result<T2>> supplier2,
+                                                                                        Supplier<Result<T3>> supplier3,
+                                                                                        Supplier<Result<T4>> supplier4,
+                                                                                        Supplier<Result<T5>> supplier5,
+                                                                                        Supplier<Result<T6>> supplier6,
+                                                                                        Supplier<Result<T7>> supplier7,
+                                                                                        Supplier<Result<T8>> supplier8,
+                                                                                        Supplier<Result<T9>> supplier9,
+                                                                                        Supplier<Result<T10>> supplier10,
+                                                                                        Supplier<Result<T11>> supplier11,
+                                                                                        Supplier<Result<T12>> supplier12,
+                                                                                        Supplier<Result<T13>> supplier13,
+                                                                                        Supplier<Result<T14>> supplier14,
+                                                                                        Supplier<Result<T15>> supplier15) {
         return () -> supplier1.get()
                               .flatMap(v1 -> supplier2.get()
                                                       .flatMap(v2 -> supplier3.get()

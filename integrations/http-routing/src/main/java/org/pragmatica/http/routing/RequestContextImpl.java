@@ -37,7 +37,7 @@ public final class RequestContextImpl implements RequestContext {
     private Supplier<Map<String, List<String>>> queryParamsSupplier = lazy(() -> queryParamsSupplier = value(initQueryParams()));
     private Supplier<Map<String, String>> headersSupplier = lazy(() -> headersSupplier = value(initRequestHeaders()));
 
-    private RequestContextImpl(FullHttpRequest request, Route< ? > route, JsonCodec jsonCodec, String requestId) {
+    private RequestContextImpl(FullHttpRequest request, Route< ?> route, JsonCodec jsonCodec, String requestId) {
         this.request = request;
         this.route = route;
         this.jsonCodec = jsonCodec;
@@ -45,14 +45,14 @@ public final class RequestContextImpl implements RequestContext {
     }
 
     public static RequestContextImpl requestContext(FullHttpRequest request,
-                                                    Route< ? > route,
+                                                    Route< ?> route,
                                                     JsonCodec jsonCodec,
                                                     String requestId) {
         return new RequestContextImpl(request, route, jsonCodec, requestId);
     }
 
     @Override
-    public Route< ? > route() {
+    public Route< ?> route() {
         return route;
     }
 

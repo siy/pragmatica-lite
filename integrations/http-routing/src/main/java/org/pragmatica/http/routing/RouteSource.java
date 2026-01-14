@@ -3,7 +3,7 @@ package org.pragmatica.http.routing;
 import java.util.stream.Stream;
 
 public interface RouteSource {
-    Stream<Route< ? >> routes();
+    Stream<Route< ?>> routes();
 
     default RouteSource withPrefix(String prefix) {
         return () -> routes()

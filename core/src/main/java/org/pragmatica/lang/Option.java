@@ -564,18 +564,19 @@ public sealed interface Option<T> permits Some, None {
     }
 
     /// Chain twelve dependent operations with access to this Option's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(Fn1<Option<T1>, T> fn1,
-                                                                                                                                Fn1<Option<T2>, T> fn2,
-                                                                                                                                Fn1<Option<T3>, T> fn3,
-                                                                                                                                Fn1<Option<T4>, T> fn4,
-                                                                                                                                Fn1<Option<T5>, T> fn5,
-                                                                                                                                Fn1<Option<T6>, T> fn6,
-                                                                                                                                Fn1<Option<T7>, T> fn7,
-                                                                                                                                Fn1<Option<T8>, T> fn8,
-                                                                                                                                Fn1<Option<T9>, T> fn9,
-                                                                                                                                Fn1<Option<T10>, T> fn10,
-                                                                                                                                Fn1<Option<T11>, T> fn11,
-                                                                                                                                Fn1<Option<T12>, T> fn12) {
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>
+    Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(Fn1<Option<T1>, T> fn1,
+                                                                    Fn1<Option<T2>, T> fn2,
+                                                                    Fn1<Option<T3>, T> fn3,
+                                                                    Fn1<Option<T4>, T> fn4,
+                                                                    Fn1<Option<T5>, T> fn5,
+                                                                    Fn1<Option<T6>, T> fn6,
+                                                                    Fn1<Option<T7>, T> fn7,
+                                                                    Fn1<Option<T8>, T> fn8,
+                                                                    Fn1<Option<T9>, T> fn9,
+                                                                    Fn1<Option<T10>, T> fn10,
+                                                                    Fn1<Option<T11>, T> fn11,
+                                                                    Fn1<Option<T12>, T> fn12) {
         return () -> flatMap(v -> fn1.apply(v)
                                      .flatMap(v1 -> fn2.apply(v)
                                                        .flatMap(v2 -> fn3.apply(v)
@@ -603,19 +604,20 @@ public sealed interface Option<T> permits Some, None {
     }
 
     /// Chain thirteen dependent operations with access to this Option's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(Fn1<Option<T1>, T> fn1,
-                                                                                                                                          Fn1<Option<T2>, T> fn2,
-                                                                                                                                          Fn1<Option<T3>, T> fn3,
-                                                                                                                                          Fn1<Option<T4>, T> fn4,
-                                                                                                                                          Fn1<Option<T5>, T> fn5,
-                                                                                                                                          Fn1<Option<T6>, T> fn6,
-                                                                                                                                          Fn1<Option<T7>, T> fn7,
-                                                                                                                                          Fn1<Option<T8>, T> fn8,
-                                                                                                                                          Fn1<Option<T9>, T> fn9,
-                                                                                                                                          Fn1<Option<T10>, T> fn10,
-                                                                                                                                          Fn1<Option<T11>, T> fn11,
-                                                                                                                                          Fn1<Option<T12>, T> fn12,
-                                                                                                                                          Fn1<Option<T13>, T> fn13) {
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>
+    Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(Fn1<Option<T1>, T> fn1,
+                                                                         Fn1<Option<T2>, T> fn2,
+                                                                         Fn1<Option<T3>, T> fn3,
+                                                                         Fn1<Option<T4>, T> fn4,
+                                                                         Fn1<Option<T5>, T> fn5,
+                                                                         Fn1<Option<T6>, T> fn6,
+                                                                         Fn1<Option<T7>, T> fn7,
+                                                                         Fn1<Option<T8>, T> fn8,
+                                                                         Fn1<Option<T9>, T> fn9,
+                                                                         Fn1<Option<T10>, T> fn10,
+                                                                         Fn1<Option<T11>, T> fn11,
+                                                                         Fn1<Option<T12>, T> fn12,
+                                                                         Fn1<Option<T13>, T> fn13) {
         return () -> flatMap(v -> fn1.apply(v)
                                      .flatMap(v1 -> fn2.apply(v)
                                                        .flatMap(v2 -> fn3.apply(v)
@@ -645,20 +647,21 @@ public sealed interface Option<T> permits Some, None {
     }
 
     /// Chain fourteen dependent operations with access to this Option's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(Fn1<Option<T1>, T> fn1,
-                                                                                                                                                    Fn1<Option<T2>, T> fn2,
-                                                                                                                                                    Fn1<Option<T3>, T> fn3,
-                                                                                                                                                    Fn1<Option<T4>, T> fn4,
-                                                                                                                                                    Fn1<Option<T5>, T> fn5,
-                                                                                                                                                    Fn1<Option<T6>, T> fn6,
-                                                                                                                                                    Fn1<Option<T7>, T> fn7,
-                                                                                                                                                    Fn1<Option<T8>, T> fn8,
-                                                                                                                                                    Fn1<Option<T9>, T> fn9,
-                                                                                                                                                    Fn1<Option<T10>, T> fn10,
-                                                                                                                                                    Fn1<Option<T11>, T> fn11,
-                                                                                                                                                    Fn1<Option<T12>, T> fn12,
-                                                                                                                                                    Fn1<Option<T13>, T> fn13,
-                                                                                                                                                    Fn1<Option<T14>, T> fn14) {
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>
+    Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(Fn1<Option<T1>, T> fn1,
+                                                                              Fn1<Option<T2>, T> fn2,
+                                                                              Fn1<Option<T3>, T> fn3,
+                                                                              Fn1<Option<T4>, T> fn4,
+                                                                              Fn1<Option<T5>, T> fn5,
+                                                                              Fn1<Option<T6>, T> fn6,
+                                                                              Fn1<Option<T7>, T> fn7,
+                                                                              Fn1<Option<T8>, T> fn8,
+                                                                              Fn1<Option<T9>, T> fn9,
+                                                                              Fn1<Option<T10>, T> fn10,
+                                                                              Fn1<Option<T11>, T> fn11,
+                                                                              Fn1<Option<T12>, T> fn12,
+                                                                              Fn1<Option<T13>, T> fn13,
+                                                                              Fn1<Option<T14>, T> fn14) {
         return () -> flatMap(v -> fn1.apply(v)
                                      .flatMap(v1 -> fn2.apply(v)
                                                        .flatMap(v2 -> fn3.apply(v)
@@ -690,21 +693,22 @@ public sealed interface Option<T> permits Some, None {
     }
 
     /// Chain fifteen dependent operations with access to this Option's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(Fn1<Option<T1>, T> fn1,
-                                                                                                                                                              Fn1<Option<T2>, T> fn2,
-                                                                                                                                                              Fn1<Option<T3>, T> fn3,
-                                                                                                                                                              Fn1<Option<T4>, T> fn4,
-                                                                                                                                                              Fn1<Option<T5>, T> fn5,
-                                                                                                                                                              Fn1<Option<T6>, T> fn6,
-                                                                                                                                                              Fn1<Option<T7>, T> fn7,
-                                                                                                                                                              Fn1<Option<T8>, T> fn8,
-                                                                                                                                                              Fn1<Option<T9>, T> fn9,
-                                                                                                                                                              Fn1<Option<T10>, T> fn10,
-                                                                                                                                                              Fn1<Option<T11>, T> fn11,
-                                                                                                                                                              Fn1<Option<T12>, T> fn12,
-                                                                                                                                                              Fn1<Option<T13>, T> fn13,
-                                                                                                                                                              Fn1<Option<T14>, T> fn14,
-                                                                                                                                                              Fn1<Option<T15>, T> fn15) {
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>
+    Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(Fn1<Option<T1>, T> fn1,
+                                                                                   Fn1<Option<T2>, T> fn2,
+                                                                                   Fn1<Option<T3>, T> fn3,
+                                                                                   Fn1<Option<T4>, T> fn4,
+                                                                                   Fn1<Option<T5>, T> fn5,
+                                                                                   Fn1<Option<T6>, T> fn6,
+                                                                                   Fn1<Option<T7>, T> fn7,
+                                                                                   Fn1<Option<T8>, T> fn8,
+                                                                                   Fn1<Option<T9>, T> fn9,
+                                                                                   Fn1<Option<T10>, T> fn10,
+                                                                                   Fn1<Option<T11>, T> fn11,
+                                                                                   Fn1<Option<T12>, T> fn12,
+                                                                                   Fn1<Option<T13>, T> fn13,
+                                                                                   Fn1<Option<T14>, T> fn14,
+                                                                                   Fn1<Option<T15>, T> fn15) {
         return () -> flatMap(v -> fn1.apply(v)
                                      .flatMap(v1 -> fn2.apply(v)
                                                        .flatMap(v2 -> fn3.apply(v)
@@ -764,7 +768,7 @@ public sealed interface Option<T> permits Some, None {
     /// @return Created instance
     @SuppressWarnings("unchecked")
     static <U> Option<U> empty() {
-        return ( Option<U>) NONE;
+        return (Option<U>) NONE;
     }
 
     /// Create an empty instance.
@@ -772,7 +776,7 @@ public sealed interface Option<T> permits Some, None {
     /// @return Created instance
     @SuppressWarnings("unchecked")
     static <U> Option<U> none() {
-        return ( Option<U>) NONE;
+        return (Option<U>) NONE;
     }
 
     /// Create a present instance with the passed value.
@@ -817,7 +821,7 @@ public sealed interface Option<T> permits Some, None {
         }
     }
 
-    @ SuppressWarnings({"rawtypes"})
+    @SuppressWarnings({"rawtypes"})
     None NONE = new None();
 
     /// This method allows "unwrapping" the value stored inside the Option instance. If the value is missing, then [IllegalStateException] is thrown.
@@ -1175,18 +1179,19 @@ public sealed interface Option<T> permits Some, None {
                                                                                                                                                                                                                                           v11)))))))))))));
     }
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(Option<T1> op1,
-                                                                                                                               Option<T2> op2,
-                                                                                                                               Option<T3> op3,
-                                                                                                                               Option<T4> op4,
-                                                                                                                               Option<T5> op5,
-                                                                                                                               Option<T6> op6,
-                                                                                                                               Option<T7> op7,
-                                                                                                                               Option<T8> op8,
-                                                                                                                               Option<T9> op9,
-                                                                                                                               Option<T10> op10,
-                                                                                                                               Option<T11> op11,
-                                                                                                                               Option<T12> op12) {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>
+    Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(Option<T1> op1,
+                                                                    Option<T2> op2,
+                                                                    Option<T3> op3,
+                                                                    Option<T4> op4,
+                                                                    Option<T5> op5,
+                                                                    Option<T6> op6,
+                                                                    Option<T7> op7,
+                                                                    Option<T8> op8,
+                                                                    Option<T9> op9,
+                                                                    Option<T10> op10,
+                                                                    Option<T11> op11,
+                                                                    Option<T12> op12) {
         return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> op3.flatMap(v3 -> op4.flatMap(v4 -> op5.flatMap(v5 -> op6.flatMap(v6 -> op7.flatMap(v7 -> op8.flatMap(v8 -> op9.flatMap(v9 -> op10.flatMap(v10 -> op11.flatMap(v11 -> op12.flatMap(v12 -> some(tuple(v1,
                                                                                                                                                                                                                                                               v2,
                                                                                                                                                                                                                                                               v3,
@@ -1201,19 +1206,20 @@ public sealed interface Option<T> permits Some, None {
                                                                                                                                                                                                                                                               v12))))))))))))));
     }
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(Option<T1> op1,
-                                                                                                                                         Option<T2> op2,
-                                                                                                                                         Option<T3> op3,
-                                                                                                                                         Option<T4> op4,
-                                                                                                                                         Option<T5> op5,
-                                                                                                                                         Option<T6> op6,
-                                                                                                                                         Option<T7> op7,
-                                                                                                                                         Option<T8> op8,
-                                                                                                                                         Option<T9> op9,
-                                                                                                                                         Option<T10> op10,
-                                                                                                                                         Option<T11> op11,
-                                                                                                                                         Option<T12> op12,
-                                                                                                                                         Option<T13> op13) {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>
+    Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(Option<T1> op1,
+                                                                         Option<T2> op2,
+                                                                         Option<T3> op3,
+                                                                         Option<T4> op4,
+                                                                         Option<T5> op5,
+                                                                         Option<T6> op6,
+                                                                         Option<T7> op7,
+                                                                         Option<T8> op8,
+                                                                         Option<T9> op9,
+                                                                         Option<T10> op10,
+                                                                         Option<T11> op11,
+                                                                         Option<T12> op12,
+                                                                         Option<T13> op13) {
         return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> op3.flatMap(v3 -> op4.flatMap(v4 -> op5.flatMap(v5 -> op6.flatMap(v6 -> op7.flatMap(v7 -> op8.flatMap(v8 -> op9.flatMap(v9 -> op10.flatMap(v10 -> op11.flatMap(v11 -> op12.flatMap(v12 -> op13.flatMap(v13 -> some(tuple(v1,
                                                                                                                                                                                                                                                                                   v2,
                                                                                                                                                                                                                                                                                   v3,
@@ -1229,20 +1235,21 @@ public sealed interface Option<T> permits Some, None {
                                                                                                                                                                                                                                                                                   v13)))))))))))))));
     }
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(Option<T1> op1,
-                                                                                                                                                   Option<T2> op2,
-                                                                                                                                                   Option<T3> op3,
-                                                                                                                                                   Option<T4> op4,
-                                                                                                                                                   Option<T5> op5,
-                                                                                                                                                   Option<T6> op6,
-                                                                                                                                                   Option<T7> op7,
-                                                                                                                                                   Option<T8> op8,
-                                                                                                                                                   Option<T9> op9,
-                                                                                                                                                   Option<T10> op10,
-                                                                                                                                                   Option<T11> op11,
-                                                                                                                                                   Option<T12> op12,
-                                                                                                                                                   Option<T13> op13,
-                                                                                                                                                   Option<T14> op14) {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>
+    Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(Option<T1> op1,
+                                                                              Option<T2> op2,
+                                                                              Option<T3> op3,
+                                                                              Option<T4> op4,
+                                                                              Option<T5> op5,
+                                                                              Option<T6> op6,
+                                                                              Option<T7> op7,
+                                                                              Option<T8> op8,
+                                                                              Option<T9> op9,
+                                                                              Option<T10> op10,
+                                                                              Option<T11> op11,
+                                                                              Option<T12> op12,
+                                                                              Option<T13> op13,
+                                                                              Option<T14> op14) {
         return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> op3.flatMap(v3 -> op4.flatMap(v4 -> op5.flatMap(v5 -> op6.flatMap(v6 -> op7.flatMap(v7 -> op8.flatMap(v8 -> op9.flatMap(v9 -> op10.flatMap(v10 -> op11.flatMap(v11 -> op12.flatMap(v12 -> op13.flatMap(v13 -> op14.flatMap(v14 -> some(tuple(v1,
                                                                                                                                                                                                                                                                                                       v2,
                                                                                                                                                                                                                                                                                                       v3,
@@ -1259,21 +1266,22 @@ public sealed interface Option<T> permits Some, None {
                                                                                                                                                                                                                                                                                                       v14))))))))))))))));
     }
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(Option<T1> op1,
-                                                                                                                                                             Option<T2> op2,
-                                                                                                                                                             Option<T3> op3,
-                                                                                                                                                             Option<T4> op4,
-                                                                                                                                                             Option<T5> op5,
-                                                                                                                                                             Option<T6> op6,
-                                                                                                                                                             Option<T7> op7,
-                                                                                                                                                             Option<T8> op8,
-                                                                                                                                                             Option<T9> op9,
-                                                                                                                                                             Option<T10> op10,
-                                                                                                                                                             Option<T11> op11,
-                                                                                                                                                             Option<T12> op12,
-                                                                                                                                                             Option<T13> op13,
-                                                                                                                                                             Option<T14> op14,
-                                                                                                                                                             Option<T15> op15) {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>
+    Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(Option<T1> op1,
+                                                                                   Option<T2> op2,
+                                                                                   Option<T3> op3,
+                                                                                   Option<T4> op4,
+                                                                                   Option<T5> op5,
+                                                                                   Option<T6> op6,
+                                                                                   Option<T7> op7,
+                                                                                   Option<T8> op8,
+                                                                                   Option<T9> op9,
+                                                                                   Option<T10> op10,
+                                                                                   Option<T11> op11,
+                                                                                   Option<T12> op12,
+                                                                                   Option<T13> op13,
+                                                                                   Option<T14> op14,
+                                                                                   Option<T15> op15) {
         return () -> op1.flatMap(v1 -> op2.flatMap(v2 -> op3.flatMap(v3 -> op4.flatMap(v4 -> op5.flatMap(v5 -> op6.flatMap(v6 -> op7.flatMap(v7 -> op8.flatMap(v8 -> op9.flatMap(v9 -> op10.flatMap(v10 -> op11.flatMap(v11 -> op12.flatMap(v12 -> op13.flatMap(v13 -> op14.flatMap(v14 -> op15.flatMap(v15 -> some(tuple(v1,
                                                                                                                                                                                                                                                                                                                           v2,
                                                                                                                                                                                                                                                                                                                           v3,

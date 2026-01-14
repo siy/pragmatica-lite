@@ -107,8 +107,8 @@ public interface RateLimiter {
 
             private synchronized Result<Unit> tryAcquire() {
                 refill();
-                if (state[0] >= 1) {
-                    state[0]-- ;
+                if (state[0]>= 1) {
+                    state[0]--;
                     return Result.unitResult();
                 }
                 return new RateLimiterError.LimitExceeded(calculateRetryAfter()).result();

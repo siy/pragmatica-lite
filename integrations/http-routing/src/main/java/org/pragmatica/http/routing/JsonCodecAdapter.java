@@ -21,6 +21,7 @@ import org.pragmatica.json.JsonMapper;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.TypeToken;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
@@ -40,7 +41,11 @@ public record JsonCodecAdapter(JsonMapper mapper) implements JsonCodec {
     ///
     /// @return JsonCodec implementation with default settings
     public static JsonCodec defaultCodec() {
-        return new JsonCodecAdapter(JsonMapper.defaultJsonMapper());
+        return new JsonCodecAdapter(JsonMapper.jsonMapper()
+                                              .withPragmaticaTypes()
+                                              .configure(builder -> builder.changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_EMPTY)
+                                                                                                                       .withContentInclusion(JsonInclude.Include.NON_EMPTY)))
+                                              .build());
     }
 
     @Override

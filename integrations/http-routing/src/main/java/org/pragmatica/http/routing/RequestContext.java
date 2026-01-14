@@ -18,7 +18,7 @@ import static org.pragmatica.lang.Result.all;
 public interface RequestContext {
     Result<String> NOT_FOUND = HttpStatus.NOT_FOUND.with("Unknown request path")
                                         .result();
-    Route< ? > route();
+    Route< ?> route();
     String requestId();
     ByteBuf body();
     String bodyAsString();

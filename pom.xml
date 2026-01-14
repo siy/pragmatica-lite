@@ -318,7 +318,7 @@
                 <plugin>
                     <groupId>org.pragmatica-lite</groupId>
                     <artifactId>jbct-maven-plugin</artifactId>
-                    <version>0.4.3</version>
+                    <version>0.4.8</version>
                 </plugin>
             </plugins>
         </pluginManagement>

@@ -3,9 +3,6 @@ package org.pragmatica.http.routing;
 import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Option;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
  * RFC 7807 Problem Details for HTTP APIs.
  * <p>
@@ -17,17 +14,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @param type      URI reference identifying the problem type (default: "about:blank")
  * @param title     Short human-readable summary of the problem type
  * @param status    HTTP status code
- * @param detail    Human-readable explanation specific to this occurrence
- * @param instance  URI reference identifying the specific occurrence (typically request path)
+ * @param detail    Human-readable explanation specific to this occurrence (MAY be present per RFC 7807)
+ * @param instance  URI reference identifying the specific occurrence (MAY be present per RFC 7807)
  * @param requestId Unique identifier for the request (mandatory extension)
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public record ProblemDetail(@JsonProperty("type") String type,
-                            @JsonProperty("title") String title,
-                            @JsonProperty("status") int status,
-                            @JsonProperty("detail") String detail,
-                            @JsonProperty("instance") String instance,
-                            @JsonProperty("requestId") String requestId) {
+public record ProblemDetail(String type,
+                            String title,
+                            int status,
+                            Option<String> detail,
+                            Option<String> instance,
+                            String requestId) {
     private static final String DEFAULT_TYPE = "about:blank";
 
     /**
@@ -44,8 +40,8 @@ public record ProblemDetail(@JsonProperty("type") String type,
                                       .message(),
                                  error.status()
                                       .code(),
-                                 extractDetail(error),
-                                 instance,
+                                 Option.option(extractDetail(error)),
+                                 Option.option(instance),
                                  requestId);
     }
 
@@ -61,8 +57,8 @@ public record ProblemDetail(@JsonProperty("type") String type,
         return new ProblemDetail(DEFAULT_TYPE,
                                  HttpStatus.INTERNAL_SERVER_ERROR.message(),
                                  HttpStatus.INTERNAL_SERVER_ERROR.code(),
-                                 cause.message(),
-                                 instance,
+                                 Option.option(cause.message()),
+                                 Option.option(instance),
                                  requestId);
     }
 
@@ -81,7 +77,12 @@ public record ProblemDetail(@JsonProperty("type") String type,
                                               String detail,
                                               String instance,
                                               String requestId) {
-        return new ProblemDetail(type, status.message(), status.code(), detail, instance, requestId);
+        return new ProblemDetail(type,
+                                 status.message(),
+                                 status.code(),
+                                 Option.option(detail),
+                                 Option.option(instance),
+                                 requestId);
     }
 
     /**
@@ -97,7 +98,12 @@ public record ProblemDetail(@JsonProperty("type") String type,
                                               String detail,
                                               String instance,
                                               String requestId) {
-        return new ProblemDetail(DEFAULT_TYPE, status.message(), status.code(), detail, instance, requestId);
+        return new ProblemDetail(DEFAULT_TYPE,
+                                 status.message(),
+                                 status.code(),
+                                 Option.option(detail),
+                                 Option.option(instance),
+                                 requestId);
     }
 
     private static String extractDetail(HttpError error) {
