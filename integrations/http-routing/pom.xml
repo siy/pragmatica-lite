@@ -28,10 +28,10 @@
             <version>${netty.version}</version>
         </dependency>
 
-        <!-- Jackson -->
+        <!-- Jackson Integration -->
         <dependency>
-            <groupId>tools.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
+            <groupId>org.pragmatica-lite</groupId>
+            <artifactId>jackson</artifactId>
         </dependency>
 
         <!-- Logging -->

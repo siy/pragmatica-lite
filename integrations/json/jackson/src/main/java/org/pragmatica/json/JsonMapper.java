@@ -22,8 +22,6 @@ import org.pragmatica.lang.type.TypeToken;
 
 import java.util.function.Consumer;
 
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.JacksonModule;
 import tools.jackson.databind.json.JsonMapper.Builder;
 
 /// Functional wrapper around Jackson's JsonMapper providing Result-based API.
@@ -117,13 +115,6 @@ public interface JsonMapper {
         ///
         /// @return This builder
         JsonMapperBuilder withPragmaticaTypes();
-
-        /// Registers custom Jackson module.
-        ///
-        /// @param module Module to register
-        ///
-        /// @return This builder
-        JsonMapperBuilder withModule(JacksonModule module);
 
         /// Configures underlying Jackson JsonMapper via builder.
         ///
