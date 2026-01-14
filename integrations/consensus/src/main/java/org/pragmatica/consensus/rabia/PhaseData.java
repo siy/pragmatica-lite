@@ -168,18 +168,18 @@ final class PhaseData<C extends Command> {
 
     /// Counts round 1 votes for a specific state value.
     int countRound1VotesForValue(StateValue value) {
-        return ( int) round1Votes.values()
-                                .stream()
-                                .filter(v -> v == value)
-                                .count();
+        return (int) round1Votes.values()
+                               .stream()
+                               .filter(v -> v == value)
+                               .count();
     }
 
     /// Counts round 2 votes for a specific state value.
     int countRound2VotesForValue(StateValue value) {
-        return ( int) round2Votes.values()
-                                .stream()
-                                .filter(v -> v == value)
-                                .count();
+        return (int) round2Votes.values()
+                               .stream()
+                               .filter(v -> v == value)
+                               .count();
     }
 
     /// Processes round 2 completion and determines the decision.

@@ -169,7 +169,7 @@ public final class TomlParser {
         MultilineState multiline = null;
         String[] lines = content.split("\n", - 1);
         for (String rawLine : lines) {
-            lineNumber++ ;
+            lineNumber++;
             // Handle multiline array continuation
             if (multiline != null && multiline.isArray()) {
                 var result = handleMultilineArrayContinuation(multiline,
@@ -403,7 +403,7 @@ public final class TomlParser {
                                                        int lineNumber) {
         String[] parts = targetSection.split("\\.");
         StringBuilder path = new StringBuilder(currentSection);
-        for (int i = 0; i < parts.length - 1; i++ ) {
+        for (int i = 0; i < parts.length - 1; i++) {
             if (!path.isEmpty()) {
                 path.append(".");
             }
@@ -434,7 +434,7 @@ public final class TomlParser {
             // Count consecutive quotes
             int end = idx + 3;
             while (end < line.length() && line.charAt(end) == '"') {
-                end++ ;
+                end++;
             }
             // Up to 2 extra quotes allowed before closing
             int extraQuotes = end - idx - 3;
@@ -506,7 +506,7 @@ public final class TomlParser {
         Map<String, Object> current = root;
         for (String part : parts) {
             Object next = current.get(part);
-            if (next instanceof Map< ? , ? > map) {
+            if (next instanceof Map< ?, ?> map) {
                 current = (Map<String, Object>) map;
             } else {
                 return null;
@@ -579,11 +579,11 @@ public final class TomlParser {
         int depth = 0;
         boolean inDoubleQuotes = false;
         boolean inSingleQuotes = false;
-        for (int i = 0; i < value.length(); i++ ) {
+        for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);
             // Handle escape sequences only in double-quoted strings
             if (c == '\\' && i + 1 < value.length() && inDoubleQuotes) {
-                i++ ;
+                i++;
                 continue;
             }
             if (c == '"' && !inSingleQuotes) {
@@ -591,7 +591,7 @@ public final class TomlParser {
             } else if (c == '\'' && !inDoubleQuotes) {
                 inSingleQuotes = !inSingleQuotes;
             } else if (!inDoubleQuotes && !inSingleQuotes) {
-                if (c == '[') depth++ ;else if (c == ']') depth-- ;
+                if (c == '[') depth++;else if (c == ']') depth--;
             }
         }
         return depth == 0;
@@ -632,10 +632,10 @@ public final class TomlParser {
     private static String stripArrayLineComment(String line) {
         boolean inDoubleQuotes = false;
         boolean inSingleQuotes = false;
-        for (int i = 0; i < line.length(); i++ ) {
+        for (int i = 0; i < line.length(); i++) {
             char c = line.charAt(i);
             if (c == '\\' && i + 1 < line.length() && inDoubleQuotes) {
-                i++ ;
+                i++;
                 continue;
             }
             if (c == '"' && !inSingleQuotes) {
@@ -691,10 +691,10 @@ public final class TomlParser {
                     // Line-ending backslash - skip newline and following whitespace
                     i += 2;
                     if (next == '\r' && i < content.length() && content.charAt(i) == '\n') {
-                        i++ ;
+                        i++;
                     }
                     while (i < content.length() && isWhitespaceOrNewline(content.charAt(i))) {
-                        i++ ;
+                        i++;
                     }
                     continue;
                 }
@@ -708,7 +708,7 @@ public final class TomlParser {
                 i += pair.consumed();
             } else {
                 result.append(c);
-                i++ ;
+                i++;
             }
         }
         return Result.success(result.toString());
@@ -749,11 +749,11 @@ public final class TomlParser {
         boolean inDoubleQuotes = false;
         boolean inSingleQuotes = false;
         int bracketDepth = 0;
-        for (int i = 0; i < value.length(); i++ ) {
+        for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);
             // Handle escape sequences only in double-quoted strings
             if (inDoubleQuotes && c == '\\' && i + 1 < value.length()) {
-                i++ ;
+                i++;
                 continue;
             }
             if (c == '"' && !inSingleQuotes) {
@@ -762,9 +762,9 @@ public final class TomlParser {
                 inSingleQuotes = !inSingleQuotes;
             } else if (!inDoubleQuotes && !inSingleQuotes) {
                 if (c == '[') {
-                    bracketDepth++ ;
+                    bracketDepth++;
                 } else if (c == ']') {
-                    bracketDepth-- ;
+                    bracketDepth--;
                 } else if (c == '#' && bracketDepth == 0) {
                     return value.substring(0, i)
                                 .trim();
@@ -934,13 +934,13 @@ public final class TomlParser {
         boolean inDoubleQuotes = false;
         boolean inSingleQuotes = false;
         int bracketDepth = 0;
-        for (int i = 0; i < content.length(); i++ ) {
+        for (int i = 0; i < content.length(); i++) {
             char c = content.charAt(i);
             // Handle escapes only in double-quoted strings
             if (c == '\\' && i + 1 < content.length() && inDoubleQuotes) {
                 current.append(c);
                 current.append(content.charAt(i + 1));
-                i++ ;
+                i++;
                 continue;
             }
             if (c == '"' && !inSingleQuotes) {
@@ -950,10 +950,10 @@ public final class TomlParser {
                 inSingleQuotes = !inSingleQuotes;
                 current.append(c);
             } else if (c == '[' && !inDoubleQuotes && !inSingleQuotes) {
-                bracketDepth++ ;
+                bracketDepth++;
                 current.append(c);
             } else if (c == ']' && !inDoubleQuotes && !inSingleQuotes) {
-                bracketDepth-- ;
+                bracketDepth--;
                 current.append(c);
             } else if (c == ',' && !inDoubleQuotes && !inSingleQuotes && bracketDepth == 0) {
                 var itemResult = parseValue(current.toString()
@@ -1048,7 +1048,7 @@ public final class TomlParser {
                 i += pair.consumed();
             } else {
                 result.append(c);
-                i++ ;
+                i++;
             }
         }
         return Result.success(result.toString());

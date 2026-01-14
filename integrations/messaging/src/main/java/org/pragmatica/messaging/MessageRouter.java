@@ -148,7 +148,7 @@ public sealed interface MessageRouter {
 
         Class<T> type();
 
-        Set<Class< ? >> validate();
+        Set<Class< ?>> validate();
 
         @SuppressWarnings("unchecked")
         default Result<MessageRouter> asRouter() {
@@ -159,12 +159,12 @@ public sealed interface MessageRouter {
                                        .collect(Collectors.joining(", "));
                 return new InvalidMessageRouterConfiguration("Missing message types: " + missing).result();
             }
-            record router <T extends Message>(Map<Class<T>, List<Consumer<T>>> routingTable) implements ImmutableRouter<T> {}
+            record router<T extends Message>(Map<Class<T>, List<Consumer<T>>> routingTable) implements ImmutableRouter<T> {}
             var routingTable = new HashMap<Class<T>, List<Consumer<T>>>();
             entries()
                    .forEach(tuple -> routingTable.compute((Class<T>) tuple.first(),
                                                           (_, oldValue) -> merge(tuple, oldValue)));
-            return Result.success(new router <>(routingTable));
+            return Result.success(new router<>(routingTable));
         }
 
         @SuppressWarnings("unchecked")
@@ -181,8 +181,8 @@ public sealed interface MessageRouter {
         /// Validates that all permitted subclasses have routes.
         interface SealedBuilder<T extends Message> extends Entry<T> {
             static <T extends Message> SealedBuilder<T> from(Class<T> clazz) {
-                record sealedBuilder <T extends Message>(Class<T> type,
-                                                         List<Entry< ? extends T>> routes) implements SealedBuilder<T> {
+                record sealedBuilder<T extends Message>(Class<T> type,
+                                                        List<Entry< ? extends T>> routes) implements SealedBuilder<T> {
                     @Override
                     @SuppressWarnings("unchecked")
                     public Stream<Tuple2<Class< ? extends T>, Consumer< ? extends T>>> entries() {
@@ -200,7 +200,7 @@ public sealed interface MessageRouter {
                     }
 
                     @Override
-                    public Set<Class< ? >> validate() {
+                    public Set<Class< ?>> validate() {
                         if (!type()
                                  .isSealed()) {
                             return mergeSubroutes(new HashSet<>());
@@ -215,13 +215,13 @@ public sealed interface MessageRouter {
                         return mergeSubroutes(permitted);
                     }
 
-                    private Set<Class< ? >> mergeSubroutes(Set<Class< ? >> local) {
+                    private Set<Class< ?>> mergeSubroutes(Set<Class< ?>> local) {
                         routes()
                               .forEach(route -> local.addAll(route.validate()));
                         return local;
                     }
                 }
-                return new sealedBuilder <>(clazz, new ArrayList<>());
+                return new sealedBuilder<>(clazz, new ArrayList<>());
             }
 
             @SuppressWarnings("unchecked")
@@ -230,18 +230,18 @@ public sealed interface MessageRouter {
 
         /// Create a simple route entry for a specific message type.
         static <T extends Message> Entry<T> route(Class<T> type, Consumer<T> receiver) {
-            record entry <T extends Message>(Class<T> type, Consumer<T> receiver) implements Entry<T> {
+            record entry<T extends Message>(Class<T> type, Consumer<T> receiver) implements Entry<T> {
                 @Override
                 public Stream<Tuple2<Class< ? extends T>, Consumer< ? extends T>>> entries() {
                     return Stream.of(tuple(type(), receiver()));
                 }
 
                 @Override
-                public Set<Class< ? >> validate() {
+                public Set<Class< ?>> validate() {
                     return Set.of();
                 }
             }
-            return new entry <>(type, receiver);
+            return new entry<>(type, receiver);
         }
     }
 

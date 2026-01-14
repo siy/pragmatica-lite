@@ -153,7 +153,7 @@ record DnsClientImpl(Bootstrap bootstrap,
 
     private static ArrayList<DomainAddress> extractAddresses(Request request, DatagramDnsResponse msg) {
         var addresses = new ArrayList<DomainAddress>();
-        for (int i = 0, count = msg.count(DnsSection.ANSWER); i < count; i++ ) {
+        for (int i = 0, count = msg.count(DnsSection.ANSWER); i < count; i++) {
             var record = msg.recordAt(DnsSection.ANSWER, i);
             if (record.type() == DnsRecordType.A) {
                 var raw = (DnsRawRecord) record;
@@ -197,14 +197,14 @@ record DnsClientImpl(Bootstrap bootstrap,
         var request = computeRequest(promise, domainName);
         log.debug("Sending request {} to {}", request, serverAddress);
         return new DatagramDnsQuery(null, serverAddress, request.requestId()).setRecursionDesired(true)
-                                                                .setRecord(DnsSection.QUESTION,
-                                                                           new DefaultDnsQuestion(request.domainName()
-                                                                                                         .name(),
-                                                                                                  DnsRecordType.A));
+                                                             .setRecord(DnsSection.QUESTION,
+                                                                        new DefaultDnsQuestion(request.domainName()
+                                                                                                      .name(),
+                                                                                               DnsRecordType.A));
     }
 
     private Request computeRequest(Promise<DomainAddress> promise, DomainName domainName) {
-        for (int attempt = 0; attempt < 0xFFFF; attempt++ ) {
+        for (int attempt = 0; attempt < 0xFFFF; attempt++) {
             var requestId = idCounter()
                                      .getAndIncrement() & 0xFFFF;
             var request = new Request(domainName, promise, requestId);

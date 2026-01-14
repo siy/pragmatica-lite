@@ -38,7 +38,7 @@ public interface RabiaPersistence<C extends Command> {
 
     /// Create an in-memory persistence implementation (for testing or single-session use).
     static <C extends Command> RabiaPersistence<C> inMemory() {
-        record inMemory <C extends Command>(AtomicReference<SavedState<C>> state) implements RabiaPersistence<C> {
+        record inMemory<C extends Command>(AtomicReference<SavedState<C>> state) implements RabiaPersistence<C> {
             @Override
             public Result<Unit> save(StateMachine<C> stateMachine,
                                      Phase lastCommittedPhase,
@@ -58,7 +58,7 @@ public interface RabiaPersistence<C extends Command> {
                                           .get());
             }
         }
-        return new inMemory <>(new AtomicReference<>());
+        return new inMemory<>(new AtomicReference<>());
     }
 
     /// Saved consensus state.
@@ -81,7 +81,7 @@ public interface RabiaPersistence<C extends Command> {
 
         @Override
         public boolean equals(Object o) {
-            if (! (o instanceof SavedState< ? >(byte[] snapshot1, Phase committedPhase, List< ? > batches))) {
+            if (! (o instanceof SavedState< ?>(byte[] snapshot1, Phase committedPhase, List< ?> batches))) {
                 return false;
             }
             return Objects.deepEquals(snapshot(), snapshot1) &&

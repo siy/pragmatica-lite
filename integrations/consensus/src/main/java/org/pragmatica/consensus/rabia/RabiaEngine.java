@@ -261,7 +261,7 @@ public class RabiaEngine<C extends Command> {
 
     @SuppressWarnings("unchecked")
     @MessageReceiver
-    public void handleNewBatch(NewBatch< ? > newBatch) {
+    public void handleNewBatch(NewBatch< ?> newBatch) {
         pendingBatches.put(newBatch.batch()
                                    .correlationId(),
                            (Batch<C>) newBatch.batch());

@@ -1,5 +1,6 @@
 package org.pragmatica.http.routing;
 
+import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.TypeToken;
 
@@ -34,6 +35,12 @@ public interface RequestContext {
                ? Result.success(pathParams()
                                           .get(index))
                : NOT_FOUND;
+    }
+
+    default List<String> queryParam(String name) {
+        return queryParams()
+                          .getOrDefault(name,
+                                        List.of());
     }
 
     default <T1> Result.Mapper1<T1> matchPath(PathParameter<T1> p1) {
@@ -88,101 +95,43 @@ public interface RequestContext {
                             .flatMap(p5::parse));
     }
 
-    default <T1, T2, T3, T4, T5, T6> Result.Mapper6<T1, T2, T3, T4, T5, T6> matchPath(PathParameter<T1> p1,
-                                                                                      PathParameter<T2> p2,
-                                                                                      PathParameter<T3> p3,
-                                                                                      PathParameter<T4> p4,
-                                                                                      PathParameter<T5> p5,
-                                                                                      PathParameter<T6> p6) {
-        return all(pathParam(0)
-                            .flatMap(p1::parse),
-                   pathParam(1)
-                            .flatMap(p2::parse),
-                   pathParam(2)
-                            .flatMap(p3::parse),
-                   pathParam(3)
-                            .flatMap(p4::parse),
-                   pathParam(4)
-                            .flatMap(p5::parse),
-                   pathParam(5)
-                            .flatMap(p6::parse));
+    default <Q1> Result.Mapper1<Option<Q1>> matchQuery(QueryParameter<Q1> q1) {
+        return all(q1.parse(queryParam(q1.name())));
     }
 
-    default <T1, T2, T3, T4, T5, T6, T7> Result.Mapper7<T1, T2, T3, T4, T5, T6, T7> matchPath(PathParameter<T1> p1,
-                                                                                              PathParameter<T2> p2,
-                                                                                              PathParameter<T3> p3,
-                                                                                              PathParameter<T4> p4,
-                                                                                              PathParameter<T5> p5,
-                                                                                              PathParameter<T6> p6,
-                                                                                              PathParameter<T7> p7) {
-        return all(pathParam(0)
-                            .flatMap(p1::parse),
-                   pathParam(1)
-                            .flatMap(p2::parse),
-                   pathParam(2)
-                            .flatMap(p3::parse),
-                   pathParam(3)
-                            .flatMap(p4::parse),
-                   pathParam(4)
-                            .flatMap(p5::parse),
-                   pathParam(5)
-                            .flatMap(p6::parse),
-                   pathParam(6)
-                            .flatMap(p7::parse));
+    default <Q1, Q2> Result.Mapper2<Option<Q1>, Option<Q2>> matchQuery(QueryParameter<Q1> q1,
+                                                                       QueryParameter<Q2> q2) {
+        return all(q1.parse(queryParam(q1.name())),
+                   q2.parse(queryParam(q2.name())));
     }
 
-    default <T1, T2, T3, T4, T5, T6, T7, T8> Result.Mapper8<T1, T2, T3, T4, T5, T6, T7, T8> matchPath(PathParameter<T1> p1,
-                                                                                                      PathParameter<T2> p2,
-                                                                                                      PathParameter<T3> p3,
-                                                                                                      PathParameter<T4> p4,
-                                                                                                      PathParameter<T5> p5,
-                                                                                                      PathParameter<T6> p6,
-                                                                                                      PathParameter<T7> p7,
-                                                                                                      PathParameter<T8> p8) {
-        return all(pathParam(0)
-                            .flatMap(p1::parse),
-                   pathParam(1)
-                            .flatMap(p2::parse),
-                   pathParam(2)
-                            .flatMap(p3::parse),
-                   pathParam(3)
-                            .flatMap(p4::parse),
-                   pathParam(4)
-                            .flatMap(p5::parse),
-                   pathParam(5)
-                            .flatMap(p6::parse),
-                   pathParam(6)
-                            .flatMap(p7::parse),
-                   pathParam(7)
-                            .flatMap(p8::parse));
+    default <Q1, Q2, Q3> Result.Mapper3<Option<Q1>, Option<Q2>, Option<Q3>> matchQuery(QueryParameter<Q1> q1,
+                                                                                       QueryParameter<Q2> q2,
+                                                                                       QueryParameter<Q3> q3) {
+        return all(q1.parse(queryParam(q1.name())),
+                   q2.parse(queryParam(q2.name())),
+                   q3.parse(queryParam(q3.name())));
     }
 
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9> Result.Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> matchPath(PathParameter<T1> p1,
-                                                                                                              PathParameter<T2> p2,
-                                                                                                              PathParameter<T3> p3,
-                                                                                                              PathParameter<T4> p4,
-                                                                                                              PathParameter<T5> p5,
-                                                                                                              PathParameter<T6> p6,
-                                                                                                              PathParameter<T7> p7,
-                                                                                                              PathParameter<T8> p8,
-                                                                                                              PathParameter<T9> p9) {
-        return all(pathParam(0)
-                            .flatMap(p1::parse),
-                   pathParam(1)
-                            .flatMap(p2::parse),
-                   pathParam(2)
-                            .flatMap(p3::parse),
-                   pathParam(3)
-                            .flatMap(p4::parse),
-                   pathParam(4)
-                            .flatMap(p5::parse),
-                   pathParam(5)
-                            .flatMap(p6::parse),
-                   pathParam(6)
-                            .flatMap(p7::parse),
-                   pathParam(7)
-                            .flatMap(p8::parse),
-                   pathParam(8)
-                            .flatMap(p9::parse));
+    default <Q1, Q2, Q3, Q4> Result.Mapper4<Option<Q1>, Option<Q2>, Option<Q3>, Option<Q4>> matchQuery(QueryParameter<Q1> q1,
+                                                                                                       QueryParameter<Q2> q2,
+                                                                                                       QueryParameter<Q3> q3,
+                                                                                                       QueryParameter<Q4> q4) {
+        return all(q1.parse(queryParam(q1.name())),
+                   q2.parse(queryParam(q2.name())),
+                   q3.parse(queryParam(q3.name())),
+                   q4.parse(queryParam(q4.name())));
+    }
+
+    default <Q1, Q2, Q3, Q4, Q5> Result.Mapper5<Option<Q1>, Option<Q2>, Option<Q3>, Option<Q4>, Option<Q5>> matchQuery(QueryParameter<Q1> q1,
+                                                                                                                       QueryParameter<Q2> q2,
+                                                                                                                       QueryParameter<Q3> q3,
+                                                                                                                       QueryParameter<Q4> q4,
+                                                                                                                       QueryParameter<Q5> q5) {
+        return all(q1.parse(queryParam(q1.name())),
+                   q2.parse(queryParam(q2.name())),
+                   q3.parse(queryParam(q3.name())),
+                   q4.parse(queryParam(q4.name())),
+                   q5.parse(queryParam(q5.name())));
     }
 }

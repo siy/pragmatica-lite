@@ -64,7 +64,7 @@ public final class KSUID implements Comparable<KSUID> {
 
     static {
         Arrays.fill(DECODE, (byte) - 1);
-        for (int i = 0; i < ALPHABET.length; i++ ) {
+        for (int i = 0; i < ALPHABET.length; i++) {
             DECODE[ALPHABET[i]] = (byte) i;
         }
     }
@@ -185,7 +185,7 @@ public final class KSUID implements Comparable<KSUID> {
         Arrays.fill(dst, '0');
         // Convert bytes to 5 x 32-bit words (big-endian)
         var parts = new long[5];
-        for (int i = 0; i < 5; i++ ) {
+        for (int i = 0; i < 5; i++) {
             int offset = i * 4;
             parts[i] = ((src[offset] & 0xFFL)<< 24) | ((src[offset + 1] & 0xFFL)<< 16) | ((src[offset + 2] & 0xFFL)<< 8) | (src[offset + 3] & 0xFFL);
         }
@@ -194,7 +194,7 @@ public final class KSUID implements Comparable<KSUID> {
         while (pos >= 0) {
             long carry = 0;
             boolean allZero = true;
-            for (int i = 0; i < 5; i++ ) {
+            for (int i = 0; i < 5; i++) {
                 long value = parts[i] + (carry<< 32);
                 parts[i] = value / 62;
                 carry = value % 62;
@@ -202,7 +202,7 @@ public final class KSUID implements Comparable<KSUID> {
                     allZero = false;
                 }
             }
-            dst[pos-- ] = ALPHABET[(int) carry];
+            dst[pos--] = ALPHABET[(int) carry];
             if (allZero) {
                 break;
             }
@@ -215,7 +215,7 @@ public final class KSUID implements Comparable<KSUID> {
     private static byte[] decodeBase62(String src) {
         var parts = new long[5];
         // Convert from base62
-        for (int i = 0; i < STRING_LENGTH; i++ ) {
+        for (int i = 0; i < STRING_LENGTH; i++) {
             char c = src.charAt(i);
             if (c >= 128) {
                 return null;
@@ -226,7 +226,7 @@ public final class KSUID implements Comparable<KSUID> {
             }
             // Multiply by 62 and add digit
             long carry = value;
-            for (int j = 4; j >= 0; j-- ) {
+            for (int j = 4; j >= 0; j--) {
                 long product = parts[j] * 62 + carry;
                 parts[j] = product & 0xFFFFFFFFL;
                 carry = product>>> 32;
@@ -234,7 +234,7 @@ public final class KSUID implements Comparable<KSUID> {
         }
         // Convert words to bytes
         var dst = new byte[BYTE_LENGTH];
-        for (int i = 0; i < 5; i++ ) {
+        for (int i = 0; i < 5; i++) {
             int offset = i * 4;
             long value = parts[i];
             dst[offset] = (byte)(value>>> 24);
