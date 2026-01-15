@@ -29,7 +29,7 @@ import tools.jackson.databind.jsontype.TypeSerializer;
 
 /// Jackson serializer for Option<T> types.
 /// Serializes Option as null-like: null for None, or the wrapped value for Some<T>
-public class OptionSerializer extends ValueSerializer<Option< ? >> {
+public class OptionSerializer extends ValueSerializer<Option< ?>> {
     private final JavaType valueType;
     private final ValueSerializer<Object> valueSerializer;
 
@@ -43,21 +43,21 @@ public class OptionSerializer extends ValueSerializer<Option< ? >> {
     }
 
     @Override
-    public void serialize(Option< ? > value, JsonGenerator gen, SerializationContext provider) throws JacksonException {
+    public void serialize(Option< ?> value, JsonGenerator gen, SerializationContext provider) throws JacksonException {
         switch (value) {
-            case Option.Some< ? > some -> {
+            case Option.Some< ?> some -> {
                 if (valueSerializer != null) {
                     valueSerializer.serialize(some.value(), gen, provider);
                 } else {
                     gen.writePOJO(some.value());
                 }
             }
-            case Option.None< ? > ignored -> gen.writeNull();
+            case Option.None< ?> ignored -> gen.writeNull();
         }
     }
 
     @Override
-    public ValueSerializer< ? > createContextual(SerializationContext prov, BeanProperty property) {
+    public ValueSerializer< ?> createContextual(SerializationContext prov, BeanProperty property) {
         if (property == null) {
             return this;
         }
@@ -71,7 +71,7 @@ public class OptionSerializer extends ValueSerializer<Option< ? >> {
     }
 
     @Override
-    public void serializeWithType(Option< ? > value,
+    public void serializeWithType(Option< ?> value,
                                   JsonGenerator gen,
                                   SerializationContext provider,
                                   TypeSerializer typeSer) throws JacksonException {
@@ -79,7 +79,7 @@ public class OptionSerializer extends ValueSerializer<Option< ? >> {
     }
 
     @Override
-    public boolean isEmpty(SerializationContext provider, Option< ? > value) {
+    public boolean isEmpty(SerializationContext provider, Option< ?> value) {
         return value instanceof Option.None;
     }
 }

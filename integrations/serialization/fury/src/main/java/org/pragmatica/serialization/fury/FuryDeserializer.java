@@ -40,7 +40,7 @@ public interface FuryDeserializer extends Deserializer {
             @Override
             public <T> T read(ByteBuf byteBuf) {
                 try (var stream = new FuryInputStream(new ByteBufInputStream(byteBuf))) {
-                    return ( T) fury.deserialize(stream);
+                    return (T) fury.deserialize(stream);
                 } catch (Exception e) {
                     log.error("Error deserializing object", e);
                     throw new RuntimeException(e);

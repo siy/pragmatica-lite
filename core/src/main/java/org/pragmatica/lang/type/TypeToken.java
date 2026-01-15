@@ -40,7 +40,7 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
         return token;
     }
 
-    public Class< ? > rawType() {
+    public Class< ?> rawType() {
         return rawClass(token);
     }
 
@@ -56,7 +56,7 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
     /// @param indexes Indexes of type arguments
     ///
     /// @return type argument at the specified chain of indexes or empty option some index points to the non-existent type argument
-    public Option<Class< ? >> typeArgument(int... indexes) {
+    public Option<Class< ?>> typeArgument(int... indexes) {
         if (indexes.length == 0) {
             return Option.option(rawClass(token));
         }
@@ -68,7 +68,7 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
         return recursivelyGetType(token, indexes);
     }
 
-    private static Option<Class< ? >> recursivelyGetType(Type type, int... indexes) {
+    private static Option<Class< ?>> recursivelyGetType(Type type, int... indexes) {
         var index = indexes[0];
         if (! (type instanceof ParameterizedType parameterizedType)) {
             return Option.none();
@@ -84,15 +84,15 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
         }
     }
 
-    private static Class< ? > rawClass(Type type) {
+    private static Class< ?> rawClass(Type type) {
         return switch (type) {
-            case Class< ? > clazz -> clazz;
+            case Class< ?> clazz -> clazz;
             case ParameterizedType parameterizedType -> (Class< ? >) parameterizedType.getRawType();
             default -> throw new IllegalStateException("Unexpected value: " + type);
         };
     }
 
-    public Option<TypeToken< ? >> subType(int... indexes) {
+    public Option<TypeToken< ?>> subType(int... indexes) {
         if (indexes.length == 0) {
             return Option.option(this);
         }
@@ -104,7 +104,7 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
         return recursivelyGetSubType(token, indexes);
     }
 
-    private static Option<TypeToken< ? >> recursivelyGetSubType(Type type, int... indexes) {
+    private static Option<TypeToken< ?>> recursivelyGetSubType(Type type, int... indexes) {
         var index = indexes[0];
         if (! (type instanceof ParameterizedType parameterizedType)) {
             return Option.none();
@@ -124,12 +124,12 @@ public abstract class TypeToken<T> implements Comparable<TypeToken<T>> {
         return 0;
     }
 
-    @ Override
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o instanceof TypeToken< ? > typeToken) {
+        if (o instanceof TypeToken< ?> typeToken) {
             return token.equals(typeToken.token);
         }
         return false;

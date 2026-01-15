@@ -32,7 +32,7 @@ public sealed interface HierarchyScanner {
             result.add(type);
             return result;
         }
-        var queue = new LinkedBlockingQueue<Class< ? >>();
+        var queue = new LinkedBlockingQueue<Class< ?>>();
         queue.offer(type);
         while (!queue.isEmpty()) {
             var currentInterface = queue.poll();
@@ -52,7 +52,7 @@ public sealed interface HierarchyScanner {
 
     /// Walk up the type hierarchy from a collection of classes.
     static <T> Set<Class< ? extends T>> walkUpTheTree(Collection<Class< ? extends T>> classes) {
-        var interfaces = new HashSet<Class< ? >>();
+        var interfaces = new HashSet<Class< ?>>();
         var collected = new HashSet<Class< ? extends T>>();
         for (var clazz : classes) {
             scanSingle(clazz, collected, interfaces);
@@ -63,8 +63,8 @@ public sealed interface HierarchyScanner {
     @SuppressWarnings("unchecked")
     private static <T> void scanSingle(Class< ? extends T> clazz,
                                        Set<Class< ? extends T>> result,
-                                       Set<Class< ? >> interfaces) {
-        var queue = new LinkedBlockingQueue<Class< ? >>();
+                                       Set<Class< ?>> interfaces) {
+        var queue = new LinkedBlockingQueue<Class< ?>>();
         if (clazz.isInterface()) {
             if (interfaces.add(clazz)) {
                 queue.offer(clazz);
@@ -79,7 +79,7 @@ public sealed interface HierarchyScanner {
                   });
         }
         while (!queue.isEmpty()) {
-            Class< ? > type = queue.poll();
+            Class< ?> type = queue.poll();
             Stream.of(type.getInterfaces())
                   .forEach(e -> {
                       if (interfaces.add(e)) {

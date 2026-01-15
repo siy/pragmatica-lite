@@ -195,7 +195,7 @@ public interface Tuple {
     }
 
     static <T1> Tuple1<T1> tuple(T1 param1) {
-        record tuple1 <T1>(T1 param1) implements Tuple1<T1> {
+        record tuple1<T1>(T1 param1) implements Tuple1<T1> {
             @Override
             public <T> T map(Fn1<T, T1> mapper) {
                 return mapper.apply(param1());
@@ -210,11 +210,11 @@ public interface Tuple {
                 }
             }
         }
-        return new tuple1 <>(param1);
+        return new tuple1<>(param1);
     }
 
     static <T1, T2> Tuple2<T1, T2> tuple(T1 param1, T2 param2) {
-        record tuple2 <T1, T2>(T1 param1, T2 param2) implements Tuple2<T1, T2> {
+        record tuple2<T1, T2>(T1 param1, T2 param2) implements Tuple2<T1, T2> {
             @Override
             public <T> T map(Fn2<T, T1, T2> mapper) {
                 return mapper.apply(param1(), param2());
@@ -239,7 +239,7 @@ public interface Tuple {
                 return param2();
             }
         }
-        return new tuple2 <>(param1, param2);
+        return new tuple2<>(param1, param2);
     }
 
     /// Create a tuple from a Map.Entry. The key becomes the first parameter and the value becomes the second parameter.
@@ -252,7 +252,7 @@ public interface Tuple {
     }
 
     static <T1, T2, T3> Tuple3<T1, T2, T3> tuple(T1 param1, T2 param2, T3 param3) {
-        record tuple3 <T1, T2, T3>(T1 param1, T2 param2, T3 param3) implements Tuple3<T1, T2, T3> {
+        record tuple3<T1, T2, T3>(T1 param1, T2 param2, T3 param3) implements Tuple3<T1, T2, T3> {
             @Override
             public <T> T map(Fn3<T, T1, T2, T3> mapper) {
                 return mapper.apply(param1(), param2(), param3());
@@ -277,11 +277,11 @@ public interface Tuple {
                 return param3();
             }
         }
-        return new tuple3 <>(param1, param2, param3);
+        return new tuple3<>(param1, param2, param3);
     }
 
     static <T1, T2, T3, T4> Tuple4<T1, T2, T3, T4> tuple(T1 param1, T2 param2, T3 param3, T4 param4) {
-        record tuple4 <T1, T2, T3, T4>(T1 param1, T2 param2, T3 param3, T4 param4) implements Tuple4<T1, T2, T3, T4> {
+        record tuple4<T1, T2, T3, T4>(T1 param1, T2 param2, T3 param3, T4 param4) implements Tuple4<T1, T2, T3, T4> {
             @Override
             public <T> T map(Fn4<T, T1, T2, T3, T4> mapper) {
                 return mapper.apply(param1(), param2(), param3(), param4());
@@ -296,7 +296,7 @@ public interface Tuple {
                 }
             }
         }
-        return new tuple4 <>(param1, param2, param3, param4);
+        return new tuple4<>(param1, param2, param3, param4);
     }
 
     static <T1, T2, T3, T4, T5> Tuple5<T1, T2, T3, T4, T5> tuple(T1 param1,
@@ -304,7 +304,7 @@ public interface Tuple {
                                                                  T3 param3,
                                                                  T4 param4,
                                                                  T5 param5) {
-        record tuple5 <T1, T2, T3, T4, T5>(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5) implements Tuple5<T1, T2, T3, T4, T5> {
+        record tuple5<T1, T2, T3, T4, T5>(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5) implements Tuple5<T1, T2, T3, T4, T5> {
             @Override
             public <T> T map(Fn5<T, T1, T2, T3, T4, T5> mapper) {
                 return mapper.apply(param1(), param2(), param3(), param4(), param5());
@@ -319,7 +319,7 @@ public interface Tuple {
                 }
             }
         }
-        return new tuple5 <>(param1, param2, param3, param4, param5);
+        return new tuple5<>(param1, param2, param3, param4, param5);
     }
 
     static <T1, T2, T3, T4, T5, T6> Tuple6<T1, T2, T3, T4, T5, T6> tuple(T1 param1,
@@ -328,7 +328,7 @@ public interface Tuple {
                                                                          T4 param4,
                                                                          T5 param5,
                                                                          T6 param6) {
-        record tuple6 <T1, T2, T3, T4, T5, T6>(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
+        record tuple6<T1, T2, T3, T4, T5, T6>(T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
         implements Tuple6<T1, T2, T3, T4, T5, T6> {
             @Override
             public <T> T map(Fn6<T, T1, T2, T3, T4, T5, T6> mapper) {
@@ -344,7 +344,7 @@ public interface Tuple {
                 }
             }
         }
-        return new tuple6 <>(param1, param2, param3, param4, param5, param6);
+        return new tuple6<>(param1, param2, param3, param4, param5, param6);
     }
 
     static <T1, T2, T3, T4, T5, T6, T7> Tuple7<T1, T2, T3, T4, T5, T6, T7> tuple(T1 param1,
@@ -354,13 +354,13 @@ public interface Tuple {
                                                                                  T5 param5,
                                                                                  T6 param6,
                                                                                  T7 param7) {
-        record tuple7 <T1, T2, T3, T4, T5, T6, T7>(T1 param1,
-                                                   T2 param2,
-                                                   T3 param3,
-                                                   T4 param4,
-                                                   T5 param5,
-                                                   T6 param6,
-                                                   T7 param7)
+        record tuple7<T1, T2, T3, T4, T5, T6, T7>(T1 param1,
+                                                  T2 param2,
+                                                  T3 param3,
+                                                  T4 param4,
+                                                  T5 param5,
+                                                  T6 param6,
+                                                  T7 param7)
         implements Tuple7<T1, T2, T3, T4, T5, T6, T7> {
             @Override
             public <T> T map(Fn7<T, T1, T2, T3, T4, T5, T6, T7> mapper) {
@@ -382,7 +382,7 @@ public interface Tuple {
                 }
             }
         }
-        return new tuple7 <>(param1, param2, param3, param4, param5, param6, param7);
+        return new tuple7<>(param1, param2, param3, param4, param5, param6, param7);
     }
 
     static <T1, T2, T3, T4, T5, T6, T7, T8> Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> tuple(T1 param1,
@@ -393,14 +393,14 @@ public interface Tuple {
                                                                                          T6 param6,
                                                                                          T7 param7,
                                                                                          T8 param8) {
-        record tuple8 <T1, T2, T3, T4, T5, T6, T7, T8>(T1 param1,
-                                                       T2 param2,
-                                                       T3 param3,
-                                                       T4 param4,
-                                                       T5 param5,
-                                                       T6 param6,
-                                                       T7 param7,
-                                                       T8 param8)
+        record tuple8<T1, T2, T3, T4, T5, T6, T7, T8>(T1 param1,
+                                                      T2 param2,
+                                                      T3 param3,
+                                                      T4 param4,
+                                                      T5 param5,
+                                                      T6 param6,
+                                                      T7 param7,
+                                                      T8 param8)
         implements Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> {
             @Override
             public <T> T map(Fn8<T, T1, T2, T3, T4, T5, T6, T7, T8> mapper) {
@@ -423,7 +423,7 @@ public interface Tuple {
                 }
             }
         }
-        return new tuple8 <>(param1, param2, param3, param4, param5, param6, param7, param8);
+        return new tuple8<>(param1, param2, param3, param4, param5, param6, param7, param8);
     }
 
     static <T1, T2, T3, T4, T5, T6, T7, T8, T9> Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9> tuple(T1 param1,
@@ -435,15 +435,15 @@ public interface Tuple {
                                                                                                  T7 param7,
                                                                                                  T8 param8,
                                                                                                  T9 param9) {
-        record tuple9 <T1, T2, T3, T4, T5, T6, T7, T8, T9>(T1 param1,
-                                                           T2 param2,
-                                                           T3 param3,
-                                                           T4 param4,
-                                                           T5 param5,
-                                                           T6 param6,
-                                                           T7 param7,
-                                                           T8 param8,
-                                                           T9 param9)
+        record tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>(T1 param1,
+                                                          T2 param2,
+                                                          T3 param3,
+                                                          T4 param4,
+                                                          T5 param5,
+                                                          T6 param6,
+                                                          T7 param7,
+                                                          T8 param8,
+                                                          T9 param9)
         implements Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9> {
             @Override
             public <T> T map(Fn9<T, T1, T2, T3, T4, T5, T6, T7, T8, T9> mapper) {
@@ -475,7 +475,7 @@ public interface Tuple {
                 }
             }
         }
-        return new tuple9 <>(param1, param2, param3, param4, param5, param6, param7, param8, param9);
+        return new tuple9<>(param1, param2, param3, param4, param5, param6, param7, param8, param9);
     }
 
     static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> tuple(T1 param1,
@@ -488,16 +488,16 @@ public interface Tuple {
                                                                                                             T8 param8,
                                                                                                             T9 param9,
                                                                                                             T10 param10) {
-        record tuple10 <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(T1 param1,
-                                                                 T2 param2,
-                                                                 T3 param3,
-                                                                 T4 param4,
-                                                                 T5 param5,
-                                                                 T6 param6,
-                                                                 T7 param7,
-                                                                 T8 param8,
-                                                                 T9 param9,
-                                                                 T10 param10) implements Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
+        record tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(T1 param1,
+                                                                T2 param2,
+                                                                T3 param3,
+                                                                T4 param4,
+                                                                T5 param5,
+                                                                T6 param6,
+                                                                T7 param7,
+                                                                T8 param8,
+                                                                T9 param9,
+                                                                T10 param10) implements Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
             @Override
             public <T> T map(Fn10<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
                 return mapper.apply(param1(),
@@ -530,7 +530,7 @@ public interface Tuple {
                 }
             }
         }
-        return new tuple10 <>(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
+        return new tuple10<>(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
     }
 
     static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> tuple(T1 param1,
@@ -544,17 +544,17 @@ public interface Tuple {
                                                                                                                       T9 param9,
                                                                                                                       T10 param10,
                                                                                                                       T11 param11) {
-        record tuple11 <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(T1 param1,
-                                                                      T2 param2,
-                                                                      T3 param3,
-                                                                      T4 param4,
-                                                                      T5 param5,
-                                                                      T6 param6,
-                                                                      T7 param7,
-                                                                      T8 param8,
-                                                                      T9 param9,
-                                                                      T10 param10,
-                                                                      T11 param11) implements Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> {
+        record tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(T1 param1,
+                                                                     T2 param2,
+                                                                     T3 param3,
+                                                                     T4 param4,
+                                                                     T5 param5,
+                                                                     T6 param6,
+                                                                     T7 param7,
+                                                                     T8 param8,
+                                                                     T9 param9,
+                                                                     T10 param10,
+                                                                     T11 param11) implements Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> {
             @Override
             public <T> T map(Fn11<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
                 return mapper.apply(param1(),
@@ -589,33 +589,34 @@ public interface Tuple {
                 }
             }
         }
-        return new tuple11 <>(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11);
+        return new tuple11<>(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10, param11);
     }
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> tuple(T1 param1,
-                                                                                                                                T2 param2,
-                                                                                                                                T3 param3,
-                                                                                                                                T4 param4,
-                                                                                                                                T5 param5,
-                                                                                                                                T6 param6,
-                                                                                                                                T7 param7,
-                                                                                                                                T8 param8,
-                                                                                                                                T9 param9,
-                                                                                                                                T10 param10,
-                                                                                                                                T11 param11,
-                                                                                                                                T12 param12) {
-        record tuple12 <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(T1 param1,
-                                                                           T2 param2,
-                                                                           T3 param3,
-                                                                           T4 param4,
-                                                                           T5 param5,
-                                                                           T6 param6,
-                                                                           T7 param7,
-                                                                           T8 param8,
-                                                                           T9 param9,
-                                                                           T10 param10,
-                                                                           T11 param11,
-                                                                           T12 param12) implements Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>
+    Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> tuple(T1 param1,
+                                                                     T2 param2,
+                                                                     T3 param3,
+                                                                     T4 param4,
+                                                                     T5 param5,
+                                                                     T6 param6,
+                                                                     T7 param7,
+                                                                     T8 param8,
+                                                                     T9 param9,
+                                                                     T10 param10,
+                                                                     T11 param11,
+                                                                     T12 param12) {
+        record tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(T1 param1,
+                                                                          T2 param2,
+                                                                          T3 param3,
+                                                                          T4 param4,
+                                                                          T5 param5,
+                                                                          T6 param6,
+                                                                          T7 param7,
+                                                                          T8 param8,
+                                                                          T9 param9,
+                                                                          T10 param10,
+                                                                          T11 param11,
+                                                                          T12 param12) implements Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> {
             @Override
             public <T> T map(Fn12<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
                 return mapper.apply(param1(),
@@ -652,46 +653,47 @@ public interface Tuple {
                 }
             }
         }
-        return new tuple12 <>(param1,
-                              param2,
-                              param3,
-                              param4,
-                              param5,
-                              param6,
-                              param7,
-                              param8,
-                              param9,
-                              param10,
-                              param11,
-                              param12);
+        return new tuple12<>(param1,
+                             param2,
+                             param3,
+                             param4,
+                             param5,
+                             param6,
+                             param7,
+                             param8,
+                             param9,
+                             param10,
+                             param11,
+                             param12);
     }
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> tuple(T1 param1,
-                                                                                                                                          T2 param2,
-                                                                                                                                          T3 param3,
-                                                                                                                                          T4 param4,
-                                                                                                                                          T5 param5,
-                                                                                                                                          T6 param6,
-                                                                                                                                          T7 param7,
-                                                                                                                                          T8 param8,
-                                                                                                                                          T9 param9,
-                                                                                                                                          T10 param10,
-                                                                                                                                          T11 param11,
-                                                                                                                                          T12 param12,
-                                                                                                                                          T13 param13) {
-        record tuple13 <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(T1 param1,
-                                                                                T2 param2,
-                                                                                T3 param3,
-                                                                                T4 param4,
-                                                                                T5 param5,
-                                                                                T6 param6,
-                                                                                T7 param7,
-                                                                                T8 param8,
-                                                                                T9 param9,
-                                                                                T10 param10,
-                                                                                T11 param11,
-                                                                                T12 param12,
-                                                                                T13 param13) implements Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>
+    Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> tuple(T1 param1,
+                                                                          T2 param2,
+                                                                          T3 param3,
+                                                                          T4 param4,
+                                                                          T5 param5,
+                                                                          T6 param6,
+                                                                          T7 param7,
+                                                                          T8 param8,
+                                                                          T9 param9,
+                                                                          T10 param10,
+                                                                          T11 param11,
+                                                                          T12 param12,
+                                                                          T13 param13) {
+        record tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(T1 param1,
+                                                                               T2 param2,
+                                                                               T3 param3,
+                                                                               T4 param4,
+                                                                               T5 param5,
+                                                                               T6 param6,
+                                                                               T7 param7,
+                                                                               T8 param8,
+                                                                               T9 param9,
+                                                                               T10 param10,
+                                                                               T11 param11,
+                                                                               T12 param12,
+                                                                               T13 param13) implements Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> {
             @Override
             public <T> T map(Fn13<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
                 return mapper.apply(param1(),
@@ -730,49 +732,50 @@ public interface Tuple {
                 }
             }
         }
-        return new tuple13 <>(param1,
-                              param2,
-                              param3,
-                              param4,
-                              param5,
-                              param6,
-                              param7,
-                              param8,
-                              param9,
-                              param10,
-                              param11,
-                              param12,
-                              param13);
+        return new tuple13<>(param1,
+                             param2,
+                             param3,
+                             param4,
+                             param5,
+                             param6,
+                             param7,
+                             param8,
+                             param9,
+                             param10,
+                             param11,
+                             param12,
+                             param13);
     }
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> tuple(T1 param1,
-                                                                                                                                                    T2 param2,
-                                                                                                                                                    T3 param3,
-                                                                                                                                                    T4 param4,
-                                                                                                                                                    T5 param5,
-                                                                                                                                                    T6 param6,
-                                                                                                                                                    T7 param7,
-                                                                                                                                                    T8 param8,
-                                                                                                                                                    T9 param9,
-                                                                                                                                                    T10 param10,
-                                                                                                                                                    T11 param11,
-                                                                                                                                                    T12 param12,
-                                                                                                                                                    T13 param13,
-                                                                                                                                                    T14 param14) {
-        record tuple14 <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(T1 param1,
-                                                                                     T2 param2,
-                                                                                     T3 param3,
-                                                                                     T4 param4,
-                                                                                     T5 param5,
-                                                                                     T6 param6,
-                                                                                     T7 param7,
-                                                                                     T8 param8,
-                                                                                     T9 param9,
-                                                                                     T10 param10,
-                                                                                     T11 param11,
-                                                                                     T12 param12,
-                                                                                     T13 param13,
-                                                                                     T14 param14) implements Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>
+    Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> tuple(T1 param1,
+                                                                               T2 param2,
+                                                                               T3 param3,
+                                                                               T4 param4,
+                                                                               T5 param5,
+                                                                               T6 param6,
+                                                                               T7 param7,
+                                                                               T8 param8,
+                                                                               T9 param9,
+                                                                               T10 param10,
+                                                                               T11 param11,
+                                                                               T12 param12,
+                                                                               T13 param13,
+                                                                               T14 param14) {
+        record tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(T1 param1,
+                                                                                    T2 param2,
+                                                                                    T3 param3,
+                                                                                    T4 param4,
+                                                                                    T5 param5,
+                                                                                    T6 param6,
+                                                                                    T7 param7,
+                                                                                    T8 param8,
+                                                                                    T9 param9,
+                                                                                    T10 param10,
+                                                                                    T11 param11,
+                                                                                    T12 param12,
+                                                                                    T13 param13,
+                                                                                    T14 param14) implements Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> {
             @Override
             public <T> T map(Fn14<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
                 return mapper.apply(param1(),
@@ -813,52 +816,53 @@ public interface Tuple {
                 }
             }
         }
-        return new tuple14 <>(param1,
-                              param2,
-                              param3,
-                              param4,
-                              param5,
-                              param6,
-                              param7,
-                              param8,
-                              param9,
-                              param10,
-                              param11,
-                              param12,
-                              param13,
-                              param14);
+        return new tuple14<>(param1,
+                             param2,
+                             param3,
+                             param4,
+                             param5,
+                             param6,
+                             param7,
+                             param8,
+                             param9,
+                             param10,
+                             param11,
+                             param12,
+                             param13,
+                             param14);
     }
 
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> tuple(T1 param1,
-                                                                                                                                                              T2 param2,
-                                                                                                                                                              T3 param3,
-                                                                                                                                                              T4 param4,
-                                                                                                                                                              T5 param5,
-                                                                                                                                                              T6 param6,
-                                                                                                                                                              T7 param7,
-                                                                                                                                                              T8 param8,
-                                                                                                                                                              T9 param9,
-                                                                                                                                                              T10 param10,
-                                                                                                                                                              T11 param11,
-                                                                                                                                                              T12 param12,
-                                                                                                                                                              T13 param13,
-                                                                                                                                                              T14 param14,
-                                                                                                                                                              T15 param15) {
-        record tuple15 <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(T1 param1,
-                                                                                          T2 param2,
-                                                                                          T3 param3,
-                                                                                          T4 param4,
-                                                                                          T5 param5,
-                                                                                          T6 param6,
-                                                                                          T7 param7,
-                                                                                          T8 param8,
-                                                                                          T9 param9,
-                                                                                          T10 param10,
-                                                                                          T11 param11,
-                                                                                          T12 param12,
-                                                                                          T13 param13,
-                                                                                          T14 param14,
-                                                                                          T15 param15) implements Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>
+    Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> tuple(T1 param1,
+                                                                                    T2 param2,
+                                                                                    T3 param3,
+                                                                                    T4 param4,
+                                                                                    T5 param5,
+                                                                                    T6 param6,
+                                                                                    T7 param7,
+                                                                                    T8 param8,
+                                                                                    T9 param9,
+                                                                                    T10 param10,
+                                                                                    T11 param11,
+                                                                                    T12 param12,
+                                                                                    T13 param13,
+                                                                                    T14 param14,
+                                                                                    T15 param15) {
+        record tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(T1 param1,
+                                                                                         T2 param2,
+                                                                                         T3 param3,
+                                                                                         T4 param4,
+                                                                                         T5 param5,
+                                                                                         T6 param6,
+                                                                                         T7 param7,
+                                                                                         T8 param8,
+                                                                                         T9 param9,
+                                                                                         T10 param10,
+                                                                                         T11 param11,
+                                                                                         T12 param12,
+                                                                                         T13 param13,
+                                                                                         T14 param14,
+                                                                                         T15 param15) implements Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> {
             @Override
             public <T> T map(Fn15<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
                 return mapper.apply(param1(),
@@ -901,20 +905,20 @@ public interface Tuple {
                 }
             }
         }
-        return new tuple15 <>(param1,
-                              param2,
-                              param3,
-                              param4,
-                              param5,
-                              param6,
-                              param7,
-                              param8,
-                              param9,
-                              param10,
-                              param11,
-                              param12,
-                              param13,
-                              param14,
-                              param15);
+        return new tuple15<>(param1,
+                             param2,
+                             param3,
+                             param4,
+                             param5,
+                             param6,
+                             param7,
+                             param8,
+                             param9,
+                             param10,
+                             param11,
+                             param12,
+                             param13,
+                             param14,
+                             param15);
     }
 }

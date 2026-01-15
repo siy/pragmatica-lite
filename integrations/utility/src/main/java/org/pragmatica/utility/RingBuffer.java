@@ -59,7 +59,7 @@ public final class RingBuffer<T> {
             buffer[head] = element;
             head = (head + 1) % capacity;
             if (size < capacity) {
-                size++ ;
+                size++;
             }
         } finally{
             lock.unlock();
@@ -78,7 +78,7 @@ public final class RingBuffer<T> {
             int start = (size < capacity)
                         ? 0
                         : head;
-            for (int i = 0; i < size; i++ ) {
+            for (int i = 0; i < size; i++) {
                 int idx = (start + i) % capacity;
                 @SuppressWarnings("unchecked")
                 T element = (T) buffer[idx];
@@ -102,7 +102,7 @@ public final class RingBuffer<T> {
             int start = (size < capacity)
                         ? 0
                         : head;
-            for (int i = 0; i < size; i++ ) {
+            for (int i = 0; i < size; i++) {
                 int idx = (start + i) % capacity;
                 @SuppressWarnings("unchecked")
                 T element = (T) buffer[idx];
@@ -140,7 +140,7 @@ public final class RingBuffer<T> {
     public void clear() {
         lock.lock();
         try{
-            for (int i = 0; i < capacity; i++ ) {
+            for (int i = 0; i < capacity; i++) {
                 buffer[i] = null;
             }
             head = 0;

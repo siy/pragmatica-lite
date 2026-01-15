@@ -121,7 +121,7 @@ public interface Promise<T> {
     ///
     /// @return New promise instance.
     default <U> Promise<U> flatMap(Fn1<Promise<U>, ? super T> transformation) {
-        return fold(result -> result.fold(Promise:: <U> failure, transformation));
+        return fold(result -> result.fold(Promise::<U> failure, transformation));
     }
 
     /// Version of the [#flatMap(Fn1)] which allows convenient "mixing in" additional parameter without the need to revert
@@ -781,18 +781,19 @@ public interface Promise<T> {
     }
 
     /// Chain twelve dependent operations with access to this Promise's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(Fn1<Promise<T1>, T> fn1,
-                                                                                                                                Fn1<Promise<T2>, T> fn2,
-                                                                                                                                Fn1<Promise<T3>, T> fn3,
-                                                                                                                                Fn1<Promise<T4>, T> fn4,
-                                                                                                                                Fn1<Promise<T5>, T> fn5,
-                                                                                                                                Fn1<Promise<T6>, T> fn6,
-                                                                                                                                Fn1<Promise<T7>, T> fn7,
-                                                                                                                                Fn1<Promise<T8>, T> fn8,
-                                                                                                                                Fn1<Promise<T9>, T> fn9,
-                                                                                                                                Fn1<Promise<T10>, T> fn10,
-                                                                                                                                Fn1<Promise<T11>, T> fn11,
-                                                                                                                                Fn1<Promise<T12>, T> fn12) {
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>
+    Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(Fn1<Promise<T1>, T> fn1,
+                                                                    Fn1<Promise<T2>, T> fn2,
+                                                                    Fn1<Promise<T3>, T> fn3,
+                                                                    Fn1<Promise<T4>, T> fn4,
+                                                                    Fn1<Promise<T5>, T> fn5,
+                                                                    Fn1<Promise<T6>, T> fn6,
+                                                                    Fn1<Promise<T7>, T> fn7,
+                                                                    Fn1<Promise<T8>, T> fn8,
+                                                                    Fn1<Promise<T9>, T> fn9,
+                                                                    Fn1<Promise<T10>, T> fn10,
+                                                                    Fn1<Promise<T11>, T> fn11,
+                                                                    Fn1<Promise<T12>, T> fn12) {
         return () -> flatMap(v -> fn1.apply(v)
                                      .flatMap(v1 -> fn2.apply(v)
                                                        .flatMap(v2 -> fn3.apply(v)
@@ -820,19 +821,20 @@ public interface Promise<T> {
     }
 
     /// Chain thirteen dependent operations with access to this Promise's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(Fn1<Promise<T1>, T> fn1,
-                                                                                                                                          Fn1<Promise<T2>, T> fn2,
-                                                                                                                                          Fn1<Promise<T3>, T> fn3,
-                                                                                                                                          Fn1<Promise<T4>, T> fn4,
-                                                                                                                                          Fn1<Promise<T5>, T> fn5,
-                                                                                                                                          Fn1<Promise<T6>, T> fn6,
-                                                                                                                                          Fn1<Promise<T7>, T> fn7,
-                                                                                                                                          Fn1<Promise<T8>, T> fn8,
-                                                                                                                                          Fn1<Promise<T9>, T> fn9,
-                                                                                                                                          Fn1<Promise<T10>, T> fn10,
-                                                                                                                                          Fn1<Promise<T11>, T> fn11,
-                                                                                                                                          Fn1<Promise<T12>, T> fn12,
-                                                                                                                                          Fn1<Promise<T13>, T> fn13) {
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>
+    Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(Fn1<Promise<T1>, T> fn1,
+                                                                         Fn1<Promise<T2>, T> fn2,
+                                                                         Fn1<Promise<T3>, T> fn3,
+                                                                         Fn1<Promise<T4>, T> fn4,
+                                                                         Fn1<Promise<T5>, T> fn5,
+                                                                         Fn1<Promise<T6>, T> fn6,
+                                                                         Fn1<Promise<T7>, T> fn7,
+                                                                         Fn1<Promise<T8>, T> fn8,
+                                                                         Fn1<Promise<T9>, T> fn9,
+                                                                         Fn1<Promise<T10>, T> fn10,
+                                                                         Fn1<Promise<T11>, T> fn11,
+                                                                         Fn1<Promise<T12>, T> fn12,
+                                                                         Fn1<Promise<T13>, T> fn13) {
         return () -> flatMap(v -> fn1.apply(v)
                                      .flatMap(v1 -> fn2.apply(v)
                                                        .flatMap(v2 -> fn3.apply(v)
@@ -862,20 +864,21 @@ public interface Promise<T> {
     }
 
     /// Chain fourteen dependent operations with access to this Promise's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(Fn1<Promise<T1>, T> fn1,
-                                                                                                                                                    Fn1<Promise<T2>, T> fn2,
-                                                                                                                                                    Fn1<Promise<T3>, T> fn3,
-                                                                                                                                                    Fn1<Promise<T4>, T> fn4,
-                                                                                                                                                    Fn1<Promise<T5>, T> fn5,
-                                                                                                                                                    Fn1<Promise<T6>, T> fn6,
-                                                                                                                                                    Fn1<Promise<T7>, T> fn7,
-                                                                                                                                                    Fn1<Promise<T8>, T> fn8,
-                                                                                                                                                    Fn1<Promise<T9>, T> fn9,
-                                                                                                                                                    Fn1<Promise<T10>, T> fn10,
-                                                                                                                                                    Fn1<Promise<T11>, T> fn11,
-                                                                                                                                                    Fn1<Promise<T12>, T> fn12,
-                                                                                                                                                    Fn1<Promise<T13>, T> fn13,
-                                                                                                                                                    Fn1<Promise<T14>, T> fn14) {
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>
+    Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(Fn1<Promise<T1>, T> fn1,
+                                                                              Fn1<Promise<T2>, T> fn2,
+                                                                              Fn1<Promise<T3>, T> fn3,
+                                                                              Fn1<Promise<T4>, T> fn4,
+                                                                              Fn1<Promise<T5>, T> fn5,
+                                                                              Fn1<Promise<T6>, T> fn6,
+                                                                              Fn1<Promise<T7>, T> fn7,
+                                                                              Fn1<Promise<T8>, T> fn8,
+                                                                              Fn1<Promise<T9>, T> fn9,
+                                                                              Fn1<Promise<T10>, T> fn10,
+                                                                              Fn1<Promise<T11>, T> fn11,
+                                                                              Fn1<Promise<T12>, T> fn12,
+                                                                              Fn1<Promise<T13>, T> fn13,
+                                                                              Fn1<Promise<T14>, T> fn14) {
         return () -> flatMap(v -> fn1.apply(v)
                                      .flatMap(v1 -> fn2.apply(v)
                                                        .flatMap(v2 -> fn3.apply(v)
@@ -907,21 +910,22 @@ public interface Promise<T> {
     }
 
     /// Chain fifteen dependent operations with access to this Promise's value.
-    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(Fn1<Promise<T1>, T> fn1,
-                                                                                                                                                              Fn1<Promise<T2>, T> fn2,
-                                                                                                                                                              Fn1<Promise<T3>, T> fn3,
-                                                                                                                                                              Fn1<Promise<T4>, T> fn4,
-                                                                                                                                                              Fn1<Promise<T5>, T> fn5,
-                                                                                                                                                              Fn1<Promise<T6>, T> fn6,
-                                                                                                                                                              Fn1<Promise<T7>, T> fn7,
-                                                                                                                                                              Fn1<Promise<T8>, T> fn8,
-                                                                                                                                                              Fn1<Promise<T9>, T> fn9,
-                                                                                                                                                              Fn1<Promise<T10>, T> fn10,
-                                                                                                                                                              Fn1<Promise<T11>, T> fn11,
-                                                                                                                                                              Fn1<Promise<T12>, T> fn12,
-                                                                                                                                                              Fn1<Promise<T13>, T> fn13,
-                                                                                                                                                              Fn1<Promise<T14>, T> fn14,
-                                                                                                                                                              Fn1<Promise<T15>, T> fn15) {
+    default <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>
+    Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(Fn1<Promise<T1>, T> fn1,
+                                                                                   Fn1<Promise<T2>, T> fn2,
+                                                                                   Fn1<Promise<T3>, T> fn3,
+                                                                                   Fn1<Promise<T4>, T> fn4,
+                                                                                   Fn1<Promise<T5>, T> fn5,
+                                                                                   Fn1<Promise<T6>, T> fn6,
+                                                                                   Fn1<Promise<T7>, T> fn7,
+                                                                                   Fn1<Promise<T8>, T> fn8,
+                                                                                   Fn1<Promise<T9>, T> fn9,
+                                                                                   Fn1<Promise<T10>, T> fn10,
+                                                                                   Fn1<Promise<T11>, T> fn11,
+                                                                                   Fn1<Promise<T12>, T> fn12,
+                                                                                   Fn1<Promise<T13>, T> fn13,
+                                                                                   Fn1<Promise<T14>, T> fn14,
+                                                                                   Fn1<Promise<T15>, T> fn15) {
         return () -> flatMap(v -> fn1.apply(v)
                                      .flatMap(v1 -> fn2.apply(v)
                                                        .flatMap(v2 -> fn3.apply(v)
@@ -1745,18 +1749,19 @@ public interface Promise<T> {
     }
 
     @SuppressWarnings("unchecked")
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(Promise<T1> promise1,
-                                                                                                                               Promise<T2> promise2,
-                                                                                                                               Promise<T3> promise3,
-                                                                                                                               Promise<T4> promise4,
-                                                                                                                               Promise<T5> promise5,
-                                                                                                                               Promise<T6> promise6,
-                                                                                                                               Promise<T7> promise7,
-                                                                                                                               Promise<T8> promise8,
-                                                                                                                               Promise<T9> promise9,
-                                                                                                                               Promise<T10> promise10,
-                                                                                                                               Promise<T11> promise11,
-                                                                                                                               Promise<T12> promise12) {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>
+    Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> all(Promise<T1> promise1,
+                                                                    Promise<T2> promise2,
+                                                                    Promise<T3> promise3,
+                                                                    Promise<T4> promise4,
+                                                                    Promise<T5> promise5,
+                                                                    Promise<T6> promise6,
+                                                                    Promise<T7> promise7,
+                                                                    Promise<T8> promise8,
+                                                                    Promise<T9> promise9,
+                                                                    Promise<T10> promise10,
+                                                                    Promise<T11> promise11,
+                                                                    Promise<T12> promise12) {
         return () -> setupResult(values -> Result.all((Result<T1>) values[0],
                                                       (Result<T2>) values[1],
                                                       (Result<T3>) values[2],
@@ -1785,19 +1790,20 @@ public interface Promise<T> {
     }
 
     @SuppressWarnings("unchecked")
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(Promise<T1> promise1,
-                                                                                                                                         Promise<T2> promise2,
-                                                                                                                                         Promise<T3> promise3,
-                                                                                                                                         Promise<T4> promise4,
-                                                                                                                                         Promise<T5> promise5,
-                                                                                                                                         Promise<T6> promise6,
-                                                                                                                                         Promise<T7> promise7,
-                                                                                                                                         Promise<T8> promise8,
-                                                                                                                                         Promise<T9> promise9,
-                                                                                                                                         Promise<T10> promise10,
-                                                                                                                                         Promise<T11> promise11,
-                                                                                                                                         Promise<T12> promise12,
-                                                                                                                                         Promise<T13> promise13) {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>
+    Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> all(Promise<T1> promise1,
+                                                                         Promise<T2> promise2,
+                                                                         Promise<T3> promise3,
+                                                                         Promise<T4> promise4,
+                                                                         Promise<T5> promise5,
+                                                                         Promise<T6> promise6,
+                                                                         Promise<T7> promise7,
+                                                                         Promise<T8> promise8,
+                                                                         Promise<T9> promise9,
+                                                                         Promise<T10> promise10,
+                                                                         Promise<T11> promise11,
+                                                                         Promise<T12> promise12,
+                                                                         Promise<T13> promise13) {
         return () -> setupResult(values -> Result.all((Result<T1>) values[0],
                                                       (Result<T2>) values[1],
                                                       (Result<T3>) values[2],
@@ -1828,20 +1834,21 @@ public interface Promise<T> {
     }
 
     @SuppressWarnings("unchecked")
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(Promise<T1> promise1,
-                                                                                                                                                   Promise<T2> promise2,
-                                                                                                                                                   Promise<T3> promise3,
-                                                                                                                                                   Promise<T4> promise4,
-                                                                                                                                                   Promise<T5> promise5,
-                                                                                                                                                   Promise<T6> promise6,
-                                                                                                                                                   Promise<T7> promise7,
-                                                                                                                                                   Promise<T8> promise8,
-                                                                                                                                                   Promise<T9> promise9,
-                                                                                                                                                   Promise<T10> promise10,
-                                                                                                                                                   Promise<T11> promise11,
-                                                                                                                                                   Promise<T12> promise12,
-                                                                                                                                                   Promise<T13> promise13,
-                                                                                                                                                   Promise<T14> promise14) {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>
+    Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> all(Promise<T1> promise1,
+                                                                              Promise<T2> promise2,
+                                                                              Promise<T3> promise3,
+                                                                              Promise<T4> promise4,
+                                                                              Promise<T5> promise5,
+                                                                              Promise<T6> promise6,
+                                                                              Promise<T7> promise7,
+                                                                              Promise<T8> promise8,
+                                                                              Promise<T9> promise9,
+                                                                              Promise<T10> promise10,
+                                                                              Promise<T11> promise11,
+                                                                              Promise<T12> promise12,
+                                                                              Promise<T13> promise13,
+                                                                              Promise<T14> promise14) {
         return () -> setupResult(values -> Result.all((Result<T1>) values[0],
                                                       (Result<T2>) values[1],
                                                       (Result<T3>) values[2],
@@ -1874,21 +1881,22 @@ public interface Promise<T> {
     }
 
     @SuppressWarnings("unchecked")
-    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(Promise<T1> promise1,
-                                                                                                                                                             Promise<T2> promise2,
-                                                                                                                                                             Promise<T3> promise3,
-                                                                                                                                                             Promise<T4> promise4,
-                                                                                                                                                             Promise<T5> promise5,
-                                                                                                                                                             Promise<T6> promise6,
-                                                                                                                                                             Promise<T7> promise7,
-                                                                                                                                                             Promise<T8> promise8,
-                                                                                                                                                             Promise<T9> promise9,
-                                                                                                                                                             Promise<T10> promise10,
-                                                                                                                                                             Promise<T11> promise11,
-                                                                                                                                                             Promise<T12> promise12,
-                                                                                                                                                             Promise<T13> promise13,
-                                                                                                                                                             Promise<T14> promise14,
-                                                                                                                                                             Promise<T15> promise15) {
+    static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>
+    Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> all(Promise<T1> promise1,
+                                                                                   Promise<T2> promise2,
+                                                                                   Promise<T3> promise3,
+                                                                                   Promise<T4> promise4,
+                                                                                   Promise<T5> promise5,
+                                                                                   Promise<T6> promise6,
+                                                                                   Promise<T7> promise7,
+                                                                                   Promise<T8> promise8,
+                                                                                   Promise<T9> promise9,
+                                                                                   Promise<T10> promise10,
+                                                                                   Promise<T11> promise11,
+                                                                                   Promise<T12> promise12,
+                                                                                   Promise<T13> promise13,
+                                                                                   Promise<T14> promise14,
+                                                                                   Promise<T15> promise15) {
         return () -> setupResult(values -> Result.all((Result<T1>) values[0],
                                                       (Result<T2>) values[1],
                                                       (Result<T3>) values[2],
@@ -2189,7 +2197,7 @@ public interface Promise<T> {
                                         values -> promise.resolve(transformer.apply(values)));
         int count = 0;
         for (var p : promises) {
-            final var index = count++ ;
+            final var index = count++;
             p.withResult(result -> collector.registerEvent(index, result));
         }
         return promise;
@@ -2481,6 +2489,6 @@ final class PromiseImpl<T> implements Promise<T> {
         // Reduce the risk of rare disastrous classloading in the first call to
         // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773
         @SuppressWarnings("unused")
-        Class< ? > ensureLoaded = LockSupport.class;
+        Class< ?> ensureLoaded = LockSupport.class;
     }
 }

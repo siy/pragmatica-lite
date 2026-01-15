@@ -43,7 +43,7 @@ public interface KryoDeserializer extends Deserializer {
                 var kryo = pool.obtain();
                 try (var byteBufInputStream = new ByteBufInputStream(byteBuf);
                      var input = new Input(byteBufInputStream)) {
-                    return ( T) kryo.readClassAndObject(input);
+                    return (T) kryo.readClassAndObject(input);
                 } catch (Exception e) {
                     log.error("Error deserializing object", e);
                     throw new RuntimeException(e);

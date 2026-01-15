@@ -282,7 +282,7 @@ public record TomlDocument(Map<String, Map<String, Object>> sections,
     }
 
     private Option<List<String>> toStringList(Object value) {
-        if (value instanceof List< ? > list) {
+        if (value instanceof List< ?> list) {
             return Option.some(list.stream()
                                    .map(Object::toString)
                                    .toList());

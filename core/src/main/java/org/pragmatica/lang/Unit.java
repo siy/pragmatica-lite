@@ -117,7 +117,7 @@ public final class Unit implements Tuple.Tuple0 {
         return "()";
     }
 
-    @ Override
+    @Override
     public boolean equals(Object obj) {
         return obj instanceof Tuple0;
     }
@@ -127,7 +127,7 @@ public final class Unit implements Tuple.Tuple0 {
         return 0;
     }
 
-    @ Override
+    @Override
     public <T> T map(Fn0<T> mapper) {
         return mapper.apply();
     }

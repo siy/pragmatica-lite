@@ -138,7 +138,7 @@ final class ConnectionFactoryR2dbcOperations implements R2dbcOperations {
 
     private Statement createStatement(Connection conn, String sql, Object[] params) {
         var stmt = conn.createStatement(sql);
-        for (int i = 0; i < params.length; i++ ) {
+        for (int i = 0; i < params.length; i++) {
             stmt.bind(i, params[i]);
         }
         return stmt;

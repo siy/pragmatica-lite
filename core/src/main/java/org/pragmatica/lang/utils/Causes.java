@@ -165,7 +165,7 @@ public sealed interface Causes {
             }
         }
         var inner = new ArrayList<Cause>();
-        for (Result< ? > result : results) {
+        for (Result< ?> result : results) {
             result.onFailure(inner::add);
         }
         return new compositeCause(none(), inner);

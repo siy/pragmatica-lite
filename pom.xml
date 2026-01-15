@@ -4,7 +4,7 @@
 
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>pragmatica-lite</artifactId>
-    <version>0.9.10</version>
+    <version>0.9.11</version>
     <modules>
         <module>core</module>
         <module>examples</module>
@@ -117,6 +117,11 @@
             <dependency>
                 <groupId>org.pragmatica-lite</groupId>
                 <artifactId>jooq</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.pragmatica-lite</groupId>
+                <artifactId>http-routing</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -313,7 +318,7 @@
                 <plugin>
                     <groupId>org.pragmatica-lite</groupId>
                     <artifactId>jbct-maven-plugin</artifactId>
-                    <version>0.4.3</version>
+                    <version>0.4.8</version>
                 </plugin>
             </plugins>
         </pluginManagement>

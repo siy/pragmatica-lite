@@ -25,5 +25,5 @@ public interface ClassRegistrator {
     /// Register classes with the serializer.
     ///
     /// @param consumer accepts each class to be registered
-    void registerClasses(Consumer<Class< ? >> consumer);
+    void registerClasses(Consumer<Class< ?>> consumer);
 }

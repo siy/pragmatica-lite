@@ -186,7 +186,7 @@ final class ConnectionFactoryJooqR2dbcOperations implements JooqR2dbcOperations 
         }
         try{
             var parts = message.split("\\s+");
-            for (int i = 0; i < parts.length - 1; i++ ) {
+            for (int i = 0; i < parts.length - 1; i++) {
                 if ("returned".equals(parts[i])) {
                     return Integer.parseInt(parts[i + 1]);
                 }
