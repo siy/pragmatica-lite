@@ -5,9 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.11] - 2026-01-14
+## [0.9.11] - 2026-01-15
 
-_No changes yet._
+### Added
+- HTTP routing module with type-safe parameter builders
+  - 35 builder interfaces supporting path, query, and body parameter combinations
+  - `QueryParameter` type with 8 factory methods (aString, aInteger, aLong, aBoolean, aDouble, aDecimal, aLocalDate, aLocalDateTime)
+  - Combined path + body builders (1-4 path params + body)
+  - Combined query + body builders (1-4 query params + body)
+  - Combined path + query builders (up to 5 total params)
+  - Combined path + query + body builders (up to 5 total params)
+- `JsonCodecAdapter` wrapping `JsonMapper` for Netty ByteBuf I/O
+
+### Changed
+- `Route.java` rewritten with fluent builder API supporting parameter combinations
+- `RequestContext` reduced to 5 path params, added 5 query match methods
+- `ProblemDetail` now uses `Option<String>` for optional fields, removed Jackson annotations
+- `JsonMapper` builder API refactored to use configurators instead of exposing Jackson types
+- `JsonCodecAdapter.defaultCodec()` configures NON_EMPTY serialization
+
+### Fixed
+- http-routing module now uses existing jackson integration instead of direct dependency
 
 ## [0.9.10] - 2026-01-07
 
