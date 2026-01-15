@@ -68,8 +68,7 @@ public record TomlDocument(Map<String, Map<String, Object>> sections,
     /// @param key     the property key
     /// @return Option containing the string value, or empty if not found
     public Option<String> getString(String section, String key) {
-        return getValue(section, key)
-                       .map(Object::toString);
+        return getValue(section, key).map(Object::toString);
     }
 
     /// Get an integer value from the document.
@@ -78,8 +77,7 @@ public record TomlDocument(Map<String, Map<String, Object>> sections,
     /// @param key     the property key
     /// @return Option containing the integer value, or empty if not found or not an integer
     public Option<Integer> getInt(String section, String key) {
-        return getValue(section, key)
-                       .flatMap(this::toInt);
+        return getValue(section, key).flatMap(this::toInt);
     }
 
     /// Get a long value from the document.
@@ -88,8 +86,7 @@ public record TomlDocument(Map<String, Map<String, Object>> sections,
     /// @param key     the property key
     /// @return Option containing the long value, or empty if not found or not a number
     public Option<Long> getLong(String section, String key) {
-        return getValue(section, key)
-                       .flatMap(this::toLong);
+        return getValue(section, key).flatMap(this::toLong);
     }
 
     /// Get a double value from the document.
@@ -98,8 +95,7 @@ public record TomlDocument(Map<String, Map<String, Object>> sections,
     /// @param key     the property key
     /// @return Option containing the double value, or empty if not found or not a number
     public Option<Double> getDouble(String section, String key) {
-        return getValue(section, key)
-                       .flatMap(this::toDouble);
+        return getValue(section, key).flatMap(this::toDouble);
     }
 
     /// Get a boolean value from the document.
@@ -108,8 +104,7 @@ public record TomlDocument(Map<String, Map<String, Object>> sections,
     /// @param key     the property key
     /// @return Option containing the boolean value, or empty if not found or not a boolean
     public Option<Boolean> getBoolean(String section, String key) {
-        return getValue(section, key)
-                       .flatMap(this::toBoolean);
+        return getValue(section, key).flatMap(this::toBoolean);
     }
 
     /// Get a string list from the document.
@@ -118,8 +113,7 @@ public record TomlDocument(Map<String, Map<String, Object>> sections,
     /// @param key     the property key
     /// @return Option containing the string list, or empty if not found or not a list
     public Option<List<String>> getStringList(String section, String key) {
-        return getValue(section, key)
-                       .flatMap(this::toStringList);
+        return getValue(section, key).flatMap(this::toStringList);
     }
 
     /// Get all keys in a section.
@@ -282,7 +276,7 @@ public record TomlDocument(Map<String, Map<String, Object>> sections,
     }
 
     private Option<List<String>> toStringList(Object value) {
-        if (value instanceof List< ?> list) {
+        if (value instanceof List<?> list) {
             return Option.some(list.stream()
                                    .map(Object::toString)
                                    .toList());

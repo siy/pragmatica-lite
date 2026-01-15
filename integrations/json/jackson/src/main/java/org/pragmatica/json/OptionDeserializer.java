@@ -32,7 +32,7 @@ import static org.pragmatica.lang.Option.option;
 
 /// Jackson deserializer for Option<T> types.
 /// Deserializes null as None, any other value as Some<T>
-public class OptionDeserializer extends ValueDeserializer<Option< ?>> {
+public class OptionDeserializer extends ValueDeserializer<Option<?>> {
     private final JavaType valueType;
     private final ValueDeserializer<Object> valueDeserializer;
 
@@ -46,7 +46,7 @@ public class OptionDeserializer extends ValueDeserializer<Option< ?>> {
     }
 
     @Override
-    public Option< ?> deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
+    public Option<?> deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
         if (p.currentToken() == JsonToken.VALUE_NULL) {
             return none();
         }
@@ -62,7 +62,7 @@ public class OptionDeserializer extends ValueDeserializer<Option< ?>> {
     }
 
     @Override
-    public ValueDeserializer< ?> createContextual(DeserializationContext ctxt, BeanProperty property) {
+    public ValueDeserializer<?> createContextual(DeserializationContext ctxt, BeanProperty property) {
         if (property == null) {
             return this;
         }
@@ -76,7 +76,7 @@ public class OptionDeserializer extends ValueDeserializer<Option< ?>> {
     }
 
     @Override
-    public Option< ?> getNullValue(DeserializationContext ctxt) {
+    public Option<?> getNullValue(DeserializationContext ctxt) {
         return none();
     }
 }

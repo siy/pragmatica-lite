@@ -59,8 +59,7 @@ public interface Transactional {
                                                      Fn1<Promise<O>, I> operation) {
         return input -> {
             var tx = em.getTransaction();
-            return beginTransaction(errorMapper, tx, input)
-                                   .flatMap(operation)
+            return beginTransaction(errorMapper, tx, input).flatMap(operation)
                                    .onFailure(_ -> handleRollback(tx))
                                    .flatMap(result -> handleCommit(errorMapper, tx, result));
         };
@@ -77,10 +76,7 @@ public interface Transactional {
     static <O> Fn0<Promise<O>> withTransaction(EntityManager em,
                                                Fn1<JpaError, Throwable> errorMapper,
                                                Fn0<Promise<O>> operation) {
-        return () -> withTransaction(em,
-                                     errorMapper,
-                                     _ -> operation.apply())
-                                    .apply(Unit.unit());
+        return () -> withTransaction(em, errorMapper, _ -> operation.apply()).apply(Unit.unit());
     }
 
     private static <T> Promise<T> beginTransaction(Fn1<JpaError, Throwable> errorMapper,

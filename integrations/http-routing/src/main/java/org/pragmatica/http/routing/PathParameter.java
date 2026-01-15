@@ -165,8 +165,7 @@ public interface PathParameter<T> {
     static PathParameter<Duration> aDuration() {
         return value -> {
             var upperCase = value.toUpperCase(Locale.ROOT);
-            return tryParseDuration(upperCase)
-                                   .orElse(() -> tryParseDuration("PT" + upperCase));
+            return tryParseDuration(upperCase).orElse(() -> tryParseDuration("PT" + upperCase));
         };
     }
 

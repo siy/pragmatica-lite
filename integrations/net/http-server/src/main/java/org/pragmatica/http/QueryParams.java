@@ -34,8 +34,7 @@ public interface QueryParams {
 
     /// Check if parameter exists.
     default boolean has(String name) {
-        return get(name)
-                  .isPresent();
+        return get(name).isPresent();
     }
 
     /// Create query parameters from a map.

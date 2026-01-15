@@ -98,8 +98,7 @@ record DnsClientImpl(Bootstrap bootstrap,
                      ConcurrentHashMap<Integer, Request> requestMap,
                      AtomicInteger idCounter,
                      boolean ownsEventLoop) implements DnsClient {
-    private static final TimeSpan QUERY_TIMEOUT = timeSpan(10)
-                                                          .seconds();
+    private static final TimeSpan QUERY_TIMEOUT = timeSpan(10).seconds();
 
     static DnsClientImpl forBootstrap(Bootstrap bootstrap, boolean ownsEventLoop) {
         return new DnsClientImpl(bootstrap, new ConcurrentHashMap<>(), new AtomicInteger(1), ownsEventLoop);
@@ -115,8 +114,7 @@ record DnsClientImpl(Bootstrap bootstrap,
         if (!ownsEventLoop) {
             return Promise.success(unit());
         }
-        return Promise.promise(promise -> bootstrap()
-                                                   .config()
+        return Promise.promise(promise -> bootstrap().config()
                                                    .group()
                                                    .shutdownGracefully()
                                                    .addListener(_ -> promise.succeed(unit())));
@@ -125,8 +123,7 @@ record DnsClientImpl(Bootstrap bootstrap,
     void handleDatagram(DatagramDnsResponse msg) {
         var requestId = msg.id();
         log.debug("Received response for request Id {}", requestId);
-        option(requestMap.get(requestId))
-              .onPresent(request -> handleResponse(request, msg));
+        option(requestMap.get(requestId)).onPresent(request -> handleResponse(request, msg));
     }
 
     private void handleResponse(Request request, DatagramDnsResponse msg) {
@@ -142,8 +139,7 @@ record DnsClientImpl(Bootstrap bootstrap,
         // Take record with minimal TTL
         // This is less efficient in regard to number of requests, but enables
         // faster propagation of DNS changes.
-        extractAddresses(request, msg)
-                        .stream()
+        extractAddresses(request, msg).stream()
                         .min(Comparator.comparing(DomainAddress::ttl))
                         .ifPresentOrElse(address -> request.promise()
                                                            .succeed(address),
@@ -181,8 +177,7 @@ record DnsClientImpl(Bootstrap bootstrap,
     }
 
     private void fireRequest(Promise<DomainAddress> promise, DomainName domainName, InetSocketAddress serverAddress) {
-        bootstrap()
-                 .bind(0)
+        bootstrap().bind(0)
                  .syncUninterruptibly()
                  .channel()
                  .writeAndFlush(buildQuery(serverAddress, promise, domainName));
@@ -205,14 +200,11 @@ record DnsClientImpl(Bootstrap bootstrap,
 
     private Request computeRequest(Promise<DomainAddress> promise, DomainName domainName) {
         for (int attempt = 0; attempt < 0xFFFF; attempt++) {
-            var requestId = idCounter()
-                                     .getAndIncrement() & 0xFFFF;
+            var requestId = idCounter().getAndIncrement() & 0xFFFF;
             var request = new Request(domainName, promise, requestId);
-            if (requestMap()
-                          .putIfAbsent(requestId, request) == null) {
+            if (requestMap().putIfAbsent(requestId, request) == null) {
                 // Ensure slot for this ID is freed regardless of the outcome
-                promise.onResultRun(() -> requestMap()
-                                                    .remove(requestId));
+                promise.onResultRun(() -> requestMap().remove(requestId));
                 return request;
             }
         }

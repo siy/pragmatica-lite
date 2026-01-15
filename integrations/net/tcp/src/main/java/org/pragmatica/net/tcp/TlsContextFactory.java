@@ -86,38 +86,38 @@ public final class TlsContextFactory {
     private static Result<SslContext> buildServerContext(TlsConfig.Identity identity,
                                                          Option<TlsConfig.Trust> clientAuth) {
         return loadIdentity(identity)
-                           .flatMap(keyMaterial -> {
-                                        try{
-                                            var builder = SslContextBuilder.forServer(keyMaterial.certFile(),
-                                                                                      keyMaterial.keyFile(),
-                                                                                      keyMaterial.password());
-                                            // Configure client authentication if required
+        .flatMap(keyMaterial -> {
+                     try{
+                         var builder = SslContextBuilder.forServer(keyMaterial.certFile(),
+                                                                   keyMaterial.keyFile(),
+                                                                   keyMaterial.password());
+                         // Configure client authentication if required
         clientAuth.onPresent(trust -> {
-                                                configureTrust(builder, trust);
-                                                builder.clientAuth(ClientAuth.REQUIRE);
-                                            });
-                                            return Result.success(builder.build());
-                                        } catch (Exception e) {
-                                            return new TlsError.ContextBuildFailed(e).result();
-                                        }
-                                    });
+                             configureTrust(builder, trust);
+                             builder.clientAuth(ClientAuth.REQUIRE);
+                         });
+                         return Result.success(builder.build());
+                     } catch (Exception e) {
+                         return new TlsError.ContextBuildFailed(e).result();
+                     }
+                 });
     }
 
     private static Result<SslContext> buildServerContextWithClientAuth(TlsConfig.Identity identity,
                                                                        TlsConfig.Trust trust) {
         return loadIdentity(identity)
-                           .flatMap(keyMaterial -> {
-                                        try{
-                                            var builder = SslContextBuilder.forServer(keyMaterial.certFile(),
-                                                                                      keyMaterial.keyFile(),
-                                                                                      keyMaterial.password());
-                                            configureTrust(builder, trust);
-                                            builder.clientAuth(ClientAuth.REQUIRE);
-                                            return Result.success(builder.build());
-                                        } catch (Exception e) {
-                                            return new TlsError.ContextBuildFailed(e).result();
-                                        }
-                                    });
+        .flatMap(keyMaterial -> {
+                     try{
+                         var builder = SslContextBuilder.forServer(keyMaterial.certFile(),
+                                                                   keyMaterial.keyFile(),
+                                                                   keyMaterial.password());
+                         configureTrust(builder, trust);
+                         builder.clientAuth(ClientAuth.REQUIRE);
+                         return Result.success(builder.build());
+                     } catch (Exception e) {
+                         return new TlsError.ContextBuildFailed(e).result();
+                     }
+                 });
     }
 
     // ===== Client Context Building =====
@@ -135,35 +135,31 @@ public final class TlsContextFactory {
         },
         // Has identity - load it and configure
         id -> loadIdentity(id)
-                          .flatMap(keyMaterial -> {
-                                       try{
-                                           var builder = SslContextBuilder.forClient();
-                                           configureTrust(builder, trust);
-                                           builder.keyManager(keyMaterial.certFile(),
-                                                              keyMaterial.keyFile(),
-                                                              keyMaterial.password());
-                                           return Result.success(builder.build());
-                                       } catch (Exception e) {
-                                           return new TlsError.ContextBuildFailed(e).result();
-                                       }
-                                   }));
+        .flatMap(keyMaterial -> {
+                     try{
+                         var builder = SslContextBuilder.forClient();
+                         configureTrust(builder, trust);
+                         builder.keyManager(keyMaterial.certFile(), keyMaterial.keyFile(), keyMaterial.password());
+                         return Result.success(builder.build());
+                     } catch (Exception e) {
+                         return new TlsError.ContextBuildFailed(e).result();
+                     }
+                 }));
     }
 
     private static Result<SslContext> buildClientContextWithIdentity(TlsConfig.Identity identity,
                                                                      TlsConfig.Trust trust) {
         return loadIdentity(identity)
-                           .flatMap(keyMaterial -> {
-                                        try{
-                                            var builder = SslContextBuilder.forClient();
-                                            configureTrust(builder, trust);
-                                            builder.keyManager(keyMaterial.certFile(),
-                                                               keyMaterial.keyFile(),
-                                                               keyMaterial.password());
-                                            return Result.success(builder.build());
-                                        } catch (Exception e) {
-                                            return new TlsError.ContextBuildFailed(e).result();
-                                        }
-                                    });
+        .flatMap(keyMaterial -> {
+                     try{
+                         var builder = SslContextBuilder.forClient();
+                         configureTrust(builder, trust);
+                         builder.keyManager(keyMaterial.certFile(), keyMaterial.keyFile(), keyMaterial.password());
+                         return Result.success(builder.build());
+                     } catch (Exception e) {
+                         return new TlsError.ContextBuildFailed(e).result();
+                     }
+                 });
     }
 
     // ===== Trust Configuration =====

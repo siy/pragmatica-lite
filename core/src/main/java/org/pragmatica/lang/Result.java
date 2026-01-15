@@ -131,7 +131,7 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param successConsumer Consumer for success result
     ///
     /// @return current instance
-    default Result<T> apply(Consumer< ? super Cause> failureConsumer, Consumer< ? super T> successConsumer) {
+    default Result<T> apply(Consumer<? super Cause> failureConsumer, Consumer<? super T> successConsumer) {
         return fold(t -> {
                         failureConsumer.accept(t);
                         return this;
@@ -173,7 +173,7 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param consumer Consumer to pass value to
     ///
     /// @return current instance for fluent call chaining
-    default Result<T> onFailure(Consumer< ? super Cause> consumer) {
+    default Result<T> onFailure(Consumer<? super Cause> consumer) {
         fold(v -> {
                  consumer.accept(v);
                  return null;
@@ -323,7 +323,7 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param consumer Consumer to pass failure cause to
     ///
     /// @return current instance for fluent call chaining
-    default Result<T> onErr(Consumer< ? super Cause> consumer) {
+    default Result<T> onErr(Consumer<? super Cause> consumer) {
         return onFailure(consumer);
     }
 
@@ -340,7 +340,7 @@ public sealed interface Result<T> permits Success, Failure {
     ///
     /// @param failureConsumer Consumer for failure result
     /// @param successConsumer Consumer for success result
-    default void run(Consumer< ? super Cause> failureConsumer, Consumer< ? super T> successConsumer) {
+    default void run(Consumer<? super Cause> failureConsumer, Consumer<? super T> successConsumer) {
         apply(failureConsumer, successConsumer);
     }
 
@@ -831,7 +831,7 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param successMapper function to transform success into value
     ///
     /// @return the result transformed by the one of the mappers.
-    <U> U fold(Fn1< ? extends U, ? super Cause> failureMapper, Fn1< ? extends U, ? super T> successMapper);
+    <U> U fold(Fn1<? extends U, ? super Cause> failureMapper, Fn1<? extends U, ? super T> successMapper);
 
     Result<Unit> UNIT_RESULT = success(unit());
 
@@ -862,7 +862,7 @@ public sealed interface Result<T> permits Success, Failure {
 
     record Success<T>(T value) implements Result<T> {
         @Override
-        public <U> U fold(Fn1< ? extends U, ? super Cause> failureMapper, Fn1< ? extends U, ? super T> successMapper) {
+        public <U> U fold(Fn1<? extends U, ? super Cause> failureMapper, Fn1<? extends U, ? super T> successMapper) {
             return successMapper.apply(value);
         }
 
@@ -899,7 +899,7 @@ public sealed interface Result<T> permits Success, Failure {
         private static final StackWalker WALKER = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
 
         @Override
-        public <U> U fold(Fn1< ? extends U, ? super Cause> failureMapper, Fn1< ? extends U, ? super T> successMapper) {
+        public <U> U fold(Fn1<? extends U, ? super Cause> failureMapper, Fn1<? extends U, ? super T> successMapper) {
             return failureMapper.apply(cause);
         }
 
@@ -927,7 +927,7 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param supplier        the call to wrap
     ///
     /// @return result transformed by the provided lambda and wrapped into [Result]
-    static <U> Result<U> lift(Fn1< ? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn0<U> supplier) {
+    static <U> Result<U> lift(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn0<U> supplier) {
         try{
             return success(supplier.apply());
         } catch (Throwable e) {
@@ -945,7 +945,7 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param <T1>            The type of the parameter
     ///
     /// @return A Result that contains either the function result or failure
-    static <U, T1> Result<U> lift1(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
+    static <U, T1> Result<U> lift1(Fn1<? extends Cause, ? super Throwable> exceptionMapper,
                                    ThrowingFn1<U, T1> function,
                                    T1 value1) {
         return lift(exceptionMapper, () -> function.apply(value1));
@@ -975,7 +975,7 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param <T2>            The type of the second parameter
     ///
     /// @return A Result that contains either the function result or failure
-    static <U, T1, T2> Result<U> lift2(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
+    static <U, T1, T2> Result<U> lift2(Fn1<? extends Cause, ? super Throwable> exceptionMapper,
                                        ThrowingFn2<U, T1, T2> function,
                                        T1 value1,
                                        T2 value2) {
@@ -1010,7 +1010,7 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param <T3>            The type of the third parameter
     ///
     /// @return A Result that contains either the function result or failure
-    static <U, T1, T2, T3> Result<U> lift3(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
+    static <U, T1, T2, T3> Result<U> lift3(Fn1<? extends Cause, ? super Throwable> exceptionMapper,
                                            ThrowingFn3<U, T1, T2, T3> function,
                                            T1 value1,
                                            T2 value2,
@@ -1043,7 +1043,7 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param runnable        the call to wrap
     ///
     /// @return Unit result which is success if no exceptions were thrown or failure otherwise
-    static Result<Unit> lift(Fn1< ? extends Cause, ? super Throwable> exceptionMapper, ThrowingRunnable runnable) {
+    static Result<Unit> lift(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingRunnable runnable) {
         try{
             runnable.run();
             return unitResult();
@@ -1118,7 +1118,7 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param exceptionMapper the function which will transform exception into instance of [Cause]
     ///
     /// @return result transformed by the provided lambda and wrapped into [Result]
-    static <U> Result<U> tryOf(ThrowingFn0<U> supplier, Fn1< ? extends Cause, ? super Throwable> exceptionMapper) {
+    static <U> Result<U> tryOf(ThrowingFn0<U> supplier, Fn1<? extends Cause, ? super Throwable> exceptionMapper) {
         return lift(exceptionMapper, supplier);
     }
 
@@ -1130,7 +1130,7 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param <T1>            The type of the parameter
     ///
     /// @return A unary function that takes one parameter and returns a Result
-    static <R, T1> Fn1<Result<R>, T1> liftFn1(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
+    static <R, T1> Fn1<Result<R>, T1> liftFn1(Fn1<? extends Cause, ? super Throwable> exceptionMapper,
                                               ThrowingFn1<R, T1> function) {
         return input -> lift(exceptionMapper, () -> function.apply(input));
     }
@@ -1145,7 +1145,7 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param <T2>            The type of the second parameter
     ///
     /// @return A binary function that takes two parameters and returns a Result
-    static <R, T1, T2> Fn2<Result<R>, T1, T2> liftFn2(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
+    static <R, T1, T2> Fn2<Result<R>, T1, T2> liftFn2(Fn1<? extends Cause, ? super Throwable> exceptionMapper,
                                                       ThrowingFn2<R, T1, T2> function) {
         return ( inputValue1, inputValue2) -> lift(exceptionMapper, () -> function.apply(inputValue1, inputValue2));
     }
@@ -1161,7 +1161,7 @@ public sealed interface Result<T> permits Success, Failure {
     /// @param <T3>            The type of the third parameter
     ///
     /// @return A ternary function that takes three parameters and returns a Result
-    static <R, T1, T2, T3> Fn3<Result<R>, T1, T2, T3> liftFn3(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
+    static <R, T1, T2, T3> Fn3<Result<R>, T1, T2, T3> liftFn3(Fn1<? extends Cause, ? super Throwable> exceptionMapper,
                                                               ThrowingFn3<R, T1, T2, T3> function) {
         return ( inputValue1, inputValue2, inputValue3) -> lift(exceptionMapper,
                                                                 () -> function.apply(inputValue1,
@@ -2162,13 +2162,11 @@ public sealed interface Result<T> permits Success, Failure {
         Result<Tuple1<T1>> id();
 
         default <R> Result<R> map(Fn1<R, T1> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn1<Result<R>, T1> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper1<T1> async() {
@@ -2189,13 +2187,11 @@ public sealed interface Result<T> permits Success, Failure {
         Result<Tuple2<T1, T2>> id();
 
         default <R> Result<R> map(Fn2<R, T1, T2> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn2<Result<R>, T1, T2> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper2<T1, T2> async() {
@@ -2216,13 +2212,11 @@ public sealed interface Result<T> permits Success, Failure {
         Result<Tuple3<T1, T2, T3>> id();
 
         default <R> Result<R> map(Fn3<R, T1, T2, T3> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn3<Result<R>, T1, T2, T3> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper3<T1, T2, T3> async() {
@@ -2243,13 +2237,11 @@ public sealed interface Result<T> permits Success, Failure {
         Result<Tuple4<T1, T2, T3, T4>> id();
 
         default <R> Result<R> map(Fn4<R, T1, T2, T3, T4> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn4<Result<R>, T1, T2, T3, T4> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper4<T1, T2, T3, T4> async() {
@@ -2270,13 +2262,11 @@ public sealed interface Result<T> permits Success, Failure {
         Result<Tuple5<T1, T2, T3, T4, T5>> id();
 
         default <R> Result<R> map(Fn5<R, T1, T2, T3, T4, T5> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn5<Result<R>, T1, T2, T3, T4, T5> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper5<T1, T2, T3, T4, T5> async() {
@@ -2297,13 +2287,11 @@ public sealed interface Result<T> permits Success, Failure {
         Result<Tuple6<T1, T2, T3, T4, T5, T6>> id();
 
         default <R> Result<R> map(Fn6<R, T1, T2, T3, T4, T5, T6> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn6<Result<R>, T1, T2, T3, T4, T5, T6> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper6<T1, T2, T3, T4, T5, T6> async() {
@@ -2324,13 +2312,11 @@ public sealed interface Result<T> permits Success, Failure {
         Result<Tuple7<T1, T2, T3, T4, T5, T6, T7>> id();
 
         default <R> Result<R> map(Fn7<R, T1, T2, T3, T4, T5, T6, T7> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn7<Result<R>, T1, T2, T3, T4, T5, T6, T7> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper7<T1, T2, T3, T4, T5, T6, T7> async() {
@@ -2351,13 +2337,11 @@ public sealed interface Result<T> permits Success, Failure {
         Result<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> id();
 
         default <R> Result<R> map(Fn8<R, T1, T2, T3, T4, T5, T6, T7, T8> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn8<Result<R>, T1, T2, T3, T4, T5, T6, T7, T8> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper8<T1, T2, T3, T4, T5, T6, T7, T8> async() {
@@ -2378,13 +2362,11 @@ public sealed interface Result<T> permits Success, Failure {
         Result<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> id();
 
         default <R> Result<R> map(Fn9<R, T1, T2, T3, T4, T5, T6, T7, T8, T9> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn9<Result<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper9<T1, T2, T3, T4, T5, T6, T7, T8, T9> async() {
@@ -2405,13 +2387,11 @@ public sealed interface Result<T> permits Success, Failure {
         Result<Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>> id();
 
         default <R> Result<R> map(Fn10<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn10<Result<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> async() {
@@ -2432,13 +2412,11 @@ public sealed interface Result<T> permits Success, Failure {
         Result<Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>> id();
 
         default <R> Result<R> map(Fn11<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn11<Result<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> async() {
@@ -2459,13 +2437,11 @@ public sealed interface Result<T> permits Success, Failure {
         Result<Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>> id();
 
         default <R> Result<R> map(Fn12<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn12<Result<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> async() {
@@ -2486,13 +2462,11 @@ public sealed interface Result<T> permits Success, Failure {
         Result<Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>> id();
 
         default <R> Result<R> map(Fn13<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn13<Result<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> async() {
@@ -2513,13 +2487,11 @@ public sealed interface Result<T> permits Success, Failure {
         Result<Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>> id();
 
         default <R> Result<R> map(Fn14<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn14<Result<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> async() {
@@ -2540,13 +2512,11 @@ public sealed interface Result<T> permits Success, Failure {
         Result<Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>> id();
 
         default <R> Result<R> map(Fn15<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Result<R> flatMap(Fn15<Result<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
 
         default Promise.Mapper15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> async() {

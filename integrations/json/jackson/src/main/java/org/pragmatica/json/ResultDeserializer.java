@@ -32,7 +32,7 @@ import static org.pragmatica.lang.Result.success;
 
 /// Jackson deserializer for Result<T> types.
 /// Expects JSON in format: {"success": true, "value": <T>} or {"success": false, "error": {"message": "...", "type": "..."}}
-public class ResultDeserializer extends ValueDeserializer<Result< ?>> {
+public class ResultDeserializer extends ValueDeserializer<Result<?>> {
     private final JavaType valueType;
     private final ValueDeserializer<Object> valueDeserializer;
 
@@ -46,7 +46,7 @@ public class ResultDeserializer extends ValueDeserializer<Result< ?>> {
     }
 
     @Override
-    public Result< ?> deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
+    public Result<?> deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
         if (p.currentToken() != tools.jackson.core.JsonToken.START_OBJECT) {
             throw new JacksonException("Expected START_OBJECT token") {};
         }
@@ -92,7 +92,7 @@ public class ResultDeserializer extends ValueDeserializer<Result< ?>> {
     }
 
     @Override
-    public ValueDeserializer< ?> createContextual(DeserializationContext ctxt, BeanProperty property) {
+    public ValueDeserializer<?> createContextual(DeserializationContext ctxt, BeanProperty property) {
         if (property == null) {
             return this;
         }

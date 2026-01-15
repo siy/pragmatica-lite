@@ -64,13 +64,14 @@ public interface JooqR2dbcTransactional {
                                           Fn2<Promise<R>, DSLContext, Connection> operation) {
         return ReactiveOperations.<Connection> fromPublisher(connectionFactory.create(),
                                                              errorMapper)
-                                 .flatMap(conn -> beginTransaction(conn, errorMapper)
-                                                                  .flatMap(_ -> {
-                                                                               var dsl = DSL.using(conn, dialect);
-                                                                               return operation.apply(dsl, conn);
-                                                                           })
+                                 .flatMap(conn -> beginTransaction(conn, errorMapper).flatMap(_ -> {
+                                                                                                  var dsl = DSL.using(conn,
+                                                                                                                      dialect);
+                                                                                                  return operation.apply(dsl,
+                                                                                                                         conn);
+                                                                                              })
                                                                   .flatMap(result -> commitTransaction(conn, errorMapper)
-                                                                                                      .map(_ -> result))
+        .map(_ -> result))
                                                                   .onFailure(_ -> rollbackTransaction(conn))
                                                                   .onResult(_ -> closeConnection(conn)));
     }

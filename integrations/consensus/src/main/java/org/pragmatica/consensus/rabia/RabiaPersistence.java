@@ -54,8 +54,7 @@ public interface RabiaPersistence<C extends Command> {
 
             @Override
             public Option<SavedState<C>> load() {
-                return Option.option(state()
-                                          .get());
+                return Option.option(state().get());
             }
         }
         return new inMemory<>(new AtomicReference<>());
@@ -81,7 +80,7 @@ public interface RabiaPersistence<C extends Command> {
 
         @Override
         public boolean equals(Object o) {
-            if (! (o instanceof SavedState< ?>(byte[] snapshot1, Phase committedPhase, List< ?> batches))) {
+            if (! (o instanceof SavedState<?>(byte[] snapshot1, Phase committedPhase, List<?> batches))) {
                 return false;
             }
             return Objects.deepEquals(snapshot(), snapshot1) &&

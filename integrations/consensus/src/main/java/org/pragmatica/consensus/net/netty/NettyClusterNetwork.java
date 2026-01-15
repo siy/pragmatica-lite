@@ -58,7 +58,7 @@ public class NettyClusterNetwork implements ClusterNetwork {
     private final Map<NodeId, Channel> peerLinks = new ConcurrentHashMap<>();
     private final Map<Channel, NodeId> channelToNodeId = new ConcurrentHashMap<>();
     private final Set<Channel> pendingChannels = ConcurrentHashMap.newKeySet();
-    private final Map<Channel, ScheduledFuture< ? >> helloTimeouts = new ConcurrentHashMap<>();
+    private final Map<Channel, ScheduledFuture<?>> helloTimeouts = new ConcurrentHashMap<>();
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final TopologyManager topologyManager;
     private final Supplier<List<ChannelHandler>> handlers;
@@ -115,10 +115,7 @@ public class NettyClusterNetwork implements ClusterNetwork {
     }
 
     private void pingNodes() {
-        randomNode()
-                  .onPresent(peerId -> sendToChannel(peerId,
-                                                     new Ping(self.id()),
-                                                     peerLinks.get(peerId)));
+        randomNode().onPresent(peerId -> sendToChannel(peerId, new Ping(self.id()), peerLinks.get(peerId)));
         schedulePing();
     }
 

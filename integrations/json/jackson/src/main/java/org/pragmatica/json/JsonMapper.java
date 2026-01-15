@@ -104,8 +104,7 @@ public interface JsonMapper {
     ///
     /// @return JsonMapper instance
     static JsonMapper defaultJsonMapper() {
-        return jsonMapper()
-                         .withPragmaticaTypes()
+        return jsonMapper().withPragmaticaTypes()
                          .build();
     }
 

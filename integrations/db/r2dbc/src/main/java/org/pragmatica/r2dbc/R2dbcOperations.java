@@ -144,7 +144,7 @@ final class ConnectionFactoryR2dbcOperations implements R2dbcOperations {
         return stmt;
     }
 
-    private <T> Publisher<T> flatMapResult(Publisher< ? extends io.r2dbc.spi.Result> resultPublisher,
+    private <T> Publisher<T> flatMapResult(Publisher<? extends io.r2dbc.spi.Result> resultPublisher,
                                            BiFunction<Row, RowMetadata, T> mapper) {
         return subscriber -> resultPublisher.subscribe(new org.reactivestreams.Subscriber<io.r2dbc.spi.Result>() {
             @Override

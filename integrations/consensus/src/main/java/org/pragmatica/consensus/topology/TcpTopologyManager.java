@@ -61,8 +61,7 @@ public interface TcpTopologyManager extends TopologyManager {
                 this.nodesById = nodesById;
                 this.nodeIdsByAddress = nodeIdsByAddress;
                 this.active = active;
-                config()
-                      .coreNodes()
+                config().coreNodes()
                       .forEach(this::addNode);
                 log.trace("Topology manager {} initialized with {} nodes", config.self(), config.coreNodes());
                 SharedScheduler.scheduleAtFixedRate(this::initReconcile, config.reconciliationInterval());
@@ -70,12 +69,9 @@ public interface TcpTopologyManager extends TopologyManager {
 
             private void initReconcile() {
                 if (active.get()) {
-                    router()
-                          .route(new NetworkManagementOperation.ListConnectedNodes());
-                } else if (nodesById()
-                                    .isEmpty()) {
-                    config()
-                          .coreNodes()
+                    router().route(new NetworkManagementOperation.ListConnectedNodes());
+                } else if (nodesById().isEmpty()) {
+                    config().coreNodes()
                           .forEach(this::addNode);
                 }
             }
@@ -100,8 +96,7 @@ public interface TcpTopologyManager extends TopologyManager {
 
             @Override
             public void handleDiscoverNodesMessage(TopologyManagementMessage.DiscoverNodes discoverNodes) {
-                router()
-                      .route(new TopologyManagementMessage.DiscoveredNodes(List.copyOf(nodesById.values())));
+                router().route(new TopologyManagementMessage.DiscoveredNodes(List.copyOf(nodesById.values())));
             }
 
             @Override
@@ -113,36 +108,29 @@ public interface TcpTopologyManager extends TopologyManager {
             private void addNode(NodeInfo nodeInfo) {
                 // To avoid reliance on the networking layer behavior, adding is done
                 // atomically and the command to establish the connection is sent only once.
-                if (nodesById()
-                             .putIfAbsent(nodeInfo.id(),
-                                          nodeInfo) == null) {
-                    nodeIdsByAddress()
-                                    .putIfAbsent(nodeInfo.address(),
-                                                 nodeInfo.id());
+                if (nodesById().putIfAbsent(nodeInfo.id(), nodeInfo) == null) {
+                    nodeIdsByAddress().putIfAbsent(nodeInfo.address(), nodeInfo.id());
                     // Only request connection if topology manager is active (router is ready)
-                    if (active()
-                              .get()) {
+                    if (active().get()) {
                         requestConnection(nodeInfo.id());
                     }
                 }
             }
 
             private void requestConnection(NodeId id) {
-                router()
-                      .route(new NetworkManagementOperation.ConnectNode(id));
+                router().route(new NetworkManagementOperation.ConnectNode(id));
             }
 
             private void removeNode(NodeId nodeId) {
                 // To avoid reliance on the networking layer behavior, removing is done
                 // atomically and command to drop the connection is sent only once.
                 nodesById()
-                         .computeIfPresent(nodeId,
-                                           (_, value) -> {
-                                               nodeIdsByAddress.remove(value.address());
-                                               router()
-                                                     .route(new NetworkManagementOperation.DisconnectNode(nodeId));
-                                               return null;
-                                           });
+                .computeIfPresent(nodeId,
+                                  (_, value) -> {
+                                      nodeIdsByAddress.remove(value.address());
+                                      router().route(new NetworkManagementOperation.DisconnectNode(nodeId));
+                                      return null;
+                                  });
             }
 
             @Override
@@ -164,8 +152,7 @@ public interface TcpTopologyManager extends TopologyManager {
 
             @Override
             public void start() {
-                if (active()
-                          .compareAndSet(false, true)) {
+                if (active().compareAndSet(false, true)) {
                     log.trace("Starting topology manager at {}", config.self());
                     initReconcile();
                 }
@@ -173,32 +160,27 @@ public interface TcpTopologyManager extends TopologyManager {
 
             @Override
             public void stop() {
-                active()
-                      .set(false);
+                active().set(false);
             }
 
             @Override
             public NodeInfo self() {
-                return nodesById()
-                                .get(config.self());
+                return nodesById().get(config.self());
             }
 
             @Override
             public TimeSpan pingInterval() {
-                return config()
-                             .pingInterval();
+                return config().pingInterval();
             }
 
             @Override
             public TimeSpan helloTimeout() {
-                return config()
-                             .helloTimeout();
+                return config().helloTimeout();
             }
 
             @Override
             public Option<TlsConfig> tls() {
-                return config()
-                             .tls();
+                return config().tls();
             }
         }
         return new Manager(new ConcurrentHashMap<>(),

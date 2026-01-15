@@ -29,7 +29,7 @@ import tools.jackson.databind.jsontype.TypeSerializer;
 
 /// Jackson serializer for Result<T> types.
 /// Serializes Result as: {"success": true, "value": <T>} or {"success": false, "error": {"message": "...", "type": "..."}}
-public class ResultSerializer extends ValueSerializer<Result< ?>> {
+public class ResultSerializer extends ValueSerializer<Result<?>> {
     private final JavaType valueType;
     private final ValueSerializer<Object> valueSerializer;
 
@@ -43,10 +43,10 @@ public class ResultSerializer extends ValueSerializer<Result< ?>> {
     }
 
     @Override
-    public void serialize(Result< ?> value, JsonGenerator gen, SerializationContext provider) throws JacksonException {
+    public void serialize(Result<?> value, JsonGenerator gen, SerializationContext provider) throws JacksonException {
         gen.writeStartObject();
         switch (value) {
-            case Result.Success< ?> success -> {
+            case Result.Success<?> success -> {
                 gen.writeBooleanProperty("success", true);
                 gen.writeName("value");
                 if (valueSerializer != null) {
@@ -55,7 +55,7 @@ public class ResultSerializer extends ValueSerializer<Result< ?>> {
                     gen.writePOJO(success.value());
                 }
             }
-            case Result.Failure< ?> failure -> {
+            case Result.Failure<?> failure -> {
                 gen.writeBooleanProperty("success", false);
                 gen.writeName("error");
                 gen.writeStartObject();
@@ -73,7 +73,7 @@ public class ResultSerializer extends ValueSerializer<Result< ?>> {
     }
 
     @Override
-    public ValueSerializer< ?> createContextual(SerializationContext prov, BeanProperty property) {
+    public ValueSerializer<?> createContextual(SerializationContext prov, BeanProperty property) {
         if (property == null) {
             return this;
         }
@@ -87,7 +87,7 @@ public class ResultSerializer extends ValueSerializer<Result< ?>> {
     }
 
     @Override
-    public void serializeWithType(Result< ?> value,
+    public void serializeWithType(Result<?> value,
                                   JsonGenerator gen,
                                   SerializationContext provider,
                                   TypeSerializer typeSer) throws JacksonException {

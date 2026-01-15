@@ -110,8 +110,7 @@ record Resolver(DnsClient client,
 
     @Override
     public Promise<DomainAddress> resolveCached(DomainName name) {
-        return option(cache.get(name))
-                     .or(() -> resolved(UNKNOWN_DOMAIN));
+        return option(cache.get(name)).or(() -> resolved(UNKNOWN_DOMAIN));
     }
 
     @Override

@@ -415,7 +415,7 @@ public interface Promise<T> {
     /// @param supplier Supplier of the value to resolve the promise with.
     ///
     /// @return Current promise instance.
-    default Promise<T> succeedAsync(Supplier< ? extends T> supplier) {
+    default Promise<T> succeedAsync(Supplier<? extends T> supplier) {
         return async(promise -> promise.succeed(supplier.get()));
     }
 
@@ -1059,7 +1059,7 @@ public interface Promise<T> {
     /// @param supplier        the call to wrap
     ///
     /// @return the [Promise] instance, which eventually will be resolved with the output of the provided lambda
-    static <U> Promise<U> lift(Fn1< ? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn0<U> supplier) {
+    static <U> Promise<U> lift(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingFn0<U> supplier) {
         return Promise.promise(() -> Result.lift(exceptionMapper, supplier));
     }
 
@@ -1069,7 +1069,7 @@ public interface Promise<T> {
     /// @param function        the function to wrap
     ///
     /// @return the [Promise] instance, which eventually will be resolved with the output of the provided lambda
-    static <U, T1> Fn1<Promise<U>, T1> liftFn1(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
+    static <U, T1> Fn1<Promise<U>, T1> liftFn1(Fn1<? extends Cause, ? super Throwable> exceptionMapper,
                                                ThrowingFn1<U, T1> function) {
         return value -> Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value)));
     }
@@ -1084,7 +1084,7 @@ public interface Promise<T> {
     /// @param <T2>            The type of the second parameter
     ///
     /// @return A binary function that takes two parameters and returns a Promise
-    static <U, T1, T2> Fn2<Promise<U>, T1, T2> liftFn2(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
+    static <U, T1, T2> Fn2<Promise<U>, T1, T2> liftFn2(Fn1<? extends Cause, ? super Throwable> exceptionMapper,
                                                        ThrowingFn2<U, T1, T2> function) {
         return ( value1, value2) -> Promise.promise(() -> Result.lift(exceptionMapper,
                                                                       () -> function.apply(value1, value2)));
@@ -1101,7 +1101,7 @@ public interface Promise<T> {
     /// @param <T3>            The type of the third parameter
     ///
     /// @return A ternary function that takes three parameters and returns a Promise
-    static <U, T1, T2, T3> Fn3<Promise<U>, T1, T2, T3> liftFn3(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
+    static <U, T1, T2, T3> Fn3<Promise<U>, T1, T2, T3> liftFn3(Fn1<? extends Cause, ? super Throwable> exceptionMapper,
                                                                ThrowingFn3<U, T1, T2, T3> function) {
         return ( value1, value2, value3) -> Promise.promise(() -> Result.lift(exceptionMapper,
                                                                               () -> function.apply(value1,
@@ -1155,7 +1155,7 @@ public interface Promise<T> {
     /// @param <T1>            The type of the parameter
     ///
     /// @return A Promise that will be resolved with the function result or failure
-    static <U, T1> Promise<U> lift1(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
+    static <U, T1> Promise<U> lift1(Fn1<? extends Cause, ? super Throwable> exceptionMapper,
                                     ThrowingFn1<U, T1> function,
                                     T1 value1) {
         return Promise.promise(() -> Result.lift(exceptionMapper, () -> function.apply(value1)));
@@ -1185,7 +1185,7 @@ public interface Promise<T> {
     /// @param <T2>            The type of the second parameter
     ///
     /// @return A Promise that will be resolved with the function result or failure
-    static <U, T1, T2> Promise<U> lift2(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
+    static <U, T1, T2> Promise<U> lift2(Fn1<? extends Cause, ? super Throwable> exceptionMapper,
                                         ThrowingFn2<U, T1, T2> function,
                                         T1 value1,
                                         T2 value2) {
@@ -1220,7 +1220,7 @@ public interface Promise<T> {
     /// @param <T3>            The type of the third parameter
     ///
     /// @return A Promise that will be resolved with the function result or failure
-    static <U, T1, T2, T3> Promise<U> lift3(Fn1< ? extends Cause, ? super Throwable> exceptionMapper,
+    static <U, T1, T2, T3> Promise<U> lift3(Fn1<? extends Cause, ? super Throwable> exceptionMapper,
                                             ThrowingFn3<U, T1, T2, T3> function,
                                             T1 value1,
                                             T2 value2,
@@ -1251,7 +1251,7 @@ public interface Promise<T> {
     /// @param runnable        the call to wrap
     ///
     /// @return the [Promise] instance which eventually will be resolved with the [Unit] or with the failure with the provided cause.
-    static Promise<Unit> lift(Fn1< ? extends Cause, ? super Throwable> exceptionMapper, ThrowingRunnable runnable) {
+    static Promise<Unit> lift(Fn1<? extends Cause, ? super Throwable> exceptionMapper, ThrowingRunnable runnable) {
         return Promise.promise(() -> Result.lift(exceptionMapper, runnable));
     }
 
@@ -1337,12 +1337,11 @@ public interface Promise<T> {
     /// @return Created instance
     @SafeVarargs
     static <T> Promise<T> any(Result<T> failureResult, Promise<T>... promises) {
-        return Promise.promise(anySuccess -> threshold(promises.length,
-                                                       () -> anySuccess.resolve(failureResult))
-                                                      .apply(at -> List.of(promises)
-                                                                       .forEach(promise -> promise.withResult(result -> result.onSuccess(anySuccess::succeed)
-                                                                                                                              .onSuccessRun(() -> cancelAll(promises))
-                                                                                                                              .onResultRun(at::registerEvent)))));
+        return Promise.promise(anySuccess -> threshold(promises.length, () -> anySuccess.resolve(failureResult))
+        .apply(at -> List.of(promises)
+                         .forEach(promise -> promise.withResult(result -> result.onSuccess(anySuccess::succeed)
+                                                                                .onSuccessRun(() -> cancelAll(promises))
+                                                                                .onResultRun(at::registerEvent)))));
     }
 
     /// Return promise which will be resolved once any of the promises provided as parameters are resolved with success. If none of the promises
@@ -1353,11 +1352,10 @@ public interface Promise<T> {
     ///
     /// @return Created instance
     static <T> Promise<T> any(Result<T> failureResult, List<Promise<T>> promises) {
-        return Promise.promise(anySuccess -> threshold(promises.size(),
-                                                       () -> anySuccess.resolve(failureResult))
-                                                      .apply(at -> promises.forEach(promise -> promise.withResult(result -> result.onSuccess(anySuccess::succeed)
-                                                                                                                                  .onSuccessRun(() -> cancelAll(promises))
-                                                                                                                                  .onResultRun(at::registerEvent)))));
+        return Promise.promise(anySuccess -> threshold(promises.size(), () -> anySuccess.resolve(failureResult))
+        .apply(at -> promises.forEach(promise -> promise.withResult(result -> result.onSuccess(anySuccess::succeed)
+                                                                                    .onSuccessRun(() -> cancelAll(promises))
+                                                                                    .onResultRun(at::registerEvent)))));
     }
 
     /// Return promise which will be resolved once any of the promises provided as parameters are resolved with success. If none of the promises
@@ -1932,7 +1930,7 @@ public interface Promise<T> {
 
     Promise<Unit> UNIT = Promise.resolved(unitResult());
 
-    Result< ? > OTHER_SUCCEEDED = new CoreError.Cancelled("Cancelled because other Promise instance succeeded").result();
+    Result<?> OTHER_SUCCEEDED = new CoreError.Cancelled("Cancelled because other Promise instance succeeded").result();
 
     CoreError.Cancelled PROMISE_CANCELLED = new CoreError.Cancelled("Promise cancelled");
 
@@ -1943,13 +1941,11 @@ public interface Promise<T> {
         Promise<Tuple1<T1>> id();
 
         default <R> Promise<R> map(Fn1<R, T1> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn1<Promise<R>, T1> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1960,13 +1956,11 @@ public interface Promise<T> {
         Promise<Tuple2<T1, T2>> id();
 
         default <R> Promise<R> map(Fn2<R, T1, T2> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn2<Promise<R>, T1, T2> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1977,13 +1971,11 @@ public interface Promise<T> {
         Promise<Tuple3<T1, T2, T3>> id();
 
         default <R> Promise<R> map(Fn3<R, T1, T2, T3> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn3<Promise<R>, T1, T2, T3> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1994,13 +1986,11 @@ public interface Promise<T> {
         Promise<Tuple4<T1, T2, T3, T4>> id();
 
         default <R> Promise<R> map(Fn4<R, T1, T2, T3, T4> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn4<Promise<R>, T1, T2, T3, T4> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -2011,13 +2001,11 @@ public interface Promise<T> {
         Promise<Tuple5<T1, T2, T3, T4, T5>> id();
 
         default <R> Promise<R> map(Fn5<R, T1, T2, T3, T4, T5> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn5<Promise<R>, T1, T2, T3, T4, T5> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -2028,13 +2016,11 @@ public interface Promise<T> {
         Promise<Tuple6<T1, T2, T3, T4, T5, T6>> id();
 
         default <R> Promise<R> map(Fn6<R, T1, T2, T3, T4, T5, T6> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn6<Promise<R>, T1, T2, T3, T4, T5, T6> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -2045,13 +2031,11 @@ public interface Promise<T> {
         Promise<Tuple7<T1, T2, T3, T4, T5, T6, T7>> id();
 
         default <R> Promise<R> map(Fn7<R, T1, T2, T3, T4, T5, T6, T7> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn7<Promise<R>, T1, T2, T3, T4, T5, T6, T7> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -2062,13 +2046,11 @@ public interface Promise<T> {
         Promise<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> id();
 
         default <R> Promise<R> map(Fn8<R, T1, T2, T3, T4, T5, T6, T7, T8> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn8<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -2079,13 +2061,11 @@ public interface Promise<T> {
         Promise<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> id();
 
         default <R> Promise<R> map(Fn9<R, T1, T2, T3, T4, T5, T6, T7, T8, T9> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn9<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -2096,13 +2076,11 @@ public interface Promise<T> {
         Promise<Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>> id();
 
         default <R> Promise<R> map(Fn10<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn10<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -2113,13 +2091,11 @@ public interface Promise<T> {
         Promise<Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>> id();
 
         default <R> Promise<R> map(Fn11<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn11<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -2130,13 +2106,11 @@ public interface Promise<T> {
         Promise<Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>> id();
 
         default <R> Promise<R> map(Fn12<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn12<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -2147,13 +2121,11 @@ public interface Promise<T> {
         Promise<Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>> id();
 
         default <R> Promise<R> map(Fn13<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn13<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -2164,13 +2136,11 @@ public interface Promise<T> {
         Promise<Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>> id();
 
         default <R> Promise<R> map(Fn14<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn14<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -2181,13 +2151,11 @@ public interface Promise<T> {
         Promise<Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>> id();
 
         default <R> Promise<R> map(Fn15<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Promise<R> flatMap(Fn15<Promise<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -2489,6 +2457,6 @@ final class PromiseImpl<T> implements Promise<T> {
         // Reduce the risk of rare disastrous classloading in the first call to
         // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773
         @SuppressWarnings("unused")
-        Class< ?> ensureLoaded = LockSupport.class;
+        Class<?> ensureLoaded = LockSupport.class;
     }
 }

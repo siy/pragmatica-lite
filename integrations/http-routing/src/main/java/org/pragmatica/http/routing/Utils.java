@@ -20,8 +20,7 @@ public sealed interface Utils {
         Supplier<T> init();
 
         default T get() {
-            return init()
-                       .get();
+            return init().get();
         }
     }
 

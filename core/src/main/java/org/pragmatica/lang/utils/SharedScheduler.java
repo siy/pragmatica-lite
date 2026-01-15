@@ -33,14 +33,14 @@ public final class SharedScheduler {
     /// Schedule one-time invocation
     ///
     /// @return instance of [ScheduledFuture] that can be used to cancel scheduled task
-    public static ScheduledFuture< ?> schedule(Runnable runnable, TimeSpan interval) {
+    public static ScheduledFuture<?> schedule(Runnable runnable, TimeSpan interval) {
         return SCHEDULER.schedule(runnable, interval.millis(), TimeUnit.MILLISECONDS);
     }
 
     /// Schedule periodic invocation
     ///
     /// @return instance of [ScheduledFuture] that can be used to cancel scheduled task
-    public static ScheduledFuture< ?> scheduleAtFixedRate(Runnable runnable, TimeSpan interval) {
+    public static ScheduledFuture<?> scheduleAtFixedRate(Runnable runnable, TimeSpan interval) {
         return SCHEDULER.scheduleAtFixedRate(runnable, interval.millis(), interval.millis(), TimeUnit.MILLISECONDS);
     }
 }

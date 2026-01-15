@@ -36,10 +36,9 @@ public interface PartitionMap<N> {
 
     /// Get the primary node for a partition.
     default Promise<N> primaryFor(Partition partition) {
-        return nodesFor(partition, 1)
-                       .map(nodes -> nodes.isEmpty()
-                                     ? null
-                                     : nodes.getFirst());
+        return nodesFor(partition, 1).map(nodes -> nodes.isEmpty()
+                                                   ? null
+                                                   : nodes.getFirst());
     }
 
     /// Get all partitions owned by a node (as primary).

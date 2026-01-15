@@ -19,7 +19,7 @@ import static org.pragmatica.lang.Result.all;
 public interface RequestContext {
     Result<String> NOT_FOUND = HttpStatus.NOT_FOUND.with("Unknown request path")
                                         .result();
-    Route< ?> route();
+    Route<?> route();
     String requestId();
     ByteBuf body();
     String bodyAsString();
@@ -30,52 +30,38 @@ public interface RequestContext {
     HttpHeaders responseHeaders();
 
     default Result<String> pathParam(int index) {
-        return pathParams()
-                         .size() > index
-               ? Result.success(pathParams()
-                                          .get(index))
+        return pathParams().size() > index
+               ? Result.success(pathParams().get(index))
                : NOT_FOUND;
     }
 
     default List<String> queryParam(String name) {
-        return queryParams()
-                          .getOrDefault(name,
-                                        List.of());
+        return queryParams().getOrDefault(name, List.of());
     }
 
     default <T1> Result.Mapper1<T1> matchPath(PathParameter<T1> p1) {
-        return all(pathParam(0)
-                            .flatMap(p1::parse));
+        return all(pathParam(0).flatMap(p1::parse));
     }
 
     default <T1, T2> Result.Mapper2<T1, T2> matchPath(PathParameter<T1> p1,
                                                       PathParameter<T2> p2) {
-        return all(pathParam(0)
-                            .flatMap(p1::parse), pathParam(1)
-                                                          .flatMap(p2::parse));
+        return all(pathParam(0).flatMap(p1::parse), pathParam(1).flatMap(p2::parse));
     }
 
     default <T1, T2, T3> Result.Mapper3<T1, T2, T3> matchPath(PathParameter<T1> p1,
                                                               PathParameter<T2> p2,
                                                               PathParameter<T3> p3) {
-        return all(pathParam(0)
-                            .flatMap(p1::parse), pathParam(1)
-                                                          .flatMap(p2::parse), pathParam(2)
-                                                                                        .flatMap(p3::parse));
+        return all(pathParam(0).flatMap(p1::parse), pathParam(1).flatMap(p2::parse), pathParam(2).flatMap(p3::parse));
     }
 
     default <T1, T2, T3, T4> Result.Mapper4<T1, T2, T3, T4> matchPath(PathParameter<T1> p1,
                                                                       PathParameter<T2> p2,
                                                                       PathParameter<T3> p3,
                                                                       PathParameter<T4> p4) {
-        return all(pathParam(0)
-                            .flatMap(p1::parse),
-                   pathParam(1)
-                            .flatMap(p2::parse),
-                   pathParam(2)
-                            .flatMap(p3::parse),
-                   pathParam(3)
-                            .flatMap(p4::parse));
+        return all(pathParam(0).flatMap(p1::parse),
+                   pathParam(1).flatMap(p2::parse),
+                   pathParam(2).flatMap(p3::parse),
+                   pathParam(3).flatMap(p4::parse));
     }
 
     default <T1, T2, T3, T4, T5> Result.Mapper5<T1, T2, T3, T4, T5> matchPath(PathParameter<T1> p1,
@@ -83,16 +69,11 @@ public interface RequestContext {
                                                                               PathParameter<T3> p3,
                                                                               PathParameter<T4> p4,
                                                                               PathParameter<T5> p5) {
-        return all(pathParam(0)
-                            .flatMap(p1::parse),
-                   pathParam(1)
-                            .flatMap(p2::parse),
-                   pathParam(2)
-                            .flatMap(p3::parse),
-                   pathParam(3)
-                            .flatMap(p4::parse),
-                   pathParam(4)
-                            .flatMap(p5::parse));
+        return all(pathParam(0).flatMap(p1::parse),
+                   pathParam(1).flatMap(p2::parse),
+                   pathParam(2).flatMap(p3::parse),
+                   pathParam(3).flatMap(p4::parse),
+                   pathParam(4).flatMap(p5::parse));
     }
 
     default <Q1> Result.Mapper1<Option<Q1>> matchQuery(QueryParameter<Q1> q1) {

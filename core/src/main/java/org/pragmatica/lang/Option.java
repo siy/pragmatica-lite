@@ -83,7 +83,7 @@ public sealed interface Option<T> permits Some, None {
     /// @param predicate Predicate to test instance value.
     ///
     /// @return current instance if it is not empty and predicate returns <code>true</code> and empty instance otherwise
-    default Option<T> filter(Predicate< ? super T> predicate) {
+    default Option<T> filter(Predicate<? super T> predicate) {
         return fold(Option::empty, v -> predicate.test(v)
                                         ? this
                                         : empty());
@@ -96,7 +96,7 @@ public sealed interface Option<T> permits Some, None {
     /// @param consumer Consumer to pass contained value to
     ///
     /// @return this instance for fluent call chaining
-    default Option<T> onPresent(Consumer< ? super T> consumer) {
+    default Option<T> onPresent(Consumer<? super T> consumer) {
         apply(Functions::unitFn, consumer);
         return this;
     }
@@ -135,7 +135,7 @@ public sealed interface Option<T> permits Some, None {
     /// @param nonEmptyValConsumer Action to perform on the present instance value
     ///
     /// @return this instance for fluent call chaining
-    default Option<T> apply(Runnable emptyValConsumer, Consumer< ? super T> nonEmptyValConsumer) {
+    default Option<T> apply(Runnable emptyValConsumer, Consumer<? super T> nonEmptyValConsumer) {
         fold(() -> {
                  emptyValConsumer.run();
                  return null;
@@ -305,7 +305,7 @@ public sealed interface Option<T> permits Some, None {
     /// @param presentMapper function to transform present value into output value
     ///
     /// @return the output of one of the mappers.
-    <U> U fold(Supplier< ? extends U> emptyMapper, Fn1< ? extends U, ? super T> presentMapper);
+    <U> U fold(Supplier<? extends U> emptyMapper, Fn1<? extends U, ? super T> presentMapper);
 
     //------------------------------------------------------------------------------------------------------------------
     // Instance all() methods - for-comprehension style composition
@@ -799,7 +799,7 @@ public sealed interface Option<T> permits Some, None {
 
     record Some<T>(T value) implements Option<T> {
         @Override
-        public <U> U fold(Supplier< ? extends U> emptyMapper, Fn1< ? extends U, ? super T> presentMapper) {
+        public <U> U fold(Supplier<? extends U> emptyMapper, Fn1<? extends U, ? super T> presentMapper) {
             return presentMapper.apply(value);
         }
 
@@ -811,7 +811,7 @@ public sealed interface Option<T> permits Some, None {
 
     record None<T>() implements Option<T> {
         @Override
-        public <U> U fold(Supplier< ? extends U> emptyMapper, Fn1< ? extends U, ? super T> presentMapper) {
+        public <U> U fold(Supplier<? extends U> emptyMapper, Fn1<? extends U, ? super T> presentMapper) {
             return emptyMapper.get();
         }
 
@@ -1313,13 +1313,11 @@ public sealed interface Option<T> permits Some, None {
         Option<Tuple.Tuple1<T1>> id();
 
         default <R> Option<R> map(Fn1<R, T1> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn1<Option<R>, T1> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1337,13 +1335,11 @@ public sealed interface Option<T> permits Some, None {
         Option<Tuple.Tuple2<T1, T2>> id();
 
         default <R> Option<R> map(Fn2<R, T1, T2> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn2<Option<R>, T1, T2> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1361,13 +1357,11 @@ public sealed interface Option<T> permits Some, None {
         Option<Tuple.Tuple3<T1, T2, T3>> id();
 
         default <R> Option<R> map(Fn3<R, T1, T2, T3> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn3<Option<R>, T1, T2, T3> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1385,13 +1379,11 @@ public sealed interface Option<T> permits Some, None {
         Option<Tuple.Tuple4<T1, T2, T3, T4>> id();
 
         default <R> Option<R> map(Fn4<R, T1, T2, T3, T4> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn4<Option<R>, T1, T2, T3, T4> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1409,13 +1401,11 @@ public sealed interface Option<T> permits Some, None {
         Option<Tuple.Tuple5<T1, T2, T3, T4, T5>> id();
 
         default <R> Option<R> map(Fn5<R, T1, T2, T3, T4, T5> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn5<Option<R>, T1, T2, T3, T4, T5> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1433,13 +1423,11 @@ public sealed interface Option<T> permits Some, None {
         Option<Tuple.Tuple6<T1, T2, T3, T4, T5, T6>> id();
 
         default <R> Option<R> map(Fn6<R, T1, T2, T3, T4, T5, T6> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn6<Option<R>, T1, T2, T3, T4, T5, T6> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1457,13 +1445,11 @@ public sealed interface Option<T> permits Some, None {
         Option<Tuple.Tuple7<T1, T2, T3, T4, T5, T6, T7>> id();
 
         default <R> Option<R> map(Fn7<R, T1, T2, T3, T4, T5, T6, T7> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn7<Option<R>, T1, T2, T3, T4, T5, T6, T7> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1481,13 +1467,11 @@ public sealed interface Option<T> permits Some, None {
         Option<Tuple.Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> id();
 
         default <R> Option<R> map(Fn8<R, T1, T2, T3, T4, T5, T6, T7, T8> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn8<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1505,13 +1489,11 @@ public sealed interface Option<T> permits Some, None {
         Option<Tuple.Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> id();
 
         default <R> Option<R> map(Fn9<R, T1, T2, T3, T4, T5, T6, T7, T8, T9> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn9<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1519,13 +1501,11 @@ public sealed interface Option<T> permits Some, None {
         Option<Tuple.Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>> id();
 
         default <R> Option<R> map(Fn10<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn10<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1533,13 +1513,11 @@ public sealed interface Option<T> permits Some, None {
         Option<Tuple.Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>> id();
 
         default <R> Option<R> map(Fn11<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn11<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1547,13 +1525,11 @@ public sealed interface Option<T> permits Some, None {
         Option<Tuple.Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>> id();
 
         default <R> Option<R> map(Fn12<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn12<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1561,13 +1537,11 @@ public sealed interface Option<T> permits Some, None {
         Option<Tuple.Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>> id();
 
         default <R> Option<R> map(Fn13<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn13<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1575,13 +1549,11 @@ public sealed interface Option<T> permits Some, None {
         Option<Tuple.Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>> id();
 
         default <R> Option<R> map(Fn14<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn14<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 
@@ -1589,13 +1561,11 @@ public sealed interface Option<T> permits Some, None {
         Option<Tuple.Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>> id();
 
         default <R> Option<R> map(Fn15<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
-            return id()
-                     .map(tuple -> tuple.map(mapper));
+            return id().map(tuple -> tuple.map(mapper));
         }
 
         default <R> Option<R> flatMap(Fn15<Option<R>, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mapper) {
-            return id()
-                     .flatMap(tuple -> tuple.map(mapper));
+            return id().flatMap(tuple -> tuple.map(mapper));
         }
     }
 }

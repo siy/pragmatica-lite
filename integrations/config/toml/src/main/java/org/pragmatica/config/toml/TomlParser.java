@@ -458,8 +458,7 @@ public final class TomlParser {
                 currentArrayTableElement.put(key, value);
             } else {
                 String subPath = section.substring(currentArrayTableBase.length() + 1);
-                getOrCreateNestedMap(currentArrayTableElement, subPath)
-                                    .put(key, value);
+                getOrCreateNestedMap(currentArrayTableElement, subPath).put(key, value);
             }
         } else {
             sections.computeIfAbsent(section,
@@ -506,7 +505,7 @@ public final class TomlParser {
         Map<String, Object> current = root;
         for (String part : parts) {
             Object next = current.get(part);
-            if (next instanceof Map< ?, ?> map) {
+            if (next instanceof Map<?, ?> map) {
                 current = (Map<String, Object>) map;
             } else {
                 return null;
@@ -1056,7 +1055,6 @@ public final class TomlParser {
 
     /// Unescape a string value and return as Object (for values).
     private static Result<Object> unescapeString(String s, int lineNumber) {
-        return unescapeBasicString(s, lineNumber)
-                                  .map(str -> str);
+        return unescapeBasicString(s, lineNumber).map(str -> str);
     }
 }

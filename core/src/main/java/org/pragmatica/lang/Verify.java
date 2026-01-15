@@ -342,8 +342,7 @@ public sealed interface Verify {
     ///         or failure if present and invalid
     static <T> Result<Option<T>> ensureOption(Option<T> value, Predicate<T> predicate) {
         return value.fold(() -> Result.success(Option.none()),
-                          v -> ensure(v, predicate)
-                                     .map(Option::some));
+                          v -> ensure(v, predicate).map(Option::some));
     }
 
     /// Validates an optional value against a predicate if present, with a fixed cause on failure.
@@ -357,8 +356,7 @@ public sealed interface Verify {
     ///         or failure with the specified cause if present and invalid
     static <T> Result<Option<T>> ensureOption(Option<T> value, Predicate<T> predicate, Cause cause) {
         return value.fold(() -> Result.success(Option.none()),
-                          v -> ensure(v, predicate, cause)
-                                     .map(Option::some));
+                          v -> ensure(v, predicate, cause).map(Option::some));
     }
 
     /// Validates an optional value against a predicate if present, with a custom cause provider.
@@ -372,8 +370,7 @@ public sealed interface Verify {
     ///         or failure with the generated cause if present and invalid
     static <T> Result<Option<T>> ensureOption(Option<T> value, Predicate<T> predicate, Fn1<Cause, T> causeProvider) {
         return value.fold(() -> Result.success(Option.none()),
-                          v -> ensure(v, predicate, causeProvider)
-                                     .map(Option::some));
+                          v -> ensure(v, predicate, causeProvider).map(Option::some));
     }
 
     /// Validates an optional value against a binary predicate if present.
@@ -388,8 +385,7 @@ public sealed interface Verify {
     ///         or failure if present and invalid
     static <T, P1> Result<Option<T>> ensureOption(Option<T> value, Fn2<Boolean, T, P1> predicate, P1 param1) {
         return value.fold(() -> Result.success(Option.none()),
-                          v -> ensure(v, predicate, param1)
-                                     .map(Option::some));
+                          v -> ensure(v, predicate, param1).map(Option::some));
     }
 
     /// Validates an optional value against a binary predicate if present, with a fixed cause on failure.
@@ -408,8 +404,7 @@ public sealed interface Verify {
                                                   P1 param1,
                                                   Cause cause) {
         return value.fold(() -> Result.success(Option.none()),
-                          v -> ensure(v, predicate, param1, cause)
-                                     .map(Option::some));
+                          v -> ensure(v, predicate, param1, cause).map(Option::some));
     }
 
     /// Validates an optional value against a binary predicate if present, with a custom cause provider.
@@ -428,8 +423,7 @@ public sealed interface Verify {
                                                   P1 param1,
                                                   Fn1<Cause, T> causeProvider) {
         return value.fold(() -> Result.success(Option.none()),
-                          v -> ensure(v, predicate, param1, causeProvider)
-                                     .map(Option::some));
+                          v -> ensure(v, predicate, param1, causeProvider).map(Option::some));
     }
 
     /// Validates an optional value against a ternary predicate if present.
@@ -449,8 +443,7 @@ public sealed interface Verify {
                                                       P1 param1,
                                                       P2 param2) {
         return value.fold(() -> Result.success(Option.none()),
-                          v -> ensure(v, predicate, param1, param2)
-                                     .map(Option::some));
+                          v -> ensure(v, predicate, param1, param2).map(Option::some));
     }
 
     /// Validates an optional value against a ternary predicate if present, with a fixed cause on failure.
@@ -472,8 +465,7 @@ public sealed interface Verify {
                                                       P2 param2,
                                                       Cause cause) {
         return value.fold(() -> Result.success(Option.none()),
-                          v -> ensure(v, predicate, param1, param2, cause)
-                                     .map(Option::some));
+                          v -> ensure(v, predicate, param1, param2, cause).map(Option::some));
     }
 
     /// Validates an optional value against a ternary predicate if present, with a custom cause provider.
@@ -495,8 +487,7 @@ public sealed interface Verify {
                                                       P2 param2,
                                                       Fn1<Cause, T> causeProvider) {
         return value.fold(() -> Result.success(Option.none()),
-                          v -> ensure(v, predicate, param1, param2, causeProvider)
-                                     .map(Option::some));
+                          v -> ensure(v, predicate, param1, param2, causeProvider).map(Option::some));
     }
 
     /// A collection of predicate functions that can be used with the `ensure` methods.

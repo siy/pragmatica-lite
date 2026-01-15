@@ -43,7 +43,7 @@ public interface ReactiveOperations {
     ///
     /// @return Promise containing the single emitted value
     @SuppressWarnings("unchecked")
-    static <T> Promise<T> fromPublisher(Publisher< ? extends T> publisher, Fn1<R2dbcError, Throwable> errorMapper) {
+    static <T> Promise<T> fromPublisher(Publisher<? extends T> publisher, Fn1<R2dbcError, Throwable> errorMapper) {
         return Promise.promise(promise -> {
                                    var valueRef = new AtomicReference<T>();
                                    var countRef = new AtomicInteger(0);
@@ -95,7 +95,7 @@ public interface ReactiveOperations {
     ///
     /// @return Promise containing Option with the first emitted value
     @SuppressWarnings("unchecked")
-    static <T> Promise<Option<T>> firstFromPublisher(Publisher< ? extends T> publisher,
+    static <T> Promise<Option<T>> firstFromPublisher(Publisher<? extends T> publisher,
                                                      Fn1<R2dbcError, Throwable> errorMapper) {
         return Promise.promise(promise -> {
                                    ((Publisher<T>) publisher).subscribe(new Subscriber<T>() {
@@ -143,7 +143,7 @@ public interface ReactiveOperations {
     ///
     /// @return Promise containing list of all emitted values
     @SuppressWarnings("unchecked")
-    static <T> Promise<List<T>> collectFromPublisher(Publisher< ? extends T> publisher,
+    static <T> Promise<List<T>> collectFromPublisher(Publisher<? extends T> publisher,
                                                      Fn1<R2dbcError, Throwable> errorMapper) {
         return Promise.promise(promise -> {
                                    var results = new ArrayList<T>();
@@ -173,17 +173,17 @@ public interface ReactiveOperations {
     }
 
     /// Convenience method with default error mapping.
-    static <T> Promise<T> fromPublisher(Publisher< ? extends T> publisher) {
+    static <T> Promise<T> fromPublisher(Publisher<? extends T> publisher) {
         return fromPublisher(publisher, R2dbcError::fromException);
     }
 
     /// Convenience method with default error mapping.
-    static <T> Promise<Option<T>> firstFromPublisher(Publisher< ? extends T> publisher) {
+    static <T> Promise<Option<T>> firstFromPublisher(Publisher<? extends T> publisher) {
         return firstFromPublisher(publisher, R2dbcError::fromException);
     }
 
     /// Convenience method with default error mapping.
-    static <T> Promise<List<T>> collectFromPublisher(Publisher< ? extends T> publisher) {
+    static <T> Promise<List<T>> collectFromPublisher(Publisher<? extends T> publisher) {
         return collectFromPublisher(publisher, R2dbcError::fromException);
     }
 }

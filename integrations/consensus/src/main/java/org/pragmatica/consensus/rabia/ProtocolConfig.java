@@ -56,16 +56,12 @@ public record ProtocolConfig(TimeSpan cleanupInterval,
 
     /// Creates a default (production) configuration.
     public static ProtocolConfig defaultConfig() {
-        return new ProtocolConfig(timeSpan(60)
-                                          .seconds(), timeSpan(5)
-                                                              .seconds(), 100);
+        return new ProtocolConfig(timeSpan(60).seconds(), timeSpan(5).seconds(), 100);
     }
 
     /// Creates a test configuration with faster intervals.
     public static ProtocolConfig testConfig() {
-        return new ProtocolConfig(timeSpan(60)
-                                          .seconds(), timeSpan(100)
-                                                              .millis(), 100);
+        return new ProtocolConfig(timeSpan(60).seconds(), timeSpan(100).millis(), 100);
     }
 
     /// Configuration validation errors.

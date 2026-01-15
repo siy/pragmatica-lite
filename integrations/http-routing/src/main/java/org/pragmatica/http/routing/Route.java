@@ -60,7 +60,7 @@ public interface Route<T> extends RouteSource {
     ContentType contentType();
 
     @Override
-    default Stream<Route< ?>> routes() {
+    default Stream<Route<?>> routes() {
         return Stream.of(this);
     }
 
@@ -199,28 +199,23 @@ public interface Route<T> extends RouteSource {
 
         // Convenience methods
         default ContentTypeBuilder<R> toImmediate(Fn1<Result<R>, RequestContext> handler) {
-            return withoutParameters()
-                                    .toImmediate(handler);
+            return withoutParameters().toImmediate(handler);
         }
 
         default Route<R> toText(Handler<R> handler) {
-            return to(handler)
-                     .asText();
+            return to(handler).asText();
         }
 
         default Route<R> toText(Supplier<R> handler) {
-            return to(_ -> Promise.success(handler.get()))
-                     .asText();
+            return to(_ -> Promise.success(handler.get())).asText();
         }
 
         default Route<R> toJson(Handler<R> handler) {
-            return to(handler)
-                     .asJson();
+            return to(handler).asJson();
         }
 
         default Route<R> toJson(Supplier<R> handler) {
-            return to(_ -> Promise.success(handler.get()))
-                     .asJson();
+            return to(_ -> Promise.success(handler.get())).asJson();
         }
     }
 
@@ -349,8 +344,7 @@ public interface Route<T> extends RouteSource {
         }
 
         default Route<R> toJson(Fn1<Promise<R>, B> fn) {
-            return to(fn)
-                     .asJson();
+            return to(fn).asJson();
         }
     }
 
@@ -452,8 +446,7 @@ public interface Route<T> extends RouteSource {
         }
 
         default Route<R> toJson(Fn2<Promise<R>, P1, B> fn) {
-            return to(fn)
-                     .asJson();
+            return to(fn).asJson();
         }
     }
 
@@ -465,8 +458,7 @@ public interface Route<T> extends RouteSource {
         }
 
         default Route<R> toJson(Fn3<Promise<R>, P1, P2, B> fn) {
-            return to(fn)
-                     .asJson();
+            return to(fn).asJson();
         }
     }
 
@@ -478,8 +470,7 @@ public interface Route<T> extends RouteSource {
         }
 
         default Route<R> toJson(Fn4<Promise<R>, P1, P2, P3, B> fn) {
-            return to(fn)
-                     .asJson();
+            return to(fn).asJson();
         }
     }
 
@@ -491,8 +482,7 @@ public interface Route<T> extends RouteSource {
         }
 
         default Route<R> toJson(Fn5<Promise<R>, P1, P2, P3, P4, B> fn) {
-            return to(fn)
-                     .asJson();
+            return to(fn).asJson();
         }
     }
 
@@ -507,8 +497,7 @@ public interface Route<T> extends RouteSource {
         }
 
         default Route<R> toJson(Fn2<Promise<R>, Option<Q1>, B> fn) {
-            return to(fn)
-                     .asJson();
+            return to(fn).asJson();
         }
     }
 
@@ -520,8 +509,7 @@ public interface Route<T> extends RouteSource {
         }
 
         default Route<R> toJson(Fn3<Promise<R>, Option<Q1>, Option<Q2>, B> fn) {
-            return to(fn)
-                     .asJson();
+            return to(fn).asJson();
         }
     }
 
@@ -533,8 +521,7 @@ public interface Route<T> extends RouteSource {
         }
 
         default Route<R> toJson(Fn4<Promise<R>, Option<Q1>, Option<Q2>, Option<Q3>, B> fn) {
-            return to(fn)
-                     .asJson();
+            return to(fn).asJson();
         }
     }
 
@@ -546,8 +533,7 @@ public interface Route<T> extends RouteSource {
         }
 
         default Route<R> toJson(Fn5<Promise<R>, Option<Q1>, Option<Q2>, Option<Q3>, Option<Q4>, B> fn) {
-            return to(fn)
-                     .asJson();
+            return to(fn).asJson();
         }
     }
 
@@ -708,8 +694,7 @@ public interface Route<T> extends RouteSource {
         }
 
         default Route<R> toJson(Fn3<Promise<R>, P1, Option<Q1>, B> fn) {
-            return to(fn)
-                     .asJson();
+            return to(fn).asJson();
         }
     }
 
@@ -722,8 +707,7 @@ public interface Route<T> extends RouteSource {
         }
 
         default Route<R> toJson(Fn4<Promise<R>, P1, Option<Q1>, Option<Q2>, B> fn) {
-            return to(fn)
-                     .asJson();
+            return to(fn).asJson();
         }
     }
 
@@ -736,8 +720,7 @@ public interface Route<T> extends RouteSource {
         }
 
         default Route<R> toJson(Fn4<Promise<R>, P1, P2, Option<Q1>, B> fn) {
-            return to(fn)
-                     .asJson();
+            return to(fn).asJson();
         }
     }
 

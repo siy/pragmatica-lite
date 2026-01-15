@@ -76,17 +76,14 @@ public interface LeaderManager {
 
             @Override
             public void nodeDown(NodeDown nodeDown) {
-                currentLeader()
-                             .set(null);
+                currentLeader().set(null);
                 stop();
             }
 
             private void tryElect(NodeId candidate) {
-                var oldLeader = currentLeader()
-                                             .get();
+                var oldLeader = currentLeader().get();
                 // Potential leader change. Implicitly handles initial election.
-                if (currentLeader()
-                                 .compareAndSet(oldLeader, candidate)) {
+                if (currentLeader().compareAndSet(oldLeader, candidate)) {
                     if (!candidate.equals(oldLeader)) {
                         notifyLeaderChange();
                     }
@@ -94,13 +91,9 @@ public interface LeaderManager {
             }
 
             private void notifyLeaderChange() {
-                if (active()
-                          .get()) {
-                    var nodeId = currentLeader()
-                                              .get();
-                    router()
-                          .route(leaderChange(option(nodeId),
-                                              self.equals(nodeId)));
+                if (active().get()) {
+                    var nodeId = currentLeader().get();
+                    router().route(leaderChange(option(nodeId), self.equals(nodeId)));
                 }
             }
 
@@ -120,12 +113,9 @@ public interface LeaderManager {
             private void stop() {
                 // Set inactive first to prevent new elections during shutdown
                 active.set(false);
-                currentLeader()
-                             .set(null);
+                currentLeader().set(null);
                 // Send notification directly since active is now false
-                router()
-                      .route(leaderChange(option(null),
-                                          false));
+                router().route(leaderChange(option(null), false));
             }
         }
         return new leaderManager(self, router, new AtomicBoolean(false), new AtomicReference<>());

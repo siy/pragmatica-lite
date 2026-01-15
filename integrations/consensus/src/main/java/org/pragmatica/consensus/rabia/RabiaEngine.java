@@ -98,8 +98,8 @@ public class RabiaEngine<C extends Command> {
 
     // Per Rabia spec: after a decision, the next phase inherits this value for round 1 vote
     private final AtomicReference<StateValue> lockedValue = new AtomicReference<>(null);
-    private final ScheduledFuture< ? > cleanupTask;
-    private final ScheduledFuture< ? > syncTask;
+    private final ScheduledFuture<?> cleanupTask;
+    private final ScheduledFuture<?> syncTask;
 
     //--------------------------------- Node State End
     /// Creates a new Rabia consensus engine without metrics.
@@ -184,8 +184,7 @@ public class RabiaEngine<C extends Command> {
         var pendingAnswer = Promise.<List<R>>promise();
         return submitCommands(commands,
                               batch -> correlationMap.put(batch.correlationId(),
-                                                          pendingAnswer))
-                             .async()
+                                                          pendingAnswer)).async()
                              .flatMap(_ -> pendingAnswer);
     }
 
@@ -261,7 +260,7 @@ public class RabiaEngine<C extends Command> {
 
     @SuppressWarnings("unchecked")
     @MessageReceiver
-    public void handleNewBatch(NewBatch< ?> newBatch) {
+    public void handleNewBatch(NewBatch<?> newBatch) {
         pendingBatches.put(newBatch.batch()
                                    .correlationId(),
                            (Batch<C>) newBatch.batch());

@@ -15,9 +15,9 @@ import static org.pragmatica.lang.Option.option;
 public final class RequestRouter {
     private static final Logger log = LoggerFactory.getLogger(RequestRouter.class);
 
-    private final Map<HttpMethod, TreeMap<String, Route< ? >>> routes;
+    private final Map<HttpMethod, TreeMap<String, Route<?>>> routes;
 
-    private RequestRouter(Map<HttpMethod, TreeMap<String, Route< ?>>> routes) {
+    private RequestRouter(Map<HttpMethod, TreeMap<String, Route<?>>> routes) {
         this.routes = routes;
     }
 
@@ -26,16 +26,16 @@ public final class RequestRouter {
     }
 
     public static RequestRouter with(Stream<RouteSource> routeStream) {
-        var routes = new HashMap<HttpMethod, TreeMap<String, Route< ?>>>();
+        var routes = new HashMap<HttpMethod, TreeMap<String, Route<?>>>();
         routeStream.flatMap(RouteSource::routes)
                    .forEach(route -> routes.compute(route.method(),
                                                     (_, pathMap) -> collectRoutes(route, pathMap)));
         return new RequestRouter(routes);
     }
 
-    private static TreeMap<String, Route< ?>> collectRoutes(Route< ?> route, TreeMap<String, Route< ?>> pathMap) {
+    private static TreeMap<String, Route<?>> collectRoutes(Route<?> route, TreeMap<String, Route<?>> pathMap) {
         var map = pathMap == null
-                  ? new TreeMap<String, Route< ?>>()
+                  ? new TreeMap<String, Route<?>>()
                   : pathMap;
         map.put(route.path(), route);
         return map;
@@ -48,10 +48,9 @@ public final class RequestRouter {
         routes.forEach((_, endpoints) -> endpoints.forEach((_, route) -> log.info("{}", route)));
     }
 
-    public Option<Route< ?>> findRoute(HttpMethod method, String inputPath) {
+    public Option<Route<?>> findRoute(HttpMethod method, String inputPath) {
         var path = inputPath + "/";
-        return option(routes.get(method))
-                     .flatMap(map -> option(map.floorEntry(path)))
+        return option(routes.get(method)).flatMap(map -> option(map.floorEntry(path)))
                      .filter(routeEntry -> isSameOrStartOfPath(path,
                                                                routeEntry.getKey()))
                      .map(Map.Entry::getValue);
