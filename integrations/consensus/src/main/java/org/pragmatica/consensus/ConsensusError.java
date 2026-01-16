@@ -19,48 +19,48 @@ package org.pragmatica.consensus;
 import org.pragmatica.lang.Cause;
 
 /// Error types for consensus operations.
-public sealed interface ConsensusErrors extends Cause {
-    record CommandBatchIsEmpty() implements ConsensusErrors {
+public sealed interface ConsensusError extends Cause {
+    record CommandBatchIsEmpty() implements ConsensusError {
         @Override
         public String message() {
             return "Command batch is empty";
         }
     }
 
-    record NodeInactive(NodeId nodeId) implements ConsensusErrors {
+    record NodeInactive(NodeId nodeId) implements ConsensusError {
         @Override
         public String message() {
             return "Node " + nodeId.id() + " is inactive";
         }
     }
 
-    record SnapshotFailed(String reason) implements ConsensusErrors {
+    record SnapshotFailed(String reason) implements ConsensusError {
         @Override
         public String message() {
             return "Snapshot failed: " + reason;
         }
     }
 
-    record RestoreFailed(String reason) implements ConsensusErrors {
+    record RestoreFailed(String reason) implements ConsensusError {
         @Override
         public String message() {
             return "Restore failed: " + reason;
         }
     }
 
-    static ConsensusErrors commandBatchIsEmpty() {
+    static ConsensusError commandBatchIsEmpty() {
         return new CommandBatchIsEmpty();
     }
 
-    static ConsensusErrors nodeInactive(NodeId nodeId) {
+    static ConsensusError nodeInactive(NodeId nodeId) {
         return new NodeInactive(nodeId);
     }
 
-    static ConsensusErrors snapshotFailed(String reason) {
+    static ConsensusError snapshotFailed(String reason) {
         return new SnapshotFailed(reason);
     }
 
-    static ConsensusErrors restoreFailed(String reason) {
+    static ConsensusError restoreFailed(String reason) {
         return new RestoreFailed(reason);
     }
 }

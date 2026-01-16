@@ -17,7 +17,7 @@
 package org.pragmatica.consensus.rabia;
 
 import org.pragmatica.consensus.Command;
-import org.pragmatica.consensus.ConsensusErrors;
+import org.pragmatica.consensus.ConsensusError;
 import org.pragmatica.consensus.NodeId;
 import org.pragmatica.consensus.StateMachine;
 import org.pragmatica.consensus.net.ClusterNetwork;
@@ -27,6 +27,7 @@ import org.pragmatica.consensus.rabia.RabiaProtocolMessage.Asynchronous.NewBatch
 import org.pragmatica.consensus.rabia.RabiaProtocolMessage.Synchronous.*;
 import org.pragmatica.consensus.topology.QuorumStateNotification;
 import org.pragmatica.consensus.topology.TopologyManager;
+import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
@@ -97,9 +98,9 @@ public class RabiaEngine<C extends Command> {
     private final AtomicReference<Phase> lastCommittedPhase = new AtomicReference<>(Phase.ZERO);
 
     // Per Rabia spec: after a decision, the next phase inherits this value for round 1 vote
-    private final AtomicReference<StateValue> lockedValue = new AtomicReference<>(null);
-    private final ScheduledFuture<?> cleanupTask;
-    private final ScheduledFuture<?> syncTask;
+    private final AtomicReference<Option<StateValue>> lockedValue = new AtomicReference<>(Option.none());
+    private final Option<ScheduledFuture<?>> cleanupTask;
+    private final Option<ScheduledFuture<?>> syncTask;
 
     //--------------------------------- Node State End
     /// Creates a new Rabia consensus engine without metrics.
@@ -133,11 +134,11 @@ public class RabiaEngine<C extends Command> {
         this.network = network;
         this.stateMachine = stateMachine;
         this.config = config;
-        this.metrics = metrics != null
-                       ? metrics
-                       : ConsensusMetrics.noop();
-        this.cleanupTask = SharedScheduler.scheduleAtFixedRate(this::cleanupOldPhases, config.cleanupInterval());
-        this.syncTask = SharedScheduler.schedule(this::synchronize, config.syncRetryInterval());
+        this.metrics = Option.option(metrics)
+                             .or(ConsensusMetrics.noop());
+        this.cleanupTask = Option.some(SharedScheduler.scheduleAtFixedRate(this::cleanupOldPhases,
+                                                                           config.cleanupInterval()));
+        this.syncTask = Option.some(SharedScheduler.schedule(this::synchronize, config.syncRetryInterval()));
     }
 
     @MessageReceiver
@@ -168,11 +169,11 @@ public class RabiaEngine<C extends Command> {
         phases.clear();
         currentPhase.set(Phase.ZERO);
         isInPhase.set(false);
-        lockedValue.set(null);
+        lockedValue.set(Option.none());
         stateMachine.reset();
         startPromise.set(Promise.promise());
         pendingBatches.clear();
-        correlationMap.forEach((_, promise) -> promise.fail(ConsensusErrors.nodeInactive(self)));
+        correlationMap.forEach((_, promise) -> promise.fail(ConsensusError.nodeInactive(self)));
         correlationMap.clear();
     }
 
@@ -196,12 +197,12 @@ public class RabiaEngine<C extends Command> {
 
     private Result<Batch<C>> submitCommands(List<C> commands, Consumer<Batch<C>> onBatchPrepared) {
         if (commands.isEmpty()) {
-            return ConsensusErrors.commandBatchIsEmpty()
-                                  .result();
+            return ConsensusError.commandBatchIsEmpty()
+                                 .result();
         }
         if (!active.get()) {
-            return ConsensusErrors.nodeInactive(self)
-                                  .result();
+            return ConsensusError.nodeInactive(self)
+                                 .result();
         }
         var batch = batch(commands);
         log.trace("Node {}: client submitted {} command(s). Prepared batch: {}", self, commands.size(), batch);
@@ -221,12 +222,8 @@ public class RabiaEngine<C extends Command> {
 
     public Promise<Unit> stop() {
         return Promise.promise(promise -> {
-                                   if (cleanupTask != null) {
-                                       cleanupTask.cancel(false);
-                                   }
-                                   if (syncTask != null) {
-                                       syncTask.cancel(false);
-                                   }
+                                   cleanupTask.onPresent(task -> task.cancel(false));
+                                   syncTask.onPresent(task -> task.cancel(false));
                                    clusterDisconnected();
                                    executor.shutdown();
                                    promise.succeed(Unit.unit());
@@ -288,13 +285,16 @@ public class RabiaEngine<C extends Command> {
         phaseData.registerProposal(self, batch);
         network.broadcast(new Propose<>(self, phase, batch));
         // Per Rabia spec: if we have a locked value from previous phase, vote it immediately
-        var locked = lockedValue.getAndSet(null);
-        if (locked != null) {
-            var vote = new VoteRound1(self, phase, locked);
-            log.trace("Node {} immediately voting locked value {} for phase {}", self, locked, phase);
-            network.broadcast(vote);
-            phaseData.registerRound1Vote(self, locked);
-        }
+        lockedValue.getAndSet(Option.none())
+                   .onPresent(locked -> {
+                                  var vote = new VoteRound1(self, phase, locked);
+                                  log.trace("Node {} immediately voting locked value {} for phase {}",
+                                            self,
+                                            locked,
+                                            phase);
+                                  network.broadcast(vote);
+                                  phaseData.registerRound1Vote(self, locked);
+                              });
     }
 
     /// Synchronizes with other nodes to catch up if needed.
@@ -542,12 +542,9 @@ public class RabiaEngine<C extends Command> {
         pendingBatches.remove(decision.value()
                                       .correlationId());
         metrics.updatePendingBatches(self, pendingBatches.size());
-        correlationMap.computeIfPresent(decision.value()
-                                                .correlationId(),
-                                        (_, promise) -> {
-                                            promise.succeed(results);
-                                            return null;
-                                        });
+        Option.option(correlationMap.remove(decision.value()
+                                                    .correlationId()))
+              .onPresent(promise -> promise.succeed(results));
     }
 
     /// Handles a decision message from another node.
@@ -567,7 +564,7 @@ public class RabiaEngine<C extends Command> {
         this.currentPhase.set(nextPhase);
         isInPhase.set(false);
         // Lock the value for the next phase's round 1 vote
-        lockedValue.set(decidedValue);
+        lockedValue.set(Option.some(decidedValue));
         log.trace("Node {} moving to phase {} with locked value {}", self, nextPhase, decidedValue);
         // If we have more commands to process, start a new phase
         if (!pendingBatches.isEmpty()) {

@@ -16,10 +16,18 @@
 
 package org.pragmatica.net.tcp;
 
+import org.pragmatica.lang.Cause;
+import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Verify;
+import org.pragmatica.lang.utils.Causes;
+
 import java.net.InetSocketAddress;
 
 /// Network node address (host and port).
 public interface NodeAddress {
+    Cause BLANK_HOST = Causes.cause("Host must not be blank");
+    Cause INVALID_PORT = Causes.cause("Port must be between 1 and 65535");
+
     String host();
 
     int port();
@@ -28,15 +36,21 @@ public interface NodeAddress {
         return host() + ":" + port();
     }
 
-    static NodeAddress nodeAddress(String host, int port) {
-        record nodeAddress(String host, int port) implements NodeAddress {}
-        return new nodeAddress(host, port);
+    static Result<NodeAddress> nodeAddress(String host, int port) {
+        return Result.all(Verify.ensure(host, Verify.Is::notBlank, BLANK_HOST),
+                          Verify.ensure(port, Verify.Is::between, 1, 65535, INVALID_PORT))
+                     .map(NodeAddress::create);
     }
 
     static NodeAddress nodeAddress(InetSocketAddress socketAddress) {
         // Use getHostAddress() to get consistent IP representation (e.g., "127.0.0.1" not "localhost")
-        return nodeAddress(socketAddress.getAddress()
-                                        .getHostAddress(),
-                           socketAddress.getPort());
+        return create(socketAddress.getAddress()
+                                   .getHostAddress(),
+                      socketAddress.getPort());
+    }
+
+    private static NodeAddress create(String host, int port) {
+        record nodeAddress(String host, int port) implements NodeAddress {}
+        return new nodeAddress(host, port);
     }
 }

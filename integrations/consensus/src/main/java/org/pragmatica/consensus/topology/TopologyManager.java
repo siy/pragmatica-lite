@@ -19,6 +19,8 @@ package org.pragmatica.consensus.topology;
 import org.pragmatica.consensus.NodeId;
 import org.pragmatica.consensus.net.NodeInfo;
 import org.pragmatica.lang.Option;
+import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.io.TimeSpan;
 import org.pragmatica.net.tcp.TlsConfig;
 
@@ -49,9 +51,9 @@ public interface TopologyManager {
     /// Mapping from IP address (host and port) to node ID.
     Option<NodeId> reverseLookup(SocketAddress socketAddress);
 
-    void start();
+    Promise<Unit> start();
 
-    void stop();
+    Promise<Unit> stop();
 
     TimeSpan pingInterval();
 

@@ -22,6 +22,10 @@ public record TopologyConfig(NodeId self,
                              TimeSpan helloTimeout,
                              List<NodeInfo> coreNodes,
                              Option<TlsConfig> tls) {
+    public TopologyConfig {
+        coreNodes = List.copyOf(coreNodes);
+    }
+
     private static final TimeSpan DEFAULT_HELLO_TIMEOUT = TimeSpan.timeSpan(5)
                                                                  .seconds();
 

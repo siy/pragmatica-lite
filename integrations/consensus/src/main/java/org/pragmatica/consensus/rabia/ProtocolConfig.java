@@ -17,6 +17,7 @@
 package org.pragmatica.consensus.rabia;
 
 import org.pragmatica.lang.Cause;
+import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.io.TimeSpan;
 
@@ -41,10 +42,9 @@ public record ProtocolConfig(TimeSpan cleanupInterval,
     }
 
     private static Result<TimeSpan> validatePositive(TimeSpan value, String name) {
-        return value != null && value.nanos() > 0
-               ? Result.success(value)
-               : ConfigError.invalidTimeSpan(name)
-                            .result();
+        return Option.option(value)
+                     .filter(v -> v.nanos() > 0)
+                     .toResult(ConfigError.invalidTimeSpan(name));
     }
 
     private static Result<Long> validatePositive(long value, String name) {

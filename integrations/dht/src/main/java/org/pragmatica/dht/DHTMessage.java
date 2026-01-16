@@ -22,25 +22,42 @@ import org.pragmatica.messaging.Message;
 /// Messages for DHT operations between nodes.
 public sealed interface DHTMessage extends Message.Wired {
     /// Request to get a value.
-    record GetRequest(String requestId, byte[] key) implements DHTMessage {}
+    record GetRequest(String requestId, byte[] key) implements DHTMessage {
+        public GetRequest {
+            key = key.clone();
+        }
+    }
 
     /// Response to a get request.
     record GetResponse(String requestId, Option<byte[]> value) implements DHTMessage {}
 
     /// Request to put a value.
-    record PutRequest(String requestId, byte[] key, byte[] value) implements DHTMessage {}
+    record PutRequest(String requestId, byte[] key, byte[] value) implements DHTMessage {
+        public PutRequest {
+            key = key.clone();
+            value = value.clone();
+        }
+    }
 
     /// Response to a put request.
     record PutResponse(String requestId, boolean success) implements DHTMessage {}
 
     /// Request to remove a value.
-    record RemoveRequest(String requestId, byte[] key) implements DHTMessage {}
+    record RemoveRequest(String requestId, byte[] key) implements DHTMessage {
+        public RemoveRequest {
+            key = key.clone();
+        }
+    }
 
     /// Response to a remove request.
     record RemoveResponse(String requestId, boolean found) implements DHTMessage {}
 
     /// Request to check if key exists.
-    record ExistsRequest(String requestId, byte[] key) implements DHTMessage {}
+    record ExistsRequest(String requestId, byte[] key) implements DHTMessage {
+        public ExistsRequest {
+            key = key.clone();
+        }
+    }
 
     /// Response to exists request.
     record ExistsResponse(String requestId, boolean exists) implements DHTMessage {}

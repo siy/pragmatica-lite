@@ -64,9 +64,9 @@ class RabiaConsensusIntegrationTest {
 
     record TestCommand(String value) implements Command {}
 
-    private static final NodeId NODE_1 = nodeId("node-1");
-    private static final NodeId NODE_2 = nodeId("node-2");
-    private static final NodeId NODE_3 = nodeId("node-3");
+    private static final NodeId NODE_1 = nodeId("node-1").unwrap();
+    private static final NodeId NODE_2 = nodeId("node-2").unwrap();
+    private static final NodeId NODE_3 = nodeId("node-3").unwrap();
     private static final int CLUSTER_SIZE = 3;
 
     private ClusterSimulator cluster;
@@ -379,15 +379,17 @@ class RabiaConsensusIntegrationTest {
         }
 
         @Override
-        public <M extends ProtocolMessage> void broadcast(M message) {
+        public <M extends ProtocolMessage> Unit broadcast(M message) {
             allMessages.add(message);
             pendingMessages.add(message);
+            return Unit.unit();
         }
 
         @Override
-        public <M extends ProtocolMessage> void send(NodeId nodeId, M message) {
+        public <M extends ProtocolMessage> Unit send(NodeId nodeId, M message) {
             allMessages.add(message);
             pendingMessages.add(message);
+            return Unit.unit();
         }
 
         @Override
@@ -443,7 +445,7 @@ class RabiaConsensusIntegrationTest {
         private final int clusterSize;
 
         SimulatedTopologyManager(NodeId selfId, int clusterSize) {
-            this.self = NodeInfo.nodeInfo(selfId, NodeAddress.nodeAddress("localhost", 5000));
+            this.self = NodeInfo.nodeInfo(selfId, NodeAddress.nodeAddress("localhost", 5000).unwrap());
             this.clusterSize = clusterSize;
         }
 
@@ -454,7 +456,7 @@ class RabiaConsensusIntegrationTest {
 
         @Override
         public Option<NodeInfo> get(NodeId id) {
-            return Option.option(NodeInfo.nodeInfo(id, NodeAddress.nodeAddress("localhost", 5000)));
+            return Option.option(NodeInfo.nodeInfo(id, NodeAddress.nodeAddress("localhost", 5000).unwrap()));
         }
 
         @Override
@@ -468,10 +470,14 @@ class RabiaConsensusIntegrationTest {
         }
 
         @Override
-        public void start() {}
+        public Promise<Unit> start() {
+            return Promise.success(Unit.unit());
+        }
 
         @Override
-        public void stop() {}
+        public Promise<Unit> stop() {
+            return Promise.success(Unit.unit());
+        }
 
         @Override
         public TimeSpan pingInterval() {
@@ -505,8 +511,9 @@ class RabiaConsensusIntegrationTest {
         }
 
         @Override
-        public void reset() {
+        public Unit reset() {
             processedCommands.clear();
+            return Unit.unit();
         }
     }
 }

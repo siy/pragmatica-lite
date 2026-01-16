@@ -49,7 +49,7 @@ class DomainNameResolverTest {
                 .await()
                 .onSuccessRun(Assertions::fail)
                 .onFailure(cause -> {
-                    assertThat(cause).isInstanceOf(ResolverErrors.UnknownDomain.class);
+                    assertThat(cause).isInstanceOf(ResolverError.UnknownDomain.class);
                 });
     }
 

@@ -37,7 +37,7 @@ public interface ClusterNetwork {
     ///
     /// Implementations must not throw exceptions. Failed sends should be
     /// logged and silently ignored - the protocol handles message loss.
-    <M extends ProtocolMessage> void broadcast(M message);
+    <M extends ProtocolMessage> Unit broadcast(M message);
 
     @MessageReceiver
     void connect(NetworkManagementOperation.ConnectNode connectNode);
@@ -58,7 +58,7 @@ public interface ClusterNetwork {
     ///
     /// Implementations must not throw exceptions. Failed sends should be
     /// logged and silently ignored - the protocol handles message loss.
-    <M extends ProtocolMessage> void send(NodeId nodeId, M message);
+    <M extends ProtocolMessage> Unit send(NodeId nodeId, M message);
 
     /// Start the network.
     Promise<Unit> start();

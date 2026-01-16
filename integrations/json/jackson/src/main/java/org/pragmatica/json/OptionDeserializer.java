@@ -50,29 +50,24 @@ public class OptionDeserializer extends ValueDeserializer<Option<?>> {
         if (p.currentToken() == JsonToken.VALUE_NULL) {
             return none();
         }
-        Object value;
-        if (valueDeserializer != null) {
-            value = valueDeserializer.deserialize(p, ctxt);
-        } else if (valueType != null) {
-            value = ctxt.readValue(p, valueType);
-        } else {
-            value = p.readValueAs(Object.class);
-        }
-        return option(value);
+        return option(valueDeserializer).map(deser -> deser.deserialize(p, ctxt))
+                     .orElse(() -> option(valueType).map(type -> ctxt.readValue(p, type)))
+                     .orElse(() -> option(p.readValueAs(Object.class)));
     }
 
     @Override
     public ValueDeserializer<?> createContextual(DeserializationContext ctxt, BeanProperty property) {
-        if (property == null) {
-            return this;
-        }
-        JavaType type = property.getType();
-        if (type.hasContentType()) {
-            JavaType contentType = type.getContentType();
-            ValueDeserializer<Object> deser = ctxt.findContextualValueDeserializer(contentType, property);
-            return new OptionDeserializer(contentType, deser);
-        }
-        return this;
+        return option(property).filter(prop -> prop.getType()
+                                                   .hasContentType())
+                     .<ValueDeserializer<?>> map(prop -> createContextualDeserializer(ctxt, prop))
+                     .or(this);
+    }
+
+    private OptionDeserializer createContextualDeserializer(DeserializationContext ctxt, BeanProperty prop) {
+        var contentType = prop.getType()
+                              .getContentType();
+        var deser = ctxt.findContextualValueDeserializer(contentType, prop);
+        return new OptionDeserializer(contentType, deser);
     }
 
     @Override

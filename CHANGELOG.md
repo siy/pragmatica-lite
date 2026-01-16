@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Bumped jbct-maven-plugin to 0.4.9
+- **JBCT compliance fixes across integrations module:**
+  - Parse-don't-validate: `DHTConfig`, `Partition`, `NodeId`, `BatchId`, `CorrelationId`, `DomainName`, `NodeAddress` now return `Result<T>`
+  - Security: Removed SQL from error messages in `JdbcError`, `JooqError`, `R2dbcError`
+  - Async patterns: `JooqR2dbcTransactional` properly chains async operations
+  - Defensive copies: `TopologyConfig`, `HttpServerConfig`, `DHTMessage` byte arrays
+  - Void→Unit: `StateMachine.reset()`, `TopologyManager.start()/stop()`, `ClusterNetwork.broadcast()/send()`
+  - Error naming: `ResolverErrors`→`ResolverError`, `ConsensusErrors`→`ConsensusError`
+  - Null policy: Replaced null checks with `Option` patterns in 29+ files
 
 ## [0.9.11] - 2026-01-15
 

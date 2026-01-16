@@ -30,7 +30,7 @@ class DomainAddressTest {
 
     @Test
     void domainAddress_creates_instance_with_all_fields() throws UnknownHostException {
-        var name = domainName("example.com");
+        var name = domainName("example.com").unwrap();
         var ip = InetAddress.getByName("93.184.216.34");
         var ttl = Duration.ofSeconds(300);
 
@@ -43,8 +43,8 @@ class DomainAddressTest {
 
     @Test
     void domainAddress_withDomain_creates_new_instance_with_different_name() throws UnknownHostException {
-        var originalName = domainName("example.com");
-        var newName = domainName("alias.example.com");
+        var originalName = domainName("example.com").unwrap();
+        var newName = domainName("alias.example.com").unwrap();
         var ip = InetAddress.getByName("93.184.216.34");
         var ttl = Duration.ofSeconds(300);
 
@@ -60,7 +60,7 @@ class DomainAddressTest {
     @Test
     void domainAddress_supports_ipv4() throws UnknownHostException {
         var ip = InetAddress.getByName("192.168.1.1");
-        var address = domainAddress(domainName("local"), ip, Duration.ofSeconds(60));
+        var address = domainAddress(domainName("local").unwrap(), ip, Duration.ofSeconds(60));
 
         assertThat(address.ip().getHostAddress()).isEqualTo("192.168.1.1");
     }
@@ -68,7 +68,7 @@ class DomainAddressTest {
     @Test
     void domainAddress_supports_ipv6() throws UnknownHostException {
         var ip = InetAddress.getByName("::1");
-        var address = domainAddress(domainName("localhost"), ip, Duration.ofSeconds(0));
+        var address = domainAddress(domainName("localhost").unwrap(), ip, Duration.ofSeconds(0));
 
         assertThat(address.ip().getHostAddress()).isEqualTo("0:0:0:0:0:0:0:1");
     }
@@ -76,7 +76,7 @@ class DomainAddressTest {
     @Test
     void domainAddress_supports_zero_ttl() throws UnknownHostException {
         var address = domainAddress(
-            domainName("no-cache.example.com"),
+            domainName("no-cache.example.com").unwrap(),
             InetAddress.getByName("1.2.3.4"),
             Duration.ZERO
         );

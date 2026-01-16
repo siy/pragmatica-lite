@@ -16,9 +16,10 @@
 
 package org.pragmatica.config.toml;
 
+import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Unit;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -28,6 +29,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import static org.pragmatica.lang.Option.none;
+import static org.pragmatica.lang.Option.option;
+import static org.pragmatica.lang.Option.some;
 
 /// Zero-dependency TOML parser supporting a practical subset of TOML 1.0.
 ///
@@ -150,68 +155,75 @@ public final class TomlParser {
         }
     }
 
+    /// Context for tracking the current array table being populated.
+    private record ArrayTableContext(String base, Map<String, Object> element) {}
+
     /// Parse TOML content from a string.
     ///
     /// @param content the TOML content to parse
     /// @return Result containing the parsed TomlDocument, or an error
     public static Result<TomlDocument> parse(String content) {
-        if (content == null || content.isBlank()) {
-            return Result.success(TomlDocument.EMPTY);
-        }
+        return option(content).filter(c -> !c.isBlank())
+                     .fold(() -> Result.success(TomlDocument.EMPTY),
+                           TomlParser::parseNonEmpty);
+    }
+
+    private static Result<TomlDocument> parseNonEmpty(String content) {
         Map<String, Map<String, Object>> sections = new LinkedHashMap<>();
         Map<String, List<Map<String, Object>>> arrayTables = new LinkedHashMap<>();
         Set<String> definedSections = new HashSet<>();
         sections.put("", new LinkedHashMap<>());
         String currentSection = "";
-        String currentArrayTableBase = null;
-        Map<String, Object> currentArrayTableElement = null;
+        Option<ArrayTableContext> arrayTableContext = none();
         int lineNumber = 0;
-        MultilineState multiline = null;
+        Option<MultilineState> multiline = none();
         String[] lines = content.split("\n", - 1);
         for (String rawLine : lines) {
             lineNumber++;
+            final int currentLineNumber = lineNumber;
             // Handle multiline array continuation
-            if (multiline != null && multiline.isArray()) {
-                var result = handleMultilineArrayContinuation(multiline,
+            if (multiline.filter(MultilineState::isArray)
+                         .isPresent()) {
+                var state = multiline.unwrap();
+                var result = handleMultilineArrayContinuation(state,
                                                               rawLine,
-                                                              lineNumber,
+                                                              currentLineNumber,
                                                               sections,
                                                               arrayTables,
-                                                              currentArrayTableBase,
-                                                              currentArrayTableElement);
+                                                              arrayTableContext);
                 if (result.isFailure()) {
                     return result.map(_ -> null);
                 }
                 if (result.fold(_ -> false, completed -> completed)) {
-                    multiline = null;
+                    multiline = none();
                 }
                 continue;
             }
             // Handle multiline string continuation
-            if (multiline != null) {
-                String delimiter = multiline.isLiteral()
+            if (multiline.isPresent()) {
+                var state = multiline.unwrap();
+                String delimiter = state.isLiteral()
                                    ? "'''"
                                    : "\"\"\"";
                 int endIndex = findClosingDelimiter(rawLine, delimiter);
                 if (endIndex >= 0) {
-                    multiline.append(rawLine.substring(0, endIndex));
-                    var processResult = multiline.isLiteral()
-                                        ? Result.success(processLiteralMultiline(multiline.content()))
-                                        : processBasicMultiline(multiline.content(), multiline.startLine());
+                    state.append(rawLine.substring(0, endIndex));
+                    var processResult = state.isLiteral()
+                                        ? Result.success(processLiteralMultiline(state.content()))
+                                        : processBasicMultiline(state.content(), state.startLine());
                     if (processResult.isFailure()) {
                         return processResult.map(_ -> null);
                     }
                     String processed = processResult.fold(_ -> "", s -> s);
                     putValue(sections,
                              arrayTables,
-                             currentArrayTableBase,
-                             currentArrayTableElement,
-                             multiline.pendingSection(),
-                             multiline.pendingKey(),
+                             arrayTableContext,
+                             state.pendingSection(),
+                             state.pendingKey(),
                              processed);
-                    multiline = null;
+                    multiline = none();
                 } else {
-                    multiline.appendLine(rawLine);
+                    state.appendLine(rawLine);
                 }
                 continue;
             }
@@ -226,7 +238,7 @@ public final class TomlParser {
                 String tableName = normalizeTableName(arrayTableMatcher.group(1));
                 // Check for type mismatch - section already defined as regular table
                 if (sections.containsKey(tableName)) {
-                    return TomlError.tableTypeMismatch(lineNumber, tableName, "regular table")
+                    return TomlError.tableTypeMismatch(currentLineNumber, tableName, "regular table")
                                     .result();
                 }
                 // Create new table in the array
@@ -234,8 +246,7 @@ public final class TomlParser {
                 arrayTables.computeIfAbsent(tableName,
                                             _ -> new ArrayList<>())
                            .add(newTable);
-                currentArrayTableBase = tableName;
-                currentArrayTableElement = newTable;
+                arrayTableContext = some(new ArrayTableContext(tableName, newTable));
                 currentSection = tableName;
                 continue;
             }
@@ -244,73 +255,72 @@ public final class TomlParser {
             if (sectionMatcher.matches()) {
                 String sectionName = normalizeTableName(sectionMatcher.group(1));
                 // Check if this is a sub-table within an array element
-                if (currentArrayTableBase != null && sectionName.startsWith(currentArrayTableBase + ".")) {
+                if (arrayTableContext.filter(ctx -> sectionName.startsWith(ctx.base() + "."))
+                                     .isPresent()) {
                     currentSection = sectionName;
                     continue;
                 }
                 // Check for type mismatch - section already defined as array table
                 if (arrayTables.containsKey(sectionName)) {
-                    return TomlError.tableTypeMismatch(lineNumber, sectionName, "array of tables")
+                    return TomlError.tableTypeMismatch(currentLineNumber, sectionName, "array of tables")
                                     .result();
                 }
                 // Check for duplicate section definition
                 if (definedSections.contains(sectionName)) {
-                    return TomlError.duplicateSection(lineNumber, sectionName)
+                    return TomlError.duplicateSection(currentLineNumber, sectionName)
                                     .result();
                 }
                 definedSections.add(sectionName);
                 // Regular section - exit array table context
-                currentArrayTableBase = null;
-                currentArrayTableElement = null;
+                arrayTableContext = none();
                 currentSection = sectionName;
                 sections.putIfAbsent(currentSection, new LinkedHashMap<>());
                 continue;
             }
             // Try to parse key = value with different key formats
-            var keyValueResult = parseKeyValue(line, lineNumber);
-            if (keyValueResult != null) {
+            var keyValueOpt = parseKeyValue(line, currentLineNumber);
+            if (keyValueOpt.isPresent()) {
+                var keyValueResult = keyValueOpt.unwrap();
                 String key = keyValueResult.key();
-                String targetSection = keyValueResult.targetSection();
+                Option<String> targetSection = keyValueResult.targetSection();
                 String rawValue = keyValueResult.value();
                 // Handle dotted keys - create implicit sections
-                String effectiveSection = currentSection;
+                final String effectiveSection;
                 String effectiveKey = key;
-                if (targetSection != null) {
+                final Option<ArrayTableContext> capturedContext = arrayTableContext;
+                if (targetSection.isPresent()) {
+                    var target = targetSection.unwrap();
                     effectiveSection = currentSection.isEmpty()
-                                       ? targetSection
-                                       : currentSection + "." + targetSection;
-                    if (currentArrayTableBase == null) {
+                                       ? target
+                                       : currentSection + "." + target;
+                    if (arrayTableContext.isEmpty()) {
                         // Check for dotted key conflict
-                        var conflictResult = checkDottedKeyConflict(sections, currentSection, targetSection, lineNumber);
+                        var conflictResult = checkDottedKeyConflict(sections, currentSection, target, currentLineNumber);
                         if (conflictResult.isFailure()) {
                             return conflictResult.map(_ -> null);
                         }
                         sections.putIfAbsent(effectiveSection, new LinkedHashMap<>());
                     }
+                } else {
+                    effectiveSection = currentSection;
                 }
                 // Check for duplicate key
-                if (isDuplicateKey(sections,
-                                   arrayTables,
-                                   currentArrayTableBase,
-                                   currentArrayTableElement,
-                                   effectiveSection,
-                                   effectiveKey)) {
-                    return TomlError.duplicateKey(lineNumber, effectiveKey)
+                if (isDuplicateKey(sections, arrayTables, arrayTableContext, effectiveSection, effectiveKey)) {
+                    return TomlError.duplicateKey(currentLineNumber, effectiveKey)
                                     .result();
                 }
                 // Check for multiline string start
                 if (rawValue.startsWith("\"\"\"")) {
-                    var result = handleMultilineStart(rawValue, "\"\"\"", false, lineNumber);
+                    var result = handleMultilineStart(rawValue, "\"\"\"", false, currentLineNumber);
                     switch (result) {
                         case MultilineStartResult.Complete c -> {
-                            var processResult = processBasicMultilineContent(c.rawValue(), lineNumber);
+                            var processResult = processBasicMultilineContent(c.rawValue(), currentLineNumber);
                             if (processResult.isFailure()) {
                                 return processResult.map(_ -> null);
                             }
                             putValue(sections,
                                      arrayTables,
-                                     currentArrayTableBase,
-                                     currentArrayTableElement,
+                                     capturedContext,
                                      effectiveSection,
                                      effectiveKey,
                                      processResult.fold(_ -> "", s -> s));
@@ -319,66 +329,62 @@ public final class TomlParser {
                             return e.error();
                         }
                         case MultilineStartResult.Partial p ->
-                        multiline = MultilineState.forString(effectiveKey,
-                                                             effectiveSection,
-                                                             p.partial(),
-                                                             false,
-                                                             lineNumber);
+                        multiline = some(MultilineState.forString(effectiveKey,
+                                                                  effectiveSection,
+                                                                  p.partial(),
+                                                                  false,
+                                                                  currentLineNumber));
                     }
                     continue;
                 }
                 if (rawValue.startsWith("'''")) {
-                    var result = handleMultilineStart(rawValue, "'''", true, lineNumber);
+                    var result = handleMultilineStart(rawValue, "'''", true, currentLineNumber);
                     switch (result) {
                         case MultilineStartResult.Complete c ->
-                        putValue(sections,
-                                 arrayTables,
-                                 currentArrayTableBase,
-                                 currentArrayTableElement,
-                                 effectiveSection,
-                                 effectiveKey,
-                                 c.rawValue());
+                        putValue(sections, arrayTables, capturedContext, effectiveSection, effectiveKey, c.rawValue());
                         case MultilineStartResult.Error e -> {
                             return e.error();
                         }
                         case MultilineStartResult.Partial p ->
-                        multiline = MultilineState.forString(effectiveKey,
-                                                             effectiveSection,
-                                                             p.partial(),
-                                                             true,
-                                                             lineNumber);
+                        multiline = some(MultilineState.forString(effectiveKey,
+                                                                  effectiveSection,
+                                                                  p.partial(),
+                                                                  true,
+                                                                  currentLineNumber));
                     }
                     continue;
                 }
                 // Check for multiline array start
                 if (rawValue.startsWith("[") && !rawValue.endsWith("]")) {
                     if (!isArrayComplete(rawValue)) {
-                        multiline = MultilineState.forArray(effectiveKey, effectiveSection, rawValue, lineNumber);
+                        multiline = some(MultilineState.forArray(effectiveKey,
+                                                                 effectiveSection,
+                                                                 rawValue,
+                                                                 currentLineNumber));
                         continue;
                     }
                 }
                 // Strip inline comment (but not from quoted strings)
                 rawValue = stripInlineComment(rawValue);
-                var parseResult = parseValue(rawValue, lineNumber);
+                var parseResult = parseValue(rawValue, currentLineNumber);
                 if (parseResult.isFailure()) {
                     return parseResult.map(_ -> null);
                 }
                 var sect = effectiveSection;
                 var k = effectiveKey;
-                var arrBase = currentArrayTableBase;
-                var arrElem = currentArrayTableElement;
-                parseResult.onSuccess(value -> putValue(sections, arrayTables, arrBase, arrElem, sect, k, value));
+                parseResult.onSuccess(value -> putValue(sections, arrayTables, capturedContext, sect, k, value));
                 continue;
             }
-            return TomlError.syntaxError(lineNumber, line)
+            return TomlError.syntaxError(currentLineNumber, line)
                             .result();
         }
         // Check for unterminated multiline constructs
-        if (multiline != null) {
-            return multiline.isArray()
-                   ? TomlError.unterminatedArray(multiline.startLine())
+        if (multiline.isPresent()) {
+            var state = multiline.unwrap();
+            return state.isArray()
+                   ? TomlError.unterminatedArray(state.startLine())
                               .result()
-                   : TomlError.unterminatedMultilineString(multiline.startLine())
+                   : TomlError.unterminatedMultilineString(state.startLine())
                               .result();
         }
         return Result.success(new TomlDocument(sections, copyArrayTables(arrayTables)));
@@ -397,7 +403,7 @@ public final class TomlParser {
     }
 
     /// Check for dotted key conflicts where a value blocks a table path.
-    private static Result<Void> checkDottedKeyConflict(Map<String, Map<String, Object>> sections,
+    private static Result<Unit> checkDottedKeyConflict(Map<String, Map<String, Object>> sections,
                                                        String currentSection,
                                                        String targetSection,
                                                        int lineNumber) {
@@ -409,18 +415,22 @@ public final class TomlParser {
             }
             path.append(parts[i]);
             String pathStr = path.toString();
-            var section = sections.get(pathStr.isEmpty()
-                                       ? ""
-                                       : pathStr.substring(0,
-                                                           pathStr.lastIndexOf('.') < 0
-                                                           ? pathStr.length()
-                                                           : pathStr.lastIndexOf('.')));
-            if (section != null && section.containsKey(parts[i]) && !(section.get(parts[i]) instanceof Map)) {
+            String sectionKey = pathStr.isEmpty()
+                                ? ""
+                                : pathStr.substring(0,
+                                                    pathStr.lastIndexOf('.') < 0
+                                                    ? pathStr.length()
+                                                    : pathStr.lastIndexOf('.'));
+            String partKey = parts[i];
+            boolean isConflict = option(sections.get(sectionKey)).filter(section -> section.containsKey(partKey))
+                                       .filter(section -> !(section.get(partKey) instanceof Map))
+                                       .isPresent();
+            if (isConflict) {
                 return TomlError.dottedKeyConflict(lineNumber, targetSection, pathStr)
                                 .result();
             }
         }
-        return Result.success(null);
+        return Result.unitResult();
     }
 
     /// Find closing delimiter handling quotes before it.
@@ -448,23 +458,29 @@ public final class TomlParser {
     /// Put a value into the appropriate location (regular section or array table element).
     private static void putValue(Map<String, Map<String, Object>> sections,
                                  Map<String, List<Map<String, Object>>> arrayTables,
-                                 String currentArrayTableBase,
-                                 Map<String, Object> currentArrayTableElement,
+                                 Option<ArrayTableContext> arrayTableContext,
                                  String section,
                                  String key,
                                  Object value) {
-        if (currentArrayTableBase != null && section.startsWith(currentArrayTableBase)) {
-            if (section.equals(currentArrayTableBase)) {
-                currentArrayTableElement.put(key, value);
-            } else {
-                String subPath = section.substring(currentArrayTableBase.length() + 1);
-                getOrCreateNestedMap(currentArrayTableElement, subPath).put(key, value);
-            }
-        } else {
-            sections.computeIfAbsent(section,
-                                     _ -> new LinkedHashMap<>())
-                    .put(key, value);
-        }
+        arrayTableContext.filter(ctx -> section.startsWith(ctx.base()))
+                         .fold(() -> {
+                                   sections.computeIfAbsent(section,
+                                                            _ -> new LinkedHashMap<>())
+                                           .put(key, value);
+                                   return Unit.unit();
+                               },
+                               ctx -> {
+                                   if (section.equals(ctx.base())) {
+                                       ctx.element()
+                                          .put(key, value);
+                                   } else {
+                                       String subPath = section.substring(ctx.base()
+                                                                             .length() + 1);
+                                       getOrCreateNestedMap(ctx.element(),
+                                                            subPath).put(key, value);
+                                   }
+                                   return Unit.unit();
+                               });
     }
 
     /// Get or create a nested map for sub-table paths like "details" or "nested.deep".
@@ -481,26 +497,29 @@ public final class TomlParser {
     /// Check if a key already exists in the appropriate location.
     private static boolean isDuplicateKey(Map<String, Map<String, Object>> sections,
                                           Map<String, List<Map<String, Object>>> arrayTables,
-                                          String currentArrayTableBase,
-                                          Map<String, Object> currentArrayTableElement,
+                                          Option<ArrayTableContext> arrayTableContext,
                                           String section,
                                           String key) {
-        if (currentArrayTableBase != null && section.startsWith(currentArrayTableBase)) {
-            if (section.equals(currentArrayTableBase)) {
-                return currentArrayTableElement.containsKey(key);
-            } else {
-                String subPath = section.substring(currentArrayTableBase.length() + 1);
-                Map<String, Object> nested = getNestedMap(currentArrayTableElement, subPath);
-                return nested != null && nested.containsKey(key);
-            }
-        }
-        var sectionMap = sections.get(section);
-        return sectionMap != null && sectionMap.containsKey(key);
+        return arrayTableContext.filter(ctx -> section.startsWith(ctx.base()))
+                                .fold(() -> option(sections.get(section)).filter(sectionMap -> sectionMap.containsKey(key))
+                                                  .isPresent(),
+                                      ctx -> {
+                                          if (section.equals(ctx.base())) {
+                                              return ctx.element()
+                                                        .containsKey(key);
+                                          } else {
+                                              String subPath = section.substring(ctx.base()
+                                                                                    .length() + 1);
+                                              return getNestedMap(ctx.element(),
+                                                                  subPath).filter(nested -> nested.containsKey(key))
+                                                                 .isPresent();
+                                          }
+                                      });
     }
 
     /// Get a nested map without creating it.
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> getNestedMap(Map<String, Object> root, String path) {
+    private static Option<Map<String, Object>> getNestedMap(Map<String, Object> root, String path) {
         String[] parts = path.split("\\.");
         Map<String, Object> current = root;
         for (String part : parts) {
@@ -508,10 +527,10 @@ public final class TomlParser {
             if (next instanceof Map<?, ?> map) {
                 current = (Map<String, Object>) map;
             } else {
-                return null;
+                return none();
             }
         }
-        return current;
+        return some(current);
     }
 
     /// Create an immutable copy of array tables.
@@ -522,10 +541,10 @@ public final class TomlParser {
     }
 
     /// Parsed key-value pair with optional target section for dotted keys.
-    private record KeyValue(String key, String targetSection, String value) {}
+    private record KeyValue(String key, Option<String> targetSection, String value) {}
 
     /// Try to parse a line as key = value using various key formats.
-    private static KeyValue parseKeyValue(String line, int lineNumber) {
+    private static Option<KeyValue> parseKeyValue(String line, int lineNumber) {
         // Try quoted key: "key" = value
         var quotedMatcher = QUOTED_KEY_VALUE_PATTERN.matcher(line);
         if (quotedMatcher.matches()) {
@@ -533,26 +552,26 @@ public final class TomlParser {
             // Process escape sequences in quoted keys
             var unescaped = unescapeBasicString(quotedKey, lineNumber);
             String key = unescaped.fold(_ -> quotedKey, s -> s);
-            return new KeyValue(key,
-                                null,
-                                quotedMatcher.group(2)
-                                             .trim());
+            return some(new KeyValue(key,
+                                     none(),
+                                     quotedMatcher.group(2)
+                                                  .trim()));
         }
         // Try literal key: 'key' = value
         var literalMatcher = LITERAL_KEY_VALUE_PATTERN.matcher(line);
         if (literalMatcher.matches()) {
-            return new KeyValue(literalMatcher.group(1),
-                                null,
-                                literalMatcher.group(2)
-                                              .trim());
+            return some(new KeyValue(literalMatcher.group(1),
+                                     none(),
+                                     literalMatcher.group(2)
+                                                   .trim()));
         }
         // Try bare key: key = value
         var bareMatcher = BARE_KEY_VALUE_PATTERN.matcher(line);
         if (bareMatcher.matches()) {
-            return new KeyValue(bareMatcher.group(1),
-                                null,
-                                bareMatcher.group(2)
-                                           .trim());
+            return some(new KeyValue(bareMatcher.group(1),
+                                     none(),
+                                     bareMatcher.group(2)
+                                                .trim()));
         }
         // Try dotted key: section.key = value
         var dottedMatcher = DOTTED_KEY_VALUE_PATTERN.matcher(line);
@@ -560,17 +579,17 @@ public final class TomlParser {
             String fullKey = dottedMatcher.group(1);
             int lastDot = fullKey.lastIndexOf('.');
             if (lastDot > 0) {
-                return new KeyValue(fullKey.substring(lastDot + 1),
-                                    fullKey.substring(0, lastDot),
-                                    dottedMatcher.group(2)
-                                                 .trim());
+                return some(new KeyValue(fullKey.substring(lastDot + 1),
+                                         some(fullKey.substring(0, lastDot)),
+                                         dottedMatcher.group(2)
+                                                      .trim()));
             }
-            return new KeyValue(fullKey,
-                                null,
-                                dottedMatcher.group(2)
-                                             .trim());
+            return some(new KeyValue(fullKey,
+                                     none(),
+                                     dottedMatcher.group(2)
+                                                  .trim()));
         }
-        return null;
+        return none();
     }
 
     /// Check if an array value is complete (balanced brackets).
@@ -602,8 +621,7 @@ public final class TomlParser {
                                                                     int lineNumber,
                                                                     Map<String, Map<String, Object>> sections,
                                                                     Map<String, List<Map<String, Object>>> arrayTables,
-                                                                    String currentArrayTableBase,
-                                                                    Map<String, Object> currentArrayTableElement) {
+                                                                    Option<ArrayTableContext> arrayTableContext) {
         // Strip comments from array lines
         String processedLine = stripArrayLineComment(rawLine);
         state.appendLine(processedLine);
@@ -617,8 +635,7 @@ public final class TomlParser {
             }
             parseResult.onSuccess(value -> putValue(sections,
                                                     arrayTables,
-                                                    currentArrayTableBase,
-                                                    currentArrayTableElement,
+                                                    arrayTableContext,
                                                     state.pendingSection(),
                                                     state.pendingKey(),
                                                     value));

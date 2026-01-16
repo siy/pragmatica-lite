@@ -21,7 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.consensus.Command;
-import org.pragmatica.consensus.ConsensusErrors;
+import org.pragmatica.consensus.ConsensusError;
 import org.pragmatica.consensus.NodeId;
 import org.pragmatica.consensus.ProtocolMessage;
 import org.pragmatica.consensus.StateMachine;
@@ -57,9 +57,9 @@ class RabiaEngineTest {
 
     record TestCommand(String value) implements Command {}
 
-    private static final NodeId NODE_1 = nodeId("node-1");
-    private static final NodeId NODE_2 = nodeId("node-2");
-    private static final NodeId NODE_3 = nodeId("node-3");
+    private static final NodeId NODE_1 = nodeId("node-1").unwrap();
+    private static final NodeId NODE_2 = nodeId("node-2").unwrap();
+    private static final NodeId NODE_3 = nodeId("node-3").unwrap();
     private static final int CLUSTER_SIZE = 3;
 
     private TestTopologyManager topologyManager;
@@ -99,7 +99,7 @@ class RabiaEngineTest {
 
             assertThat(result.isFailure()).isTrue();
             result.onFailure(cause ->
-                assertThat(cause).isInstanceOf(ConsensusErrors.NodeInactive.class)
+                assertThat(cause).isInstanceOf(ConsensusError.NodeInactive.class)
             );
         }
 
@@ -111,7 +111,7 @@ class RabiaEngineTest {
 
             assertThat(result.isFailure()).isTrue();
             result.onFailure(cause ->
-                assertThat(cause).isInstanceOf(ConsensusErrors.CommandBatchIsEmpty.class)
+                assertThat(cause).isInstanceOf(ConsensusError.CommandBatchIsEmpty.class)
             );
         }
     }
@@ -237,7 +237,7 @@ class RabiaEngineTest {
         private final int clusterSize;
 
         TestTopologyManager(NodeId selfId, int clusterSize) {
-            this.self = NodeInfo.nodeInfo(selfId, NodeAddress.nodeAddress("localhost", 5000));
+            this.self = NodeInfo.nodeInfo(selfId, NodeAddress.nodeAddress("localhost", 5000).unwrap());
             this.clusterSize = clusterSize;
         }
 
@@ -248,7 +248,7 @@ class RabiaEngineTest {
 
         @Override
         public Option<NodeInfo> get(NodeId id) {
-            return Option.option(NodeInfo.nodeInfo(id, NodeAddress.nodeAddress("localhost", 5000)));
+            return Option.option(NodeInfo.nodeInfo(id, NodeAddress.nodeAddress("localhost", 5000).unwrap()));
         }
 
         @Override
@@ -262,10 +262,14 @@ class RabiaEngineTest {
         }
 
         @Override
-        public void start() {}
+        public Promise<Unit> start() {
+            return Promise.success(Unit.unit());
+        }
 
         @Override
-        public void stop() {}
+        public Promise<Unit> stop() {
+            return Promise.success(Unit.unit());
+        }
 
         @Override
         public TimeSpan pingInterval() {
@@ -282,8 +286,9 @@ class RabiaEngineTest {
         private final List<ProtocolMessage> messages = new CopyOnWriteArrayList<>();
 
         @Override
-        public <M extends ProtocolMessage> void broadcast(M message) {
+        public <M extends ProtocolMessage> Unit broadcast(M message) {
             messages.add(message);
+            return Unit.unit();
         }
 
         @Override
@@ -302,8 +307,9 @@ class RabiaEngineTest {
         public void handlePong(NetworkMessage.Pong pong) {}
 
         @Override
-        public <M extends ProtocolMessage> void send(NodeId nodeId, M message) {
+        public <M extends ProtocolMessage> Unit send(NodeId nodeId, M message) {
             messages.add(message);
+            return Unit.unit();
         }
 
         @Override
@@ -356,8 +362,9 @@ class RabiaEngineTest {
         }
 
         @Override
-        public void reset() {
+        public Unit reset() {
             processedCommands.clear();
+            return Unit.unit();
         }
 
         List<TestCommand> getProcessedCommands() {

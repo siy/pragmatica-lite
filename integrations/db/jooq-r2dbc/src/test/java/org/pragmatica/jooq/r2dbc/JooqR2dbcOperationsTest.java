@@ -18,10 +18,12 @@
 package org.pragmatica.jooq.r2dbc;
 
 import org.jooq.SQLDialect;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Disabled("Placeholder - requires R2DBC database")
 class JooqR2dbcOperationsTest {
 
     @Test

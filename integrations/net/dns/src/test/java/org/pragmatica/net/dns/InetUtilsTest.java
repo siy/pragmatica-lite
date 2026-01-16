@@ -54,7 +54,7 @@ class InetUtilsTest {
         InetUtils.forBytes(bytes)
                  .onSuccessRun(Assertions::fail)
                  .onFailure(cause -> {
-                     assertThat(cause).isInstanceOf(ResolverErrors.InvalidIpAddress.class);
+                     assertThat(cause).isInstanceOf(ResolverError.InvalidIpAddress.class);
                  });
     }
 

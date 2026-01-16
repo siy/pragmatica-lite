@@ -18,6 +18,7 @@
 package org.pragmatica.jdbc;
 
 import org.pragmatica.lang.Functions.Fn1;
+import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
 
@@ -95,19 +96,21 @@ public interface JdbcTransactional {
     }
 
     private static void rollback(Connection conn) {
-        if (conn != null) {
-            try{
-                conn.rollback();
-            } catch (SQLException _) {}
-        }
+        Option.option(conn)
+              .onPresent(c -> {
+                  try{
+                      c.rollback();
+                  } catch (SQLException _) {}
+              });
     }
 
     private static void close(Connection conn) {
-        if (conn != null) {
-            try{
-                conn.setAutoCommit(true);
-                conn.close();
-            } catch (SQLException _) {}
-        }
+        Option.option(conn)
+              .onPresent(c -> {
+                  try{
+                      c.setAutoCommit(true);
+                      c.close();
+                  } catch (SQLException _) {}
+              });
     }
 }

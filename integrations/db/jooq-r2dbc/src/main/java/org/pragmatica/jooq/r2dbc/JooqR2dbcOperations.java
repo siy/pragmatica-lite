@@ -171,11 +171,12 @@ final class ConnectionFactoryJooqR2dbcOperations implements JooqR2dbcOperations 
     }
 
     /// Maps exceptions to R2dbcError, with special handling for JOOQ-R2DBC specific exceptions.
-    private static R2dbcError mapException(Throwable e, String sql) {
+    @SuppressWarnings("unused")
+    private static R2dbcError mapException(Throwable e, String ignored) {
         return switch (e) {
-            case R2dbcNoResultException _ -> new R2dbcError.NoResult(sql);
-            case R2dbcMultipleResultsException ex -> new R2dbcError.MultipleResults(sql, parseCount(ex.getMessage()));
-            default -> R2dbcError.fromException(e, sql);
+            case R2dbcNoResultException _ -> R2dbcError.NoResult.INSTANCE;
+            case R2dbcMultipleResultsException ex -> new R2dbcError.MultipleResults(parseCount(ex.getMessage()));
+            default -> R2dbcError.fromException(e, ignored);
         };
     }
 

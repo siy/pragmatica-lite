@@ -112,11 +112,9 @@ public sealed interface JooqError extends Cause {
 
         @Override
         public String message() {
-            var msg = cause.getMessage();
-            return "Database operation failed: " + ( msg != null
-                                                     ? msg
-                                                     : cause.getClass()
-                                                            .getName());
+            return "Database operation failed: " + Option.option(cause.getMessage())
+                                                         .or(() -> cause.getClass()
+                                                                        .getName());
         }
     }
 
@@ -136,13 +134,12 @@ public sealed interface JooqError extends Cause {
             case SQLTimeoutException e -> new Timeout(e.getMessage());
             case SQLIntegrityConstraintViolationException e -> ConstraintViolation.constraintViolation(e.getMessage());
             case SQLTransactionRollbackException e -> new TransactionRollback(e.getMessage());
-            case SQLException e -> {
-                var sqlState = e.getSQLState();
-                if (sqlState != null && sqlState.startsWith("08")) {
-                    yield ConnectionFailed.connectionFailed(e.getMessage(), e);
-                }
-                yield new QueryFailed(sql, e.getMessage());
-            }
+            case SQLException e -> Option.option(e.getSQLState())
+                                         .filter(state -> state.startsWith("08"))
+                                         .map(_ -> (JooqError) ConnectionFailed.connectionFailed(e.getMessage(),
+                                                                                                 e))
+                                         .or(() -> new QueryFailed(sql,
+                                                                   e.getMessage()));
             default -> DatabaseFailure.databaseFailure(throwable);
         };
     }

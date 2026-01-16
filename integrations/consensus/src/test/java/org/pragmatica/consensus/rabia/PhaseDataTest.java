@@ -35,11 +35,11 @@ class PhaseDataTest {
     private static final int QUORUM_SIZE = 3;
     private static final int F_PLUS_ONE = 3;
 
-    private static final NodeId NODE_1 = nodeId("node-1");
-    private static final NodeId NODE_2 = nodeId("node-2");
-    private static final NodeId NODE_3 = nodeId("node-3");
-    private static final NodeId NODE_4 = nodeId("node-4");
-    private static final NodeId NODE_5 = nodeId("node-5");
+    private static final NodeId NODE_1 = nodeId("node-1").unwrap();
+    private static final NodeId NODE_2 = nodeId("node-2").unwrap();
+    private static final NodeId NODE_3 = nodeId("node-3").unwrap();
+    private static final NodeId NODE_4 = nodeId("node-4").unwrap();
+    private static final NodeId NODE_5 = nodeId("node-5").unwrap();
 
     private PhaseData<TestCommand> phaseData;
 

@@ -17,9 +17,9 @@
 
 package org.pragmatica.json;
 
+import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
-
-import java.util.Map;
+import org.pragmatica.lang.utils.Causes;
 
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonParser;
@@ -28,19 +28,20 @@ import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.JavaType;
 import tools.jackson.databind.ValueDeserializer;
 
+import static org.pragmatica.lang.Option.option;
 import static org.pragmatica.lang.Result.success;
 
 /// Jackson deserializer for Result<T> types.
 /// Expects JSON in format: {"success": true, "value": <T>} or {"success": false, "error": {"message": "...", "type": "..."}}
 public class ResultDeserializer extends ValueDeserializer<Result<?>> {
-    private final JavaType valueType;
-    private final ValueDeserializer<Object> valueDeserializer;
+    private final Option<JavaType> valueType;
+    private final Option<ValueDeserializer<Object>> valueDeserializer;
 
     public ResultDeserializer() {
-        this(null, null);
+        this(Option.none(), Option.none());
     }
 
-    private ResultDeserializer(JavaType valueType, ValueDeserializer<Object> valueDeserializer) {
+    private ResultDeserializer(Option<JavaType> valueType, Option<ValueDeserializer<Object>> valueDeserializer) {
         this.valueType = valueType;
         this.valueDeserializer = valueDeserializer;
     }
@@ -50,58 +51,77 @@ public class ResultDeserializer extends ValueDeserializer<Result<?>> {
         if (p.currentToken() != tools.jackson.core.JsonToken.START_OBJECT) {
             throw new JacksonException("Expected START_OBJECT token") {};
         }
-        Boolean isSuccess = null;
+        Option<Boolean> isSuccess = Option.none();
         Object value = null;
-        String errorMessage = null;
+        Option<String> errorMessage = Option.none();
         while (p.nextToken() != tools.jackson.core.JsonToken.END_OBJECT) {
             String fieldName = p.currentName();
             p.nextToken();
             switch (fieldName) {
-                case "success" -> isSuccess = p.getBooleanValue();
-                case "value" -> {
-                    if (valueDeserializer != null) {
-                        value = valueDeserializer.deserialize(p, ctxt);
-                    } else if (valueType != null) {
-                        value = ctxt.readValue(p, valueType);
-                    } else {
-                        value = p.readValueAs(Object.class);
-                    }
-                }
+                case "success" -> isSuccess = Option.some(p.getBooleanValue());
+                case "value" -> value = deserializeValue(p, ctxt);
                 case "error" -> {
                     while (p.nextToken() != tools.jackson.core.JsonToken.END_OBJECT) {
                         String errorField = p.currentName();
                         p.nextToken();
                         if ("message".equals(errorField)) {
-                            errorMessage = p.getString();
+                            errorMessage = Option.some(p.getString());
                         }
                     }
                 }
             }
         }
-        if (isSuccess == null) {
-            throw new JacksonException("Missing 'success' field in Result JSON") {};
+        Object finalValue = value;
+        var finalErrorMessage = errorMessage;
+        var cause = Causes.cause("Missing 'success' field in Result JSON");
+        return isSuccess.toResult(cause)
+                        .flatMap(successFlag -> successFlag
+                                                ? success(finalValue)
+                                                : DeserializedCause.deserializedCause(finalErrorMessage.or("Unknown error"))
+                                                                   .result());
+    }
+
+    private Object deserializeValue(JsonParser p, DeserializationContext ctxt) {
+        return valueDeserializer.map(deser -> deserializeWith(deser, p, ctxt))
+                                .orElse(() -> valueType.map(type -> readValue(ctxt, p, type)))
+                                .or(() -> readValueAs(p));
+    }
+
+    private static Object deserializeWith(ValueDeserializer<Object> deser, JsonParser p, DeserializationContext ctxt) {
+        try{
+            return deser.deserialize(p, ctxt);
+        } catch (JacksonException e) {
+            throw new RuntimeException(e);
         }
-        if (isSuccess) {
-            return success(value);
-        } else {
-            return DeserializedCause.deserializedCause(errorMessage != null
-                                                       ? errorMessage
-                                                       : "Unknown error")
-                                    .result();
+    }
+
+    private static Object readValue(DeserializationContext ctxt, JsonParser p, JavaType type) {
+        try{
+            return ctxt.readValue(p, type);
+        } catch (JacksonException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Object readValueAs(JsonParser p) {
+        try{
+            return p.readValueAs(Object.class);
+        } catch (JacksonException e) {
+            throw new RuntimeException(e);
         }
     }
 
     @Override
     public ValueDeserializer<?> createContextual(DeserializationContext ctxt, BeanProperty property) {
-        if (property == null) {
-            return this;
-        }
-        JavaType type = property.getType();
-        if (type.hasContentType()) {
-            JavaType contentType = type.getContentType();
-            ValueDeserializer<Object> deser = ctxt.findContextualValueDeserializer(contentType, property);
-            return new ResultDeserializer(contentType, deser);
-        }
-        return this;
+        return option(property).map(BeanProperty::getType)
+                     .filter(JavaType::hasContentType)
+                     .<ValueDeserializer<?>> map(type -> {
+                                                     JavaType contentType = type.getContentType();
+                                                     ValueDeserializer<Object> deser = ctxt.findContextualValueDeserializer(contentType,
+                                                                                                                            property);
+                                                     return new ResultDeserializer(option(contentType),
+                                                                                   option(deser));
+                                                 })
+                     .or(this);
     }
 }

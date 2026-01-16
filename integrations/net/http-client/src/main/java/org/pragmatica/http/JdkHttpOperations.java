@@ -17,6 +17,7 @@
 
 package org.pragmatica.http;
 
+import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
 
 import java.net.http.HttpClient;
@@ -54,18 +55,16 @@ public final class JdkHttpOperations implements HttpOperations {
     ///
     /// @param connectTimeout Connection timeout
     /// @param followRedirects Redirect policy
-    /// @param executor Custom executor for async operations
+    /// @param executor Optional custom executor for async operations
     ///
     /// @return JdkHttpOperations instance with specified configuration
     public static JdkHttpOperations jdkHttpOperations(Duration connectTimeout,
                                                       HttpClient.Redirect followRedirects,
-                                                      Executor executor) {
+                                                      Option<Executor> executor) {
         var builder = HttpClient.newBuilder()
                                 .connectTimeout(connectTimeout)
                                 .followRedirects(followRedirects);
-        if (executor != null) {
-            builder.executor(executor);
-        }
+        executor.onPresent(builder::executor);
         return new JdkHttpOperations(builder.build());
     }
 
@@ -73,13 +72,9 @@ public final class JdkHttpOperations implements HttpOperations {
     public <T> Promise<HttpResult<T>> send(HttpRequest request, BodyHandler<T> handler) {
         return Promise.promise(promise -> client.sendAsync(request, handler)
                                                 .thenApply(HttpResult::from)
-                                                .whenComplete((result, error) -> {
-                                                                  if (error != null) {
-                                                                      promise.fail(HttpError.fromException(error));
-                                                                  } else {
-                                                                      promise.succeed(result);
-                                                                  }
-                                                              }));
+                                                .whenComplete((result, error) -> Option.option(error)
+                                                                                       .onPresent(e -> promise.fail(HttpError.fromException(e)))
+                                                                                       .onEmpty(() -> promise.succeed(result))));
     }
 
     /// Returns the underlying HttpClient.

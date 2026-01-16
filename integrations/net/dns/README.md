@@ -91,15 +91,15 @@ public interface DomainAddress {
 
 ### Error Handling
 
-All errors are typed via `ResolverErrors`:
+All errors are typed via `ResolverError`:
 
 ```java
-public sealed interface ResolverErrors extends Cause {
-    record InvalidIpAddress(String message) implements ResolverErrors {}
-    record ServerError(String message) implements ResolverErrors {}
-    record RequestTimeout(String message) implements ResolverErrors {}
-    record UnknownError(String message) implements ResolverErrors {}
-    record UnknownDomain(String message) implements ResolverErrors {}
+public sealed interface ResolverError extends Cause {
+    record InvalidIpAddress(String message) implements ResolverError {}
+    record ServerError(String message) implements ResolverError {}
+    record RequestTimeout(String message) implements ResolverError {}
+    record UnknownError(String message) implements ResolverError {}
+    record UnknownDomain(String message) implements ResolverError {}
 }
 ```
 
