@@ -196,6 +196,13 @@ public class RabiaEngine<C extends Command> {
     }
 
     private Result<Batch<C>> submitCommands(List<C> commands, Consumer<Batch<C>> onBatchPrepared) {
+        return validateSubmission(commands).map(_ -> prepareBatch(commands))
+                                 .onSuccess(batch -> registerBatch(batch, onBatchPrepared))
+                                 .onSuccess(this::broadcastBatch)
+                                 .onSuccess(_ -> triggerPhaseIfNeeded());
+    }
+
+    private Result<List<C>> validateSubmission(List<C> commands) {
         if (commands.isEmpty()) {
             return ConsensusError.commandBatchIsEmpty()
                                  .result();
@@ -204,16 +211,29 @@ public class RabiaEngine<C extends Command> {
             return ConsensusError.nodeInactive(self)
                                  .result();
         }
+        return Result.success(commands);
+    }
+
+    private Batch<C> prepareBatch(List<C> commands) {
         var batch = batch(commands);
         log.trace("Node {}: client submitted {} command(s). Prepared batch: {}", self, commands.size(), batch);
+        return batch;
+    }
+
+    private void registerBatch(Batch<C> batch, Consumer<Batch<C>> onBatchPrepared) {
         pendingBatches.put(batch.correlationId(), batch);
         metrics.updatePendingBatches(self, pendingBatches.size());
         onBatchPrepared.accept(batch);
+    }
+
+    private void broadcastBatch(Batch<C> batch) {
         network.broadcast(new NewBatch<>(self, batch));
+    }
+
+    private void triggerPhaseIfNeeded() {
         if (!isInPhase.get()) {
             executor.execute(this::startPhase);
         }
-        return Result.success(batch);
     }
 
     public Promise<Unit> start() {

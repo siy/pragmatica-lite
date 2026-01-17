@@ -27,9 +27,12 @@ public record Partition(int value) implements Comparable<Partition> {
 
     private static final Cause INVALID_PARTITION = Causes.cause("Partition must be between 0 and " + (MAX_PARTITIONS - 1));
 
-    public Partition {
-        if (value < 0 || value >= MAX_PARTITIONS) {
-            throw new IllegalArgumentException(INVALID_PARTITION.message());
+    // Pre-allocated array of all valid partitions for efficient access
+    private static final Partition[] PARTITIONS = new Partition[MAX_PARTITIONS];
+
+    static {
+        for (int i = 0; i < MAX_PARTITIONS; i++) {
+            PARTITIONS[i] = new Partition(i);
         }
     }
 
@@ -37,21 +40,23 @@ public record Partition(int value) implements Comparable<Partition> {
         if (value < 0 || value >= MAX_PARTITIONS) {
             return INVALID_PARTITION.result();
         }
-        return Result.success(new Partition(value));
+        return Result.success(PARTITIONS[value]);
     }
 
-    public static Partition partitionUnsafe(int value) {
-        return new Partition(value);
+    /// Internal access for known-valid values (0 to MAX_PARTITIONS-1).
+    /// Used by next(), previous(), and internal iteration.
+    static Partition at(int value) {
+        return PARTITIONS[value];
     }
 
     /// Get the next partition in the ring (wraps around).
     public Partition next() {
-        return new Partition((value + 1) % MAX_PARTITIONS);
+        return at((value + 1) % MAX_PARTITIONS);
     }
 
     /// Get the previous partition in the ring (wraps around).
     public Partition previous() {
-        return new Partition((value - 1 + MAX_PARTITIONS) % MAX_PARTITIONS);
+        return at((value - 1 + MAX_PARTITIONS) % MAX_PARTITIONS);
     }
 
     @Override

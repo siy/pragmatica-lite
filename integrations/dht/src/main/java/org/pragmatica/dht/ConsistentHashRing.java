@@ -92,7 +92,7 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
     public Partition partitionFor(byte[] key) {
         int hash = hash(key);
         // Use bitwise AND to ensure non-negative result (Math.abs fails for Integer.MIN_VALUE)
-        return Partition.partitionUnsafe((hash & 0x7FFFFFFF) % Partition.MAX_PARTITIONS);
+        return Partition.at((hash & 0x7FFFFFFF) % Partition.MAX_PARTITIONS);
     }
 
     /// Get the partition for a given string key.

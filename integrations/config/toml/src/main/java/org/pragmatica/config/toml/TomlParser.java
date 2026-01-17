@@ -463,24 +463,21 @@ public final class TomlParser {
                                  String key,
                                  Object value) {
         arrayTableContext.filter(ctx -> section.startsWith(ctx.base()))
-                         .fold(() -> {
-                                   sections.computeIfAbsent(section,
-                                                            _ -> new LinkedHashMap<>())
-                                           .put(key, value);
-                                   return Unit.unit();
-                               },
-                               ctx -> {
-                                   if (section.equals(ctx.base())) {
-                                       ctx.element()
-                                          .put(key, value);
-                                   } else {
-                                       String subPath = section.substring(ctx.base()
-                                                                             .length() + 1);
-                                       getOrCreateNestedMap(ctx.element(),
-                                                            subPath).put(key, value);
-                                   }
-                                   return Unit.unit();
-                               });
+                         .onPresent(ctx -> putValueInContext(ctx, section, key, value))
+                         .onEmpty(() -> sections.computeIfAbsent(section,
+                                                                 _ -> new LinkedHashMap<>())
+                                                .put(key, value));
+    }
+
+    private static void putValueInContext(ArrayTableContext ctx, String section, String key, Object value) {
+        if (section.equals(ctx.base())) {
+            ctx.element()
+               .put(key, value);
+        } else {
+            String subPath = section.substring(ctx.base()
+                                                  .length() + 1);
+            getOrCreateNestedMap(ctx.element(), subPath).put(key, value);
+        }
     }
 
     /// Get or create a nested map for sub-table paths like "details" or "nested.deep".
@@ -501,20 +498,27 @@ public final class TomlParser {
                                           String section,
                                           String key) {
         return arrayTableContext.filter(ctx -> section.startsWith(ctx.base()))
-                                .fold(() -> option(sections.get(section)).filter(sectionMap -> sectionMap.containsKey(key))
-                                                  .isPresent(),
-                                      ctx -> {
-                                          if (section.equals(ctx.base())) {
-                                              return ctx.element()
-                                                        .containsKey(key);
-                                          } else {
-                                              String subPath = section.substring(ctx.base()
-                                                                                    .length() + 1);
-                                              return getNestedMap(ctx.element(),
-                                                                  subPath).filter(nested -> nested.containsKey(key))
-                                                                 .isPresent();
-                                          }
-                                      });
+                                .fold(() -> isDuplicateInSections(sections, section, key),
+                                      ctx -> isDuplicateInContext(ctx, section, key));
+    }
+
+    private static boolean isDuplicateInSections(Map<String, Map<String, Object>> sections,
+                                                 String section,
+                                                 String key) {
+        return option(sections.get(section)).filter(sectionMap -> sectionMap.containsKey(key))
+                     .isPresent();
+    }
+
+    private static boolean isDuplicateInContext(ArrayTableContext ctx, String section, String key) {
+        if (section.equals(ctx.base())) {
+            return ctx.element()
+                      .containsKey(key);
+        }
+        String subPath = section.substring(ctx.base()
+                                              .length() + 1);
+        return getNestedMap(ctx.element(),
+                            subPath).filter(nested -> nested.containsKey(key))
+                           .isPresent();
     }
 
     /// Get a nested map without creating it.

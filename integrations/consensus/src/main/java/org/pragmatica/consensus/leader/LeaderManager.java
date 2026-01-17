@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.pragmatica.consensus.leader.LeaderNotification.leaderChange;
-import static org.pragmatica.lang.Option.option;
 
 /// Leader manager is responsible for choosing which node is the leader.
 /// Although consensus is leaderless, it is often necessary to have a single
@@ -46,15 +45,17 @@ public interface LeaderManager {
         record leaderManager(NodeId self,
                              MessageRouter router,
                              AtomicBoolean active,
-                             AtomicReference<NodeId> currentLeader) implements LeaderManager {
+                             AtomicReference<Option<NodeId>> currentLeader) implements LeaderManager {
             @Override
             public Option<NodeId> leader() {
-                return option(currentLeader.get());
+                return currentLeader.get();
             }
 
             @Override
             public boolean isLeader() {
-                return self.equals(currentLeader.get());
+                return currentLeader.get()
+                                    .filter(self::equals)
+                                    .isPresent();
             }
 
             @Override
@@ -76,15 +77,16 @@ public interface LeaderManager {
 
             @Override
             public void nodeDown(NodeDown nodeDown) {
-                currentLeader().set(null);
+                currentLeader().set(Option.none());
                 stop();
             }
 
             private void tryElect(NodeId candidate) {
                 var oldLeader = currentLeader().get();
+                var newLeader = Option.some(candidate);
                 // Potential leader change. Implicitly handles initial election.
-                if (currentLeader().compareAndSet(oldLeader, candidate)) {
-                    if (!candidate.equals(oldLeader)) {
+                if (currentLeader().compareAndSet(oldLeader, newLeader)) {
+                    if (!newLeader.equals(oldLeader)) {
                         notifyLeaderChange();
                     }
                 }
@@ -92,8 +94,10 @@ public interface LeaderManager {
 
             private void notifyLeaderChange() {
                 if (active().get()) {
-                    var nodeId = currentLeader().get();
-                    router().route(leaderChange(option(nodeId), self.equals(nodeId)));
+                    var leaderOpt = currentLeader().get();
+                    router().route(leaderChange(leaderOpt,
+                                                leaderOpt.filter(self::equals)
+                                                         .isPresent()));
                 }
             }
 
@@ -113,12 +117,12 @@ public interface LeaderManager {
             private void stop() {
                 // Set inactive first to prevent new elections during shutdown
                 active.set(false);
-                currentLeader().set(null);
+                currentLeader().set(Option.none());
                 // Send notification directly since active is now false
-                router().route(leaderChange(option(null), false));
+                router().route(leaderChange(Option.none(), false));
             }
         }
-        return new leaderManager(self, router, new AtomicBoolean(false), new AtomicReference<>());
+        return new leaderManager(self, router, new AtomicBoolean(false), new AtomicReference<>(Option.none()));
     }
 
     @MessageReceiver

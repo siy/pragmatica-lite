@@ -326,7 +326,7 @@ final class NettyHttpServer implements HttpServer {
         private final ChannelHandlerContext ctx;
         private final String requestId;
         private final io.netty.handler.codec.http.HttpHeaders responseHeaders;
-        private boolean written = false;
+        private final java.util.concurrent.atomic.AtomicBoolean written = new java.util.concurrent.atomic.AtomicBoolean(false);
 
         NettyResponseWriter(ChannelHandlerContext ctx, String requestId) {
             this.ctx = ctx;
@@ -342,10 +342,9 @@ final class NettyHttpServer implements HttpServer {
 
         @Override
         public void write(HttpStatus status, byte[] body, ContentType contentType) {
-            if (written) {
+            if (!written.compareAndSet(false, true)) {
                 return;
             }
-            written = true;
             var nettyStatus = HttpResponseStatus.valueOf(status.code());
             var content = Unpooled.wrappedBuffer(body);
             var response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, nettyStatus, content);

@@ -26,6 +26,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /// Apache Fury-based serializer implementation.
+///
+/// <b>Design Note:</b> Serialization failures throw RuntimeException intentionally.
+/// Such failures indicate fatal system misconfiguration and should trigger immediate shutdown.
+/// See {@link Serializer} for rationale.
 public interface FurySerializer extends Serializer {
     /// Create a Fury serializer with the given class registrators.
     ///

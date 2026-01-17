@@ -19,6 +19,7 @@ package org.pragmatica.net.tcp;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class SocketOptionsTest {
 
@@ -43,12 +44,27 @@ class SocketOptionsTest {
     @Test
     void withSoBacklog_returns_new_instance() {
         var original = SocketOptions.socketOptions();
-        var modified = original.withSoBacklog(256);
 
-        assertThat(modified.soBacklog()).isEqualTo(256);
-        assertThat(modified.soKeepalive()).isTrue();
-        assertThat(modified.tcpNoDelay()).isTrue();
+        original.withSoBacklog(256)
+            .onFailure(_ -> fail("Should succeed"))
+            .onSuccess(modified -> {
+                assertThat(modified.soBacklog()).isEqualTo(256);
+                assertThat(modified.soKeepalive()).isTrue();
+                assertThat(modified.tcpNoDelay()).isTrue();
+            });
+
         assertThat(original.soBacklog()).isEqualTo(128);
+    }
+
+    @Test
+    void withSoBacklog_fails_for_invalid_value() {
+        var original = SocketOptions.socketOptions();
+
+        original.withSoBacklog(0)
+            .onSuccess(_ -> fail("Should fail for zero backlog"));
+
+        original.withSoBacklog(-1)
+            .onSuccess(_ -> fail("Should fail for negative backlog"));
     }
 
     @Test
@@ -75,13 +91,35 @@ class SocketOptionsTest {
 
     @Test
     void chained_modifications_work() {
-        var options = SocketOptions.socketOptions()
+        SocketOptions.socketOptions()
             .withSoBacklog(512)
-            .withSoKeepalive(false)
-            .withTcpNoDelay(false);
+            .map(opts -> opts.withSoKeepalive(false))
+            .map(opts -> opts.withTcpNoDelay(false))
+            .onFailure(_ -> fail("Should succeed"))
+            .onSuccess(options -> {
+                assertThat(options.soBacklog()).isEqualTo(512);
+                assertThat(options.soKeepalive()).isFalse();
+                assertThat(options.tcpNoDelay()).isFalse();
+            });
+    }
 
-        assertThat(options.soBacklog()).isEqualTo(512);
-        assertThat(options.soKeepalive()).isFalse();
-        assertThat(options.tcpNoDelay()).isFalse();
+    @Test
+    void validated_factory_succeeds_for_valid_values() {
+        SocketOptions.socketOptions(256, false, false)
+            .onFailure(_ -> fail("Should succeed"))
+            .onSuccess(options -> {
+                assertThat(options.soBacklog()).isEqualTo(256);
+                assertThat(options.soKeepalive()).isFalse();
+                assertThat(options.tcpNoDelay()).isFalse();
+            });
+    }
+
+    @Test
+    void validated_factory_fails_for_invalid_backlog() {
+        SocketOptions.socketOptions(0, true, true)
+            .onSuccess(_ -> fail("Should fail for zero backlog"));
+
+        SocketOptions.socketOptions(-5, true, true)
+            .onSuccess(_ -> fail("Should fail for negative backlog"));
     }
 }

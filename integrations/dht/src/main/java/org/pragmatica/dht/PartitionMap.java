@@ -16,7 +16,9 @@
 
 package org.pragmatica.dht;
 
+import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
 
 import java.util.List;
 import java.util.Set;
@@ -35,10 +37,10 @@ public interface PartitionMap<N> {
     Promise<List<N>> nodesFor(Partition partition, int replicaCount);
 
     /// Get the primary node for a partition.
-    default Promise<N> primaryFor(Partition partition) {
+    default Promise<Option<N>> primaryFor(Partition partition) {
         return nodesFor(partition, 1).map(nodes -> nodes.isEmpty()
-                                                   ? null
-                                                   : nodes.getFirst());
+                                                   ? Option.none()
+                                                   : Option.some(nodes.getFirst()));
     }
 
     /// Get all partitions owned by a node (as primary).
@@ -51,5 +53,5 @@ public interface PartitionMap<N> {
     /// Called when nodes join or leave the cluster.
     ///
     /// @param nodes current set of nodes in the cluster
-    Promise<Void> updateTopology(Set<N> nodes);
+    Promise<Unit> updateTopology(Set<N> nodes);
 }

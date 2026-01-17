@@ -15,6 +15,11 @@
  */
 
 package org.pragmatica.dht;
+
+import org.pragmatica.lang.Cause;
+import org.pragmatica.lang.Result;
+import org.pragmatica.lang.utils.Causes;
+
 /// Configuration for the distributed hash table.
 ///
 /// @param replicationFactor number of copies of each piece of data (including primary).
@@ -24,6 +29,10 @@ package org.pragmatica.dht;
 public record DHTConfig(int replicationFactor, int writeQuorum, int readQuorum) {
     /// Full replication marker - all nodes store all data.
     public static final int FULL_REPLICATION = 0;
+
+    private static final Cause INVALID_REPLICATION = Causes.cause("replicationFactor must be >= 0 (0 = full replication)");
+    private static final Cause INVALID_WRITE_QUORUM = Causes.cause("writeQuorum must be between 1 and replicationFactor");
+    private static final Cause INVALID_READ_QUORUM = Causes.cause("readQuorum must be between 1 and replicationFactor");
 
     /// Default configuration: 3 replicas, quorum of 2 for both reads and writes.
     public static final DHTConfig DEFAULT = new DHTConfig(3, 2, 2);
@@ -35,28 +44,31 @@ public record DHTConfig(int replicationFactor, int writeQuorum, int readQuorum) 
     /// Read/write quorum of 1 since any node has all data.
     public static final DHTConfig FULL = new DHTConfig(FULL_REPLICATION, 1, 1);
 
-    public DHTConfig {
+    /// Create a DHT configuration with validation.
+    public static Result<DHTConfig> dhtConfig(int replicationFactor, int writeQuorum, int readQuorum) {
         if (replicationFactor < 0) {
-            throw new IllegalArgumentException("replicationFactor must be >= 0 (0 = full replication)");
+            return INVALID_REPLICATION.result();
         }
         if (replicationFactor > 0) {
             if (writeQuorum < 1 || writeQuorum > replicationFactor) {
-                throw new IllegalArgumentException("writeQuorum must be between 1 and replicationFactor");
+                return INVALID_WRITE_QUORUM.result();
             }
             if (readQuorum < 1 || readQuorum > replicationFactor) {
-                throw new IllegalArgumentException("readQuorum must be between 1 and replicationFactor");
+                return INVALID_READ_QUORUM.result();
             }
         }
+        return Result.success(new DHTConfig(replicationFactor, writeQuorum, readQuorum));
     }
 
     /// Create a config with the given replication factor and majority quorum.
     /// Use 0 for full replication.
-    public static DHTConfig withReplication(int replicationFactor) {
+    /// Returns the pre-defined FULL config for full replication, otherwise calculates majority quorum.
+    public static Result<DHTConfig> withReplication(int replicationFactor) {
         if (replicationFactor == FULL_REPLICATION) {
-            return FULL;
+            return Result.success(FULL);
         }
         int quorum = (replicationFactor / 2) + 1;
-        return new DHTConfig(replicationFactor, quorum, quorum);
+        return dhtConfig(replicationFactor, quorum, quorum);
     }
 
     /// Check if this is full replication mode (all nodes store everything).

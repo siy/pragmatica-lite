@@ -5,18 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.12] - 2026-01-15
+## [0.10.0] - 2026-01-17
 
 ### Changed
 - Bumped jbct-maven-plugin to 0.4.9
 - **JBCT compliance fixes across integrations module:**
   - Parse-don't-validate: `DHTConfig`, `Partition`, `NodeId`, `BatchId`, `CorrelationId`, `DomainName`, `NodeAddress` now return `Result<T>`
+  - `SocketOptions` factory now returns `Result<SocketOptions>` with validation
+  - `JdbcTransactional` refactored to use Promise composition instead of blocking `.await()`
+  - `RabiaEngine.submitCommands()` decomposed into Leaf methods
+  - `RabiaPersistence` uses `Option` instead of null for saved state
+  - `MemoryStorageEngine` and `Headers` use `Option.option()` pattern
   - Security: Removed SQL from error messages in `JdbcError`, `JooqError`, `R2dbcError`
   - Async patterns: `JooqR2dbcTransactional` properly chains async operations
   - Defensive copies: `TopologyConfig`, `HttpServerConfig`, `DHTMessage` byte arrays
   - Void→Unit: `StateMachine.reset()`, `TopologyManager.start()/stop()`, `ClusterNetwork.broadcast()/send()`
   - Error naming: `ResolverErrors`→`ResolverError`, `ConsensusErrors`→`ConsensusError`
   - Null policy: Replaced null checks with `Option` patterns in 29+ files
+- **Serializer design note:** Added documentation explaining intentional exception-based error handling for fatal serialization failures
 
 ## [0.9.11] - 2026-01-15
 
