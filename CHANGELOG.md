@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.10.0] - 2026-01-17
 
+### Added
+- `TimeSpan` value object for parsing human-friendly duration strings
+  - Supports units: d (days), h (hours), m (minutes), s (seconds), ms (milliseconds), us (microseconds), ns (nanoseconds)
+  - Optional whitespace between components ("1d16h" and "1d 16h" both valid)
+  - `TimeSpan.timeSpan(String)` factory returning `Result<TimeSpan>`
+  - `TimeSpanError` sealed interface for typed parsing errors
+
 ### Changed
 - Bumped jbct-maven-plugin to 0.4.9
 - **JBCT compliance fixes across integrations module:**
