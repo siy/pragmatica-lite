@@ -50,21 +50,21 @@ class I18nTest {
     void testParseCurrencyFailure() {
         I18n.parseCurrency("INVALID")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testParseCurrencyNull() {
         I18n.parseCurrency(null)
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testParseCurrencyEmpty() {
         I18n.parseCurrency("")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -99,7 +99,7 @@ class I18nTest {
         // null throws NullPointerException in Locale.forLanguageTag
         I18n.parseLocale(null)
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -127,21 +127,21 @@ class I18nTest {
     void testParseCharsetFailure() {
         I18n.parseCharset("INVALID-CHARSET")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testParseCharsetNull() {
         I18n.parseCharset(null)
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testParseCharsetEmpty() {
         I18n.parseCharset("")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -176,21 +176,21 @@ class I18nTest {
     void testParseZoneIdFailure() {
         I18n.parseZoneId("Invalid/Zone")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testParseZoneIdNull() {
         I18n.parseZoneId(null)
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testParseZoneIdEmpty() {
         I18n.parseZoneId("")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -225,20 +225,123 @@ class I18nTest {
     void testParseZoneOffsetFailure() {
         I18n.parseZoneOffset("+25:00")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testParseZoneOffsetNull() {
         I18n.parseZoneOffset(null)
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testParseZoneOffsetEmpty() {
         I18n.parseZoneOffset("")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
+    }
+
+    // Edge cases
+
+    @Test
+    void testParseCurrencyLowercase() {
+        // Currency codes are case-sensitive - lowercase should fail
+        I18n.parseCurrency("usd")
+                .onSuccessRun(Assertions::fail)
+                .onFailure(cause -> assertNotNull(cause.message()));
+    }
+
+    @Test
+    void testParseCurrencyWithWhitespace() {
+        I18n.parseCurrency(" USD ")
+                .onSuccessRun(Assertions::fail)
+                .onFailure(cause -> assertNotNull(cause.message()));
+    }
+
+    @Test
+    void testParseLocaleWithUnderscore() {
+        // IETF BCP 47 uses hyphen, but underscore is sometimes used
+        I18n.parseLocale("en_US")
+                .onFailureRun(Assertions::fail)
+                .onSuccess(locale -> {
+                    // Java's Locale.forLanguageTag accepts underscore too
+                    assertNotNull(locale);
+                });
+    }
+
+    @Test
+    void testParseLocaleWithScriptAndVariant() {
+        // Complex locale: language-script-region
+        I18n.parseLocale("zh-Hans-CN")
+                .onFailureRun(Assertions::fail)
+                .onSuccess(locale -> {
+                    assertEquals("zh", locale.getLanguage());
+                    assertEquals("CN", locale.getCountry());
+                    assertEquals("Hans", locale.getScript());
+                });
+    }
+
+    @Test
+    void testParseCharsetCaseInsensitive() {
+        // Charset names are case-insensitive
+        I18n.parseCharset("utf-8")
+                .onFailureRun(Assertions::fail)
+                .onSuccess(charset -> assertEquals(StandardCharsets.UTF_8, charset));
+    }
+
+    @Test
+    void testParseCharsetAlias() {
+        // Common alias
+        I18n.parseCharset("ASCII")
+                .onFailureRun(Assertions::fail)
+                .onSuccess(charset -> assertEquals(StandardCharsets.US_ASCII, charset));
+    }
+
+    @Test
+    void testParseZoneIdOffset() {
+        // ZoneId can also accept offset strings
+        I18n.parseZoneId("+05:30")
+                .onFailureRun(Assertions::fail)
+                .onSuccess(zoneId -> assertEquals(ZoneId.of("+05:30"), zoneId));
+    }
+
+    @Test
+    void testParseZoneIdGMT() {
+        I18n.parseZoneId("GMT")
+                .onFailureRun(Assertions::fail)
+                .onSuccess(zoneId -> assertEquals(ZoneId.of("GMT"), zoneId));
+    }
+
+    @Test
+    void testParseZoneOffsetMaxValue() {
+        // Maximum valid offset is +18:00
+        I18n.parseZoneOffset("+18:00")
+                .onFailureRun(Assertions::fail)
+                .onSuccess(offset -> assertEquals(ZoneOffset.of("+18:00"), offset));
+    }
+
+    @Test
+    void testParseZoneOffsetMinValue() {
+        // Minimum valid offset is -18:00
+        I18n.parseZoneOffset("-18:00")
+                .onFailureRun(Assertions::fail)
+                .onSuccess(offset -> assertEquals(ZoneOffset.of("-18:00"), offset));
+    }
+
+    @Test
+    void testParseZoneOffsetSecondsForm() {
+        // Full form with seconds
+        I18n.parseZoneOffset("+05:30:45")
+                .onFailureRun(Assertions::fail)
+                .onSuccess(offset -> assertEquals(ZoneOffset.of("+05:30:45"), offset));
+    }
+
+    @Test
+    void testParseZoneOffsetInvalidMinutes() {
+        // Minutes must be 00-59
+        I18n.parseZoneOffset("+01:60")
+                .onSuccessRun(Assertions::fail)
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 }

@@ -187,7 +187,7 @@ class TimeSpanTest {
         void timeSpan_fails_forNullInput() {
             TimeSpan.timeSpan(null)
                     .onSuccessRun(Assertions::fail)
-                    .onFailure(cause -> assertInstanceOf(TimeSpanError.class, cause));
+                    .onFailure(cause -> assertEquals(TimeSpanError.NULL_INPUT, cause));
         }
 
         @Test
@@ -222,40 +222,40 @@ class TimeSpanTest {
         void timeSpan_fails_forUnitOnly() {
             TimeSpan.timeSpan("ms")
                     .onSuccessRun(Assertions::fail)
-                    .onFailure(cause -> assertInstanceOf(TimeSpanError.class, cause));
+                    .onFailure(cause -> assertInstanceOf(TimeSpanError.InvalidComponent.class, cause));
         }
 
         @Test
         void timeSpan_fails_forNegativeValue() {
             TimeSpan.timeSpan("-100ms")
                     .onSuccessRun(Assertions::fail)
-                    .onFailure(cause -> assertInstanceOf(TimeSpanError.class, cause));
+                    .onFailure(cause -> assertInstanceOf(TimeSpanError.InvalidComponent.class, cause));
         }
 
         @Test
         void timeSpan_fails_forDecimalValue() {
             TimeSpan.timeSpan("1.5s")
                     .onSuccessRun(Assertions::fail)
-                    .onFailure(cause -> assertInstanceOf(TimeSpanError.class, cause));
+                    .onFailure(cause -> assertInstanceOf(TimeSpanError.InvalidComponent.class, cause));
         }
 
         @Test
         void timeSpan_fails_forInvalidFormats() {
             TimeSpan.timeSpan("abc")
                     .onSuccessRun(Assertions::fail)
-                    .onFailure(Assertions::assertNotNull);
+                    .onFailure(cause -> assertInstanceOf(TimeSpanError.InvalidComponent.class, cause));
 
             TimeSpan.timeSpan("hello")
                     .onSuccessRun(Assertions::fail)
-                    .onFailure(Assertions::assertNotNull);
+                    .onFailure(cause -> assertInstanceOf(TimeSpanError.InvalidComponent.class, cause));
 
             TimeSpan.timeSpan("one second")
                     .onSuccessRun(Assertions::fail)
-                    .onFailure(Assertions::assertNotNull);
+                    .onFailure(cause -> assertInstanceOf(TimeSpanError.InvalidComponent.class, cause));
 
             TimeSpan.timeSpan("1 second")
                     .onSuccessRun(Assertions::fail)
-                    .onFailure(Assertions::assertNotNull);
+                    .onFailure(cause -> assertInstanceOf(TimeSpanError.InvalidComponent.class, cause));
         }
 
         @Test
@@ -364,6 +364,52 @@ class TimeSpanTest {
                     .onSuccess(ts -> {
                         var expected = Duration.ofDays(1).plusHours(2).plusMinutes(3);
                         assertEquals(expected, ts.duration());
+                    });
+        }
+
+        @Test
+        void timeSpan_succeeds_forOutOfOrderUnits() {
+            // Units in non-standard order (seconds before days) - accumulates correctly
+            TimeSpan.timeSpan("5s3d")
+                    .onFailureRun(Assertions::fail)
+                    .onSuccess(ts -> {
+                        var expected = Duration.ofDays(3).plusSeconds(5);
+                        assertEquals(expected, ts.duration());
+                    });
+        }
+
+        @Test
+        void timeSpan_fails_forOverflow() {
+            // Very large number that overflows Long.parseLong
+            TimeSpan.timeSpan("99999999999999999999999d")
+                    .onSuccessRun(Assertions::fail)
+                    .onFailure(cause -> assertInstanceOf(TimeSpanError.InvalidValue.class, cause));
+        }
+
+        @Test
+        void timeSpan_fails_forUppercaseUnits() {
+            // Units are case-sensitive - uppercase should fail
+            TimeSpan.timeSpan("100MS")
+                    .onSuccessRun(Assertions::fail)
+                    .onFailure(cause -> assertInstanceOf(TimeSpanError.InvalidComponent.class, cause));
+        }
+
+        @Test
+        void timeSpan_verifyErrorMessages() {
+            // Verify InvalidComponent error message format
+            TimeSpan.timeSpan("100x")
+                    .onSuccessRun(Assertions::fail)
+                    .onFailure(cause -> {
+                        assertInstanceOf(TimeSpanError.InvalidComponent.class, cause);
+                        assertTrue(cause.message().contains("100x"));
+                    });
+
+            // Verify InvalidValue error message format
+            TimeSpan.timeSpan("99999999999999999999999d")
+                    .onSuccessRun(Assertions::fail)
+                    .onFailure(cause -> {
+                        assertInstanceOf(TimeSpanError.InvalidValue.class, cause);
+                        assertTrue(cause.message().contains("99999999999999999999999"));
                     });
         }
     }

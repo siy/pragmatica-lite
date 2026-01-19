@@ -25,6 +25,10 @@ public record Batch<C extends Command>(BatchId id,
                                        CorrelationId correlationId,
                                        long timestamp,
                                        List<C> commands) implements Comparable<Batch<C>> {
+    public Batch {
+        commands = List.copyOf(commands);
+    }
+
     @Override
     public int compareTo(Batch<C> o) {
         var timestampCompare = Long.compare(timestamp, o.timestamp);

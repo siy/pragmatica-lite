@@ -40,14 +40,14 @@ class NetworkTest {
     void testParseURLFailure() {
         Network.parseURL("not a valid url")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testParseURLNull() {
         Network.parseURL(null)
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -68,14 +68,14 @@ class NetworkTest {
     void testParseURIFailure() {
         Network.parseURI("http://[invalid")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testParseURINull() {
         Network.parseURI(null)
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -98,28 +98,28 @@ class NetworkTest {
     void testParseUUIDFailure() {
         Network.parseUUID("not-a-uuid")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testParseUUIDNull() {
         Network.parseUUID(null)
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testParseUUIDEmpty() {
         Network.parseUUID("")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testParseInetAddressSuccess() {
         Network.parseInetAddress("localhost")
                 .onFailureRun(Assertions::fail)
-                .onSuccess(addr -> assertNotNull(addr.getHostName()));
+                .onSuccess(addr -> assertTrue(addr.isLoopbackAddress() || "localhost".equals(addr.getHostName())));
     }
 
     @Test
@@ -133,14 +133,18 @@ class NetworkTest {
     void testParseInetAddressIPv6() {
         Network.parseInetAddress("::1")
                 .onFailureRun(Assertions::fail)
-                .onSuccess(addr -> assertTrue(addr.getHostAddress().contains(":")));
+                .onSuccess(addr -> {
+                    assertTrue(addr.getHostAddress().contains(":"));
+                    assertTrue(addr.isLoopbackAddress());
+                });
     }
 
     @Test
     void testParseInetAddressFailure() {
-        Network.parseInetAddress("invalid...host...name")
+        // Use malformed IPv6 which is guaranteed to fail (not DNS-dependent)
+        Network.parseInetAddress("[::invalid")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -148,6 +152,44 @@ class NetworkTest {
         // null is treated as localhost by InetAddress
         Network.parseInetAddress(null)
                 .onFailureRun(Assertions::fail)
-                .onSuccess(Assertions::assertNotNull);
+                .onSuccess(addr -> assertTrue(addr.isLoopbackAddress()));
+    }
+
+    // Edge cases
+
+    @Test
+    void testParseUUIDUppercase() {
+        var expected = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
+        Network.parseUUID("550E8400-E29B-41D4-A716-446655440000")
+                .onFailureRun(Assertions::fail)
+                .onSuccess(uuid -> assertEquals(expected, uuid));
+    }
+
+    @Test
+    void testParseURLWithCredentials() {
+        Network.parseURL("https://user:pass@example.com/path")
+                .onFailureRun(Assertions::fail)
+                .onSuccess(url -> {
+                    assertEquals("https", url.getProtocol());
+                    assertEquals("user:pass", url.getUserInfo());
+                    assertEquals("example.com", url.getHost());
+                });
+    }
+
+    @Test
+    void testParseURIRelative() {
+        Network.parseURI("../path/to/resource")
+                .onFailureRun(Assertions::fail)
+                .onSuccess(uri -> {
+                    assertNull(uri.getScheme());
+                    assertEquals("../path/to/resource", uri.getPath());
+                });
+    }
+
+    @Test
+    void testParseURIMailto() {
+        Network.parseURI("mailto:test@example.com")
+                .onFailureRun(Assertions::fail)
+                .onSuccess(uri -> assertEquals("mailto", uri.getScheme()));
     }
 }

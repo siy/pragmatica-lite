@@ -24,6 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Bumped jbct-maven-plugin to 0.4.9
+- **Rabia consensus engine JBCT compliance overhaul:**
+  - Thread safety: All state-mutating methods now route through single-executor serialization (`clusterDisconnected`, `handleNewBatch`, `submitCommands`, `synchronize`, `cleanupOldPhases`, `handleSyncRequest`)
+  - Structural patterns: `handlePropose`, `handleVoteRound1`, `handleVoteRound2` refactored into focused Leaf methods
+  - Extracted predicate methods: `canVoteRound1()`, `canVoteRound2()`, `canMakeDecision()`, `isPastPhase()`
+  - Multi-statement lambdas extracted: `performStop()`, `broadcastLockedVote()`, `applyRestoredState()`
+  - Value objects: `Batch` adds defensive copy of commands list, `Phase` validates non-negative values
 - **JBCT compliance fixes across integrations module:**
   - Parse-don't-validate: `DHTConfig`, `Partition`, `NodeId`, `BatchId`, `CorrelationId`, `DomainName`, `NodeAddress` now return `Result<T>`
   - `SocketOptions` factory now returns `Result<SocketOptions>` with validation
