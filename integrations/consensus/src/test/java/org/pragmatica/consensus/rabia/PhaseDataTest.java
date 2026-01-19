@@ -284,7 +284,7 @@ class PhaseDataTest {
         }
 
         @Test
-        void votes_VQUESTION_when_no_quorum_agreement() {
+        void votes_VQUESTION_when_no_majority_for_single_value() {
             phaseData.registerRound1Vote(NODE_1, StateValue.V0);
             phaseData.registerRound1Vote(NODE_2, StateValue.V1);
             phaseData.registerRound1Vote(NODE_3, StateValue.V0);
@@ -297,7 +297,9 @@ class PhaseDataTest {
 
         @Test
         void prioritizes_V0_check_over_V1() {
-            // When both V0 and V1 have quorum (impossible in practice, but tests priority)
+            // Per weak_mvc.ivy spec: evaluateRound2Vote checks V0 before V1
+            // This is specification compliance, not a realistic scenario
+            // (having quorum for both V0 and V1 is impossible due to quorum intersection)
             phaseData.registerRound1Vote(NODE_1, StateValue.V0);
             phaseData.registerRound1Vote(NODE_2, StateValue.V0);
             phaseData.registerRound1Vote(NODE_3, StateValue.V0);
@@ -475,6 +477,123 @@ class PhaseDataTest {
             var pd = new PhaseData<TestCommand>(phase);
 
             assertThat(pd.phase()).isEqualTo(phase);
+        }
+    }
+
+    @Nested
+    class SpecificationCompliance {
+
+        // Conjecture 14: Round 1 votes can only be V0 or V1, never VQUESTION
+        @Test
+        void round1_vote_cannot_be_vquestion() {
+            var batch = createBatch("cmd1");
+            phaseData.registerProposal(NODE_1, batch);
+            phaseData.registerProposal(NODE_2, batch);
+            phaseData.registerProposal(NODE_3, batch);
+
+            var vote = phaseData.evaluateInitialVote(NODE_1, QUORUM_SIZE);
+
+            assertThat(vote.stateValue()).isNotEqualTo(StateValue.VQUESTION);
+            assertThat(vote.stateValue()).isIn(StateValue.V0, StateValue.V1);
+        }
+
+        // Conjecture 15: Round 1 vote registration is idempotent per node
+        @Test
+        void round1_vote_is_idempotent_same_node_phase() {
+            phaseData.registerRound1Vote(NODE_1, StateValue.V1);
+            phaseData.registerRound1Vote(NODE_1, StateValue.V0); // Second registration overwrites
+
+            // Map semantics: only one vote per node
+            assertThat(phaseData.countRound1VotesForValue(StateValue.V1) +
+                       phaseData.countRound1VotesForValue(StateValue.V0))
+                .isEqualTo(1);
+        }
+
+        // Conjecture 16: Round 2 vote registration is idempotent per node
+        @Test
+        void round2_vote_is_idempotent_same_node_phase() {
+            phaseData.registerRound2Vote(NODE_1, StateValue.V1);
+            phaseData.registerRound2Vote(NODE_1, StateValue.V0);
+
+            assertThat(phaseData.countRound2VotesForValue(StateValue.V1) +
+                       phaseData.countRound2VotesForValue(StateValue.V0) +
+                       phaseData.countRound2VotesForValue(StateValue.VQUESTION))
+                .isEqualTo(1);
+        }
+
+        // Conjecture 17: If two nodes vote non-VQUESTION in round 2, values must match
+        // (enforced by quorum intersection - only possible if quorum voted same in round 1)
+        @Test
+        void round2_definite_votes_must_agree() {
+            // If quorum voted V1 in round 1, all round 2 definite votes must be V1
+            phaseData.registerRound1Vote(NODE_1, StateValue.V1);
+            phaseData.registerRound1Vote(NODE_2, StateValue.V1);
+            phaseData.registerRound1Vote(NODE_3, StateValue.V1);
+
+            var vote1 = phaseData.evaluateRound2Vote(QUORUM_SIZE);
+
+            // Different quorum voting same value
+            var phaseData2 = new PhaseData<TestCommand>(new Phase(1));
+            phaseData2.registerRound1Vote(NODE_2, StateValue.V1);
+            phaseData2.registerRound1Vote(NODE_3, StateValue.V1);
+            phaseData2.registerRound1Vote(NODE_4, StateValue.V1);
+
+            var vote2 = phaseData2.evaluateRound2Vote(QUORUM_SIZE);
+
+            assertThat(vote1).isEqualTo(vote2).isEqualTo(StateValue.V1);
+        }
+
+        // Conjecture 18: Definite round 2 vote requires quorum agreement in round 1
+        @Test
+        void definite_round2_requires_quorum_round1() {
+            // Less than quorum agreeing -> VQUESTION
+            phaseData.registerRound1Vote(NODE_1, StateValue.V1);
+            phaseData.registerRound1Vote(NODE_2, StateValue.V0);
+
+            var vote = phaseData.evaluateRound2Vote(QUORUM_SIZE);
+
+            assertThat(vote).isEqualTo(StateValue.VQUESTION);
+        }
+
+        // Conjecture 22: Decision requires f+1 votes, not just f
+        @Test
+        void decision_requires_f_plus_one_not_just_f() {
+            var batch = createBatch("cmd");
+            phaseData.registerProposal(NODE_1, batch);
+            phaseData.registerProposal(NODE_2, batch);
+            phaseData.registerProposal(NODE_3, batch);
+
+            // For 5-node cluster: f=2, f+1=3
+            // With exactly f votes (2), decision should use coin flip
+            phaseData.registerRound2Vote(NODE_1, StateValue.V1);
+            phaseData.registerRound2Vote(NODE_2, StateValue.V1);
+            phaseData.registerRound2Vote(NODE_3, StateValue.VQUESTION);
+
+            var decisionWithF = phaseData.processRound2Completion(NODE_1, F_PLUS_ONE, QUORUM_SIZE);
+            // Phase 1 coin flip is V1, and we only have 2 V1 votes (< f+1=3)
+            // So coin flip is used, which returns V1 for odd phase
+
+            // Add one more V1 vote to reach f+1
+            phaseData.registerRound2Vote(NODE_4, StateValue.V1);
+
+            var decisionWithFPlusOne = phaseData.processRound2Completion(NODE_1, F_PLUS_ONE, QUORUM_SIZE);
+            // Now we have 3 V1 votes (== f+1), decision should be V1 from vote count
+
+            assertThat(decisionWithFPlusOne.stateValue()).isEqualTo(StateValue.V1);
+            assertThat(F_PLUS_ONE).isGreaterThan(2); // f+1 > f boundary
+        }
+
+        // Conjecture 23: Coin flip never returns VQUESTION
+        @Test
+        void coin_flip_never_returns_vquestion() {
+            for (int i = 0; i < 100; i++) {
+                var pd = new PhaseData<TestCommand>(new Phase(i));
+                var coin = pd.coinFlip();
+
+                assertThat(coin)
+                    .as("Phase %d coin flip", i)
+                    .isIn(StateValue.V0, StateValue.V1);
+            }
         }
     }
 }

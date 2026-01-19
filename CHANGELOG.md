@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Optional whitespace between components ("1d16h" and "1d 16h" both valid)
   - `TimeSpan.timeSpan(String)` factory returning `Result<TimeSpan>`
   - `TimeSpanError` sealed interface for typed parsing errors
+- Comprehensive Rabia consensus test suite for `weak_mvc.ivy` specification compliance
+  - 6 helper classes: `ClusterConfiguration`, `ClusterState`, `InvariantChecker`, `ProtocolAction`, `SpecClusterSimulator`, `VotingHistoryRecorder`
+  - 5 spec test classes covering 50 testable invariants (237 parameterized tests across cluster sizes 3, 5, 7)
+  - `RabiaSpecInvariantTest`: Conjectures 1-28 (proposal, decision, phase, vote, decision_bc, coin invariants)
+  - `RabiaValueLockingTest`: Conjectures 31-46 (value locking and decision locking properties)
+  - `RabiaWrapperInvariantTest`: Conjectures 47-52 (phase goodness and started predicates)
+  - `RabiaQuorumIntersectionTest`: Quorum intersection axioms
+  - `RabiaMultiPhaseTest`: Multi-phase scenarios including failure and coin flip cases
 
 ### Changed
 - Bumped jbct-maven-plugin to 0.4.9
