@@ -202,8 +202,7 @@ public class RabiaEngine<C extends Command> {
     private Result<Batch<C>> submitCommands(List<C> commands, Consumer<Batch<C>> onBatchPrepared) {
         return validateSubmission(commands).map(_ -> prepareBatch(commands))
                                  .onSuccess(batch -> executor.execute(() -> registerBatch(batch, onBatchPrepared)))
-                                 .onSuccess(batch -> executor.execute(() -> broadcastBatch(batch)))
-                                 .onSuccess(_ -> triggerPhaseIfNeeded());
+                                 .onSuccess(batch -> executor.execute(() -> broadcastBatch(batch)));
     }
 
     private Result<List<C>> validateSubmission(List<C> commands) {
@@ -228,6 +227,7 @@ public class RabiaEngine<C extends Command> {
         pendingBatches.put(batch.correlationId(), batch);
         metrics.updatePendingBatches(self, pendingBatches.size());
         onBatchPrepared.accept(batch);
+        triggerPhaseIfNeeded();
     }
 
     private void broadcastBatch(Batch<C> batch) {
@@ -284,9 +284,12 @@ public class RabiaEngine<C extends Command> {
     @SuppressWarnings("unchecked")
     @MessageReceiver
     public void handleNewBatch(NewBatch<?> newBatch) {
-        executor.execute(() -> pendingBatches.put(newBatch.batch()
-                                                          .correlationId(),
-                                                  (Batch<C>) newBatch.batch()));
+        executor.execute(() -> {
+                             pendingBatches.put(newBatch.batch()
+                                                        .correlationId(),
+                                                (Batch<C>) newBatch.batch());
+                             triggerPhaseIfNeeded();
+                         });
     }
 
     /// Starts a new phase with pending commands.
