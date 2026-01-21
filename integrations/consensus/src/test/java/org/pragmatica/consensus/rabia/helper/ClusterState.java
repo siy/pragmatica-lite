@@ -245,4 +245,20 @@ public final class ClusterState<C extends Command> {
         }
         return result;
     }
+
+    /// Checks if super-majority (n-f) nodes agree on a value in round 1.
+    /// Returns the agreed value if super-majority exists.
+    public Option<StateValue> getSuperMajorityRound1Value(Phase phase, int superMajoritySize) {
+        for (var value : List.of(StateValue.V0, StateValue.V1)) {
+            if (countRound1VotesForValue(phase, value) >= superMajoritySize) {
+                return Option.some(value);
+            }
+        }
+        return Option.none();
+    }
+
+    /// Checks if super-majority exists for fast path
+    public boolean hasSuperMajorityAgreement(Phase phase, int superMajoritySize) {
+        return getSuperMajorityRound1Value(phase, superMajoritySize).isPresent();
+    }
 }

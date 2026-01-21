@@ -63,6 +63,13 @@ public interface ConsensusMetrics {
     /// @param count  Current number of pending batches
     void updatePendingBatches(NodeId nodeId, int count);
 
+    /// Records when fast path optimization is used.
+    ///
+    /// @param nodeId The node using fast path
+    /// @param phase  The phase number
+    /// @param value  The decided value (V0 or V1)
+    void recordFastPath(NodeId nodeId, Phase phase, StateValue value);
+
     /// Returns a no-op implementation that does nothing.
     static ConsensusMetrics noop() {
         return NoopMetrics.INSTANCE;
@@ -83,5 +90,7 @@ public interface ConsensusMetrics {
         public void recordSyncAttempt(NodeId nodeId, boolean success) {}
         @Override
         public void updatePendingBatches(NodeId nodeId, int count) {}
+        @Override
+        public void recordFastPath(NodeId nodeId, Phase phase, StateValue value) {}
     }
 }

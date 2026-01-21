@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.10.0] - 2026-01-17
 
 ### Added
+- **Super-majority fast path optimization for Rabia consensus:**
+  - When `n - f` nodes vote the same value in Round 1, skip Round 2 and decide immediately
+  - `TopologyManager.superMajoritySize()` returns the fast path threshold
+  - `PhaseData.getSuperMajorityRound1Value()` detects super-majority agreement
+  - `ConsensusMetrics.recordFastPath()` for observability
+  - 52 new tests in `RabiaSuperMajorityFastPathTest` covering threshold calculations, trigger conditions, and correctness
 - `TimeSpan` value object for parsing human-friendly duration strings
   - Supports units: d (days), h (hours), m (minutes), s (seconds), ms (milliseconds), us (microseconds), ns (nanoseconds)
   - Optional whitespace between components ("1d16h" and "1d 16h" both valid)

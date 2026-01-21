@@ -548,9 +548,43 @@ public class RabiaEngine<C extends Command> {
 
     private void tryBroadcastRound2Vote(Phase phase, PhaseData<C> phaseData) {
         var quorumSize = topologyManager.quorumSize();
+        var superMajoritySize = topologyManager.superMajoritySize();
+        // Check for fast path: if n-f nodes agree in Round 1, skip Round 2
+        if (canUseFastPath(phase, phaseData, superMajoritySize)) {
+            useFastPath(phase, phaseData, superMajoritySize, quorumSize);
+            return;
+        }
+        // Normal path: proceed with Round 2 voting
         if (canVoteRound2(phase, phaseData, quorumSize)) {
             broadcastRound2Vote(phase, phaseData, quorumSize);
         }
+    }
+
+    private boolean canUseFastPath(Phase phase, PhaseData<C> phaseData, int superMajoritySize) {
+        return isInPhase.get() && currentPhase.get()
+                                              .equals(phase) && !phaseData.isDecided() && !phaseData.hasVotedRound2(self) && phaseData.getSuperMajorityRound1Value(superMajoritySize)
+                                                                                                                                      .isPresent();
+    }
+
+    private void useFastPath(Phase phase, PhaseData<C> phaseData, int superMajoritySize, int quorumSize) {
+        phaseData.getSuperMajorityRound1Value(superMajoritySize)
+                 .onPresent(agreedValue -> {
+                                log.debug("Node {} using fast path for phase {} with value {} (super-majority agreement)",
+                                          self,
+                                          phase,
+                                          agreedValue);
+                                metrics.recordFastPath(self, phase, agreedValue);
+                                var decision = buildDecision(phaseData, agreedValue, quorumSize);
+                                network.broadcast(decision);
+                                processDecision(decision);
+                            });
+    }
+
+    private Decision<C> buildDecision(PhaseData<C> phaseData, StateValue agreedValue, int quorumSize) {
+        var batch = agreedValue == StateValue.V1
+                    ? phaseData.findAgreedProposal(quorumSize)
+                    : Batch.<C>emptyBatch();
+        return new Decision<>(self, phaseData.phase(), agreedValue, batch);
     }
 
     private boolean canVoteRound2(Phase phase, PhaseData<C> phaseData, int quorumSize) {

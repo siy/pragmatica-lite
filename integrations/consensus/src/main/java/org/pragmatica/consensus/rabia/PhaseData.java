@@ -20,6 +20,7 @@ import org.pragmatica.consensus.Command;
 import org.pragmatica.consensus.NodeId;
 import org.pragmatica.consensus.rabia.RabiaProtocolMessage.Synchronous.Decision;
 import org.pragmatica.consensus.rabia.RabiaProtocolMessage.Synchronous.VoteRound1;
+import org.pragmatica.lang.Option;
 
 import java.util.Comparator;
 import java.util.List;
@@ -172,6 +173,20 @@ final class PhaseData<C extends Command> {
                                .stream()
                                .filter(v -> v == value)
                                .count();
+    }
+
+    /// Checks if we have a super-majority agreement on a single value in Round 1.
+    /// If true, we can skip Round 2 and decide immediately (fast path).
+    ///
+    /// @param superMajoritySize the n - f threshold
+    /// @return the agreed value if super-majority exists, empty otherwise
+    Option<StateValue> getSuperMajorityRound1Value(int superMajoritySize) {
+        for (var value : List.of(StateValue.V0, StateValue.V1)) {
+            if (countRound1VotesForValue(value) >= superMajoritySize) {
+                return Option.some(value);
+            }
+        }
+        return Option.none();
     }
 
     /// Counts round 2 votes for a specific state value.

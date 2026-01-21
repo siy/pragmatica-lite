@@ -33,6 +33,7 @@ public record ClusterConfiguration(
     int quorumSize,
     int fPlusOne,
     int maxFailures,
+    int superMajoritySize,
     List<NodeId> nodeIds
 ) {
     public static ClusterConfiguration threeNodes() {
@@ -52,7 +53,7 @@ public record ClusterConfiguration(
         var nodeIds = IntStream.rangeClosed(1, n)
                                .mapToObj(i -> NodeId.nodeId("node-" + i).unwrap())
                                .toList();
-        return new ClusterConfiguration(n, f + 1, f + 1, f, nodeIds);
+        return new ClusterConfiguration(n, f + 1, f + 1, f, n - f, nodeIds);
     }
 
     /// Return all possible majority quorums (combinations of quorumSize nodes)
