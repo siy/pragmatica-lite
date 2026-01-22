@@ -144,8 +144,10 @@ public interface TcpTopologyManager extends TopologyManager {
 
             @Override
             public Option<NodeId> reverseLookup(SocketAddress socketAddress) {
-                return ( socketAddress instanceof InetSocketAddress inet)
-                       ? Option.option(nodeIdsByAddress.get(NodeAddress.nodeAddress(inet)))
+                return (socketAddress instanceof InetSocketAddress inet)
+                       ? NodeAddress.nodeAddress(inet)
+                                    .option()
+                                    .flatMap(addr -> Option.option(nodeIdsByAddress.get(addr)))
                        : Option.empty();
             }
 

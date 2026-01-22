@@ -42,11 +42,11 @@ public interface NodeAddress {
                      .map(NodeAddress::create);
     }
 
-    static NodeAddress nodeAddress(InetSocketAddress socketAddress) {
+    static Result<NodeAddress> nodeAddress(InetSocketAddress socketAddress) {
         // Use getHostAddress() to get consistent IP representation (e.g., "127.0.0.1" not "localhost")
-        return create(socketAddress.getAddress()
-                                   .getHostAddress(),
-                      socketAddress.getPort());
+        return nodeAddress(socketAddress.getAddress()
+                                        .getHostAddress(),
+                           socketAddress.getPort());
     }
 
     private static NodeAddress create(String host, int port) {

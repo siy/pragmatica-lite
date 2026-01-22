@@ -66,7 +66,12 @@ public interface JdbcTransactional {
         return Promise.lift(errorMapper,
                             () -> {
                                 var conn = dataSource.getConnection();
-                                conn.setAutoCommit(false);
+                                try{
+                                    conn.setAutoCommit(false);
+                                } catch (Exception e) {
+                                    close(conn);
+                                    throw e;
+                                }
                                 return conn;
                             });
     }

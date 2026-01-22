@@ -415,12 +415,10 @@ public final class TomlParser {
             }
             path.append(parts[i]);
             String pathStr = path.toString();
-            String sectionKey = pathStr.isEmpty()
+            int lastDot = pathStr.lastIndexOf('.');
+            String sectionKey = lastDot < 0
                                 ? ""
-                                : pathStr.substring(0,
-                                                    pathStr.lastIndexOf('.') < 0
-                                                    ? pathStr.length()
-                                                    : pathStr.lastIndexOf('.'));
+                                : pathStr.substring(0, lastDot);
             String partKey = parts[i];
             boolean isConflict = option(sections.get(sectionKey)).filter(section -> section.containsKey(partKey))
                                        .filter(section -> !(section.get(partKey) instanceof Map))

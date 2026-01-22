@@ -494,6 +494,8 @@ public class RabiaEngine<C extends Command> {
                       .sorted()
                       .findFirst()
                       .ifPresent(ourBatch -> broadcastOwnProposal(proposalPhase, phaseData, ourBatch));
+        // Broadcast locked value if present (same as startPhase does)
+        broadcastLockedValueIfPresent(proposalPhase, phaseData);
     }
 
     private void broadcastOwnProposal(Phase phase, PhaseData<C> phaseData, Batch<C> batch) {
