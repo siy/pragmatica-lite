@@ -109,10 +109,13 @@ public interface JdbcTransactional {
     private static void close(Connection conn) {
         Option.option(conn)
               .onPresent(c -> {
-                  try{
-                      c.setAutoCommit(true);
-                      c.close();
-                  } catch (SQLException _) {}
-              });
+                             try{
+                                 c.setAutoCommit(true);
+                             } catch (SQLException _) {} finally{
+                                 try{
+                                     c.close();
+                                 } catch (SQLException _) {}
+                             }
+                         });
     }
 }

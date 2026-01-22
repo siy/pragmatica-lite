@@ -43,10 +43,15 @@ public interface NodeAddress {
     }
 
     static Result<NodeAddress> nodeAddress(InetSocketAddress socketAddress) {
-        // Use getHostAddress() to get consistent IP representation (e.g., "127.0.0.1" not "localhost")
-        return nodeAddress(socketAddress.getAddress()
-                                        .getHostAddress(),
-                           socketAddress.getPort());
+        if (socketAddress == null) {
+            return BLANK_HOST.result();
+        }
+        // Prefer getHostAddress() for consistent IP representation; fall back to getHostString() for unresolved
+        var address = socketAddress.getAddress();
+        var host = address != null
+                   ? address.getHostAddress()
+                   : socketAddress.getHostString();
+        return nodeAddress(host, socketAddress.getPort());
     }
 
     private static NodeAddress create(String host, int port) {
