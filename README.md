@@ -6,7 +6,7 @@
 
 ## Modern Functional Programming for Java 25
 
-Pragmatica Lite brings the power of functional programming to Java with zero-dependency monadic types that eliminate null pointer exceptions, unchecked exceptions, and callback hell. Built on Java 25's latest features including sealed interfaces and pattern matching.
+Pragmatica Lite brings the power of functional programming to Java with monadic types that eliminate null pointer exceptions, unchecked exceptions, and callback hell. Built on Java 25's latest features including sealed interfaces and pattern matching.
 
 ## Why Pragmatica Lite?
 
@@ -134,7 +134,7 @@ public class Example {
 
 ## API Overview
 
-### Result&lt;T&gt; - Railway-Oriented Programming
+### Result&lt;T&gt; - Exceptionless Error Propagation
 Handle success and failure without exceptions:
 
 ```java
@@ -165,9 +165,9 @@ Promise<String> response = httpClient.get(url)
 
 ## Design Principles
 
-- **Zero Dependencies**: No external libraries required
+- **Minimal Dependencies**: Only slf4j-api for logging
 - **Type Safety**: Leverage Java's type system for correctness
-- **Performance**: Minimal overhead, allocation-free operations
+- **Performance**: Minimal overhead
 - **Composability**: Chain operations naturally
 - **Modern Java**: Built for Java 25 and beyond
 

@@ -14,7 +14,7 @@
     <packaging>pom</packaging>
 
     <name>Pragmatica Lite</name>
-    <description>Modern functional programming library for Java 25 featuring Result, Option, and Promise monads with zero dependencies</description>
+    <description>Modern functional programming library for Java 25 featuring Result, Option, and Promise monads</description>
     <url>https://github.com/siy/pragmatica-lite</url>
 
     <scm>
