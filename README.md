@@ -25,11 +25,10 @@ public User getUser(String id) throws UserNotFoundException, DatabaseException {
 **With Pragmatica:**
 ```java
 // Clean, safe, composable
-public Result<User> getUser(String id) {
+public Promise<User> getUser(String id) {
     return database.findUser(id)
-        .filter(user -> user.isActive())
-        .map(this::enrichUserData)
-        .recover(DatabaseError.class, this::handleDatabaseError);
+                   .filter(user -> user.isActive())
+                   .map(this::enrichUserData);
 }
 ```
 
@@ -37,25 +36,25 @@ public Result<User> getUser(String id) {
 
 ### Eliminate Null Pointer Exceptions
 ```java
-Option<String> name = Option.of(user.getName())
-    .map(String::toUpperCase)
-    .filter(n -> n.length() > 2)
-    .orElse("Anonymous");
+Option<String> name = Option.option(user.getName())
+                            .map(String::toUpperCase)
+                            .filter(n -> n.length() > 2)
+                            .or("Anonymous");
 ```
 
 ### Safe Error Handling Without Exceptions
 ```java
 Result<Integer> divide(int a, int b) {
     return b == 0
-        ? Result.err(new MathError("Division by zero"))
-        : Result.ok(a / b);
+        ? MathError.DIVISION_BY_ZERO.result()
+        : Result.success(a / b);
 }
 
 // Chain operations safely
 Result<String> result = divide(10, 2)
     .map(x -> x * 2)
     .map(Object::toString)
-    .recover(MathError.class, err -> "Error: " + err.message());
+    .recover(err -> "Error: " + err.message());
 ```
 
 ### Asynchronous Programming Made Simple
@@ -71,14 +70,11 @@ Promise<UserProfile> getUserProfile(String userId) {
 ### Process Collections Safely
 ```java
 List<Result<User>> userResults = userIds.stream()
-    .map(this::fetchUser)
-    .toList();
+                                        .map(this::fetchUser)
+                                        .toList();
 
 // Collect all successes, fail if any operation failed
 Result<List<User>> allUsers = Result.allOf(userResults);
-
-// Or collect only successful operations
-List<User> validUsers = Result.collectSuccesses(userResults);
 ```
 
 ## Modern Java 25 Features
@@ -141,7 +137,7 @@ Handle success and failure without exceptions:
 Result<String> result = processData()
     .map(String::trim)
     .filter(s -> !s.isEmpty())
-    .recover(ValidationError.class, err -> "default");
+    .recover(_ -> "default");
 ```
 
 ### Option&lt;T&gt; - Null Safety
@@ -188,23 +184,23 @@ Explore comprehensive examples in the [examples](examples) directory:
 
 ### Integration Modules
 
-| Category | Module | Description | Docs |
-|----------|--------|-------------|------|
-| **Config** | [toml](integrations/config/toml) | Zero-dependency TOML parser | [README](integrations/config/toml/README.md) |
-| **Consensus** | [consensus](integrations/consensus) | Rabia consensus protocol (CFT) | [README](integrations/consensus/README.md) |
-| **Database** | [jdbc](integrations/db/jdbc) | Promise-based JDBC with HikariCP | [README](integrations/db/jdbc/README.md) |
-| | [jpa](integrations/db/jpa) | JPA/Hibernate integration | [README](integrations/db/jpa/README.md) |
-| | [r2dbc](integrations/db/r2dbc) | Reactive database access | [README](integrations/db/r2dbc/README.md) |
-| | [jooq](integrations/db/jooq) | Promise-based JOOQ with JDBC | — |
-| | [jooq-r2dbc](integrations/db/jooq-r2dbc) | Promise-based JOOQ with R2DBC | [README](integrations/db/jooq-r2dbc/README.md) |
-| **Distributed** | [dht](integrations/dht) | Distributed Hash Table | [README](integrations/dht/README.md) |
-| **JSON** | [jackson](integrations/json/jackson) | Jackson 3.0 serialization | [README](integrations/json/jackson/README.md) |
-| **Messaging** | [messaging](integrations/messaging) | Message queue abstractions | [README](integrations/messaging/README.md) |
-| **Metrics** | [micrometer](integrations/metrics/micrometer) | Micrometer observability | [README](integrations/metrics/micrometer/README.md) |
-| **Network** | [http-client](integrations/net/http-client) | Promise-based HTTP client | [README](integrations/net/http-client/README.md) |
-| | [tcp](integrations/net/tcp) | TCP networking utilities | [README](integrations/net/tcp/README.md) |
-| | [dns](integrations/net/dns) | DNS client | [README](integrations/net/dns/README.md) |
-| **Serialization** | [serialization](integrations/serialization) | Binary serialization (Fury, Kryo) | [README](integrations/serialization/README.md) |
+| Category          | Module                                        | Description                       | Docs                                                |
+|-------------------|-----------------------------------------------|-----------------------------------|-----------------------------------------------------|
+| **Config**        | [toml](integrations/config/toml)              | Zero-dependency TOML parser       | [README](integrations/config/toml/README.md)        |
+| **Consensus**     | [consensus](integrations/consensus)           | Rabia consensus protocol (CFT)    | [README](integrations/consensus/README.md)          |
+| **Database**      | [jdbc](integrations/db/jdbc)                  | Promise-based JDBC with HikariCP  | [README](integrations/db/jdbc/README.md)            |
+|                   | [jpa](integrations/db/jpa)                    | JPA/Hibernate integration         | [README](integrations/db/jpa/README.md)             |
+|                   | [r2dbc](integrations/db/r2dbc)                | Reactive database access          | [README](integrations/db/r2dbc/README.md)           |
+|                   | [jooq](integrations/db/jooq)                  | Promise-based JOOQ with JDBC      | —                                                   |
+|                   | [jooq-r2dbc](integrations/db/jooq-r2dbc)      | Promise-based JOOQ with R2DBC     | [README](integrations/db/jooq-r2dbc/README.md)      |
+| **Distributed**   | [dht](integrations/dht)                       | Distributed Hash Table            | [README](integrations/dht/README.md)                |
+| **JSON**          | [jackson](integrations/json/jackson)          | Jackson 3.0 serialization         | [README](integrations/json/jackson/README.md)       |
+| **Messaging**     | [messaging](integrations/messaging)           | Message queue abstractions        | [README](integrations/messaging/README.md)          |
+| **Metrics**       | [micrometer](integrations/metrics/micrometer) | Micrometer observability          | [README](integrations/metrics/micrometer/README.md) |
+| **Network**       | [http-client](integrations/net/http-client)   | Promise-based HTTP client         | [README](integrations/net/http-client/README.md)    |
+|                   | [tcp](integrations/net/tcp)                   | TCP networking utilities          | [README](integrations/net/tcp/README.md)            |
+|                   | [dns](integrations/net/dns)                   | DNS client                        | [README](integrations/net/dns/README.md)            |
+| **Serialization** | [serialization](integrations/serialization)   | Binary serialization (Fury, Kryo) | [README](integrations/serialization/README.md)      |
 
 ## Integrations
 
@@ -222,17 +218,18 @@ Serialize and deserialize Result, Option, and Promise types:
 
 ```java
 var mapper = JsonMapper.jsonMapper()
-    .withPragmaticaTypes()
-    .build();
+                       .withPragmaticaTypes()
+                       .build();
 
 // Result<T> serialization
 Result<User> result = fetchUser(id);
+
 mapper.writeAsString(result)  // Result<String>
-    .onSuccess(json -> sendResponse(json));
+      .onSuccess(json -> sendResponse(json));
 
 // Type-safe deserialization
 mapper.readString(json, new TypeToken<List<User>>() {})
-    .onSuccess(users -> processUsers(users));
+      .onSuccess(users -> processUsers(users));
 ```
 
 ### JPA Database Integration
