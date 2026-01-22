@@ -158,10 +158,8 @@ public class NettyClusterNetwork implements ClusterNetwork {
     }
 
     private void handleHello(Hello hello, Channel channel) {
-        var timeout = helloTimeouts.remove(channel);
-        if (timeout != null) {
-            timeout.cancel(false);
-        }
+        Option.option(helloTimeouts.remove(channel))
+              .onPresent(timeout -> timeout.cancel(false));
         if (!pendingChannels.remove(channel)) {
             log.debug("Received Hello from {} on already established channel", hello.sender());
             return;
@@ -172,8 +170,9 @@ public class NettyClusterNetwork implements ClusterNetwork {
             channel.close();
             return;
         }
-        var existing = peerLinks.putIfAbsent(hello.sender(), channel);
-        if (existing != null) {
+        if (Option.option(peerLinks.putIfAbsent(hello.sender(),
+                                                channel))
+                  .isPresent()) {
             log.debug("Duplicate connection from {}, closing new channel", hello.sender());
             channel.close();
             return;
@@ -186,11 +185,12 @@ public class NettyClusterNetwork implements ClusterNetwork {
     private void peerDisconnected(Channel channel) {
         helloTimeouts.remove(channel);
         pendingChannels.remove(channel);
-        var nodeId = channelToNodeId.remove(channel);
-        if (nodeId != null && peerLinks.remove(nodeId, channel)) {
-            processViewChange(REMOVE, nodeId);
-            log.debug("Node {} disconnected", nodeId);
-        }
+        Option.option(channelToNodeId.remove(channel))
+              .filter(nodeId -> peerLinks.remove(nodeId, channel))
+              .onPresent(nodeId -> {
+                  processViewChange(REMOVE, nodeId);
+                  log.debug("Node {} disconnected", nodeId);
+              });
     }
 
     @Override
@@ -248,18 +248,14 @@ public class NettyClusterNetwork implements ClusterNetwork {
 
     @Override
     public void connect(ConnectNode connectNode) {
-        if (server.get() == null) {
-            log.error("Attempt to connect {} while node is not running", connectNode.node());
-            return;
-        }
-        if (connectNode.node()
-                       .equals(self.id())) {
-            return;
-        }
-        topologyManager.get(connectNode.node())
-                       .onPresent(this::connectPeer)
-                       .onEmpty(() -> log.error("Unknown {}",
-                                                connectNode.node()));
+        server().onEmpty(() -> log.error("Attempt to connect {} while node is not running",
+                                         connectNode.node()))
+              .filter(_ -> !connectNode.node()
+                                       .equals(self.id()))
+              .onPresent(_ -> topologyManager.get(connectNode.node())
+                                             .onPresent(this::connectPeer)
+                                             .onEmpty(() -> log.error("Unknown {}",
+                                                                      connectNode.node())));
     }
 
     private void connectPeer(NodeInfo nodeInfo) {
@@ -274,50 +270,52 @@ public class NettyClusterNetwork implements ClusterNetwork {
 
     @Override
     public void disconnect(DisconnectNode disconnectNode) {
-        var channel = peerLinks.remove(disconnectNode.nodeId());
-        if (channel == null) {
-            return;
-        }
-        channelToNodeId.remove(channel);
-        processViewChange(REMOVE, disconnectNode.nodeId());
-        channel.close()
-               .addListener(future -> {
-                                if (future.isSuccess()) {
-                                    log.info("Node {} disconnected from node {}",
-                                             self.id(),
-                                             disconnectNode.nodeId());
-                                } else {
-                                    log.warn("Node {} failed to disconnect from node {}: ",
-                                             self.id(),
-                                             disconnectNode.nodeId(),
-                                             future.cause());
-                                }
-                            });
+        Option.option(peerLinks.remove(disconnectNode.nodeId()))
+              .onPresent(channel -> {
+                             channelToNodeId.remove(channel);
+                             processViewChange(REMOVE,
+                                               disconnectNode.nodeId());
+                             channel.close()
+                                    .addListener(future -> {
+                                                     if (future.isSuccess()) {
+                                                         log.info("Node {} disconnected from node {}",
+                                                                  self.id(),
+                                                                  disconnectNode.nodeId());
+                                                     } else {
+                                                         log.warn("Node {} failed to disconnect from node {}: ",
+                                                                  self.id(),
+                                                                  disconnectNode.nodeId(),
+                                                                  future.cause());
+                                                     }
+                                                 });
+                         });
     }
 
     @Override
-    public <M extends ProtocolMessage> void send(NodeId peerId, M message) {
+    public <M extends ProtocolMessage> Unit send(NodeId peerId, M message) {
         sendToChannel(peerId, message, peerLinks.get(peerId));
+        return Unit.unit();
     }
 
     private <M extends Message.Wired> void sendToChannel(NodeId peerId, M message, Channel channel) {
-        if (channel == null) {
-            log.warn("Node {} is not connected", peerId);
-            return;
-        }
-        if (!channel.isActive()) {
-            peerLinks.remove(peerId);
-            channelToNodeId.remove(channel);
-            processViewChange(REMOVE, peerId);
-            log.warn("Node {} is not active", peerId);
-            return;
-        }
-        channel.writeAndFlush(message);
+        Option.option(channel)
+              .onEmpty(() -> log.warn("Node {} is not connected", peerId))
+              .onPresent(ch -> {
+                             if (!ch.isActive()) {
+                                 peerLinks.remove(peerId);
+                                 channelToNodeId.remove(ch);
+                                 processViewChange(REMOVE, peerId);
+                                 log.warn("Node {} is not active", peerId);
+                             } else {
+                                 ch.writeAndFlush(message);
+                             }
+                         });
     }
 
     @Override
-    public <M extends ProtocolMessage> void broadcast(M message) {
+    public <M extends ProtocolMessage> Unit broadcast(M message) {
         peerLinks.forEach((peerId, channel) -> sendToChannel(peerId, message, channel));
+        return Unit.unit();
     }
 
     private void processViewChange(ViewChangeOperation operation, NodeId peerId) {

@@ -17,6 +17,7 @@
 package org.pragmatica.dht;
 
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
 
 import java.util.HashSet;
 import java.util.List;
@@ -53,7 +54,7 @@ public final class LocalPartitionMap<N extends Comparable<N>> implements Partiti
     public Promise<Set<Partition>> partitionsFor(N node) {
         Set<Partition> partitions = new HashSet<>();
         for (int i = 0; i < Partition.MAX_PARTITIONS; i++) {
-            Partition partition = Partition.partitionUnsafe(i);
+            Partition partition = Partition.at(i);
             String partitionKey = "partition:" + i;
             ring.primaryFor(partitionKey)
                 .onPresent(primary -> {
@@ -69,7 +70,7 @@ public final class LocalPartitionMap<N extends Comparable<N>> implements Partiti
     public Promise<Set<Partition>> allPartitionsFor(N node, int replicaCount) {
         Set<Partition> partitions = new HashSet<>();
         for (int i = 0; i < Partition.MAX_PARTITIONS; i++) {
-            Partition partition = Partition.partitionUnsafe(i);
+            Partition partition = Partition.at(i);
             String partitionKey = "partition:" + i;
             List<N> nodes = ring.nodesFor(partitionKey, replicaCount);
             if (nodes.contains(node)) {
@@ -80,7 +81,7 @@ public final class LocalPartitionMap<N extends Comparable<N>> implements Partiti
     }
 
     @Override
-    public Promise<Void> updateTopology(Set<N> nodes) {
+    public Promise<Unit> updateTopology(Set<N> nodes) {
         synchronized (ring) {
             // Remove nodes no longer in topology
             Set<N> currentNodes = new HashSet<>(ring.nodes());
@@ -94,7 +95,7 @@ public final class LocalPartitionMap<N extends Comparable<N>> implements Partiti
                 ring.addNode(node);
             }
         }
-        return Promise.success(null);
+        return Promise.unitPromise();
     }
 
     /// Add a node to the partition map.

@@ -38,7 +38,7 @@ public interface RabiaPersistence<C extends Command> {
 
     /// Create an in-memory persistence implementation (for testing or single-session use).
     static <C extends Command> RabiaPersistence<C> inMemory() {
-        record inMemory<C extends Command>(AtomicReference<SavedState<C>> state) implements RabiaPersistence<C> {
+        record inMemory<C extends Command>(AtomicReference<Option<SavedState<C>>> state) implements RabiaPersistence<C> {
             @Override
             public Result<Unit> save(StateMachine<C> stateMachine,
                                      Phase lastCommittedPhase,
@@ -47,17 +47,17 @@ public interface RabiaPersistence<C extends Command> {
                                    .map(snapshot -> SavedState.savedState(snapshot,
                                                                           lastCommittedPhase,
                                                                           List.copyOf(pendingBatches)))
-                                   .onSuccess(state::set)
-                                   .onFailure(_ -> state.set(null))
+                                   .onSuccess(saved -> state.set(Option.some(saved)))
+                                   .onFailure(_ -> state.set(Option.none()))
                                    .map(_ -> Unit.unit());
             }
 
             @Override
             public Option<SavedState<C>> load() {
-                return Option.option(state().get());
+                return state().get();
             }
         }
-        return new inMemory<>(new AtomicReference<>());
+        return new inMemory<>(new AtomicReference<>(Option.none()));
     }
 
     /// Saved consensus state.

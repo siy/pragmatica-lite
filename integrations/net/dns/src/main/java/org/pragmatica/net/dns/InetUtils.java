@@ -18,8 +18,8 @@ package org.pragmatica.net.dns;
 
 import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Result;
-import org.pragmatica.net.dns.ResolverErrors.InvalidIpAddress;
-import org.pragmatica.net.dns.ResolverErrors.UnknownError;
+import org.pragmatica.net.dns.ResolverError.InvalidIpAddress;
+import org.pragmatica.net.dns.ResolverError.UnknownError;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;

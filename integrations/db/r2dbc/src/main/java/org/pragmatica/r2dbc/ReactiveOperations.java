@@ -63,8 +63,7 @@ public interface ReactiveOperations {
                                                                                 valueRef.set(item);
                                                                             } else if (count == 2) {
                                                                                 subscription.cancel();
-                                                                                promise.resolve(new R2dbcError.MultipleResults("publisher",
-                                                                                                                               count).result());
+                                                                                promise.resolve(new R2dbcError.MultipleResults(count).result());
                                                                             }
                                                                         }
 
@@ -78,7 +77,7 @@ public interface ReactiveOperations {
             public void onComplete() {
                                                                             var count = countRef.get();
                                                                             if (count == 0) {
-                                                                                promise.resolve(new R2dbcError.NoResult("publisher").result());
+                                                                                promise.resolve(R2dbcError.NoResult.INSTANCE.result());
                                                                             } else if (count == 1) {
                                                                                 promise.resolve(Result.success(valueRef.get()));
                                                                             }

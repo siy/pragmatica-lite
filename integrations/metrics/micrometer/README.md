@@ -8,7 +8,7 @@ Aspect decorators for adding Micrometer metrics to Promise-returning functions.
 <dependency>
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>micrometer</artifactId>
-    <version>0.9.11</version>
+    <version>0.10.0</version>
 </dependency>
 ```
 

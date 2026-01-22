@@ -19,14 +19,14 @@ package org.pragmatica.net.dns;
 import org.pragmatica.lang.Cause;
 
 /// DNS resolution errors.
-public sealed interface ResolverErrors extends Cause {
-    record InvalidIpAddress(String message) implements ResolverErrors {}
+public sealed interface ResolverError extends Cause {
+    record InvalidIpAddress(String message) implements ResolverError {}
 
-    record ServerError(String message) implements ResolverErrors {}
+    record ServerError(String message) implements ResolverError {}
 
-    record RequestTimeout(String message) implements ResolverErrors {}
+    record RequestTimeout(String message) implements ResolverError {}
 
-    record UnknownError(String message) implements ResolverErrors {}
+    record UnknownError(String message) implements ResolverError {}
 
-    record UnknownDomain(String message) implements ResolverErrors {}
+    record UnknownDomain(String message) implements ResolverError {}
 }

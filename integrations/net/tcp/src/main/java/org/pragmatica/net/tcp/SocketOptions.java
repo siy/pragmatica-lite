@@ -15,32 +15,49 @@
  */
 
 package org.pragmatica.net.tcp;
+
+import org.pragmatica.lang.Cause;
+import org.pragmatica.lang.Result;
+import org.pragmatica.lang.utils.Causes;
+
 /// Socket-level options for server configuration.
 ///
 /// @param soBacklog   maximum queue length for incoming connection requests (SO_BACKLOG)
 /// @param soKeepalive whether to enable TCP keepalive probes (SO_KEEPALIVE)
 /// @param tcpNoDelay  whether to disable Nagle's algorithm for low-latency (TCP_NODELAY)
 public record SocketOptions(int soBacklog, boolean soKeepalive, boolean tcpNoDelay) {
-    public static SocketOptions socketOptions(int soBacklog, boolean soKeepalive, boolean tcpNoDelay) {
-        return new SocketOptions(soBacklog, soKeepalive, tcpNoDelay);
+    private static final Cause INVALID_BACKLOG = Causes.cause("soBacklog must be positive");
+    private static final SocketOptions DEFAULT = new SocketOptions(128, true, true);
+
+    /// Create socket options with validation.
+    public static Result<SocketOptions> socketOptions(int soBacklog, boolean soKeepalive, boolean tcpNoDelay) {
+        if (soBacklog <= 0) {
+            return INVALID_BACKLOG.result();
+        }
+        return Result.success(new SocketOptions(soBacklog, soKeepalive, tcpNoDelay));
     }
 
+    /// Get default socket options.
     public static SocketOptions socketOptions() {
         return defaults();
     }
 
+    /// Get default socket options (backlog=128, keepalive=true, nodelay=true).
     public static SocketOptions defaults() {
-        return new SocketOptions(128, true, true);
+        return DEFAULT;
     }
 
-    public SocketOptions withSoBacklog(int soBacklog) {
-        return new SocketOptions(soBacklog, soKeepalive, tcpNoDelay);
+    /// Create new options with different backlog value.
+    public Result<SocketOptions> withSoBacklog(int soBacklog) {
+        return socketOptions(soBacklog, soKeepalive, tcpNoDelay);
     }
 
+    /// Create new options with different keepalive setting.
     public SocketOptions withSoKeepalive(boolean soKeepalive) {
         return new SocketOptions(soBacklog, soKeepalive, tcpNoDelay);
     }
 
+    /// Create new options with different TCP nodelay setting.
     public SocketOptions withTcpNoDelay(boolean tcpNoDelay) {
         return new SocketOptions(soBacklog, soKeepalive, tcpNoDelay);
     }

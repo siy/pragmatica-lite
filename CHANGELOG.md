@@ -5,10 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.12] - 2026-01-15
+## [0.10.0] - 2026-01-17
+
+### Added
+- **Super-majority fast path optimization for Rabia consensus:**
+  - When `n - f` nodes vote the same value in Round 1, skip Round 2 and decide immediately
+  - `TopologyManager.superMajoritySize()` returns the fast path threshold
+  - `PhaseData.getSuperMajorityRound1Value()` detects super-majority agreement
+  - `ConsensusMetrics.recordFastPath()` for observability
+  - 52 new tests in `RabiaSuperMajorityFastPathTest` covering threshold calculations, trigger conditions, and correctness
+- `TimeSpan` value object for parsing human-friendly duration strings
+  - Supports units: d (days), h (hours), m (minutes), s (seconds), ms (milliseconds), us (microseconds), ns (nanoseconds)
+  - Optional whitespace between components ("1d16h" and "1d 16h" both valid)
+  - `TimeSpan.timeSpan(String)` factory returning `Result<TimeSpan>`
+  - `TimeSpanError` sealed interface for typed parsing errors
+- Comprehensive Rabia consensus test suite for `weak_mvc.ivy` specification compliance
+  - 6 helper classes: `ClusterConfiguration`, `ClusterState`, `InvariantChecker`, `ProtocolAction`, `SpecClusterSimulator`, `VotingHistoryRecorder`
+  - 5 spec test classes covering 50 testable invariants (237 parameterized tests across cluster sizes 3, 5, 7)
+  - `RabiaSpecInvariantTest`: Conjectures 1-28 (proposal, decision, phase, vote, decision_bc, coin invariants)
+  - `RabiaValueLockingTest`: Conjectures 31-46 (value locking and decision locking properties)
+  - `RabiaWrapperInvariantTest`: Conjectures 47-52 (phase goodness and started predicates)
+  - `RabiaQuorumIntersectionTest`: Quorum intersection axioms
+  - `RabiaMultiPhaseTest`: Multi-phase scenarios including failure and coin flip cases
+- `Idempotency` utility for at-most-once execution guarantees
+  - TTL-based caching with automatic cleanup
+  - In-flight request coalescing (concurrent calls share same Promise)
+  - Failed operations not cached, allowing immediate retry
+  - Thread-safe via `ConcurrentHashMap.compute()`
+  - `Idempotency.create(TimeSpan)` factory returning `Result<Idempotency>`
 
 ### Changed
 - Bumped jbct-maven-plugin to 0.4.9
+- **Rabia consensus engine JBCT compliance overhaul:**
+  - Thread safety: All state-mutating methods now route through single-executor serialization (`clusterDisconnected`, `handleNewBatch`, `submitCommands`, `synchronize`, `cleanupOldPhases`, `handleSyncRequest`)
+  - Structural patterns: `handlePropose`, `handleVoteRound1`, `handleVoteRound2` refactored into focused Leaf methods
+  - Extracted predicate methods: `canVoteRound1()`, `canVoteRound2()`, `canMakeDecision()`, `isPastPhase()`
+  - Multi-statement lambdas extracted: `performStop()`, `broadcastLockedVote()`, `applyRestoredState()`
+  - Value objects: `Batch` adds defensive copy of commands list, `Phase` validates non-negative values
+- **JBCT compliance fixes across integrations module:**
+  - Parse-don't-validate: `DHTConfig`, `Partition`, `NodeId`, `BatchId`, `CorrelationId`, `DomainName`, `NodeAddress` now return `Result<T>`
+  - `SocketOptions` factory now returns `Result<SocketOptions>` with validation
+  - `JdbcTransactional` refactored to use Promise composition instead of blocking `.await()`
+  - `RabiaEngine.submitCommands()` decomposed into Leaf methods
+  - `RabiaPersistence` uses `Option` instead of null for saved state
+  - `MemoryStorageEngine` and `Headers` use `Option.option()` pattern
+  - Security: Removed SQL from error messages in `JdbcError`, `JooqError`, `R2dbcError`
+  - Async patterns: `JooqR2dbcTransactional` properly chains async operations
+  - Defensive copies: `TopologyConfig`, `HttpServerConfig`, `DHTMessage` byte arrays
+  - Void→Unit: `StateMachine.reset()`, `TopologyManager.start()/stop()`, `ClusterNetwork.broadcast()/send()`
+  - Error naming: `ResolverErrors`→`ResolverError`, `ConsensusErrors`→`ConsensusError`
+  - Null policy: Replaced null checks with `Option` patterns in 29+ files
+- **Serializer design note:** Added documentation explaining intentional exception-based error handling for fatal serialization failures
 
 ## [0.9.11] - 2026-01-15
 

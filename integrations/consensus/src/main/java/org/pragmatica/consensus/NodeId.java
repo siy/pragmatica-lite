@@ -16,18 +16,22 @@
 
 package org.pragmatica.consensus;
 
+import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Verify;
 import org.pragmatica.utility.IdGenerator;
 
 /// Unique identifier for a node in the consensus cluster.
 public record NodeId(String id) implements Comparable<NodeId> {
-    /// Create a node ID from the given string.
-    public static NodeId nodeId(String id) {
-        return new NodeId(id);
+    /// Create a node ID from the given string with validation.
+    public static Result<NodeId> nodeId(String id) {
+        return Verify.ensure(id, Verify.Is::notBlank)
+                     .map(NodeId::new);
     }
 
     /// Generate a unique random node ID.
+    /// This method cannot fail because IdGenerator always produces valid non-blank IDs.
     public static NodeId randomNodeId() {
-        return nodeId(IdGenerator.generate("node"));
+        return new NodeId(IdGenerator.generate("node"));
     }
 
     @Override

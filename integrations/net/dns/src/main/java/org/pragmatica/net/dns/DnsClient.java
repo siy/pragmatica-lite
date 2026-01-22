@@ -20,8 +20,8 @@ import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.io.AsyncCloseable;
 import org.pragmatica.lang.io.TimeSpan;
-import org.pragmatica.net.dns.ResolverErrors.RequestTimeout;
-import org.pragmatica.net.dns.ResolverErrors.ServerError;
+import org.pragmatica.net.dns.ResolverError.RequestTimeout;
+import org.pragmatica.net.dns.ResolverError.ServerError;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
@@ -202,7 +202,7 @@ record DnsClientImpl(Bootstrap bootstrap,
         for (int attempt = 0; attempt < 0xFFFF; attempt++) {
             var requestId = idCounter().getAndIncrement() & 0xFFFF;
             var request = new Request(domainName, promise, requestId);
-            if (requestMap().putIfAbsent(requestId, request) == null) {
+            if (option(requestMap().putIfAbsent(requestId, request)).isEmpty()) {
                 // Ensure slot for this ID is freed regardless of the outcome
                 promise.onResultRun(() -> requestMap().remove(requestId));
                 return request;

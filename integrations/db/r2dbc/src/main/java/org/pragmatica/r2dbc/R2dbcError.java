@@ -18,6 +18,7 @@
 package org.pragmatica.r2dbc;
 
 import org.pragmatica.lang.Cause;
+import org.pragmatica.lang.Option;
 
 import io.r2dbc.spi.R2dbcDataIntegrityViolationException;
 import io.r2dbc.spi.R2dbcException;
@@ -38,14 +39,14 @@ public sealed interface R2dbcError extends Cause {
     }
 
     /// SQL query execution failed.
-    record QueryFailed(String sql, String message) implements R2dbcError {
+    record QueryFailed(String message) implements R2dbcError {
         public static QueryFailed queryFailed(String message) {
-            return new QueryFailed("unknown", message);
+            return new QueryFailed(message);
         }
 
         @Override
         public String message() {
-            return "Query failed: " + message + " [SQL: " + sql + "]";
+            return "Query failed: " + message;
         }
     }
 
@@ -66,18 +67,19 @@ public sealed interface R2dbcError extends Cause {
     }
 
     /// Query returned no result when one was expected.
-    record NoResult(String query) implements R2dbcError {
+    enum NoResult implements R2dbcError {
+        INSTANCE;
         @Override
         public String message() {
-            return "No result for query: " + query;
+            return "Query returned no result when one was expected";
         }
     }
 
     /// Query returned multiple results when single was expected.
-    record MultipleResults(String query, int count) implements R2dbcError {
+    record MultipleResults(int count) implements R2dbcError {
         @Override
         public String message() {
-            return "Expected single result but got " + count + " for query: " + query;
+            return "Expected single result but got " + count;
         }
     }
 
@@ -89,11 +91,9 @@ public sealed interface R2dbcError extends Cause {
 
         @Override
         public String message() {
-            var msg = cause.getMessage();
-            return "Database operation failed: " + ( msg != null
-                                                     ? msg
-                                                     : cause.getClass()
-                                                            .getName());
+            return "Database operation failed: " + Option.option(cause.getMessage())
+                                                         .or(() -> cause.getClass()
+                                                                        .getName());
         }
     }
 
@@ -107,35 +107,30 @@ public sealed interface R2dbcError extends Cause {
             case R2dbcTimeoutException e -> new Timeout(e.getMessage());
             case R2dbcDataIntegrityViolationException e -> new ConstraintViolation(e.getMessage());
             case R2dbcTransientException e -> new ConnectionFailed(e.getMessage());
-            case R2dbcException e -> {
-                var sqlState = e.getSqlState();
-                if (sqlState != null && sqlState.startsWith("08")) {
-                    yield new ConnectionFailed(e.getMessage());
-                }
-                yield databaseFailure(e);
-            }
+            case R2dbcException e -> Option.option(e.getSqlState())
+                                           .filter(state -> state.startsWith("08"))
+                                           .fold(() -> databaseFailure(e),
+                                                 _ -> new ConnectionFailed(e.getMessage()));
             default -> databaseFailure(throwable);
         };
     }
 
-    /// Maps R2DBC exceptions with SQL context to typed R2dbcError causes.
+    /// Maps R2DBC exceptions with context to typed R2dbcError causes.
     ///
     /// @param throwable Exception to map
-    /// @param sql SQL that caused the error
+    /// @param ignored Ignored parameter for API compatibility (SQL removed for security)
     ///
     /// @return Corresponding R2dbcError
-    static R2dbcError fromException(Throwable throwable, String sql) {
+    @SuppressWarnings("unused")
+    static R2dbcError fromException(Throwable throwable, String ignored) {
         return switch (throwable) {
             case R2dbcTimeoutException e -> new Timeout(e.getMessage());
             case R2dbcDataIntegrityViolationException e -> new ConstraintViolation(e.getMessage());
             case R2dbcTransientException e -> new ConnectionFailed(e.getMessage());
-            case R2dbcException e -> {
-                var sqlState = e.getSqlState();
-                if (sqlState != null && sqlState.startsWith("08")) {
-                    yield new ConnectionFailed(e.getMessage());
-                }
-                yield new QueryFailed(sql, e.getMessage());
-            }
+            case R2dbcException e -> Option.option(e.getSqlState())
+                                           .filter(state -> state.startsWith("08"))
+                                           .fold(() -> new QueryFailed(e.getMessage()),
+                                                 _ -> new ConnectionFailed(e.getMessage()));
             default -> databaseFailure(throwable);
         };
     }

@@ -54,5 +54,5 @@ public interface StateMachine<C extends Command> {
     Result<Unit> restoreSnapshot(byte[] snapshot);
 
     /// Reset state machine to its initial state.
-    void reset();
+    Unit reset();
 }

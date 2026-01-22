@@ -35,10 +35,9 @@ class R2dbcErrorTest {
     }
 
     @Test
-    void queryFailed_containsSqlAndMessage() {
-        var error = new R2dbcError.QueryFailed("SELECT * FROM users", "Table not found");
+    void queryFailed_containsMessage() {
+        var error = new R2dbcError.QueryFailed("Table not found");
 
-        assertThat(error.message()).contains("SELECT * FROM users");
         assertThat(error.message()).contains("Table not found");
     }
 
@@ -57,17 +56,16 @@ class R2dbcErrorTest {
     }
 
     @Test
-    void noResult_containsQuery() {
-        var error = new R2dbcError.NoResult("SELECT * FROM users WHERE id = 999");
+    void noResult_hasExpectedMessage() {
+        var error = R2dbcError.NoResult.INSTANCE;
 
-        assertThat(error.message()).contains("SELECT * FROM users WHERE id = 999");
+        assertThat(error.message()).contains("no result");
     }
 
     @Test
-    void multipleResults_containsQueryAndCount() {
-        var error = new R2dbcError.MultipleResults("SELECT * FROM users", 5);
+    void multipleResults_containsCount() {
+        var error = new R2dbcError.MultipleResults(5);
 
-        assertThat(error.message()).contains("SELECT * FROM users");
         assertThat(error.message()).contains("5");
     }
 

@@ -16,10 +16,15 @@
 package org.pragmatica.utility;
 
 import org.pragmatica.lang.Cause;
+import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Result;
 
 import java.security.SecureRandom;
 import java.util.Arrays;
+
+import static org.pragmatica.lang.Option.none;
+import static org.pragmatica.lang.Option.option;
+import static org.pragmatica.lang.Option.some;
 
 /// K-Sortable Unique Identifier (KSUID) implementation.
 ///
@@ -101,32 +106,22 @@ public final class KSUID implements Comparable<KSUID> {
 
     /// Parse a KSUID from its 27-character base62 string representation.
     public static Result<KSUID> parse(String input) {
-        if (input == null) {
-            return KSUIDError.NULL_INPUT.result();
-        }
-        if (input.length() != STRING_LENGTH) {
-            return KSUIDError.invalidLength(input.length())
-                             .result();
-        }
-        var decoded = decodeBase62(input);
-        if (decoded == null) {
-            return KSUIDError.INVALID_CHARACTER.result();
-        }
-        return Result.success(new KSUID(decoded));
+        return option(input).toResult(KSUIDError.NULL_INPUT)
+                     .filter(KSUIDError::invalidLength,
+                             s -> s.length() == STRING_LENGTH)
+                     .flatMap(s -> decodeBase62(s).toResult(KSUIDError.INVALID_CHARACTER))
+                     .map(KSUID::new);
     }
 
     /// Create a KSUID from its 20-byte binary representation.
     public static Result<KSUID> fromBytes(byte[] bytes) {
-        if (bytes == null) {
-            return KSUIDError.NULL_INPUT.result();
-        }
-        if (bytes.length != BYTE_LENGTH) {
-            return KSUIDError.invalidByteLength(bytes.length)
-                             .result();
-        }
-        var copy = new byte[BYTE_LENGTH];
-        System.arraycopy(bytes, 0, copy, 0, BYTE_LENGTH);
-        return Result.success(new KSUID(copy));
+        return option(bytes).toResult(KSUIDError.NULL_INPUT)
+                     .filter(KSUIDError::invalidByteLength, b -> b.length == BYTE_LENGTH)
+                     .map(b -> {
+                              var copy = new byte[BYTE_LENGTH];
+                              System.arraycopy(b, 0, copy, 0, BYTE_LENGTH);
+                              return new KSUID(copy);
+                          });
     }
 
     /// Get the 27-character base62 encoded string representation.
@@ -211,18 +206,18 @@ public final class KSUID implements Comparable<KSUID> {
     }
 
     /// Decode 27-character base62 string to 20 bytes.
-    /// Returns null if any character is invalid.
-    private static byte[] decodeBase62(String src) {
+    /// Returns none if any character is invalid.
+    private static Option<byte[]> decodeBase62(String src) {
         var parts = new long[5];
         // Convert from base62
         for (int i = 0; i < STRING_LENGTH; i++) {
             char c = src.charAt(i);
             if (c >= 128) {
-                return null;
+                return none();
             }
             int value = DECODE[c];
             if (value < 0) {
-                return null;
+                return none();
             }
             // Multiply by 62 and add digit
             long carry = value;
@@ -242,7 +237,7 @@ public final class KSUID implements Comparable<KSUID> {
             dst[offset + 2] = (byte)(value>>> 8);
             dst[offset + 3] = (byte) value;
         }
-        return dst;
+        return some(dst);
     }
 
     private static byte[] maxBytes() {
@@ -256,12 +251,12 @@ public final class KSUID implements Comparable<KSUID> {
         KSUIDError NULL_INPUT = new NullInput();
         KSUIDError INVALID_CHARACTER = new InvalidCharacter();
 
-        static KSUIDError invalidLength(int actual) {
-            return new InvalidLength(actual);
+        static KSUIDError invalidLength(String input) {
+            return new InvalidLength(input.length());
         }
 
-        static KSUIDError invalidByteLength(int actual) {
-            return new InvalidByteLength(actual);
+        static KSUIDError invalidByteLength(byte[] bytes) {
+            return new InvalidByteLength(bytes.length);
         }
 
         record NullInput() implements KSUIDError {

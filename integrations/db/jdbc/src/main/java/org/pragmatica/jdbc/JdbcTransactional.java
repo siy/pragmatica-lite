@@ -18,6 +18,7 @@
 package org.pragmatica.jdbc;
 
 import org.pragmatica.lang.Functions.Fn1;
+import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
 
@@ -53,34 +54,36 @@ public interface JdbcTransactional {
     static <R> Promise<R> withTransaction(DataSource dataSource,
                                           Fn1<JdbcError, Throwable> errorMapper,
                                           Fn1<Promise<R>, Connection> operation) {
-        return Promise.promise(promise -> {
-                                   Connection conn = null;
-                                   try{
-                                       conn = dataSource.getConnection();
-                                       conn.setAutoCommit(false);
-                                       var result = operation.apply(conn)
-                                                             .await();
-                                       if (result instanceof Result.Success<R>) {
-                                           try{
-                                               conn.commit();
-                                           } catch (SQLException e) {
-                                               rollback(conn);
-                                               promise.resolve(errorMapper.apply(e)
-                                                                          .result());
-                                               return;
-                                           }
-                                       } else {
-                                           rollback(conn);
-                                       }
-                                       promise.resolve(result);
-                                   } catch (Exception e) {
-                                       rollback(conn);
-                                       promise.resolve(errorMapper.apply(e)
-                                                                  .result());
-                                   } finally{
-                                       close(conn);
-                                   }
-                               });
+        return acquireConnection(dataSource, errorMapper)
+        .flatMap(conn -> operation.apply(conn)
+                                  .flatMap(result -> commit(conn, errorMapper, result))
+                                  .onFailure(_ -> rollback(conn))
+                                  .onResult(_ -> close(conn)));
+    }
+
+    private static Promise<Connection> acquireConnection(DataSource dataSource,
+                                                         Fn1<JdbcError, Throwable> errorMapper) {
+        return Promise.lift(errorMapper,
+                            () -> {
+                                var conn = dataSource.getConnection();
+                                try{
+                                    conn.setAutoCommit(false);
+                                } catch (Exception e) {
+                                    close(conn);
+                                    throw e;
+                                }
+                                return conn;
+                            });
+    }
+
+    private static <R> Promise<R> commit(Connection conn,
+                                         Fn1<JdbcError, Throwable> errorMapper,
+                                         R result) {
+        return Promise.lift(errorMapper,
+                            () -> {
+                                conn.commit();
+                                return result;
+                            });
     }
 
     /// Creates a transactional wrapper function.
@@ -95,19 +98,24 @@ public interface JdbcTransactional {
     }
 
     private static void rollback(Connection conn) {
-        if (conn != null) {
-            try{
-                conn.rollback();
-            } catch (SQLException _) {}
-        }
+        Option.option(conn)
+              .onPresent(c -> {
+                  try{
+                      c.rollback();
+                  } catch (SQLException _) {}
+              });
     }
 
     private static void close(Connection conn) {
-        if (conn != null) {
-            try{
-                conn.setAutoCommit(true);
-                conn.close();
-            } catch (SQLException _) {}
-        }
+        Option.option(conn)
+              .onPresent(c -> {
+                             try{
+                                 c.setAutoCommit(true);
+                             } catch (SQLException _) {} finally{
+                                 try{
+                                     c.close();
+                                 } catch (SQLException _) {}
+                             }
+                         });
     }
 }

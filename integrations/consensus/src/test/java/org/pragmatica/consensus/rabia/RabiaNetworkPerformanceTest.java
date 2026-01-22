@@ -32,6 +32,7 @@ import org.pragmatica.consensus.topology.QuorumStateNotification;
 import org.pragmatica.consensus.topology.TcpTopologyManager;
 import org.pragmatica.consensus.topology.TopologyConfig;
 import org.pragmatica.consensus.topology.TopologyManagementMessage;
+import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
@@ -77,14 +78,14 @@ class RabiaNetworkPerformanceTest {
         // Create node info list for all nodes
         var nodeInfos = new ArrayList<NodeInfo>();
         for (int i = 0; i < CLUSTER_SIZE; i++) {
-            var id = nodeId("node-" + i);
+            var id = nodeId("node-" + i).unwrap();
             var port = basePort + i;
-            nodeInfos.add(NodeInfo.nodeInfo(id, NodeAddress.nodeAddress("127.0.0.1", port)));
+            nodeInfos.add(NodeInfo.nodeInfo(id, NodeAddress.nodeAddress("127.0.0.1", port).unwrap()));
         }
 
         // Create all nodes
         for (int i = 0; i < CLUSTER_SIZE; i++) {
-            var id = nodeId("node-" + i);
+            var id = nodeId("node-" + i).unwrap();
             var node = new NetworkNode(id, nodeInfos, this::onDecision);
             nodes.add(node);
         }
@@ -110,9 +111,7 @@ class RabiaNetworkPerformanceTest {
 
     private void onDecision() {
         decisionsReached.incrementAndGet();
-        if (decisionLatch != null) {
-            decisionLatch.countDown();
-        }
+        Option.option(decisionLatch).onPresent(CountDownLatch::countDown);
     }
 
     @Test
@@ -333,15 +332,9 @@ class RabiaNetworkPerformanceTest {
         }
 
         void stop() {
-            if (engine != null) {
-                engine.stop().await();
-            }
-            if (topologyManager != null) {
-                topologyManager.stop();
-            }
-            if (network != null) {
-                network.stop().await();
-            }
+            Option.option(engine).onPresent(e -> e.stop().await());
+            Option.option(topologyManager).onPresent(TcpTopologyManager::stop);
+            Option.option(network).onPresent(n -> n.stop().await());
         }
 
         static class SimpleStateMachine implements StateMachine<TestCommand> {
@@ -365,8 +358,9 @@ class RabiaNetworkPerformanceTest {
             }
 
             @Override
-            public void reset() {
+            public Unit reset() {
                 processed.clear();
+                return Unit.unit();
             }
         }
     }

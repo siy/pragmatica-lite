@@ -21,7 +21,7 @@ import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.io.AsyncCloseable;
 import org.pragmatica.lang.io.TimeSpan;
-import org.pragmatica.net.dns.ResolverErrors.UnknownDomain;
+import org.pragmatica.net.dns.ResolverError.UnknownDomain;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -51,7 +51,8 @@ public interface DomainNameResolver extends AsyncCloseable {
 
     /// Resolve domain name, using cache if available.
     default Promise<DomainAddress> resolve(String name) {
-        return resolve(domainName(name));
+        return domainName(name).async()
+                         .flatMap(this::resolve);
     }
 
     /// Resolve domain name, using cache if available.
@@ -59,7 +60,8 @@ public interface DomainNameResolver extends AsyncCloseable {
 
     /// Get cached resolution result without triggering new resolution.
     default Promise<DomainAddress> resolveCached(String name) {
-        return resolveCached(domainName(name));
+        return domainName(name).async()
+                         .flatMap(this::resolveCached);
     }
 
     /// Get cached resolution result without triggering new resolution.
@@ -93,10 +95,10 @@ public interface DomainNameResolver extends AsyncCloseable {
 
     private static ConcurrentHashMap<DomainName, Promise<DomainAddress>> buildDnsCache() {
         var cache = new ConcurrentHashMap<DomainName, Promise<DomainAddress>>();
-        var resolvedLocalHost = domainAddress(domainName("localhost"),
-                                              InetAddress.getLoopbackAddress(),
-                                              Duration.ofSeconds(0));
-        cache.put(resolvedLocalHost.name(), success(resolvedLocalHost));
+        // "localhost" is a well-known valid domain name, safe to use directly
+        var localhost = new DomainName("localhost");
+        var resolvedLocalHost = domainAddress(localhost, InetAddress.getLoopbackAddress(), Duration.ofSeconds(0));
+        cache.put(localhost, success(resolvedLocalHost));
         return cache;
     }
 }

@@ -42,6 +42,10 @@ public record HttpServerConfig(String name,
                                SocketOptions socketOptions) {
     private static final int DEFAULT_MAX_CONTENT_LENGTH = 65536;
 
+    public HttpServerConfig {
+        webSocketEndpoints = List.copyOf(webSocketEndpoints);
+    }
+
     public static HttpServerConfig httpServerConfig(String name, int port) {
         return new HttpServerConfig(name,
                                     port,

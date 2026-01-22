@@ -17,7 +17,7 @@
 package org.pragmatica.consensus.rabia;
 
 import org.pragmatica.consensus.Command;
-import org.pragmatica.consensus.ConsensusErrors;
+import org.pragmatica.consensus.ConsensusError;
 import org.pragmatica.consensus.NodeId;
 import org.pragmatica.consensus.StateMachine;
 import org.pragmatica.consensus.net.ClusterNetwork;
@@ -27,6 +27,7 @@ import org.pragmatica.consensus.rabia.RabiaProtocolMessage.Asynchronous.NewBatch
 import org.pragmatica.consensus.rabia.RabiaProtocolMessage.Synchronous.*;
 import org.pragmatica.consensus.topology.QuorumStateNotification;
 import org.pragmatica.consensus.topology.TopologyManager;
+import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
@@ -97,9 +98,9 @@ public class RabiaEngine<C extends Command> {
     private final AtomicReference<Phase> lastCommittedPhase = new AtomicReference<>(Phase.ZERO);
 
     // Per Rabia spec: after a decision, the next phase inherits this value for round 1 vote
-    private final AtomicReference<StateValue> lockedValue = new AtomicReference<>(null);
-    private final ScheduledFuture<?> cleanupTask;
-    private final ScheduledFuture<?> syncTask;
+    private final AtomicReference<Option<StateValue>> lockedValue = new AtomicReference<>(Option.none());
+    private final Option<ScheduledFuture<?>> cleanupTask;
+    private final Option<ScheduledFuture<?>> syncTask;
 
     //--------------------------------- Node State End
     /// Creates a new Rabia consensus engine without metrics.
@@ -133,11 +134,11 @@ public class RabiaEngine<C extends Command> {
         this.network = network;
         this.stateMachine = stateMachine;
         this.config = config;
-        this.metrics = metrics != null
-                       ? metrics
-                       : ConsensusMetrics.noop();
-        this.cleanupTask = SharedScheduler.scheduleAtFixedRate(this::cleanupOldPhases, config.cleanupInterval());
-        this.syncTask = SharedScheduler.schedule(this::synchronize, config.syncRetryInterval());
+        this.metrics = Option.option(metrics)
+                             .or(ConsensusMetrics.noop());
+        this.cleanupTask = Option.some(SharedScheduler.scheduleAtFixedRate(this::cleanupOldPhases,
+                                                                           config.cleanupInterval()));
+        this.syncTask = Option.some(SharedScheduler.schedule(this::synchronize, config.syncRetryInterval()));
     }
 
     @MessageReceiver
@@ -157,6 +158,10 @@ public class RabiaEngine<C extends Command> {
     }
 
     private void clusterDisconnected() {
+        executor.execute(this::doClusterDisconnected);
+    }
+
+    private void doClusterDisconnected() {
         if (!active.compareAndSet(true, false)) {
             return;
         }
@@ -168,11 +173,11 @@ public class RabiaEngine<C extends Command> {
         phases.clear();
         currentPhase.set(Phase.ZERO);
         isInPhase.set(false);
-        lockedValue.set(null);
+        lockedValue.set(Option.none());
         stateMachine.reset();
         startPromise.set(Promise.promise());
         pendingBatches.clear();
-        correlationMap.forEach((_, promise) -> promise.fail(ConsensusErrors.nodeInactive(self)));
+        correlationMap.forEach((_, promise) -> promise.fail(ConsensusError.nodeInactive(self)));
         correlationMap.clear();
     }
 
@@ -195,24 +200,44 @@ public class RabiaEngine<C extends Command> {
     }
 
     private Result<Batch<C>> submitCommands(List<C> commands, Consumer<Batch<C>> onBatchPrepared) {
+        return validateSubmission(commands).map(_ -> prepareBatch(commands))
+                                 .onSuccess(batch -> executor.execute(() -> registerBatch(batch, onBatchPrepared)))
+                                 .onSuccess(batch -> executor.execute(() -> broadcastBatch(batch)));
+    }
+
+    private Result<List<C>> validateSubmission(List<C> commands) {
         if (commands.isEmpty()) {
-            return ConsensusErrors.commandBatchIsEmpty()
-                                  .result();
+            return ConsensusError.commandBatchIsEmpty()
+                                 .result();
         }
         if (!active.get()) {
-            return ConsensusErrors.nodeInactive(self)
-                                  .result();
+            return ConsensusError.nodeInactive(self)
+                                 .result();
         }
+        return Result.success(commands);
+    }
+
+    private Batch<C> prepareBatch(List<C> commands) {
         var batch = batch(commands);
         log.trace("Node {}: client submitted {} command(s). Prepared batch: {}", self, commands.size(), batch);
+        return batch;
+    }
+
+    private void registerBatch(Batch<C> batch, Consumer<Batch<C>> onBatchPrepared) {
         pendingBatches.put(batch.correlationId(), batch);
         metrics.updatePendingBatches(self, pendingBatches.size());
         onBatchPrepared.accept(batch);
+        triggerPhaseIfNeeded();
+    }
+
+    private void broadcastBatch(Batch<C> batch) {
         network.broadcast(new NewBatch<>(self, batch));
+    }
+
+    private void triggerPhaseIfNeeded() {
         if (!isInPhase.get()) {
             executor.execute(this::startPhase);
         }
-        return Result.success(batch);
     }
 
     public Promise<Unit> start() {
@@ -220,17 +245,15 @@ public class RabiaEngine<C extends Command> {
     }
 
     public Promise<Unit> stop() {
-        return Promise.promise(promise -> {
-                                   if (cleanupTask != null) {
-                                       cleanupTask.cancel(false);
-                                   }
-                                   if (syncTask != null) {
-                                       syncTask.cancel(false);
-                                   }
-                                   clusterDisconnected();
-                                   executor.shutdown();
-                                   promise.succeed(Unit.unit());
-                               });
+        return Promise.promise(this::performStop);
+    }
+
+    private void performStop(Promise<Unit> promise) {
+        cleanupTask.onPresent(task -> task.cancel(false));
+        syncTask.onPresent(task -> task.cancel(false));
+        clusterDisconnected();
+        executor.shutdown();
+        promise.succeed(Unit.unit());
     }
 
     @MessageReceiver
@@ -261,9 +284,12 @@ public class RabiaEngine<C extends Command> {
     @SuppressWarnings("unchecked")
     @MessageReceiver
     public void handleNewBatch(NewBatch<?> newBatch) {
-        pendingBatches.put(newBatch.batch()
-                                   .correlationId(),
-                           (Batch<C>) newBatch.batch());
+        executor.execute(() -> {
+                             pendingBatches.put(newBatch.batch()
+                                                        .correlationId(),
+                                                (Batch<C>) newBatch.batch());
+                             triggerPhaseIfNeeded();
+                         });
     }
 
     /// Starts a new phase with pending commands.
@@ -287,22 +313,30 @@ public class RabiaEngine<C extends Command> {
         var phaseData = getOrCreatePhaseData(phase);
         phaseData.registerProposal(self, batch);
         network.broadcast(new Propose<>(self, phase, batch));
-        // Per Rabia spec: if we have a locked value from previous phase, vote it immediately
-        var locked = lockedValue.getAndSet(null);
-        if (locked != null) {
-            var vote = new VoteRound1(self, phase, locked);
-            log.trace("Node {} immediately voting locked value {} for phase {}", self, locked, phase);
-            network.broadcast(vote);
-            phaseData.registerRound1Vote(self, locked);
-        }
+        broadcastLockedValueIfPresent(phase, phaseData);
+    }
+
+    private void broadcastLockedValueIfPresent(Phase phase, PhaseData<C> phaseData) {
+        lockedValue.getAndSet(Option.none())
+                   .onPresent(locked -> broadcastLockedVote(phase, phaseData, locked));
+    }
+
+    private void broadcastLockedVote(Phase phase, PhaseData<C> phaseData, StateValue locked) {
+        var vote = new VoteRound1(self, phase, locked);
+        log.trace("Node {} immediately voting locked value {} for phase {}", self, locked, phase);
+        network.broadcast(vote);
+        phaseData.registerRound1Vote(self, locked);
     }
 
     /// Synchronizes with other nodes to catch up if needed.
     private void synchronize() {
+        executor.execute(this::doSynchronize);
+    }
+
+    private void doSynchronize() {
         if (active.get()) {
             return;
         }
-        // Clear stale responses
         syncResponses.clear();
         var request = new SyncRequest(self);
         log.trace("Node {}: requesting phase synchronization {}", self, request);
@@ -345,21 +379,19 @@ public class RabiaEngine<C extends Command> {
             return;
         }
         stateMachine.restoreSnapshot(state.snapshot())
-                    .onSuccess(_ -> {
-                                   currentPhase.set(state.lastCommittedPhase());
-                                   lastCommittedPhase.set(state.lastCommittedPhase());
-                                   state.pendingBatches()
-                                        .forEach(batch -> pendingBatches.put(batch.correlationId(),
-                                                                             batch));
-                                   persistence.save(stateMachine,
-                                                    currentPhase.get(),
-                                                    pendingBatches.values());
-                                   log.info("Node {} restored state from persistence. Current phase {}",
-                                            self,
-                                            currentPhase.get());
-                               })
+                    .onSuccess(_ -> applyRestoredState(state))
                     .onSuccessRun(this::activate)
                     .onFailure(cause -> log.error("Node {} failed to restore state: {}", self, cause));
+    }
+
+    private void applyRestoredState(SavedState<C> state) {
+        currentPhase.set(state.lastCommittedPhase());
+        lastCommittedPhase.set(state.lastCommittedPhase());
+        state.pendingBatches()
+             .forEach(batch -> pendingBatches.put(batch.correlationId(),
+                                                  batch));
+        persistence.save(stateMachine, currentPhase.get(), pendingBatches.values());
+        log.info("Node {} restored state from persistence. Current phase {}", self, currentPhase.get());
     }
 
     /// Activate node and adjust phase, if necessary.
@@ -376,6 +408,10 @@ public class RabiaEngine<C extends Command> {
     /// Handles a synchronization request from another node.
     @MessageReceiver
     public void handleSyncRequest(SyncRequest request) {
+        executor.execute(() -> doHandleSyncRequest(request));
+    }
+
+    private void doHandleSyncRequest(SyncRequest request) {
         if (active.get()) {
             stateMachine.makeSnapshot()
                         .map(snapshot -> new SyncResponse<>(self,
@@ -396,6 +432,10 @@ public class RabiaEngine<C extends Command> {
 
     /// Cleans up old phase data to prevent memory leaks.
     private void cleanupOldPhases() {
+        executor.execute(this::doCleanupOldPhases);
+    }
+
+    private void doCleanupOldPhases() {
         if (!active.get()) {
             return;
         }
@@ -416,55 +456,88 @@ public class RabiaEngine<C extends Command> {
         }
         log.trace("Node {} received proposal from {} for phase {}", self, propose.sender(), propose.phase());
         var currentPhaseValue = currentPhase.get();
-        // Ignore proposals for past phases
-        if (propose.phase()
-                   .compareTo(currentPhaseValue) < 0) {
+        if (isPastPhase(propose.phase(), currentPhaseValue)) {
             log.trace("Node {} ignoring proposal for past phase {}", self, propose.phase());
             return;
         }
-        // Potentially add check for proposals too far in the future
-        var phaseData = getOrCreatePhaseData(propose.phase());
-        // Ensure the phase state is correct. If we receive a proposal for the current
-        // phase value but aren't "in" it, enter it now and broadcast our own proposal if we have pending batches.
-        // This assumes the currentPhaseValue is correctly managed by sync/moveToNextPhase
-        if (propose.phase()
-                   .equals(currentPhaseValue) && !isInPhase.get()) {
-            log.trace("Node {} entering phase {} triggered by proposal from {}", self, propose.phase(), propose.sender());
-            isInPhase.set(true);
-            // Only broadcast our own proposal if we have pending batches
-            var ourBatchOpt = pendingBatches.values()
-                                            .stream()
-                                            .sorted()
-                                            .findFirst();
-            if (ourBatchOpt.isPresent()) {
-                var ourBatch = ourBatchOpt.get();
-                phaseData.registerProposal(self, ourBatch);
-                network.broadcast(new Propose<>(self, propose.phase(), ourBatch));
-            }
+        if (isFarFuturePhase(propose.phase(), currentPhaseValue)) {
+            log.warn("Node {} rejecting proposal for far-future phase {} (current: {})",
+                     self,
+                     propose.phase(),
+                     currentPhaseValue);
+            return;
         }
+        var phaseData = getOrCreatePhaseData(propose.phase());
+        enterPhaseIfNeeded(propose.phase(), currentPhaseValue, phaseData);
+        registerProposal(propose, phaseData);
+        tryBroadcastRound1Vote(propose.phase(), phaseData);
+    }
+
+    private static final long MAX_PHASE_AHEAD = 100;
+
+    private boolean isFarFuturePhase(Phase proposalPhase, Phase current) {
+        return proposalPhase.value() - current.value() > MAX_PHASE_AHEAD;
+    }
+
+    private boolean isPastPhase(Phase proposalPhase, Phase current) {
+        return proposalPhase.compareTo(current) < 0;
+    }
+
+    private void enterPhaseIfNeeded(Phase proposalPhase, Phase currentPhaseValue, PhaseData<C> phaseData) {
+        if (!proposalPhase.equals(currentPhaseValue) || isInPhase.get()) {
+            return;
+        }
+        log.trace("Node {} entering phase {} triggered by external proposal", self, proposalPhase);
+        isInPhase.set(true);
+        pendingBatches.values()
+                      .stream()
+                      .sorted()
+                      .findFirst()
+                      .ifPresent(ourBatch -> broadcastOwnProposal(proposalPhase, phaseData, ourBatch));
+        // Broadcast locked value if present (same as startPhase does)
+        broadcastLockedValueIfPresent(proposalPhase, phaseData);
+    }
+
+    private void broadcastOwnProposal(Phase phase, PhaseData<C> phaseData, Batch<C> batch) {
+        phaseData.registerProposal(self, batch);
+        network.broadcast(new Propose<>(self, phase, batch));
+    }
+
+    private void registerProposal(Propose<C> propose, PhaseData<C> phaseData) {
         phaseData.registerProposal(propose.sender(), propose.value());
         metrics.recordProposal(propose.sender(), propose.phase());
+    }
+
+    private void tryBroadcastRound1Vote(Phase phase, PhaseData<C> phaseData) {
         var quorumSize = topologyManager.quorumSize();
-        // Only vote once we have quorum proposals and haven't voted yet
-        if (isInPhase.get() && currentPhase.get()
-                                           .equals(propose.phase()) && !phaseData.hasVotedRound1(self) && phaseData.hasQuorumProposals(quorumSize)) {
-            var vote = phaseData.evaluateInitialVote(self, quorumSize);
-            log.trace("Node {} broadcasting R1 vote {} for phase {} after collecting quorum proposals",
-                      self,
-                      vote,
-                      propose.phase());
-            network.broadcast(vote);
-            phaseData.registerRound1Vote(self, vote.stateValue());
+        if (canVoteRound1(phase, phaseData, quorumSize)) {
+            broadcastRound1Vote(phase, phaseData, quorumSize);
         } else {
-            log.trace("Node {} conditions not met to vote R1 for phase {}. InPhase: {}, CurrentPhase: {}, HasVotedR1: {}, ProposalCount: {}/{}",
-                      self,
-                      propose.phase(),
-                      isInPhase.get(),
-                      currentPhase.get(),
-                      phaseData.hasVotedRound1(self),
-                      phaseData.proposalCount(),
-                      quorumSize);
+            logRound1VoteConditionsNotMet(phase, phaseData, quorumSize);
         }
+    }
+
+    private boolean canVoteRound1(Phase phase, PhaseData<C> phaseData, int quorumSize) {
+        return isInPhase.get() && currentPhase.get()
+                                              .equals(phase) && !phaseData.hasVotedRound1(self) && phaseData.hasQuorumProposals(quorumSize);
+    }
+
+    private void broadcastRound1Vote(Phase phase, PhaseData<C> phaseData, int quorumSize) {
+        var vote = phaseData.evaluateInitialVote(self, quorumSize);
+        log.trace("Node {} broadcasting R1 vote {} for phase {} after collecting quorum proposals", self, vote, phase);
+        network.broadcast(vote);
+        phaseData.registerRound1Vote(self, vote.stateValue());
+    }
+
+    private void logRound1VoteConditionsNotMet(Phase phase, PhaseData<C> phaseData, int quorumSize) {
+        log.trace("Node {} conditions not met to vote R1 for phase {}. InPhase: {}, CurrentPhase: {}, HasVotedR1: {}, ProposalCount: {}/{}",
+                  self,
+                  phase,
+                  isInPhase.get(),
+                  currentPhase.get(),
+                  phaseData.hasVotedRound1(self),
+                  phaseData.proposalCount(),
+                  quorumSize);
     }
 
     /// Handles a round 1 vote from another node.
@@ -479,19 +552,68 @@ public class RabiaEngine<C extends Command> {
                   vote.phase(),
                   vote.stateValue());
         var phaseData = getOrCreatePhaseData(vote.phase());
+        registerRound1Vote(vote, phaseData);
+        tryBroadcastRound2Vote(vote.phase(), phaseData);
+    }
+
+    private void registerRound1Vote(VoteRound1 vote, PhaseData<C> phaseData) {
         phaseData.registerRound1Vote(vote.sender(), vote.stateValue());
         metrics.recordVoteRound1(vote.sender(), vote.phase(), vote.stateValue());
-        // If we're active and in this phase, check if we can proceed to round 2
-        if (isInPhase.get() && currentPhase.get()
-                                           .equals(vote.phase()) && !phaseData.hasVotedRound2(self)) {
-            if (!phaseData.hasRound1MajorityVotes(topologyManager.quorumSize())) {
-                return;
-            }
-            var round2Vote = phaseData.evaluateRound2Vote(topologyManager.quorumSize());
-            log.trace("Node {} votes in round 2 {}", self, round2Vote);
-            network.broadcast(new VoteRound2(self, vote.phase(), round2Vote));
-            phaseData.registerRound2Vote(self, round2Vote);
+    }
+
+    private void tryBroadcastRound2Vote(Phase phase, PhaseData<C> phaseData) {
+        var quorumSize = topologyManager.quorumSize();
+        var superMajoritySize = topologyManager.superMajoritySize();
+        // Check for fast path: if n-f nodes agree in Round 1, skip Round 2
+        var superMajorityValue = phaseData.getSuperMajorityRound1Value(superMajoritySize);
+        if (canUseFastPath(phase, phaseData, superMajorityValue)) {
+            useFastPath(phase, phaseData, superMajorityValue, quorumSize);
+            return;
         }
+        // Normal path: proceed with Round 2 voting
+        if (canVoteRound2(phase, phaseData, quorumSize)) {
+            broadcastRound2Vote(phase, phaseData, quorumSize);
+        }
+    }
+
+    private boolean canUseFastPath(Phase phase, PhaseData<C> phaseData, Option<StateValue> superMajorityValue) {
+        return isInPhase.get() && currentPhase.get()
+                                              .equals(phase) && !phaseData.isDecided() && !phaseData.hasVotedRound2(self) && superMajorityValue.isPresent();
+    }
+
+    private void useFastPath(Phase phase,
+                             PhaseData<C> phaseData,
+                             Option<StateValue> superMajorityValue,
+                             int quorumSize) {
+        superMajorityValue.onPresent(agreedValue -> {
+                                         log.debug("Node {} using fast path for phase {} with value {} (super-majority agreement)",
+                                                   self,
+                                                   phase,
+                                                   agreedValue);
+                                         metrics.recordFastPath(self, phase, agreedValue);
+                                         var decision = buildDecision(phaseData, agreedValue, quorumSize);
+                                         network.broadcast(decision);
+                                         processDecision(decision);
+                                     });
+    }
+
+    private Decision<C> buildDecision(PhaseData<C> phaseData, StateValue agreedValue, int quorumSize) {
+        var batch = agreedValue == StateValue.V1
+                    ? phaseData.findAgreedProposal(quorumSize)
+                    : Batch.<C>emptyBatch();
+        return new Decision<>(self, phaseData.phase(), agreedValue, batch);
+    }
+
+    private boolean canVoteRound2(Phase phase, PhaseData<C> phaseData, int quorumSize) {
+        return isInPhase.get() && currentPhase.get()
+                                              .equals(phase) && !phaseData.hasVotedRound2(self) && phaseData.hasRound1MajorityVotes(quorumSize);
+    }
+
+    private void broadcastRound2Vote(Phase phase, PhaseData<C> phaseData, int quorumSize) {
+        var round2Vote = phaseData.evaluateRound2Vote(quorumSize);
+        log.trace("Node {} votes in round 2 {}", self, round2Vote);
+        network.broadcast(new VoteRound2(self, phase, round2Vote));
+        phaseData.registerRound2Vote(self, round2Vote);
     }
 
     /// Handles a round 2 vote from another node.
@@ -506,18 +628,31 @@ public class RabiaEngine<C extends Command> {
                   vote.phase(),
                   vote.stateValue());
         var phaseData = getOrCreatePhaseData(vote.phase());
+        registerRound2Vote(vote, phaseData);
+        tryMakeDecision(vote.phase(), phaseData);
+    }
+
+    private void registerRound2Vote(VoteRound2 vote, PhaseData<C> phaseData) {
         phaseData.registerRound2Vote(vote.sender(), vote.stateValue());
         metrics.recordVoteRound2(vote.sender(), vote.phase(), vote.stateValue());
-        // If we're active and in this phase, check if we can make a decision
+    }
+
+    private void tryMakeDecision(Phase phase, PhaseData<C> phaseData) {
         var quorumSize = topologyManager.quorumSize();
-        if (isInPhase.get() && currentPhase.get()
-                                           .equals(vote.phase()) && !phaseData.isDecided()) {
-            if (phaseData.hasRound2MajorityVotes(quorumSize)) {
-                var decision = phaseData.processRound2Completion(self, topologyManager.fPlusOne(), quorumSize);
-                network.broadcast(decision);
-                processDecision(decision);
-            }
+        if (canMakeDecision(phase, phaseData, quorumSize)) {
+            makeAndBroadcastDecision(phaseData, quorumSize);
         }
+    }
+
+    private boolean canMakeDecision(Phase phase, PhaseData<C> phaseData, int quorumSize) {
+        return isInPhase.get() && currentPhase.get()
+                                              .equals(phase) && !phaseData.isDecided() && phaseData.hasRound2MajorityVotes(quorumSize);
+    }
+
+    private void makeAndBroadcastDecision(PhaseData<C> phaseData, int quorumSize) {
+        var decision = phaseData.processRound2Completion(self, topologyManager.fPlusOne(), quorumSize);
+        network.broadcast(decision);
+        processDecision(decision);
     }
 
     private void commitDecision(PhaseData<C> phaseData, Decision<C> decision) {
@@ -542,12 +677,9 @@ public class RabiaEngine<C extends Command> {
         pendingBatches.remove(decision.value()
                                       .correlationId());
         metrics.updatePendingBatches(self, pendingBatches.size());
-        correlationMap.computeIfPresent(decision.value()
-                                                .correlationId(),
-                                        (_, promise) -> {
-                                            promise.succeed(results);
-                                            return null;
-                                        });
+        Option.option(correlationMap.remove(decision.value()
+                                                    .correlationId()))
+              .onPresent(promise -> promise.succeed(results));
     }
 
     /// Handles a decision message from another node.
@@ -567,7 +699,7 @@ public class RabiaEngine<C extends Command> {
         this.currentPhase.set(nextPhase);
         isInPhase.set(false);
         // Lock the value for the next phase's round 1 vote
-        lockedValue.set(decidedValue);
+        lockedValue.set(Option.some(decidedValue));
         log.trace("Node {} moving to phase {} with locked value {}", self, nextPhase, decidedValue);
         // If we have more commands to process, start a new phase
         if (!pendingBatches.isEmpty()) {

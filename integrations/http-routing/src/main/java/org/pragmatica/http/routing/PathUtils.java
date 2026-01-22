@@ -1,5 +1,7 @@
 package org.pragmatica.http.routing;
 
+import org.pragmatica.lang.Option;
+
 import java.util.regex.Pattern;
 
 /**
@@ -15,9 +17,12 @@ public sealed interface PathUtils {
      * - Ensuring path starts and ends with /
      */
     static String normalize(String fullPath) {
-        if (fullPath == null) {
-            return "/";
-        }
+        return Option.option(fullPath)
+                     .map(PathUtils::normalizeNonNull)
+                     .or("/");
+    }
+
+    private static String normalizeNonNull(String fullPath) {
         var query = fullPath.indexOf('?');
         var path = query >= 0
                    ? fullPath.substring(0, query)

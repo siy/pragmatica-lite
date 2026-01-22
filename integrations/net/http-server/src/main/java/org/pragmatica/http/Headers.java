@@ -38,18 +38,15 @@ public interface Headers {
         record headers(Map<String, List<String>> normalized) implements Headers {
             @Override
             public Option<String> get(String name) {
-                var values = normalized.get(name.toLowerCase());
-                return values == null || values.isEmpty()
-                       ? Option.empty()
-                       : Option.some(values.getFirst());
+                return Option.option(normalized.get(name.toLowerCase()))
+                             .filter(values -> !values.isEmpty())
+                             .map(List::getFirst);
             }
 
             @Override
             public List<String> getAll(String name) {
-                var values = normalized.get(name.toLowerCase());
-                return values == null
-                       ? List.of()
-                       : values;
+                return Option.option(normalized.get(name.toLowerCase()))
+                             .or(List::of);
             }
 
             @Override

@@ -168,9 +168,8 @@ public sealed interface MessageRouter {
         @SuppressWarnings("unchecked")
         private static <T extends Message> List<Consumer<T>> merge(Tuple2<Class<? extends T>, Consumer<? extends T>> tuple,
                                                                    List<Consumer<T>> oldValue) {
-            var list = oldValue == null
-                       ? new ArrayList<Consumer<T>>()
-                       : oldValue;
+            var list = Option.option(oldValue)
+                             .or(ArrayList::new);
             list.add((Consumer<T>) tuple.last());
             return list;
         }

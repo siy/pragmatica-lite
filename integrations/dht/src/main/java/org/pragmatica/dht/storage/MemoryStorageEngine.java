@@ -37,10 +37,8 @@ public final class MemoryStorageEngine implements StorageEngine {
 
     @Override
     public Promise<Option<byte[]>> get(byte[] key) {
-        byte[] value = data.get(new ByteArrayKey(key));
-        return Promise.success(value != null
-                               ? Option.some(value.clone())
-                               : Option.none());
+        return Promise.success(Option.option(data.get(new ByteArrayKey(key)))
+                                     .map(byte[]::clone));
     }
 
     @Override
@@ -51,8 +49,8 @@ public final class MemoryStorageEngine implements StorageEngine {
 
     @Override
     public Promise<Boolean> remove(byte[] key) {
-        byte[] removed = data.remove(new ByteArrayKey(key));
-        return Promise.success(removed != null);
+        return Promise.success(Option.option(data.remove(new ByteArrayKey(key)))
+                                     .isPresent());
     }
 
     @Override

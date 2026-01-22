@@ -110,38 +110,41 @@ final class DataSourceJooqTransactional implements JooqTransactional {
     }
 
     private void commit(Connection conn) {
-        if (conn != null) {
-            try{
-                conn.commit();
-            } catch (SQLException e) {
-                throw new RuntimeException("Failed to commit transaction", e);
-            }
-        }
+        Option.option(conn)
+              .onPresent(c -> {
+                             try{
+                                 c.commit();
+                             } catch (SQLException e) {
+                                 throw new RuntimeException("Failed to commit transaction", e);
+                             }
+                         });
     }
 
     private void rollback(Connection conn) {
-        if (conn != null) {
-            try{
-                conn.rollback();
-            } catch (SQLException e) {
-                LOG.error("Failed to rollback transaction", e);
-            }
-        }
+        Option.option(conn)
+              .onPresent(c -> {
+                             try{
+                                 c.rollback();
+                             } catch (SQLException e) {
+                                 LOG.error("Failed to rollback transaction", e);
+                             }
+                         });
     }
 
     private void close(Connection conn) {
-        if (conn != null) {
-            try{
-                conn.setAutoCommit(true);
-            } catch (SQLException e) {
-                LOG.warn("Failed to restore autoCommit", e);
-            }
-            try{
-                conn.close();
-            } catch (SQLException e) {
-                LOG.error("Failed to close connection", e);
-            }
-        }
+        Option.option(conn)
+              .onPresent(c -> {
+                             try{
+                                 c.setAutoCommit(true);
+                             } catch (SQLException e) {
+                                 LOG.warn("Failed to restore autoCommit", e);
+                             }
+                             try{
+                                 c.close();
+                             } catch (SQLException e) {
+                                 LOG.error("Failed to close connection", e);
+                             }
+                         });
     }
 }
 

@@ -19,6 +19,7 @@ package org.pragmatica.net.tcp;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.pragmatica.net.tcp.ServerConfig.serverConfig;
 
 class ServerConfigTest {
@@ -68,29 +69,36 @@ class ServerConfigTest {
 
     @Test
     void withSocketOptions_sets_socket_options() {
-        var socketOptions = SocketOptions.socketOptions()
+        SocketOptions.socketOptions()
             .withSoBacklog(256)
-            .withSoKeepalive(false);
+            .map(opts -> opts.withSoKeepalive(false))
+            .onFailure(_ -> fail("Should succeed"))
+            .onSuccess(socketOptions -> {
+                var config = serverConfig("server", 8080)
+                    .withSocketOptions(socketOptions);
 
-        var config = serverConfig("server", 8080)
-            .withSocketOptions(socketOptions);
-
-        assertThat(config.socketOptions().soBacklog()).isEqualTo(256);
-        assertThat(config.socketOptions().soKeepalive()).isFalse();
+                assertThat(config.socketOptions().soBacklog()).isEqualTo(256);
+                assertThat(config.socketOptions().soKeepalive()).isFalse();
+            });
     }
 
     @Test
     void chained_configuration_works() {
-        var config = serverConfig("full-config", 9000)
-            .withTls(TlsConfig.selfSignedServer())
-            .withClientTls(TlsConfig.insecureClient())
-            .withSocketOptions(SocketOptions.socketOptions().withSoBacklog(512));
+        SocketOptions.socketOptions()
+            .withSoBacklog(512)
+            .onFailure(_ -> fail("Should succeed"))
+            .onSuccess(socketOptions -> {
+                var config = serverConfig("full-config", 9000)
+                    .withTls(TlsConfig.selfSignedServer())
+                    .withClientTls(TlsConfig.insecureClient())
+                    .withSocketOptions(socketOptions);
 
-        assertThat(config.name()).isEqualTo("full-config");
-        assertThat(config.port()).isEqualTo(9000);
-        assertThat(config.tls().isPresent()).isTrue();
-        assertThat(config.clientTls().isPresent()).isTrue();
-        assertThat(config.socketOptions().soBacklog()).isEqualTo(512);
+                assertThat(config.name()).isEqualTo("full-config");
+                assertThat(config.port()).isEqualTo(9000);
+                assertThat(config.tls().isPresent()).isTrue();
+                assertThat(config.clientTls().isPresent()).isTrue();
+                assertThat(config.socketOptions().soBacklog()).isEqualTo(512);
+            });
     }
 
     @Test

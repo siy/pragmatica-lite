@@ -4,6 +4,8 @@ import org.pragmatica.consensus.NodeId;
 import org.pragmatica.consensus.net.NetworkManagementOperation;
 import org.pragmatica.consensus.net.NodeInfo;
 import org.pragmatica.lang.Option;
+import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.io.TimeSpan;
 import org.pragmatica.lang.utils.SharedScheduler;
 import org.pragmatica.messaging.MessageReceiver;
@@ -38,10 +40,6 @@ public interface TcpTopologyManager extends TopologyManager {
 
     @MessageReceiver
     void handleMergeNodesMessage(TopologyManagementMessage.DiscoveredNodes discoveredNodes);
-
-    void start();
-
-    void stop();
 
     static TcpTopologyManager tcpTopologyManager(TopologyConfig config, MessageRouter router) {
         record Manager(Map<NodeId, NodeInfo> nodesById,
@@ -108,13 +106,16 @@ public interface TcpTopologyManager extends TopologyManager {
             private void addNode(NodeInfo nodeInfo) {
                 // To avoid reliance on the networking layer behavior, adding is done
                 // atomically and the command to establish the connection is sent only once.
-                if (nodesById().putIfAbsent(nodeInfo.id(), nodeInfo) == null) {
-                    nodeIdsByAddress().putIfAbsent(nodeInfo.address(), nodeInfo.id());
-                    // Only request connection if topology manager is active (router is ready)
-                    if (active().get()) {
-                        requestConnection(nodeInfo.id());
-                    }
-                }
+                Option.option(nodesById().putIfAbsent(nodeInfo.id(),
+                                                      nodeInfo))
+                      .onEmpty(() -> {
+                                   nodeIdsByAddress().putIfAbsent(nodeInfo.address(),
+                                                                  nodeInfo.id());
+                                   // Only request connection if topology manager is active (router is ready)
+                if (active().get()) {
+                                       requestConnection(nodeInfo.id());
+                                   }
+                               });
             }
 
             private void requestConnection(NodeId id) {
@@ -124,13 +125,11 @@ public interface TcpTopologyManager extends TopologyManager {
             private void removeNode(NodeId nodeId) {
                 // To avoid reliance on the networking layer behavior, removing is done
                 // atomically and command to drop the connection is sent only once.
-                nodesById()
-                .computeIfPresent(nodeId,
-                                  (_, value) -> {
-                                      nodeIdsByAddress.remove(value.address());
-                                      router().route(new NetworkManagementOperation.DisconnectNode(nodeId));
-                                      return null;
-                                  });
+                Option.option(nodesById().remove(nodeId))
+                      .onPresent(nodeInfo -> {
+                                     nodeIdsByAddress.remove(nodeInfo.address());
+                                     router().route(new NetworkManagementOperation.DisconnectNode(nodeId));
+                                 });
             }
 
             @Override
@@ -145,22 +144,26 @@ public interface TcpTopologyManager extends TopologyManager {
 
             @Override
             public Option<NodeId> reverseLookup(SocketAddress socketAddress) {
-                return ( socketAddress instanceof InetSocketAddress inet)
-                       ? Option.option(nodeIdsByAddress.get(NodeAddress.nodeAddress(inet)))
+                return (socketAddress instanceof InetSocketAddress inet)
+                       ? NodeAddress.nodeAddress(inet)
+                                    .option()
+                                    .flatMap(addr -> Option.option(nodeIdsByAddress.get(addr)))
                        : Option.empty();
             }
 
             @Override
-            public void start() {
+            public Promise<Unit> start() {
                 if (active().compareAndSet(false, true)) {
                     log.trace("Starting topology manager at {}", config.self());
                     initReconcile();
                 }
+                return Promise.success(Unit.unit());
             }
 
             @Override
-            public void stop() {
+            public Promise<Unit> stop() {
                 active().set(false);
+                return Promise.success(Unit.unit());
             }
 
             @Override

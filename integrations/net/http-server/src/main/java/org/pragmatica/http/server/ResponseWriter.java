@@ -20,6 +20,7 @@ import org.pragmatica.http.CommonContentType;
 import org.pragmatica.http.ContentType;
 import org.pragmatica.http.HttpStatus;
 import org.pragmatica.lang.Cause;
+import org.pragmatica.lang.Option;
 
 import java.nio.charset.StandardCharsets;
 
@@ -89,9 +90,12 @@ public interface ResponseWriter {
     }
 
     private static String escapeJson(String s) {
-        if (s == null) {
-            return "";
-        }
+        return Option.option(s)
+                     .map(ResponseWriter::doEscapeJson)
+                     .or("");
+    }
+
+    private static String doEscapeJson(String s) {
         return s.replace("\\", "\\\\")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")

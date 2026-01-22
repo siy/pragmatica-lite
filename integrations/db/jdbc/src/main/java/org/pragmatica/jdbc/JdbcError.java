@@ -101,11 +101,9 @@ public sealed interface JdbcError extends Cause {
 
         @Override
         public String message() {
-            var msg = cause.getMessage();
-            return "Database operation failed: " + ( msg != null
-                                                     ? msg
-                                                     : cause.getClass()
-                                                            .getName());
+            return "Database operation failed: " + Option.option(cause.getMessage())
+                                                         .or(() -> cause.getClass()
+                                                                        .getName());
         }
     }
 
@@ -119,13 +117,11 @@ public sealed interface JdbcError extends Cause {
             case SQLTimeoutException e -> new Timeout(e.getMessage());
             case SQLIntegrityConstraintViolationException e -> constraintViolation(e.getMessage());
             case SQLTransactionRollbackException e -> new TransactionRollback(e.getMessage());
-            case SQLException e -> {
-                var sqlState = e.getSQLState();
-                if (sqlState != null && sqlState.startsWith("08")) {
-                    yield connectionFailed(e.getMessage(), e);
-                }
-                yield databaseFailure(e);
-            }
+            case SQLException e -> Option.option(e.getSQLState())
+                                         .filter(s -> s.startsWith("08"))
+                                         .fold(() -> databaseFailure(e),
+                                               _ -> connectionFailed(e.getMessage(),
+                                                                     e));
             default -> databaseFailure(throwable);
         };
     }
@@ -141,13 +137,12 @@ public sealed interface JdbcError extends Cause {
             case SQLTimeoutException e -> new Timeout(e.getMessage());
             case SQLIntegrityConstraintViolationException e -> constraintViolation(e.getMessage());
             case SQLTransactionRollbackException e -> new TransactionRollback(e.getMessage());
-            case SQLException e -> {
-                var sqlState = e.getSQLState();
-                if (sqlState != null && sqlState.startsWith("08")) {
-                    yield connectionFailed(e.getMessage(), e);
-                }
-                yield new QueryFailed(sql, e.getMessage());
-            }
+            case SQLException e -> Option.option(e.getSQLState())
+                                         .filter(s -> s.startsWith("08"))
+                                         .fold(() -> new QueryFailed(sql,
+                                                                     e.getMessage()),
+                                               _ -> connectionFailed(e.getMessage(),
+                                                                     e));
             default -> databaseFailure(throwable);
         };
     }

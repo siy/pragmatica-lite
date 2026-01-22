@@ -34,9 +34,7 @@ public final class RequestRouter {
     }
 
     private static TreeMap<String, Route<?>> collectRoutes(Route<?> route, TreeMap<String, Route<?>> pathMap) {
-        var map = pathMap == null
-                  ? new TreeMap<String, Route<?>>()
-                  : pathMap;
+        var map = option(pathMap).or(TreeMap::new);
         map.put(route.path(), route);
         return map;
     }

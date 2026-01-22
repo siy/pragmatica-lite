@@ -16,19 +16,22 @@
 
 package org.pragmatica.consensus.rabia;
 
+import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Verify;
 import org.pragmatica.utility.IdGenerator;
 
 /// Correlation identifier for tracking command batches through consensus.
 public record CorrelationId(String id) {
-    public static CorrelationId correlationId(String id) {
-        return new CorrelationId(id);
+    public static Result<CorrelationId> correlationId(String id) {
+        return Verify.ensure(id, Verify.Is::notBlank)
+                     .map(CorrelationId::new);
     }
 
     public static CorrelationId randomCorrelationId() {
-        return correlationId(IdGenerator.generate("xref"));
+        return new CorrelationId(IdGenerator.generate("xref"));
     }
 
     public static CorrelationId emptyCorrelationId() {
-        return correlationId("");
+        return new CorrelationId("empty");
     }
 }

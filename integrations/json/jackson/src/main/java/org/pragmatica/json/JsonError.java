@@ -69,8 +69,8 @@ public sealed interface JsonError extends Cause {
             return new InvalidJson(details, Option.none());
         }
 
-        public static InvalidJson invalidJson(String details, String locationInfo) {
-            return new InvalidJson(details, Option.option(locationInfo));
+        public static InvalidJson invalidJson(String details, Option<String> locationInfo) {
+            return new InvalidJson(details, locationInfo);
         }
 
         @Override
@@ -110,17 +110,15 @@ public sealed interface JsonError extends Cause {
             SerializationFailed.serializationFailed(e.getMessage(), e);
             // Type mismatches during deserialization
             case MismatchedInputException e ->
-            TypeMismatch.typeMismatch(e.getTargetType() != null
-                                      ? e.getTargetType()
-                                         .getSimpleName()
-                                      : "unknown",
+            TypeMismatch.typeMismatch(Option.option(e.getTargetType())
+                                            .map(Class::getSimpleName)
+                                            .or("unknown"),
                                       extractValue(e),
                                       e.getPathReference());
             case InvalidDefinitionException e ->
-            TypeMismatch.typeMismatch(e.getType() != null
-                                      ? e.getType()
-                                         .getTypeName()
-                                      : "unknown",
+            TypeMismatch.typeMismatch(Option.option(e.getType())
+                                            .map(t -> t.getTypeName())
+                                            .or("unknown"),
                                       "invalid definition",
                                       e.getPathReference());
             // JSON parsing errors (malformed JSON)
@@ -138,24 +136,26 @@ public sealed interface JsonError extends Cause {
     }
 
     private static String extractValue(MismatchedInputException e) {
-        var msg = e.getMessage();
-        if (msg != null && msg.contains("Cannot deserialize value of type")) {
-            var fromIdx = msg.indexOf("from ");
-            if (fromIdx > 0) {
-                var endIdx = msg.indexOf(" ", fromIdx + 5);
-                if (endIdx > fromIdx) {
-                    return msg.substring(fromIdx + 5, endIdx);
-                }
-            }
-        }
-        return "unknown";
+        return Option.option(e.getMessage())
+                     .filter(msg -> msg.contains("Cannot deserialize value of type"))
+                     .flatMap(JsonError::extractValueFromMessage)
+                     .or("unknown");
     }
 
-    private static String extractLocation(StreamReadException e) {
-        var loc = e.getLocation();
-        if (loc != null) {
-            return "line " + loc.getLineNr() + ", column " + loc.getColumnNr();
+    private static Option<String> extractValueFromMessage(String msg) {
+        var fromIdx = msg.indexOf("from ");
+        if (fromIdx <= 0) {
+            return Option.none();
         }
-        return null;
+        var endIdx = msg.indexOf(" ", fromIdx + 5);
+        if (endIdx <= fromIdx) {
+            return Option.none();
+        }
+        return Option.some(msg.substring(fromIdx + 5, endIdx));
+    }
+
+    private static Option<String> extractLocation(StreamReadException e) {
+        return Option.option(e.getLocation())
+                     .map(loc -> "line " + loc.getLineNr() + ", column " + loc.getColumnNr());
     }
 }

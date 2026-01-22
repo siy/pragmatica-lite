@@ -20,6 +20,12 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 /// Basic serialization interface for encoding objects to binary format.
+///
+/// <b>Design Note:</b> This interface intentionally uses exceptions rather than Result types.
+/// Serialization failures indicate a fundamental system misconfiguration (missing class registrations,
+/// incompatible schema changes, or memory corruption) that cannot be recovered at runtime.
+/// Such failures are fatal and should result in immediate application shutdown rather than
+/// attempting graceful error handling.
 public interface Serializer {
     /// Encode an object to a byte array.
     ///

@@ -97,20 +97,28 @@ var custom = new ProtocolConfig(
 
 1. **Propose** - Node proposes a batch of commands
 2. **Round 1 Vote** - Nodes vote on whether to accept the proposal
-3. **Round 2 Vote** - Based on round 1 majority, nodes refine their vote
+3. **Round 2 Vote** - Based on round 1 majority, nodes refine their vote (may be skipped via fast path)
 4. **Decision** - With f+1 votes, nodes commit or use coin flip
+
+#### Super-Majority Fast Path
+
+When `n - f` nodes vote the same value in Round 1, the protocol skips Round 2 and decides immediately. This optimization reduces latency in the common case where nodes agree quickly.
+
+- **Threshold**: `n - f` nodes (super-majority)
+- **Correctness**: At least one non-faulty node voted, so any future quorum would reach the same decision
 
 ### Quorum Requirements
 
 - **Cluster Size = N**: Tolerates up to f = (N-1)/2 failures
 - **Quorum Size**: N/2 + 1 (majority)
 - **f+1 Size**: N - quorum + 1
+- **Super-Majority**: N - f (fast path threshold)
 
-| Nodes | Quorum | f+1 | Max Failures |
-|-------|--------|-----|--------------|
-| 3     | 2      | 2   | 1            |
-| 5     | 3      | 3   | 2            |
-| 7     | 4      | 4   | 3            |
+| Nodes | Quorum | f+1 | Super-Majority | Max Failures |
+|-------|--------|-----|----------------|--------------|
+| 3     | 2      | 2   | 2              | 1            |
+| 5     | 3      | 3   | 4              | 2            |
+| 7     | 4      | 4   | 5              | 3            |
 
 ## Message Types
 

@@ -19,6 +19,8 @@ package org.pragmatica.consensus.topology;
 import org.pragmatica.consensus.NodeId;
 import org.pragmatica.consensus.net.NodeInfo;
 import org.pragmatica.lang.Option;
+import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.io.TimeSpan;
 import org.pragmatica.net.tcp.TlsConfig;
 
@@ -46,12 +48,23 @@ public interface TopologyManager {
         return clusterSize() - quorumSize() + 1;
     }
 
+    /// Gets the maximum number of failures the cluster can tolerate.
+    default int maxFailures() {
+        return (clusterSize() - 1) / 2;
+    }
+
+    /// Returns the super-majority size (n - f) for fast path optimization.
+    /// When this many nodes agree in Round 1, we can skip Round 2.
+    default int superMajoritySize() {
+        return clusterSize() - maxFailures();
+    }
+
     /// Mapping from IP address (host and port) to node ID.
     Option<NodeId> reverseLookup(SocketAddress socketAddress);
 
-    void start();
+    Promise<Unit> start();
 
-    void stop();
+    Promise<Unit> stop();
 
     TimeSpan pingInterval();
 

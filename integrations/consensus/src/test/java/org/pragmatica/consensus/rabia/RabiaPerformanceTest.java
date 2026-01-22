@@ -70,7 +70,7 @@ class RabiaPerformanceTest {
     void setUp() {
         nodeIds = new ArrayList<>();
         for (int i = 1; i <= CLUSTER_SIZE; i++) {
-            nodeIds.add(nodeId("node-" + i));
+            nodeIds.add(nodeId("node-" + i).unwrap());
         }
         cluster = new PerformanceCluster(nodeIds);
     }

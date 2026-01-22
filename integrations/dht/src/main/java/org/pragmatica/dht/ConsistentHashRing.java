@@ -79,10 +79,8 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
         lock.writeLock()
             .lock();
         try{
-            List<Integer> virtualNodes = nodeToVirtualNodes.remove(node);
-            if (virtualNodes != null) {
-                virtualNodes.forEach(ring::remove);
-            }
+            Option.option(nodeToVirtualNodes.remove(node))
+                  .onPresent(virtualNodes -> virtualNodes.forEach(ring::remove));
         } finally{
             lock.writeLock()
                 .unlock();
@@ -94,7 +92,7 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
     public Partition partitionFor(byte[] key) {
         int hash = hash(key);
         // Use bitwise AND to ensure non-negative result (Math.abs fails for Integer.MIN_VALUE)
-        return Partition.partitionUnsafe((hash & 0x7FFFFFFF) % Partition.MAX_PARTITIONS);
+        return Partition.at((hash & 0x7FFFFFFF) % Partition.MAX_PARTITIONS);
     }
 
     /// Get the partition for a given string key.
@@ -139,17 +137,13 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
             int hash = hash(key);
             Set<N> seen = new LinkedHashSet<>();
             // Start from the hash position and walk clockwise
-            Integer current = ring.ceilingKey(hash);
-            if (current == null) {
-                current = ring.firstKey();
-            }
+            int current = Option.option(ring.ceilingKey(hash))
+                                .or(ring::firstKey);
             while (seen.size() < replicaCount && seen.size() < nodeToVirtualNodes.size()) {
                 N node = ring.get(current);
                 seen.add(node);
-                current = ring.higherKey(current);
-                if (current == null) {
-                    current = ring.firstKey();
-                }
+                current = Option.option(ring.higherKey(current))
+                                .or(ring::firstKey);
             }
             return new ArrayList<>(seen);
         } finally{
@@ -200,10 +194,8 @@ public final class ConsistentHashRing<N extends Comparable<N>> {
     }
 
     private N getNodeForHash(int hash) {
-        Integer key = ring.ceilingKey(hash);
-        if (key == null) {
-            key = ring.firstKey();
-        }
+        int key = Option.option(ring.ceilingKey(hash))
+                        .or(ring::firstKey);
         return ring.get(key);
     }
 

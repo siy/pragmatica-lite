@@ -62,7 +62,7 @@ class ServerIT {
             .onSuccess(server -> {
                 try {
                     // Connect and send message
-                    server.connectTo(nodeAddress("localhost", 19080))
+                    server.connectTo(nodeAddress("localhost", 19080).unwrap())
                         .await()
                         .onFailure(cause -> fail(cause.message()))
                         .onSuccess(channel -> {

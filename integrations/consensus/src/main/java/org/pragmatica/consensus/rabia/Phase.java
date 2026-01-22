@@ -19,6 +19,17 @@ package org.pragmatica.consensus.rabia;
 public record Phase(long value) implements Comparable<Phase> {
     public static final Phase ZERO = new Phase(0);
 
+    public Phase {
+        if (value < 0) {
+            throw new IllegalArgumentException("Phase value must be non-negative: " + value);
+        }
+    }
+
+    /// Creates a Phase from the given value.
+    public static Phase phase(long value) {
+        return new Phase(value);
+    }
+
     /// Creates the successor phase to this phase.
     public Phase successor() {
         return new Phase(value + 1);

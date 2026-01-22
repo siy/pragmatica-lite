@@ -28,6 +28,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /// Kryo-based serializer implementation.
+///
+/// <b>Design Note:</b> Serialization failures throw RuntimeException intentionally.
+/// Such failures indicate fatal system misconfiguration and should trigger immediate shutdown.
+/// See {@link Serializer} for rationale.
 public interface KryoSerializer extends Serializer {
     /// Create a Kryo serializer with the given class registrators.
     ///

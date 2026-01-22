@@ -16,19 +16,22 @@
 
 package org.pragmatica.consensus.rabia;
 
+import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Verify;
 import org.pragmatica.utility.IdGenerator;
 
 /// Unique identifier for a command batch.
 public record BatchId(String id) {
-    public static BatchId batchId(String id) {
-        return new BatchId(id);
+    public static Result<BatchId> batchId(String id) {
+        return Verify.ensure(id, Verify.Is::notBlank)
+                     .map(BatchId::new);
     }
 
     public static BatchId randomBatchId() {
-        return batchId(IdGenerator.generate("batch"));
+        return new BatchId(IdGenerator.generate("batch"));
     }
 
     public static BatchId emptyBatchId() {
-        return batchId("empty");
+        return new BatchId("empty");
     }
 }

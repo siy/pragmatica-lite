@@ -37,7 +37,7 @@ class NumberTest {
     void testParseByteFailure() {
         Number.parseByte("128")
                      .onSuccessRun(Assertions::fail)
-                     .onFailure(Assertions::assertNotNull);
+                     .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -58,7 +58,7 @@ class NumberTest {
     void testParseShortFailure() {
         Number.parseShort("32768")
                      .onSuccessRun(Assertions::fail)
-                     .onFailure(Assertions::assertNotNull);
+                     .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -79,7 +79,7 @@ class NumberTest {
     void testParseIntFailure() {
         Number.parseInt("not_a_number")
                      .onSuccessRun(Assertions::fail)
-                     .onFailure(Assertions::assertNotNull);
+                     .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -100,7 +100,7 @@ class NumberTest {
     void testParseLongFailure() {
         Number.parseLong("9223372036854775808")
                      .onSuccessRun(Assertions::fail)
-                     .onFailure(Assertions::assertNotNull);
+                     .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -121,7 +121,7 @@ class NumberTest {
     void testParseFloatFailure() {
         Number.parseFloat("not_a_float")
                      .onSuccessRun(Assertions::fail)
-                     .onFailure(Assertions::assertNotNull);
+                     .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -135,7 +135,7 @@ class NumberTest {
     void testParseDoubleFailure() {
         Number.parseDouble("not_a_double")
                      .onSuccessRun(Assertions::fail)
-                     .onFailure(Assertions::assertNotNull);
+                     .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -150,7 +150,7 @@ class NumberTest {
     void testParseBigIntegerFailure() {
         Number.parseBigInteger("not_a_bigint")
                      .onSuccessRun(Assertions::fail)
-                     .onFailure(Assertions::assertNotNull);
+                     .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -173,52 +173,175 @@ class NumberTest {
     void testParseBigDecimalFailure() {
         Number.parseBigDecimal("not_a_bigdecimal")
                      .onSuccessRun(Assertions::fail)
-                     .onFailure(Assertions::assertNotNull);
+                     .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testNullInputs() {
+        Number.parseByte(null)
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(cause -> assertNotNull(cause.message()));
+
+        Number.parseShort(null)
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(cause -> assertNotNull(cause.message()));
+
         Number.parseInt(null)
                      .onSuccessRun(Assertions::fail)
-                     .onFailure(Assertions::assertNotNull);
-                     
+                     .onFailure(cause -> assertNotNull(cause.message()));
+
         Number.parseLong(null)
                      .onSuccessRun(Assertions::fail)
-                     .onFailure(Assertions::assertNotNull);
-                     
+                     .onFailure(cause -> assertNotNull(cause.message()));
+
+        Number.parseFloat(null)
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(cause -> assertNotNull(cause.message()));
+
         Number.parseDouble(null)
                      .onSuccessRun(Assertions::fail)
-                     .onFailure(Assertions::assertNotNull);
-                     
+                     .onFailure(cause -> assertNotNull(cause.message()));
+
         Number.parseBigInteger(null)
                      .onSuccessRun(Assertions::fail)
-                     .onFailure(Assertions::assertNotNull);
-                     
+                     .onFailure(cause -> assertNotNull(cause.message()));
+
         Number.parseBigDecimal(null)
                      .onSuccessRun(Assertions::fail)
-                     .onFailure(Assertions::assertNotNull);
+                     .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testEmptyStringInputs() {
+        Number.parseByte("")
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(cause -> assertNotNull(cause.message()));
+
+        Number.parseShort("")
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(cause -> assertNotNull(cause.message()));
+
         Number.parseInt("")
                      .onSuccessRun(Assertions::fail)
-                     .onFailure(Assertions::assertNotNull);
-                     
+                     .onFailure(cause -> assertNotNull(cause.message()));
+
         Number.parseLong("")
                      .onSuccessRun(Assertions::fail)
-                     .onFailure(Assertions::assertNotNull);
-                     
+                     .onFailure(cause -> assertNotNull(cause.message()));
+
+        Number.parseFloat("")
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(cause -> assertNotNull(cause.message()));
+
         Number.parseDouble("")
                      .onSuccessRun(Assertions::fail)
-                     .onFailure(Assertions::assertNotNull);
-                     
+                     .onFailure(cause -> assertNotNull(cause.message()));
+
         Number.parseBigInteger("")
                      .onSuccessRun(Assertions::fail)
-                     .onFailure(Assertions::assertNotNull);
-                     
+                     .onFailure(cause -> assertNotNull(cause.message()));
+
         Number.parseBigDecimal("")
                      .onSuccessRun(Assertions::fail)
-                     .onFailure(Assertions::assertNotNull);
+                     .onFailure(cause -> assertNotNull(cause.message()));
+    }
+
+    // Edge cases
+
+    @Test
+    void testParseMinValues() {
+        Number.parseByte("-128")
+                     .onFailureRun(Assertions::fail)
+                     .onSuccess(value -> assertEquals(Byte.MIN_VALUE, value));
+
+        Number.parseShort("-32768")
+                     .onFailureRun(Assertions::fail)
+                     .onSuccess(value -> assertEquals(Short.MIN_VALUE, value));
+
+        Number.parseInt("-2147483648")
+                     .onFailureRun(Assertions::fail)
+                     .onSuccess(value -> assertEquals(Integer.MIN_VALUE, value));
+
+        Number.parseLong("-9223372036854775808")
+                     .onFailureRun(Assertions::fail)
+                     .onSuccess(value -> assertEquals(Long.MIN_VALUE, value));
+    }
+
+    @Test
+    void testParseZero() {
+        Number.parseInt("0")
+                     .onFailureRun(Assertions::fail)
+                     .onSuccess(value -> assertEquals(0, value));
+
+        Number.parseDouble("0.0")
+                     .onFailureRun(Assertions::fail)
+                     .onSuccess(value -> assertEquals(0.0, value));
+    }
+
+    @Test
+    void testParseNegativeNumbers() {
+        Number.parseInt("-123")
+                     .onFailureRun(Assertions::fail)
+                     .onSuccess(value -> assertEquals(-123, value));
+
+        Number.parseDouble("-3.14")
+                     .onFailureRun(Assertions::fail)
+                     .onSuccess(value -> assertEquals(-3.14, value, 0.001));
+    }
+
+    @Test
+    void testParseSpecialFloatValues() {
+        Number.parseDouble("NaN")
+                     .onFailureRun(Assertions::fail)
+                     .onSuccess(value -> assertTrue(Double.isNaN(value)));
+
+        Number.parseDouble("Infinity")
+                     .onFailureRun(Assertions::fail)
+                     .onSuccess(value -> assertEquals(Double.POSITIVE_INFINITY, value));
+
+        Number.parseDouble("-Infinity")
+                     .onFailureRun(Assertions::fail)
+                     .onSuccess(value -> assertEquals(Double.NEGATIVE_INFINITY, value));
+
+        Number.parseFloat("NaN")
+                     .onFailureRun(Assertions::fail)
+                     .onSuccess(value -> assertTrue(Float.isNaN(value)));
+    }
+
+    @Test
+    void testParseScientificNotation() {
+        Number.parseDouble("1.5e10")
+                     .onFailureRun(Assertions::fail)
+                     .onSuccess(value -> assertEquals(1.5e10, value));
+
+        Number.parseDouble("3.14E-5")
+                     .onFailureRun(Assertions::fail)
+                     .onSuccess(value -> assertEquals(3.14E-5, value, 1e-10));
+    }
+
+    @Test
+    void testParseWithPlusSign() {
+        Number.parseInt("+123")
+                     .onFailureRun(Assertions::fail)
+                     .onSuccess(value -> assertEquals(123, value));
+    }
+
+    @Test
+    void testParseRadixFailure() {
+        Number.parseByte("GG", 16)
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(cause -> assertNotNull(cause.message()));
+
+        Number.parseShort("ZZ", 16)
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(cause -> assertNotNull(cause.message()));
+
+        Number.parseInt("XYZ", 16)
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(cause -> assertNotNull(cause.message()));
+
+        Number.parseLong("!!!", 16)
+                     .onSuccessRun(Assertions::fail)
+                     .onFailure(cause -> assertNotNull(cause.message()));
     }
 }

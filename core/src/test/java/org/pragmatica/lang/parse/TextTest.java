@@ -43,21 +43,21 @@ class TextTest {
     void testParseEnumFailure() {
         Text.parseEnum(TestEnum.class, "INVALID_VALUE")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testParseEnumNull() {
         Text.parseEnum(TestEnum.class, null)
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testParseEnumEmpty() {
         Text.parseEnum(TestEnum.class, "")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -74,14 +74,14 @@ class TextTest {
     void testCompilePatternFailure() {
         Text.compilePattern("[invalid(")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testCompilePatternNull() {
         Text.compilePattern(null)
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -98,7 +98,7 @@ class TextTest {
     void testCompilePatternWithFlagsFailure() {
         Text.compilePattern("[invalid(", Pattern.CASE_INSENSITIVE)
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -115,14 +115,14 @@ class TextTest {
     void testDecodeBase64Failure() {
         Text.decodeBase64("not-valid-base64!!!")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testDecodeBase64Null() {
         Text.decodeBase64(null)
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -144,16 +144,17 @@ class TextTest {
 
     @Test
     void testDecodeBase64URLFailure() {
-        Text.decodeBase64URL("not/valid+base64")  // Contains non-URL-safe characters
+        // Use truly invalid base64 (invalid padding)
+        Text.decodeBase64URL("!!!invalid!!!")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testDecodeBase64URLNull() {
         Text.decodeBase64URL(null)
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
@@ -180,13 +181,90 @@ class TextTest {
     void testDecodeBase64MIMEFailure() {
         Text.decodeBase64MIME("invalid!!!base64")
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
     }
 
     @Test
     void testDecodeBase64MIMENull() {
         Text.decodeBase64MIME(null)
                 .onSuccessRun(Assertions::fail)
-                .onFailure(Assertions::assertNotNull);
+                .onFailure(cause -> assertNotNull(cause.message()));
+    }
+
+    // Edge cases
+
+    @Test
+    void testParseEnumCaseSensitive() {
+        // Lowercase should fail - enums are case-sensitive
+        Text.parseEnum(TestEnum.class, "value_one")
+                .onSuccessRun(Assertions::fail)
+                .onFailure(cause -> assertNotNull(cause.message()));
+    }
+
+    @Test
+    void testParseEnumWithWhitespace() {
+        // Whitespace should cause failure
+        Text.parseEnum(TestEnum.class, " VALUE_ONE ")
+                .onSuccessRun(Assertions::fail)
+                .onFailure(cause -> assertNotNull(cause.message()));
+    }
+
+    @Test
+    void testCompilePatternEmpty() {
+        // Empty pattern is valid (matches empty string)
+        Text.compilePattern("")
+                .onFailureRun(Assertions::fail)
+                .onSuccess(pattern -> assertTrue(pattern.matcher("").matches()));
+    }
+
+    @Test
+    void testCompilePatternComplex() {
+        // Complex pattern with special regex characters
+        Text.compilePattern("\\d{3}-\\d{4}")
+                .onFailureRun(Assertions::fail)
+                .onSuccess(pattern -> {
+                    assertTrue(pattern.matcher("123-4567").matches());
+                    assertFalse(pattern.matcher("12-4567").matches());
+                });
+    }
+
+    @Test
+    void testCompilePatternWithMultipleFlags() {
+        Text.compilePattern("hello", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE)
+                .onFailureRun(Assertions::fail)
+                .onSuccess(pattern -> {
+                    assertEquals(Pattern.CASE_INSENSITIVE | Pattern.MULTILINE, pattern.flags());
+                    assertTrue(pattern.matcher("HELLO").matches());
+                });
+    }
+
+    @Test
+    void testDecodeBase64URLEmpty() {
+        Text.decodeBase64URL("")
+                .onFailureRun(Assertions::fail)
+                .onSuccess(decoded -> assertEquals(0, decoded.length));
+    }
+
+    @Test
+    void testDecodeBase64MIMEEmpty() {
+        Text.decodeBase64MIME("")
+                .onFailureRun(Assertions::fail)
+                .onSuccess(decoded -> assertEquals(0, decoded.length));
+    }
+
+    @Test
+    void testDecodeBase64WithPadding() {
+        // Test various padding scenarios
+        Text.decodeBase64("YQ==")  // "a" with padding
+                .onFailureRun(Assertions::fail)
+                .onSuccess(decoded -> assertEquals("a", new String(decoded)));
+
+        Text.decodeBase64("YWI=")  // "ab" with padding
+                .onFailureRun(Assertions::fail)
+                .onSuccess(decoded -> assertEquals("ab", new String(decoded)));
+
+        Text.decodeBase64("YWJj")  // "abc" no padding needed
+                .onFailureRun(Assertions::fail)
+                .onSuccess(decoded -> assertEquals("abc", new String(decoded)));
     }
 }

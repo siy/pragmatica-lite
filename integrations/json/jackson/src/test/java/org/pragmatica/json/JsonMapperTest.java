@@ -165,7 +165,7 @@ class JsonMapperTest {
                 .onSuccess(result ->
                     result.onSuccess(user -> fail("Result should be failure"))
                           .onFailure(cause -> {
-                              assertTrue(cause instanceof DeserializedCause);
+                              assertInstanceOf(DeserializedCause.class, cause);
                               assertEquals("Something failed", cause.message());
                           })
                 );
