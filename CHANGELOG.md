@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `RabiaWrapperInvariantTest`: Conjectures 47-52 (phase goodness and started predicates)
   - `RabiaQuorumIntersectionTest`: Quorum intersection axioms
   - `RabiaMultiPhaseTest`: Multi-phase scenarios including failure and coin flip cases
+- `Idempotency` utility for at-most-once execution guarantees
+  - TTL-based caching with automatic cleanup
+  - In-flight request coalescing (concurrent calls share same Promise)
+  - Failed operations not cached, allowing immediate retry
+  - Thread-safe via `ConcurrentHashMap.compute()`
+  - `Idempotency.create(TimeSpan)` factory returning `Result<Idempotency>`
 
 ### Changed
 - Bumped jbct-maven-plugin to 0.4.9
