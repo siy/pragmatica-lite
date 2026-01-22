@@ -460,10 +460,23 @@ public class RabiaEngine<C extends Command> {
             log.trace("Node {} ignoring proposal for past phase {}", self, propose.phase());
             return;
         }
+        if (isFarFuturePhase(propose.phase(), currentPhaseValue)) {
+            log.warn("Node {} rejecting proposal for far-future phase {} (current: {})",
+                     self,
+                     propose.phase(),
+                     currentPhaseValue);
+            return;
+        }
         var phaseData = getOrCreatePhaseData(propose.phase());
         enterPhaseIfNeeded(propose.phase(), currentPhaseValue, phaseData);
         registerProposal(propose, phaseData);
         tryBroadcastRound1Vote(propose.phase(), phaseData);
+    }
+
+    private static final long MAX_PHASE_AHEAD = 100;
+
+    private boolean isFarFuturePhase(Phase proposalPhase, Phase current) {
+        return proposalPhase.value() - current.value() > MAX_PHASE_AHEAD;
     }
 
     private boolean isPastPhase(Phase proposalPhase, Phase current) {
@@ -550,8 +563,9 @@ public class RabiaEngine<C extends Command> {
         var quorumSize = topologyManager.quorumSize();
         var superMajoritySize = topologyManager.superMajoritySize();
         // Check for fast path: if n-f nodes agree in Round 1, skip Round 2
-        if (canUseFastPath(phase, phaseData, superMajoritySize)) {
-            useFastPath(phase, phaseData, superMajoritySize, quorumSize);
+        var superMajorityValue = phaseData.getSuperMajorityRound1Value(superMajoritySize);
+        if (canUseFastPath(phase, phaseData, superMajorityValue)) {
+            useFastPath(phase, phaseData, superMajorityValue, quorumSize);
             return;
         }
         // Normal path: proceed with Round 2 voting
@@ -560,24 +574,25 @@ public class RabiaEngine<C extends Command> {
         }
     }
 
-    private boolean canUseFastPath(Phase phase, PhaseData<C> phaseData, int superMajoritySize) {
+    private boolean canUseFastPath(Phase phase, PhaseData<C> phaseData, Option<StateValue> superMajorityValue) {
         return isInPhase.get() && currentPhase.get()
-                                              .equals(phase) && !phaseData.isDecided() && !phaseData.hasVotedRound2(self) && phaseData.getSuperMajorityRound1Value(superMajoritySize)
-                                                                                                                                      .isPresent();
+                                              .equals(phase) && !phaseData.isDecided() && !phaseData.hasVotedRound2(self) && superMajorityValue.isPresent();
     }
 
-    private void useFastPath(Phase phase, PhaseData<C> phaseData, int superMajoritySize, int quorumSize) {
-        phaseData.getSuperMajorityRound1Value(superMajoritySize)
-                 .onPresent(agreedValue -> {
-                                log.debug("Node {} using fast path for phase {} with value {} (super-majority agreement)",
-                                          self,
-                                          phase,
-                                          agreedValue);
-                                metrics.recordFastPath(self, phase, agreedValue);
-                                var decision = buildDecision(phaseData, agreedValue, quorumSize);
-                                network.broadcast(decision);
-                                processDecision(decision);
-                            });
+    private void useFastPath(Phase phase,
+                             PhaseData<C> phaseData,
+                             Option<StateValue> superMajorityValue,
+                             int quorumSize) {
+        superMajorityValue.onPresent(agreedValue -> {
+                                         log.debug("Node {} using fast path for phase {} with value {} (super-majority agreement)",
+                                                   self,
+                                                   phase,
+                                                   agreedValue);
+                                         metrics.recordFastPath(self, phase, agreedValue);
+                                         var decision = buildDecision(phaseData, agreedValue, quorumSize);
+                                         network.broadcast(decision);
+                                         processDecision(decision);
+                                     });
     }
 
     private Decision<C> buildDecision(PhaseData<C> phaseData, StateValue agreedValue, int quorumSize) {

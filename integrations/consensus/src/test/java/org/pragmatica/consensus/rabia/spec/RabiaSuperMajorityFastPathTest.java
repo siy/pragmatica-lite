@@ -142,27 +142,29 @@ class RabiaSuperMajorityFastPathTest {
             assertThat(superMajorityValue.unwrap()).isEqualTo(StateValue.V0);
         }
 
-        @ParameterizedTest
-        @MethodSource("org.pragmatica.consensus.rabia.spec.RabiaSuperMajorityFastPathTest#clusterSizes")
-        void normal_path_when_only_quorum_agrees(int size) {
-            var config = ClusterConfiguration.of(size);
+        @Test
+        void normal_path_when_only_quorum_agrees_in_9_node_cluster() {
+            // Use 9-node cluster where quorum (5) < super-majority (5) is NOT true
+            // Actually for odd n: quorum = (n/2)+1 = 5, super-majority = n-f = n-(n-1)/2 = 5
+            // For even n like 10: quorum = 6, super-majority = 10-4 = 6
+            // Standard CFT clusters always have quorum == super-majority
+            // So test split votes where neither reaches super-majority
+            var config = ClusterConfiguration.of(5);
             var state = new ClusterState<TestCommand>(config.nodeIds());
 
-            // Only quorum nodes vote V1 (not super-majority)
-            for (int i = 0; i < config.quorumSize(); i++) {
-                state.voteRound1(config.nodeIds().get(i), Phase.ZERO, StateValue.V1);
-            }
-            // Remaining nodes vote V0
-            for (int i = config.quorumSize(); i < config.clusterSize(); i++) {
-                state.voteRound1(config.nodeIds().get(i), Phase.ZERO, StateValue.V0);
-            }
+            // 2 nodes vote V1, 2 nodes vote V0, 1 doesn't vote
+            // super-majority = 3 for 5 nodes, neither reaches it
+            state.voteRound1(config.nodeIds().get(0), Phase.ZERO, StateValue.V1);
+            state.voteRound1(config.nodeIds().get(1), Phase.ZERO, StateValue.V1);
+            state.voteRound1(config.nodeIds().get(2), Phase.ZERO, StateValue.V0);
+            state.voteRound1(config.nodeIds().get(3), Phase.ZERO, StateValue.V0);
+            // Node 4 doesn't vote
 
-            // If quorum < super-majority, no fast path
-            if (config.quorumSize() < config.superMajoritySize()) {
-                var superMajorityValue = state.getSuperMajorityRound1Value(
-                    Phase.ZERO, config.superMajoritySize());
-                assertThat(superMajorityValue.isPresent()).isFalse();
-            }
+            var superMajorityValue = state.getSuperMajorityRound1Value(
+                Phase.ZERO, config.superMajoritySize());
+            assertThat(superMajorityValue.isPresent())
+                .as("Neither V0 nor V1 should reach super-majority of 3")
+                .isFalse();
         }
 
         @ParameterizedTest
@@ -210,6 +212,87 @@ class RabiaSuperMajorityFastPathTest {
                 Phase.ZERO, config.superMajoritySize());
 
             assertThat(superMajorityValue.isPresent()).isFalse();
+        }
+
+        @ParameterizedTest
+        @MethodSource("org.pragmatica.consensus.rabia.spec.RabiaSuperMajorityFastPathTest#clusterSizes")
+        void no_fast_path_when_exactly_superMajoritySize_minus_1_votes(int size) {
+            var config = ClusterConfiguration.of(size);
+            var state = new ClusterState<TestCommand>(config.nodeIds());
+
+            // Vote exactly superMajoritySize - 1 times for V1
+            int votesNeeded = config.superMajoritySize() - 1;
+            for (int i = 0; i < votesNeeded; i++) {
+                state.voteRound1(config.nodeIds().get(i), Phase.ZERO, StateValue.V1);
+            }
+
+            var superMajorityValue = state.getSuperMajorityRound1Value(
+                Phase.ZERO, config.superMajoritySize());
+
+            assertThat(superMajorityValue.isPresent())
+                .as("superMajoritySize - 1 votes should NOT trigger fast path")
+                .isFalse();
+        }
+
+        @ParameterizedTest
+        @MethodSource("org.pragmatica.consensus.rabia.spec.RabiaSuperMajorityFastPathTest#clusterSizes")
+        void no_fast_path_when_already_decided(int size) {
+            // This test verifies the canUseFastPath() check: !phaseData.isDecided()
+            // Once a phase is decided, fast path should not trigger again
+            var config = ClusterConfiguration.of(size);
+            var state = new ClusterState<TestCommand>(config.nodeIds());
+
+            // All nodes vote V1 - super-majority achieved
+            for (var node : config.nodeIds()) {
+                state.voteRound1(node, Phase.ZERO, StateValue.V1);
+            }
+
+            // Decision already made for this phase
+            state.decideBc(config.nodeIds().getFirst(), Phase.ZERO, StateValue.V1);
+
+            // Super-majority still exists in round 1 votes
+            var superMajorityValue = state.getSuperMajorityRound1Value(
+                Phase.ZERO, config.superMajoritySize());
+            assertThat(superMajorityValue.isPresent())
+                .as("Super-majority exists")
+                .isTrue();
+
+            // But the phase is already decided - fast path should NOT trigger again
+            // In actual RabiaEngine, canUseFastPath checks !phaseData.isDecided()
+            assertThat(state.hasDecisionBc(config.nodeIds().getFirst(), Phase.ZERO))
+                .as("Phase already decided - fast path should not trigger")
+                .isTrue();
+        }
+
+        @ParameterizedTest
+        @MethodSource("org.pragmatica.consensus.rabia.spec.RabiaSuperMajorityFastPathTest#clusterSizes")
+        void no_fast_path_when_already_voted_round2(int size) {
+            // This test verifies the canUseFastPath() check: !phaseData.hasVotedRound2(self)
+            // Once a node has voted in round 2, it should not use fast path
+            var config = ClusterConfiguration.of(size);
+            var state = new ClusterState<TestCommand>(config.nodeIds());
+            var selfNode = config.nodeIds().getFirst();
+
+            // All nodes vote V1 - super-majority achieved
+            for (var node : config.nodeIds()) {
+                state.voteRound1(node, Phase.ZERO, StateValue.V1);
+            }
+
+            // Self node already voted in round 2 (took normal path earlier)
+            state.voteRound2(selfNode, Phase.ZERO, StateValue.V1);
+
+            // Super-majority still exists in round 1 votes
+            var superMajorityValue = state.getSuperMajorityRound1Value(
+                Phase.ZERO, config.superMajoritySize());
+            assertThat(superMajorityValue.isPresent())
+                .as("Super-majority exists")
+                .isTrue();
+
+            // But the node already voted round 2 - fast path should NOT trigger
+            // In actual RabiaEngine, canUseFastPath checks !phaseData.hasVotedRound2(self)
+            assertThat(state.hasVotedRound2(selfNode, Phase.ZERO))
+                .as("Node already voted round 2 - fast path should not trigger")
+                .isTrue();
         }
     }
 
@@ -261,7 +344,7 @@ class RabiaSuperMajorityFastPathTest {
 
         @ParameterizedTest
         @MethodSource("org.pragmatica.consensus.rabia.spec.RabiaSuperMajorityFastPathTest#clusterSizes")
-        void late_round2_votes_ignored_after_fast_path_decision(int size) {
+        void late_round1_votes_ignored_after_fast_path_decision(int size) {
             var config = ClusterConfiguration.of(size);
             var state = new ClusterState<TestCommand>(config.nodeIds());
 

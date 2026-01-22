@@ -470,6 +470,36 @@ class RabiaEngineTest {
             assertThat(vote).isPresent();
             assertThat(vote.get().stateValue()).isEqualTo(StateValue.V0);
         }
+
+        @Test
+        void fast_path_skips_round2_when_super_majority_agrees() throws InterruptedException {
+            activateEngine();
+            network.clearMessages();
+
+            var batch = Batch.batch(List.of(new TestCommand("fast-path-cmd")));
+
+            // Simulate receiving proposals from all nodes (same batch)
+            engine.processPropose(new Propose<>(NODE_1, Phase.ZERO, batch));
+            engine.processPropose(new Propose<>(NODE_2, Phase.ZERO, batch));
+            Thread.sleep(50);
+
+            // Simulate round 1 votes from all nodes (super-majority = n-f = 2 for 3 nodes)
+            // ENGINE already voted V1 when proposals matched, so just need NODE_2 and NODE_3
+            engine.processVoteRound1(new VoteRound1(NODE_2, Phase.ZERO, StateValue.V1));
+            engine.processVoteRound1(new VoteRound1(NODE_3, Phase.ZERO, StateValue.V1));
+            Thread.sleep(100);
+
+            // Verify decision was broadcast WITHOUT any round 2 votes being sent
+            var hasDecision = network.getMessages().stream()
+                .anyMatch(m -> m instanceof Decision);
+            assertThat(hasDecision).as("Fast path should produce a decision").isTrue();
+
+            // Verify no VoteRound2 was broadcast (fast path skipped round 2)
+            var round2VoteCount = network.getMessages().stream()
+                .filter(m -> m instanceof VoteRound2)
+                .count();
+            assertThat(round2VoteCount).as("Fast path should skip round 2 voting").isZero();
+        }
     }
 
     // ==================== Stub Implementations ====================

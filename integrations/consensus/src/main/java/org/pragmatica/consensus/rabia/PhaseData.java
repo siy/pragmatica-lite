@@ -218,9 +218,10 @@ final class PhaseData<C extends Command> {
 
     /// Gets a deterministic coin flip value for a phase.
     /// Must be deterministic across all nodes for consensus correctness.
+    /// Uses bit-based check to avoid Math.abs(Long.MIN_VALUE) returning negative.
     StateValue coinFlip() {
         long seed = phase.value();
-        return ( Math.abs(seed) % 2 == 0)
+        return (seed & 1) == 0
                ? StateValue.V0
                : StateValue.V1;
     }
