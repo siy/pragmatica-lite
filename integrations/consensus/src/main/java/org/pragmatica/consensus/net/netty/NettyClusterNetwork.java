@@ -258,14 +258,15 @@ public class NettyClusterNetwork implements ClusterNetwork {
                                                                       connectNode.node())));
     }
 
-    private void connectPeer(NodeInfo nodeInfo) {
-        var peerId = nodeInfo.id();
+    private void connectPeer(NodeInfo peer) {
+        var peerId = peer.id();
         if (peerLinks.containsKey(peerId)) {
             return;
         }
         server.get()
-              .connectTo(nodeInfo.address())
-              .onFailure(cause -> log.warn("Failed to connect to {}: {}", peerId, cause));
+              .connectTo(peer.address())
+              .trace()
+              .onFailure(cause -> log.warn("Failed to connect from {} to {}: {}", self, peer, cause));
     }
 
     @Override

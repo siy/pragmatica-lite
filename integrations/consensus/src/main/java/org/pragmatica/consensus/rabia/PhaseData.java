@@ -58,6 +58,11 @@ final class PhaseData<C extends Command> {
         proposals.putIfAbsent(node, batch);
     }
 
+    /// Checks if a node has already proposed in this phase.
+    boolean hasProposal(NodeId node) {
+        return proposals.containsKey(node);
+    }
+
     /// Checks if a node has already voted in round 1.
     boolean hasVotedRound1(NodeId node) {
         return round1Votes.containsKey(node);

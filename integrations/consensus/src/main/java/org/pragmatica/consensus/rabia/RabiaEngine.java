@@ -288,8 +288,27 @@ public class RabiaEngine<C extends Command> {
                              pendingBatches.put(newBatch.batch()
                                                         .correlationId(),
                                                 (Batch<C>) newBatch.batch());
-                             triggerPhaseIfNeeded();
+                             if (isInPhase.get() && active.get()) {
+                                 // Already in phase - broadcast our proposal for this batch if not already proposed
+        broadcastOwnProposalIfNeeded();
+                             } else {
+                                 triggerPhaseIfNeeded();
+                             }
                          });
+    }
+
+    /// Broadcasts own proposal for pending batch if not already proposed in current phase.
+    private void broadcastOwnProposalIfNeeded() {
+        var phase = currentPhase.get();
+        var phaseData = getOrCreatePhaseData(phase);
+        if (phaseData.hasProposal(self)) {
+            return;
+        }
+        pendingBatches.values()
+                      .stream()
+                      .sorted()
+                      .findFirst()
+                      .ifPresent(batch -> broadcastOwnProposal(phase, phaseData, batch));
     }
 
     /// Starts a new phase with pending commands.
