@@ -171,7 +171,7 @@ public interface TcpTopologyManager extends TopologyManager {
                                                        .stream()
                                                        .filter(s -> s.health() == NodeHealth.DISABLED)
                                                        .count();
-                if (disabledCount >= maxFailures()) {
+                if (disabledCount > maxFailures()) {
                     log.warn("Too many disabled nodes ({}), resetting all to healthy for cluster liveness",
                              disabledCount);
                     resetAllDisabledNodes();
