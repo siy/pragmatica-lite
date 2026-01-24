@@ -25,12 +25,12 @@ import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 /// @param maxAttempts     Maximum failed connection attempts before disabling a node
 /// @param backoffStrategy Strategy for calculating delay between connection attempts
 public record BackoffConfig(int maxAttempts, BackoffStrategy backoffStrategy) {
-    /// Default configuration: 10 attempts, exponential backoff with 1s initial, 60s max, factor 2.0, with jitter.
-    public static final BackoffConfig DEFAULT = new BackoffConfig(10,
+    /// Default configuration: 4 attempts, exponential backoff with 1s initial, 60s max, factor 1.5, with jitter.
+    public static final BackoffConfig DEFAULT = new BackoffConfig(4,
                                                                   BackoffStrategy.exponential()
                                                                                  .initialDelay(timeSpan(1).seconds())
                                                                                  .maxDelay(timeSpan(60).seconds())
-                                                                                 .factor(2.0)
+                                                                                 .factor(1.5)
                                                                                  .withJitter());
 
     /// Checks if a node should be disabled based on the number of failed attempts.
