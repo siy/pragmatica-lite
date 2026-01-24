@@ -25,16 +25,19 @@ import org.pragmatica.lang.utils.Causes;
 /// @param soBacklog   maximum queue length for incoming connection requests (SO_BACKLOG)
 /// @param soKeepalive whether to enable TCP keepalive probes (SO_KEEPALIVE)
 /// @param tcpNoDelay  whether to disable Nagle's algorithm for low-latency (TCP_NODELAY)
-public record SocketOptions(int soBacklog, boolean soKeepalive, boolean tcpNoDelay) {
+public record SocketOptions(int soBacklog, boolean soKeepalive, boolean tcpNoDelay, boolean reuseAddress) {
     private static final Cause INVALID_BACKLOG = Causes.cause("soBacklog must be positive");
-    private static final SocketOptions DEFAULT = new SocketOptions(128, true, true);
+    private static final SocketOptions DEFAULT = new SocketOptions(128, true, true, true);
 
     /// Create socket options with validation.
-    public static Result<SocketOptions> socketOptions(int soBacklog, boolean soKeepalive, boolean tcpNoDelay) {
+    public static Result<SocketOptions> socketOptions(int soBacklog,
+                                                      boolean soKeepalive,
+                                                      boolean tcpNoDelay,
+                                                      boolean reuseAddress) {
         if (soBacklog <= 0) {
             return INVALID_BACKLOG.result();
         }
-        return Result.success(new SocketOptions(soBacklog, soKeepalive, tcpNoDelay));
+        return Result.success(new SocketOptions(soBacklog, soKeepalive, tcpNoDelay, reuseAddress));
     }
 
     /// Get default socket options.
@@ -49,16 +52,21 @@ public record SocketOptions(int soBacklog, boolean soKeepalive, boolean tcpNoDel
 
     /// Create new options with different backlog value.
     public Result<SocketOptions> withSoBacklog(int soBacklog) {
-        return socketOptions(soBacklog, soKeepalive, tcpNoDelay);
+        return socketOptions(soBacklog, soKeepalive, tcpNoDelay, reuseAddress);
     }
 
     /// Create new options with different keepalive setting.
     public SocketOptions withSoKeepalive(boolean soKeepalive) {
-        return new SocketOptions(soBacklog, soKeepalive, tcpNoDelay);
+        return new SocketOptions(soBacklog, soKeepalive, tcpNoDelay, reuseAddress);
     }
 
     /// Create new options with different TCP nodelay setting.
     public SocketOptions withTcpNoDelay(boolean tcpNoDelay) {
-        return new SocketOptions(soBacklog, soKeepalive, tcpNoDelay);
+        return new SocketOptions(soBacklog, soKeepalive, tcpNoDelay, reuseAddress);
+    }
+
+    /// Create new options with different reuse address setting.
+    public SocketOptions withReuseAddress(boolean reuseAddress) {
+        return new SocketOptions(soBacklog, soKeepalive, tcpNoDelay, reuseAddress);
     }
 }
