@@ -3,8 +3,8 @@ package org.pragmatica.consensus.net.netty;
 import org.pragmatica.consensus.ProtocolMessage;
 import org.pragmatica.consensus.net.ClusterNetwork;
 import org.pragmatica.consensus.net.ConnectionError;
-import org.pragmatica.consensus.net.NetworkManagementOperation;
-import org.pragmatica.consensus.net.NetworkManagementOperation.ListConnectedNodes;
+import org.pragmatica.consensus.net.NetworkServiceMessage;
+import org.pragmatica.consensus.net.NetworkServiceMessage.ListConnectedNodes;
 import org.pragmatica.consensus.net.NetworkMessage.Hello;
 import org.pragmatica.consensus.net.NetworkMessage.Ping;
 import org.pragmatica.consensus.net.NetworkMessage.Pong;
@@ -45,8 +45,8 @@ import io.netty.handler.codec.LengthFieldPrepender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.pragmatica.consensus.net.NetworkManagementOperation.ConnectNode;
-import static org.pragmatica.consensus.net.NetworkManagementOperation.DisconnectNode;
+import static org.pragmatica.consensus.net.NetworkServiceMessage.ConnectNode;
+import static org.pragmatica.consensus.net.NetworkServiceMessage.DisconnectNode;
 import static org.pragmatica.consensus.net.netty.NettyClusterNetwork.ViewChangeOperation.*;
 
 /// Manages network connections between nodes using Netty.
@@ -137,7 +137,19 @@ public class NettyClusterNetwork implements ClusterNetwork {
 
     @Override
     public void listNodes(ListConnectedNodes listConnectedNodes) {
-        router.route(new NetworkManagementOperation.ConnectedNodesList(List.copyOf(peerLinks.keySet())));
+        router.route(new NetworkServiceMessage.ConnectedNodesList(List.copyOf(peerLinks.keySet())));
+    }
+
+    @Override
+    public void handleSend(NetworkServiceMessage.Send send) {
+        sendToChannel(send.target(),
+                      send.payload(),
+                      peerLinks.get(send.target()));
+    }
+
+    @Override
+    public void handleBroadcast(NetworkServiceMessage.Broadcast broadcast) {
+        peerLinks.forEach((peerId, channel) -> sendToChannel(peerId, broadcast.payload(), channel));
     }
 
     private void peerConnected(Channel channel) {
@@ -158,9 +170,9 @@ public class NettyClusterNetwork implements ClusterNetwork {
             log.warn("Hello timeout for channel {}, closing", channel.remoteAddress());
             channel.close();
             topologyManager.reverseLookup(channel.remoteAddress())
-                           .onPresent(nodeId -> router.route(new NetworkManagementOperation.ConnectionFailed(nodeId,
-                                                                                                             ConnectionError.helloTimeout(channel.remoteAddress()
-                                                                                                                                                 .toString()))));
+                           .onPresent(nodeId -> router.route(new NetworkServiceMessage.ConnectionFailed(nodeId,
+                                                                                                        ConnectionError.helloTimeout(channel.remoteAddress()
+                                                                                                                                            .toString()))));
         }
     }
 
@@ -181,8 +193,8 @@ public class NettyClusterNetwork implements ClusterNetwork {
                 channel.close();
                 return;
             }
-            unknownNodeInfo = addressResult.map(addr -> NodeInfo.nodeInfo(hello.sender(),
-                                                                          addr))
+            unknownNodeInfo = addressResult.map(addr -> new NodeInfo(hello.sender(),
+                                                                     addr))
                                            .option();
             log.info("Unknown node {} connecting from {}", hello.sender(), channel.remoteAddress());
         }
@@ -197,7 +209,7 @@ public class NettyClusterNetwork implements ClusterNetwork {
         channelToNodeId.put(channel, hello.sender());
         // Send AddNode BEFORE ConnectionEstablished if unknown
         unknownNodeInfo.onPresent(nodeInfo -> router.route(new TopologyManagementMessage.AddNode(nodeInfo)));
-        router.route(new NetworkManagementOperation.ConnectionEstablished(hello.sender()));
+        router.route(new NetworkServiceMessage.ConnectionEstablished(hello.sender()));
         processViewChange(ADD, hello.sender());
         log.debug("Node {} connected via Hello handshake", hello.sender());
     }
@@ -288,10 +300,10 @@ public class NettyClusterNetwork implements ClusterNetwork {
               .trace()
               .onFailure(cause -> {
                              log.warn("Failed to connect from {} to {}: {}", self, peer, cause);
-                             router.route(new NetworkManagementOperation.ConnectionFailed(peerId,
-                                                                                          ConnectionError.networkError(peer.address()
-                                                                                                                           .toString(),
-                                                                                                                       cause.message())));
+                             router.route(new NetworkServiceMessage.ConnectionFailed(peerId,
+                                                                                     ConnectionError.networkError(peer.address()
+                                                                                                                      .toString(),
+                                                                                                                  cause.message())));
                          });
     }
 

@@ -24,6 +24,8 @@ import org.pragmatica.lang.Unit;
 import org.pragmatica.messaging.MessageReceiver;
 import org.pragmatica.net.tcp.Server;
 
+import static org.pragmatica.consensus.net.NetworkServiceMessage.*;
+
 /// Generalized Network API for cluster communication.
 ///
 /// **Implementation contract:** All methods must be exception-safe.
@@ -40,13 +42,19 @@ public interface ClusterNetwork {
     <M extends ProtocolMessage> Unit broadcast(M message);
 
     @MessageReceiver
-    void connect(NetworkManagementOperation.ConnectNode connectNode);
+    void connect(ConnectNode connectNode);
 
     @MessageReceiver
-    void disconnect(NetworkManagementOperation.DisconnectNode disconnectNode);
+    void disconnect(DisconnectNode disconnectNode);
 
     @MessageReceiver
-    void listNodes(NetworkManagementOperation.ListConnectedNodes listConnectedNodes);
+    void listNodes(ListConnectedNodes listConnectedNodes);
+
+    @MessageReceiver
+    void handleSend(Send send);
+
+    @MessageReceiver
+    void handleBroadcast(Broadcast broadcast);
 
     @MessageReceiver
     void handlePing(NetworkMessage.Ping ping);

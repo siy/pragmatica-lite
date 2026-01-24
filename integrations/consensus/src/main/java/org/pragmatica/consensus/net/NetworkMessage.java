@@ -28,4 +28,10 @@ public sealed interface NetworkMessage extends Message.Wired {
 
     /// Pong - test connection response
     record Pong(NodeId sender) implements NetworkMessage {}
+
+    /// Topology discovery request - asks recipient to share their known nodes
+    record DiscoverNodes(NodeId self) implements NetworkMessage {}
+
+    /// Topology discovery response - list of known nodes sent to target
+    record DiscoveredNodes(NodeId target, java.util.List<NodeInfo> nodes) implements NetworkMessage {}
 }

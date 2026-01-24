@@ -22,18 +22,24 @@ import org.pragmatica.messaging.Message;
 
 import java.util.List;
 
-public sealed interface NetworkManagementOperation extends Message.Local {
-    record ConnectNode(NodeId node) implements NetworkManagementOperation {}
+public sealed interface NetworkServiceMessage extends Message.Local {
+    record ConnectNode(NodeId node) implements NetworkServiceMessage {}
 
-    record DisconnectNode(NodeId nodeId) implements NetworkManagementOperation {}
+    record DisconnectNode(NodeId nodeId) implements NetworkServiceMessage {}
 
-    record ListConnectedNodes() implements NetworkManagementOperation {}
+    record ListConnectedNodes() implements NetworkServiceMessage {}
 
-    record ConnectedNodesList(List<NodeId> connected) implements NetworkManagementOperation {}
+    record ConnectedNodesList(List<NodeId> connected) implements NetworkServiceMessage {}
 
     /// Notification that a connection attempt to a node has failed.
-    record ConnectionFailed(NodeId nodeId, Cause cause) implements NetworkManagementOperation {}
+    record ConnectionFailed(NodeId nodeId, Cause cause) implements NetworkServiceMessage {}
 
     /// Notification that a connection to a node has been established.
-    record ConnectionEstablished(NodeId nodeId) implements NetworkManagementOperation {}
+    record ConnectionEstablished(NodeId nodeId) implements NetworkServiceMessage {}
+
+    /// Send a wired message to a specific target node
+    record Send(NodeId target, Message.Wired payload) implements NetworkServiceMessage {}
+
+    /// Broadcast a wired message to all connected nodes
+    record Broadcast(Message.Wired payload) implements NetworkServiceMessage {}
 }

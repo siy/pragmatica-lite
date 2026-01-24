@@ -26,7 +26,7 @@ import org.pragmatica.consensus.NodeId;
 import org.pragmatica.consensus.ProtocolMessage;
 import org.pragmatica.consensus.StateMachine;
 import org.pragmatica.consensus.net.ClusterNetwork;
-import org.pragmatica.consensus.net.NetworkManagementOperation;
+import org.pragmatica.consensus.net.NetworkServiceMessage;
 import org.pragmatica.consensus.net.NetworkMessage;
 import org.pragmatica.consensus.net.NodeInfo;
 import org.pragmatica.consensus.rabia.RabiaProtocolMessage.Synchronous.*;
@@ -510,7 +510,7 @@ class RabiaEngineTest {
         private final int clusterSize;
 
         TestTopologyManager(NodeId selfId, int clusterSize) {
-            this.self = NodeInfo.nodeInfo(selfId, NodeAddress.nodeAddress("localhost", 5000).unwrap());
+            this.self = new NodeInfo(selfId, NodeAddress.nodeAddress("localhost", 5000).unwrap());
             this.clusterSize = clusterSize;
         }
 
@@ -521,7 +521,7 @@ class RabiaEngineTest {
 
         @Override
         public Option<NodeInfo> get(NodeId id) {
-            return Option.option(NodeInfo.nodeInfo(id, NodeAddress.nodeAddress("localhost", 5000).unwrap()));
+            return Option.option(new NodeInfo(id, NodeAddress.nodeAddress("localhost", 5000).unwrap()));
         }
 
         @Override
@@ -575,19 +575,25 @@ class RabiaEngineTest {
         }
 
         @Override
-        public void connect(NetworkManagementOperation.ConnectNode connectNode) {}
+        public void connect(NetworkServiceMessage.ConnectNode connectNode) {}
 
         @Override
-        public void disconnect(NetworkManagementOperation.DisconnectNode disconnectNode) {}
+        public void disconnect(NetworkServiceMessage.DisconnectNode disconnectNode) {}
 
         @Override
-        public void listNodes(NetworkManagementOperation.ListConnectedNodes listConnectedNodes) {}
+        public void listNodes(NetworkServiceMessage.ListConnectedNodes listConnectedNodes) {}
 
         @Override
         public void handlePing(NetworkMessage.Ping ping) {}
 
         @Override
         public void handlePong(NetworkMessage.Pong pong) {}
+
+        @Override
+        public void handleSend(NetworkServiceMessage.Send send) {}
+
+        @Override
+        public void handleBroadcast(NetworkServiceMessage.Broadcast broadcast) {}
 
         @Override
         public <M extends ProtocolMessage> Unit send(NodeId nodeId, M message) {

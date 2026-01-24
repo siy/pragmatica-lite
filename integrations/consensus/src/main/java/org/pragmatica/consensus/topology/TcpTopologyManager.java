@@ -1,7 +1,8 @@
 package org.pragmatica.consensus.topology;
 
 import org.pragmatica.consensus.NodeId;
-import org.pragmatica.consensus.net.NetworkManagementOperation;
+import org.pragmatica.consensus.net.NetworkMessage;
+import org.pragmatica.consensus.net.NetworkServiceMessage;
 import org.pragmatica.consensus.net.NodeInfo;
 import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Option;
@@ -30,7 +31,7 @@ import org.slf4j.LoggerFactory;
 /// Topology manager for TCP/IP networks.
 public interface TcpTopologyManager extends TopologyManager {
     @MessageReceiver
-    void reconcile(NetworkManagementOperation.ConnectedNodesList connectedNodesList);
+    void reconcile(NetworkServiceMessage.ConnectedNodesList connectedNodesList);
 
     @MessageReceiver
     void handleAddNodeMessage(TopologyManagementMessage.AddNode message);
@@ -39,16 +40,16 @@ public interface TcpTopologyManager extends TopologyManager {
     void handleRemoveNodeMessage(TopologyManagementMessage.RemoveNode removeNode);
 
     @MessageReceiver
-    void handleDiscoverNodesMessage(TopologyManagementMessage.DiscoverNodes discoverNodes);
+    void handleDiscoverNodes(NetworkMessage.DiscoverNodes discoverNodes);
 
     @MessageReceiver
-    void handleMergeNodesMessage(TopologyManagementMessage.DiscoveredNodes discoveredNodes);
+    void handleDiscoveredNodes(NetworkMessage.DiscoveredNodes discoveredNodes);
 
     @MessageReceiver
-    void handleConnectionFailed(NetworkManagementOperation.ConnectionFailed connectionFailed);
+    void handleConnectionFailed(NetworkServiceMessage.ConnectionFailed connectionFailed);
 
     @MessageReceiver
-    void handleConnectionEstablished(NetworkManagementOperation.ConnectionEstablished connectionEstablished);
+    void handleConnectionEstablished(NetworkServiceMessage.ConnectionEstablished connectionEstablished);
 
     static TcpTopologyManager tcpTopologyManager(TopologyConfig config, MessageRouter router) {
         return tcpTopologyManager(config, router, TimeSource.system());
@@ -87,7 +88,7 @@ public interface TcpTopologyManager extends TopologyManager {
 
             private void initReconcile() {
                 if (active.get()) {
-                    router().route(new NetworkManagementOperation.ListConnectedNodes());
+                    router().route(new NetworkServiceMessage.ListConnectedNodes());
                 } else if (nodeStatesById().isEmpty()) {
                     config().coreNodes()
                           .forEach(this::addNode);
@@ -95,7 +96,7 @@ public interface TcpTopologyManager extends TopologyManager {
             }
 
             @Override
-            public void reconcile(NetworkManagementOperation.ConnectedNodesList connectedNodesList) {
+            public void reconcile(NetworkServiceMessage.ConnectedNodesList connectedNodesList) {
                 var snapshot = new HashSet<>(nodeStatesById.keySet());
                 connectedNodesList.connected()
                                   .forEach(snapshot::remove);
@@ -119,22 +120,24 @@ public interface TcpTopologyManager extends TopologyManager {
             }
 
             @Override
-            public void handleDiscoverNodesMessage(TopologyManagementMessage.DiscoverNodes discoverNodes) {
+            public void handleDiscoverNodes(NetworkMessage.DiscoverNodes discoverNodes) {
                 var nodeInfos = nodeStatesById.values()
                                               .stream()
                                               .map(NodeState::info)
                                               .toList();
-                router().route(new TopologyManagementMessage.DiscoveredNodes(nodeInfos));
+                router().route(new NetworkServiceMessage.Send(discoverNodes.self(),
+                                                              new NetworkMessage.DiscoveredNodes(discoverNodes.self(),
+                                                                                                 nodeInfos)));
             }
 
             @Override
-            public void handleMergeNodesMessage(TopologyManagementMessage.DiscoveredNodes discoveredNodes) {
-                discoveredNodes.nodeInfos()
+            public void handleDiscoveredNodes(NetworkMessage.DiscoveredNodes discoveredNodes) {
+                discoveredNodes.nodes()
                                .forEach(this::addNode);
             }
 
             @Override
-            public void handleConnectionFailed(NetworkManagementOperation.ConnectionFailed connectionFailed) {
+            public void handleConnectionFailed(NetworkServiceMessage.ConnectionFailed connectionFailed) {
                 var nodeId = connectionFailed.nodeId();
                 Option.option(nodeStatesById.get(nodeId))
                       .onPresent(state -> processConnectionFailure(state,
@@ -165,10 +168,13 @@ public interface TcpTopologyManager extends TopologyManager {
             }
 
             @Override
-            public void handleConnectionEstablished(NetworkManagementOperation.ConnectionEstablished connectionEstablished) {
+            public void handleConnectionEstablished(NetworkServiceMessage.ConnectionEstablished connectionEstablished) {
                 var nodeId = connectionEstablished.nodeId();
                 Option.option(nodeStatesById.get(nodeId))
                       .onPresent(this::processConnectionEstablished);
+                // Initiate topology discovery
+                router.route(new NetworkServiceMessage.Send(nodeId,
+                                                            new NetworkMessage.DiscoverNodes(config.self())));
             }
 
             private void processConnectionEstablished(NodeState state) {
@@ -199,7 +205,7 @@ public interface TcpTopologyManager extends TopologyManager {
             }
 
             private void requestConnection(NodeId id) {
-                router().route(new NetworkManagementOperation.ConnectNode(id));
+                router().route(new NetworkServiceMessage.ConnectNode(id));
             }
 
             private void removeNode(NodeId nodeId) {
@@ -209,7 +215,7 @@ public interface TcpTopologyManager extends TopologyManager {
                       .onPresent(state -> {
                                      nodeIdsByAddress.remove(state.info()
                                                                   .address());
-                                     router().route(new NetworkManagementOperation.DisconnectNode(nodeId));
+                                     router().route(new NetworkServiceMessage.DisconnectNode(nodeId));
                                  });
             }
 
