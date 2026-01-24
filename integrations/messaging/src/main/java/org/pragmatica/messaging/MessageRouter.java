@@ -66,17 +66,35 @@ public sealed interface MessageRouter {
     sealed interface DelegateRouter extends MessageRouter {
         void replaceDelegate(MessageRouter delegate);
 
+        /// Stop message delivery. After this call, route() silently drops all messages.
+        /// Thread-safe and idempotent. Can be restarted by calling replaceDelegate().
+        void quiesce();
+
         static DelegateRouter delegate() {
             return new DelegateRouterImpl();
         }
 
-        // WARNING: implementation is not thread-safe. It meant to be configured before use.
         final class DelegateRouterImpl implements DelegateRouter {
-            private MessageRouter delegate;
+            private static final MessageRouter NO_OP = new ImmutableRouter<>() {
+                @Override
+                public Map<Class<Message>, List<Consumer<Message>>> routingTable() {
+                    return Map.of();
+                }
+
+                @Override
+                public <T extends Message> void route(T message) {}
+            };
+
+            private volatile MessageRouter delegate;
 
             @Override
             public void replaceDelegate(MessageRouter delegate) {
                 this.delegate = delegate;
+            }
+
+            @Override
+            public void quiesce() {
+                delegate = NO_OP;
             }
 
             @Override
