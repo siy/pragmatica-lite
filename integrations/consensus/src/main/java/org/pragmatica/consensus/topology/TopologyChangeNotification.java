@@ -39,6 +39,20 @@ public sealed interface TopologyChangeNotification extends Message.Local {
     /// Node down notification. Send when the current node goes down. Topology is always empty in this notification.
     record NodeDown(NodeId nodeId, List<NodeId> topology) implements TopologyChangeNotification {}
 
+    /// Node disabled notification. Sent when a node is disabled due to exceeding max connection attempts.
+    record NodeDisabled(NodeId nodeId, List<NodeId> topology) implements TopologyChangeNotification {}
+
+    /// Node reactivated notification. Sent when a previously disabled node is restored to active state.
+    record NodeReactivated(NodeId nodeId, List<NodeId> topology) implements TopologyChangeNotification {}
+
+    /// All nodes reset notification. Sent when all disabled nodes are reset due to cluster liveness concerns.
+    record AllNodesReset(List<NodeId> topology) implements TopologyChangeNotification {
+        @Override
+        public NodeId nodeId() {
+            return null;
+        }
+    }
+
     static NodeAdded nodeAdded(NodeId nodeId, List<NodeId> changedView) {
         return new NodeAdded(nodeId, changedView);
     }
@@ -49,5 +63,17 @@ public sealed interface TopologyChangeNotification extends Message.Local {
 
     static NodeDown nodeDown(NodeId nodeId) {
         return new NodeDown(nodeId, List.of());
+    }
+
+    static NodeDisabled nodeDisabled(NodeId nodeId, List<NodeId> changedView) {
+        return new NodeDisabled(nodeId, changedView);
+    }
+
+    static NodeReactivated nodeReactivated(NodeId nodeId, List<NodeId> changedView) {
+        return new NodeReactivated(nodeId, changedView);
+    }
+
+    static AllNodesReset allNodesReset(List<NodeId> changedView) {
+        return new AllNodesReset(changedView);
     }
 }

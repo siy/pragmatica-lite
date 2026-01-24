@@ -25,6 +25,7 @@ import org.pragmatica.lang.io.TimeSpan;
 import org.pragmatica.net.tcp.TlsConfig;
 
 import java.net.SocketAddress;
+import java.util.List;
 
 /// Representation of our knowledge about the cluster structure: known nodes and cluster/quorum size.
 /// Note that this is not a representation of the actual cluster topology.
@@ -74,5 +75,22 @@ public interface TopologyManager {
     /// TLS configuration for cluster communication (empty for plain TCP).
     default Option<TlsConfig> tls() {
         return Option.empty();
+    }
+
+    /// Retrieve the state of a node by ID.
+    Option<NodeState> getState(NodeId id);
+
+    /// Returns the list of active node IDs (HEALTHY or SUSPECTED).
+    List<NodeId> activeTopology();
+
+    /// Returns the full list of all node IDs regardless of health status.
+    List<NodeId> fullTopology();
+
+    /// Returns the count of active nodes (HEALTHY or SUSPECTED).
+    int activeClusterSize();
+
+    /// Returns the quorum size based on active cluster size.
+    default int activeQuorumSize() {
+        return activeClusterSize() / 2 + 1;
     }
 }

@@ -29,4 +29,10 @@ public sealed interface NetworkManagementOperation extends Message.Local {
     record ListConnectedNodes() implements NetworkManagementOperation {}
 
     record ConnectedNodesList(List<NodeId> connected) implements NetworkManagementOperation {}
+
+    /// Notification that a connection attempt to a node has failed.
+    record ConnectionFailed(NodeId nodeId, Throwable cause) implements NetworkManagementOperation {}
+
+    /// Notification that a connection to a node has been established.
+    record ConnectionEstablished(NodeId nodeId) implements NetworkManagementOperation {}
 }

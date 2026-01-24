@@ -178,6 +178,7 @@ public class NettyClusterNetwork implements ClusterNetwork {
             return;
         }
         channelToNodeId.put(channel, hello.sender());
+        router.route(new NetworkManagementOperation.ConnectionEstablished(hello.sender()));
         processViewChange(ADD, hello.sender());
         log.debug("Node {} connected via Hello handshake", hello.sender());
     }
@@ -266,7 +267,11 @@ public class NettyClusterNetwork implements ClusterNetwork {
         server.get()
               .connectTo(peer.address())
               .trace()
-              .onFailure(cause -> log.warn("Failed to connect from {} to {}: {}", self, peer, cause));
+              .onFailure(cause -> {
+                             log.warn("Failed to connect from {} to {}: {}", self, peer, cause);
+                             router.route(new NetworkManagementOperation.ConnectionFailed(peerId,
+                                                                                          new RuntimeException(cause.message())));
+                         });
     }
 
     @Override

@@ -30,6 +30,7 @@ import org.pragmatica.consensus.net.NetworkManagementOperation;
 import org.pragmatica.consensus.net.NetworkMessage;
 import org.pragmatica.consensus.net.NodeInfo;
 import org.pragmatica.consensus.rabia.RabiaProtocolMessage.Synchronous.*;
+import org.pragmatica.consensus.topology.NodeState;
 import org.pragmatica.consensus.topology.QuorumStateNotification;
 import org.pragmatica.consensus.topology.TopologyManager;
 import org.pragmatica.lang.Option;
@@ -551,6 +552,26 @@ class RabiaEngineTest {
         @Override
         public TimeSpan helloTimeout() {
             return timeSpan(5).seconds();
+        }
+
+        @Override
+        public Option<NodeState> getState(NodeId id) {
+            return Option.empty();
+        }
+
+        @Override
+        public List<NodeId> activeTopology() {
+            return List.of();
+        }
+
+        @Override
+        public List<NodeId> fullTopology() {
+            return List.of();
+        }
+
+        @Override
+        public int activeClusterSize() {
+            return clusterSize;
         }
     }
 
