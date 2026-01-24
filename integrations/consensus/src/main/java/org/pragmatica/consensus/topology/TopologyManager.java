@@ -80,17 +80,6 @@ public interface TopologyManager {
     /// Retrieve the state of a node by ID.
     Option<NodeState> getState(NodeId id);
 
-    /// Returns the list of active node IDs (HEALTHY or SUSPECTED).
-    List<NodeId> activeTopology();
-
-    /// Returns the full list of all node IDs regardless of health status.
-    List<NodeId> fullTopology();
-
-    /// Returns the count of active nodes (HEALTHY or SUSPECTED).
-    int activeClusterSize();
-
-    /// Returns the quorum size based on active cluster size.
-    default int activeQuorumSize() {
-        return activeClusterSize() / 2 + 1;
-    }
+    /// Returns the list of all node IDs in the topology.
+    List<NodeId> topology();
 }

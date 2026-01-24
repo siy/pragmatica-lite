@@ -372,12 +372,12 @@ public class RabiaEngine<C extends Command> {
             return;
         }
         syncResponses.put(response.sender(), response.state());
-        if (syncResponses.size() < topologyManager.activeQuorumSize()) {
-            log.trace("Node {} received {} responses {}, not enough to proceed (active quorum size = {})",
+        if (syncResponses.size() < topologyManager.quorumSize()) {
+            log.trace("Node {} received {} responses {}, not enough to proceed (quorum size = {})",
                       self,
                       syncResponses.size(),
                       syncResponses.keySet(),
-                      topologyManager.activeQuorumSize());
+                      topologyManager.quorumSize());
             return;
         }
         log.trace("Node {} received {} responses, collected: {}", self, syncResponses.size(), syncResponses);

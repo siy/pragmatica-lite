@@ -46,25 +46,13 @@ public record NodeState(NodeInfo info,
         return new NodeState(info, NodeHealth.SUSPECTED, failedAttempts, lastAttempt, some(nextAttempt));
     }
 
-    /// Creates a disabled node state.
-    public static NodeState disabled(NodeInfo info, int failedAttempts, Instant lastAttempt) {
-        return new NodeState(info, NodeHealth.DISABLED, failedAttempts, lastAttempt, none());
-    }
-
     /// Checks if a connection attempt can be made at the given time.
-    /// Returns true for HEALTHY nodes and for SUSPECTED nodes if now > nextAttemptAfter.
-    /// Returns false for DISABLED nodes.
+    /// Returns true for HEALTHY nodes and for SUSPECTED nodes if now >= nextAttemptAfter.
     public boolean canAttemptConnection(Instant now) {
         return switch (health) {
             case HEALTHY -> true;
             case SUSPECTED -> nextAttemptAfter.map(next -> now.isAfter(next) || now.equals(next))
                                               .or(true);
-            case DISABLED -> false;
         };
-    }
-
-    /// Checks if the node is active (HEALTHY or SUSPECTED).
-    public boolean isActive() {
-        return health == NodeHealth.HEALTHY || health == NodeHealth.SUSPECTED;
     }
 }

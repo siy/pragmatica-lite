@@ -17,6 +17,7 @@
 package org.pragmatica.consensus.net;
 
 import org.pragmatica.consensus.NodeId;
+import org.pragmatica.lang.Cause;
 import org.pragmatica.messaging.Message;
 
 import java.util.List;
@@ -31,7 +32,7 @@ public sealed interface NetworkManagementOperation extends Message.Local {
     record ConnectedNodesList(List<NodeId> connected) implements NetworkManagementOperation {}
 
     /// Notification that a connection attempt to a node has failed.
-    record ConnectionFailed(NodeId nodeId, Throwable cause) implements NetworkManagementOperation {}
+    record ConnectionFailed(NodeId nodeId, Cause cause) implements NetworkManagementOperation {}
 
     /// Notification that a connection to a node has been established.
     record ConnectionEstablished(NodeId nodeId) implements NetworkManagementOperation {}

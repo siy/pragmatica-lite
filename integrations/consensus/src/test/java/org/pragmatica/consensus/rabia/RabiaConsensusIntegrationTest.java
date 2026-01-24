@@ -611,18 +611,8 @@ class RabiaConsensusIntegrationTest {
         }
 
         @Override
-        public List<NodeId> activeTopology() {
+        public List<NodeId> topology() {
             return List.of();
-        }
-
-        @Override
-        public List<NodeId> fullTopology() {
-            return List.of();
-        }
-
-        @Override
-        public int activeClusterSize() {
-            return clusterSize;
         }
     }
 

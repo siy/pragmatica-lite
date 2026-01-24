@@ -3,6 +3,7 @@ package org.pragmatica.consensus.topology;
 import org.pragmatica.consensus.NodeId;
 import org.pragmatica.consensus.net.NetworkManagementOperation;
 import org.pragmatica.consensus.net.NodeInfo;
+import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Unit;
@@ -140,18 +141,15 @@ public interface TcpTopologyManager extends TopologyManager {
                                                                    connectionFailed.cause()));
             }
 
-            private void processConnectionFailure(NodeState state, Throwable cause) {
+            private void processConnectionFailure(NodeState state, Cause cause) {
                 var nodeId = state.info()
                                   .id();
                 var newAttempts = state.failedAttempts() + 1;
                 var backoff = config.backoff();
                 var now = now();
                 if (backoff.shouldDisable(newAttempts)) {
-                    var disabledState = NodeState.disabled(state.info(), newAttempts, now);
-                    nodeStatesById.put(nodeId, disabledState);
-                    log.warn("Node {} disabled after {} failed attempts: {}", nodeId, newAttempts, cause.getMessage());
-                    router.route(TopologyChangeNotification.nodeDisabled(nodeId, activeTopology()));
-                    checkAutoReset();
+                    log.warn("Node {} removed after {} failed attempts: {}", nodeId, newAttempts, cause.message());
+                    router.route(new TopologyManagementMessage.RemoveNode(nodeId));
                 } else {
                     var delay = backoff.backoffStrategy()
                                        .nextTimeout(newAttempts);
@@ -162,47 +160,23 @@ public interface TcpTopologyManager extends TopologyManager {
                               nodeId,
                               newAttempts,
                               delay,
-                              cause.getMessage());
+                              cause.message());
                 }
-            }
-
-            private void checkAutoReset() {
-                var disabledCount = (int) nodeStatesById.values()
-                                                       .stream()
-                                                       .filter(s -> s.health() == NodeHealth.DISABLED)
-                                                       .count();
-                if (disabledCount > maxFailures()) {
-                    log.warn("Too many disabled nodes ({}), resetting all to healthy for cluster liveness",
-                             disabledCount);
-                    resetAllDisabledNodes();
-                }
-            }
-
-            private void resetAllDisabledNodes() {
-                var now = now();
-                nodeStatesById.replaceAll((id, state) -> state.health() == NodeHealth.DISABLED
-                                                         ? NodeState.healthy(state.info(), now)
-                                                         : state);
-                router.route(TopologyChangeNotification.allNodesReset(activeTopology()));
             }
 
             @Override
             public void handleConnectionEstablished(NetworkManagementOperation.ConnectionEstablished connectionEstablished) {
                 var nodeId = connectionEstablished.nodeId();
                 Option.option(nodeStatesById.get(nodeId))
-                      .onPresent(state -> processConnectionEstablished(state));
+                      .onPresent(this::processConnectionEstablished);
             }
 
             private void processConnectionEstablished(NodeState state) {
                 var nodeId = state.info()
                                   .id();
-                var wasDisabled = state.health() == NodeHealth.DISABLED;
                 var healthyState = NodeState.healthy(state.info(), now());
                 nodeStatesById.put(nodeId, healthyState);
-                if (wasDisabled) {
-                    log.info("Node {} reactivated after successful connection", nodeId);
-                    router.route(TopologyChangeNotification.nodeReactivated(nodeId, activeTopology()));
-                } else if (state.health() == NodeHealth.SUSPECTED) {
+                if (state.health() == NodeHealth.SUSPECTED) {
                     log.debug("Node {} recovered from suspected state", nodeId);
                 }
             }
@@ -251,18 +225,7 @@ public interface TcpTopologyManager extends TopologyManager {
             }
 
             @Override
-            public List<NodeId> activeTopology() {
-                return nodeStatesById.values()
-                                     .stream()
-                                     .filter(NodeState::isActive)
-                                     .map(state -> state.info()
-                                                        .id())
-                                     .sorted()
-                                     .toList();
-            }
-
-            @Override
-            public List<NodeId> fullTopology() {
+            public List<NodeId> topology() {
                 return nodeStatesById.keySet()
                                      .stream()
                                      .sorted()
@@ -272,14 +235,6 @@ public interface TcpTopologyManager extends TopologyManager {
             @Override
             public int clusterSize() {
                 return nodeStatesById.size();
-            }
-
-            @Override
-            public int activeClusterSize() {
-                return (int) nodeStatesById.values()
-                                          .stream()
-                                          .filter(NodeState::isActive)
-                                          .count();
             }
 
             @Override
@@ -308,6 +263,8 @@ public interface TcpTopologyManager extends TopologyManager {
 
             @Override
             public NodeInfo self() {
+                // Self node is guaranteed to be in topology after constructor completes
+                // (added via config.coreNodes().forEach(this::addNode))
                 return nodeStatesById().get(config.self())
                                      .info();
             }

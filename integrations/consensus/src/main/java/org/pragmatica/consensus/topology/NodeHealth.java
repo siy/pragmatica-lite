@@ -20,7 +20,5 @@ public enum NodeHealth {
     /// Node is healthy and participating in the cluster.
     HEALTHY,
     /// Connection attempts in progress with backoff.
-    SUSPECTED,
-    /// Exceeded max attempts, excluded from active topology.
-    DISABLED
+    SUSPECTED
 }
