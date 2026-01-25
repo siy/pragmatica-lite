@@ -270,6 +270,7 @@ class RabiaNetworkPerformanceTest {
             // Create topology config
             var config = new TopologyConfig(
                 nodeId,
+                allNodes.size(),        // Cluster size
                 timeSpan(100).hours(),  // Long reconciliation interval for tests
                 timeSpan(10).seconds(), // Ping interval
                 allNodes

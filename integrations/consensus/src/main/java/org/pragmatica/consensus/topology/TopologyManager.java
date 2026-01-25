@@ -36,7 +36,9 @@ public interface TopologyManager {
     /// Retrieve information about the node.
     Option<NodeInfo> get(NodeId id);
 
-    /// Configured cluster size.
+    /// Returns the configured fixed cluster size used for quorum calculations.
+    /// This value is set at startup and can be dynamically updated via SetClusterSize message.
+    /// Using a fixed cluster size prevents split-brain resurrection scenarios.
     int clusterSize();
 
     /// The quorum size (majority) for the cluster.

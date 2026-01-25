@@ -25,4 +25,6 @@ sealed public interface TopologyManagementMessage extends Message.Local {
     record AddNode(NodeInfo nodeInfo) implements TopologyManagementMessage {}
 
     record RemoveNode(NodeId nodeId) implements TopologyManagementMessage {}
+
+    record SetClusterSize(int clusterSize) implements TopologyManagementMessage {}
 }

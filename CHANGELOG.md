@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.10.1] - 2026-01-25
 
+### Fixed
+- **Split-brain resurrection vulnerability in consensus topology:**
+  - `TopologyManager.clusterSize()` now returns fixed configured value instead of dynamic topology size
+  - Prevents minority partitions from achieving false quorum after removing unreachable nodes
+  - Added `TopologyConfig.clusterSize` required parameter for explicit cluster size configuration
+  - Added `TopologyManagementMessage.SetClusterSize` for operational cluster size changes with validation:
+    - Rejects size < 3 (minimum for Byzantine fault tolerance)
+    - Rejects size increase if active nodes < new quorum
+    - Triggers `QuorumStateNotification.ESTABLISHED` on resurrection via size decrease
+
 ### Added
 - **Memoization utilities** for caching computation results:
   - `Memo<K,V>` - pure synchronous memoization with optional LRU eviction

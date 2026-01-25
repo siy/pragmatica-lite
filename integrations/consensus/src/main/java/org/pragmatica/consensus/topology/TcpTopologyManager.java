@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +52,9 @@ public interface TcpTopologyManager extends TopologyManager {
     @MessageReceiver
     void handleConnectionEstablished(NetworkServiceMessage.ConnectionEstablished connectionEstablished);
 
+    @MessageReceiver
+    void handleSetClusterSize(TopologyManagementMessage.SetClusterSize message);
+
     static TcpTopologyManager tcpTopologyManager(TopologyConfig config, MessageRouter router) {
         return tcpTopologyManager(config, router, TimeSource.system());
     }
@@ -61,7 +65,8 @@ public interface TcpTopologyManager extends TopologyManager {
                        MessageRouter router,
                        TopologyConfig config,
                        TimeSource timeSource,
-                       AtomicBoolean active) implements TcpTopologyManager {
+                       AtomicBoolean active,
+                       AtomicInteger effectiveClusterSize) implements TcpTopologyManager {
             private static final Logger log = LoggerFactory.getLogger(TcpTopologyManager.class);
 
             Manager(Map<NodeId, NodeState> nodeStatesById,
@@ -69,16 +74,22 @@ public interface TcpTopologyManager extends TopologyManager {
                     MessageRouter router,
                     TopologyConfig config,
                     TimeSource timeSource,
-                    AtomicBoolean active) {
+                    AtomicBoolean active,
+                    AtomicInteger effectiveClusterSize) {
                 this.config = config;
                 this.router = router;
                 this.nodeStatesById = nodeStatesById;
                 this.nodeIdsByAddress = nodeIdsByAddress;
                 this.timeSource = timeSource;
                 this.active = active;
+                this.effectiveClusterSize = effectiveClusterSize;
+                this.effectiveClusterSize.set(config.clusterSize());
                 config().coreNodes()
                       .forEach(this::addNode);
-                log.trace("Topology manager {} initialized with {} nodes", config.self(), config.coreNodes());
+                log.trace("Topology manager {} initialized with {} nodes, cluster size {}",
+                          config.self(),
+                          config.coreNodes(),
+                          config.clusterSize());
                 SharedScheduler.scheduleAtFixedRate(this::initReconcile, config.reconciliationInterval());
             }
 
@@ -237,7 +248,51 @@ public interface TcpTopologyManager extends TopologyManager {
 
             @Override
             public int clusterSize() {
-                return nodeStatesById.size();
+                return effectiveClusterSize.get();
+            }
+
+            private int activeTopologySize() {
+                return (int) nodeStatesById.values()
+                                          .stream()
+                                          .filter(state -> state.health() == NodeHealth.HEALTHY)
+                                          .count();
+            }
+
+            @Override
+            public void handleSetClusterSize(TopologyManagementMessage.SetClusterSize message) {
+                int newSize = message.clusterSize();
+                int currentSize = effectiveClusterSize.get();
+                if (newSize < 3) {
+                    log.warn("Rejecting cluster size change to {}: minimum is 3 for Byzantine fault tolerance", newSize);
+                    return;
+                }
+                if (newSize > currentSize) {
+                    int newQuorum = newSize / 2 + 1;
+                    int activeNodes = activeTopologySize();
+                    if (activeNodes < newQuorum) {
+                        log.warn("Rejecting cluster size increase from {} to {}: only {} active nodes, need {} for new quorum",
+                                 currentSize,
+                                 newSize,
+                                 activeNodes,
+                                 newQuorum);
+                        return;
+                    }
+                }
+                int oldQuorum = currentSize / 2 + 1;
+                int newQuorum = newSize / 2 + 1;
+                int activeNodes = activeTopologySize();
+                boolean wasBelow = activeNodes < oldQuorum;
+                boolean nowAbove = activeNodes >= newQuorum;
+                effectiveClusterSize.set(newSize);
+                log.info("Cluster size changed from {} to {} (quorum: {} -> {})",
+                         currentSize,
+                         newSize,
+                         oldQuorum,
+                         newQuorum);
+                if (wasBelow && nowAbove) {
+                    log.info("Quorum re-established after cluster size change");
+                    router.route(QuorumStateNotification.ESTABLISHED);
+                }
             }
 
             @Override
@@ -292,6 +347,7 @@ public interface TcpTopologyManager extends TopologyManager {
                            router,
                            config,
                            timeSource,
-                           new AtomicBoolean(false));
+                           new AtomicBoolean(false),
+                           new AtomicInteger(config.clusterSize()));
     }
 }
