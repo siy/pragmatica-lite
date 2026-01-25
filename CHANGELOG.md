@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Rejects size < 3 (minimum for Byzantine fault tolerance)
     - Rejects size increase if active nodes < new quorum
     - Triggers `QuorumStateNotification.ESTABLISHED` on resurrection via size decrease
+- **Sync deadlock when actual cluster smaller than configured size:**
+  - `RabiaEngine` sync now uses connected peer count for quorum instead of fixed cluster size
+  - Allows new nodes to join a reduced cluster (e.g., after partition healing)
 
 ### Added
 - **Memoization utilities** for caching computation results:

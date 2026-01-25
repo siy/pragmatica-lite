@@ -363,7 +363,7 @@ public class RabiaEngine<C extends Command> {
             return;
         }
         // Check if we already have enough responses from previous attempt
-        if (syncResponses.size() >= topologyManager.quorumSize()) {
+        if (syncResponses.size() >= syncQuorumSize()) {
             // Process immediately instead of clearing
             processAccumulatedSyncResponses();
             return;
@@ -396,12 +396,12 @@ public class RabiaEngine<C extends Command> {
             return;
         }
         syncResponses.put(response.sender(), response.state());
-        if (syncResponses.size() < topologyManager.quorumSize()) {
+        if (syncResponses.size() < syncQuorumSize()) {
             log.trace("Node {} received {} responses {}, not enough to proceed (quorum size = {})",
                       self,
                       syncResponses.size(),
                       syncResponses.keySet(),
-                      topologyManager.quorumSize());
+                      syncQuorumSize());
             return;
         }
         log.trace("Node {} received {} responses, collected: {}", self, syncResponses.size(), syncResponses);
@@ -471,6 +471,12 @@ public class RabiaEngine<C extends Command> {
                                                          .or(SavedState.empty()));
             network.send(request.sender(), response);
         }
+    }
+
+    /// Calculates quorum size for sync based on currently connected peers.
+    /// Unlike consensus quorum (fixed cluster size), sync quorum adapts to actual connectivity.
+    private int syncQuorumSize() {
+        return network.connectedNodeCount() / 2 + 1;
     }
 
     /// Cleans up old phase data to prevent memory leaks.
