@@ -5,6 +5,7 @@ import org.pragmatica.consensus.net.ClusterNetwork;
 import org.pragmatica.consensus.net.ConnectionError;
 import org.pragmatica.consensus.net.NetworkServiceMessage;
 import org.pragmatica.consensus.net.NetworkServiceMessage.ListConnectedNodes;
+import org.pragmatica.consensus.net.NetworkMessage;
 import org.pragmatica.consensus.net.NetworkMessage.Hello;
 import org.pragmatica.consensus.net.NetworkMessage.Ping;
 import org.pragmatica.consensus.net.NetworkMessage.Pong;
@@ -63,6 +64,7 @@ public class NettyClusterNetwork implements ClusterNetwork {
     private final Set<Channel> pendingChannels = ConcurrentHashMap.newKeySet();
     private final Map<Channel, ScheduledFuture<?>> helloTimeouts = new ConcurrentHashMap<>();
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
+    private final AtomicBoolean quorumEstablished = new AtomicBoolean(false);
     private final TopologyManager topologyManager;
     private final Supplier<List<ChannelHandler>> handlers;
     private final MessageRouter router;
@@ -211,6 +213,9 @@ public class NettyClusterNetwork implements ClusterNetwork {
         unknownNodeInfo.onPresent(nodeInfo -> router.route(new TopologyManagementMessage.AddNode(nodeInfo)));
         router.route(new NetworkServiceMessage.ConnectionEstablished(hello.sender()));
         processViewChange(ADD, hello.sender());
+        // Initiate topology discovery only for unknown nodes
+        unknownNodeInfo.onPresent(_ -> router.route(new NetworkServiceMessage.Send(hello.sender(),
+                                                                                   new NetworkMessage.DiscoverNodes(self.id()))));
         log.debug("Node {} connected via Hello handshake", hello.sender());
     }
 
@@ -360,20 +365,24 @@ public class NettyClusterNetwork implements ClusterNetwork {
     }
 
     private void processViewChange(ViewChangeOperation operation, NodeId peerId) {
+        var currentlyHaveQuorum = (peerLinks.size() + 1) >= topologyManager.quorumSize();
         var viewChange = switch (operation) {
             case ADD -> {
-                if ((peerLinks.size() + 1) == topologyManager.quorumSize()) {
+                // Only notify on transition from below to at/above quorum
+                if (currentlyHaveQuorum && quorumEstablished.compareAndSet(false, true)) {
                     router.route(QuorumStateNotification.ESTABLISHED);
                 }
                 yield TopologyChangeNotification.nodeAdded(peerId, currentView());
             }
             case REMOVE -> {
-                if ((peerLinks.size() + 1) == topologyManager.quorumSize() - 1) {
+                // Only notify on transition from at/above quorum to below
+                if (!currentlyHaveQuorum && quorumEstablished.compareAndSet(true, false)) {
                     router.route(QuorumStateNotification.DISAPPEARED);
                 }
                 yield TopologyChangeNotification.nodeRemoved(peerId, currentView());
             }
             case SHUTDOWN -> {
+                quorumEstablished.set(false);
                 router.route(QuorumStateNotification.DISAPPEARED);
                 yield TopologyChangeNotification.nodeDown(peerId);
             }

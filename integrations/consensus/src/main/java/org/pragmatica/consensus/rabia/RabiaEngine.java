@@ -96,6 +96,7 @@ public class RabiaEngine<C extends Command> {
     private final AtomicBoolean isInPhase = new AtomicBoolean(false);
     private final AtomicReference<Promise<Unit>> startPromise = new AtomicReference<>(Promise.promise());
     private final AtomicReference<Phase> lastCommittedPhase = new AtomicReference<>(Phase.ZERO);
+    private final AtomicReference<ScheduledFuture<?>> pendingSyncTask = new AtomicReference<>();
 
     // Per Rabia spec: after a decision, the next phase inherits this value for round 1 vote
     private final AtomicReference<Option<StateValue>> lockedValue = new AtomicReference<>(Option.none());
@@ -152,9 +153,10 @@ public class RabiaEngine<C extends Command> {
 
     private void clusterConnected() {
         log.info("Node {}: quorum connected. Starting synchronization attempts", self);
-        SharedScheduler.schedule(this::synchronize,
-                                 config.syncRetryInterval()
-                                       .randomize(SCALE));
+        var task = SharedScheduler.schedule(this::synchronize,
+                                            config.syncRetryInterval()
+                                                  .randomize(SCALE));
+        pendingSyncTask.set(task);
     }
 
     private void clusterDisconnected() {
@@ -165,6 +167,9 @@ public class RabiaEngine<C extends Command> {
         if (!active.compareAndSet(true, false)) {
             return;
         }
+        // Cancel any pending sync task
+        Option.option(pendingSyncTask.getAndSet(null))
+              .onPresent(task -> task.cancel(false));
         persistence.save(stateMachine,
                          lastCommittedPhase.get(),
                          pendingBatches.values())
@@ -354,15 +359,34 @@ public class RabiaEngine<C extends Command> {
 
     private void doSynchronize() {
         if (active.get()) {
+            pendingSyncTask.set(null);
             return;
         }
+        // Check if we already have enough responses from previous attempt
+        if (syncResponses.size() >= topologyManager.quorumSize()) {
+            // Process immediately instead of clearing
+            processAccumulatedSyncResponses();
+            return;
+        }
+        // Only clear and restart if we don't have enough responses
         syncResponses.clear();
         var request = new SyncRequest(self);
         log.trace("Node {}: requesting phase synchronization {}", self, request);
         network.broadcast(request);
-        SharedScheduler.schedule(this::synchronize,
-                                 config.syncRetryInterval()
-                                       .randomize(SCALE));
+        var task = SharedScheduler.schedule(this::synchronize,
+                                            config.syncRetryInterval()
+                                                  .randomize(SCALE));
+        pendingSyncTask.set(task);
+    }
+
+    private void processAccumulatedSyncResponses() {
+        var candidate = syncResponses.values()
+                                     .stream()
+                                     .sorted(Comparator.comparing(SavedState::lastCommittedPhase))
+                                     .toList()
+                                     .getLast();
+        log.trace("Node {} uses {} as synchronization candidate out of {}", self, candidate, syncResponses.size());
+        restoreState(candidate);
     }
 
     /// Handles a synchronization response from another node.

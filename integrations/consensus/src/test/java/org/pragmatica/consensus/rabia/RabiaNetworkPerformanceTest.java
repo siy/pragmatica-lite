@@ -18,7 +18,6 @@ package org.pragmatica.consensus.rabia;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.pragmatica.consensus.Command;
 import org.pragmatica.consensus.NodeId;
@@ -56,15 +55,14 @@ import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 
 /// Performance tests for Rabia consensus using real TCP networking.
 /// All nodes run in the same process but communicate over localhost TCP.
-@Tag("Slow")
 class RabiaNetworkPerformanceTest {
 
     record TestCommand(int id) implements Command {}
 
     private static final AtomicInteger portCounter = new AtomicInteger(16000);
     private static final int CLUSTER_SIZE = 5;
-    private static final int WARMUP_ROUNDS = 5;
-    private static final int BENCHMARK_ROUNDS = 20;
+    private static final int WARMUP_ROUNDS = 20;
+    private static final int BENCHMARK_ROUNDS = 100;
 
     private int basePort;
     private List<NetworkNode> nodes;

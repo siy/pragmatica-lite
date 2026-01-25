@@ -172,9 +172,6 @@ public interface TcpTopologyManager extends TopologyManager {
                 var nodeId = connectionEstablished.nodeId();
                 Option.option(nodeStatesById.get(nodeId))
                       .onPresent(this::processConnectionEstablished);
-                // Initiate topology discovery
-                router.route(new NetworkServiceMessage.Send(nodeId,
-                                                            new NetworkMessage.DiscoverNodes(config.self())));
             }
 
             private void processConnectionEstablished(NodeState state) {
