@@ -693,9 +693,37 @@ public class RabiaEngine<C extends Command> {
     }
 
     private void makeAndBroadcastDecision(PhaseData<C> phaseData, int quorumSize) {
-        var decision = phaseData.processRound2Completion(self, topologyManager.fPlusOne(), quorumSize);
-        network.broadcast(decision);
-        processDecision(decision);
+        var outcome = phaseData.processRound2Completion(self, topologyManager.fPlusOne(), quorumSize);
+        switch (outcome) {
+            case Round2Outcome.Decided<C> decided -> {
+                network.broadcast(decided.decision());
+                processDecision(decided.decision());
+            }
+            case Round2Outcome.CarryForward<C> carryForward -> {
+                // No decision, just move to next phase with locked value
+                moveToNextPhaseWithoutDecision(phaseData, carryForward.value());
+            }
+        }
+    }
+
+    /// Moves to next phase without making a decision (Case 2: non-question vote seen but < f+1).
+    /// Per Rabia spec: carry the value forward but don't commit anything.
+    private void moveToNextPhaseWithoutDecision(PhaseData<C> phaseData, StateValue carryForwardValue) {
+        if (!phaseData.tryMarkDecided()) {
+            return;
+        }
+        var nextPhase = phaseData.phase()
+                                 .successor();
+        currentPhase.set(nextPhase);
+        isInPhase.set(false);
+        lockedValue.set(Option.some(carryForwardValue));
+        log.trace("Node {} moving to phase {} with carry-forward value {} (no decision)",
+                  self,
+                  nextPhase,
+                  carryForwardValue);
+        if (!pendingBatches.isEmpty()) {
+            executor.execute(this::startPhase);
+        }
     }
 
     private void commitDecision(PhaseData<C> phaseData, Decision<C> decision) {

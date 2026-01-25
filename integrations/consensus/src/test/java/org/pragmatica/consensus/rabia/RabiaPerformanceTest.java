@@ -295,12 +295,15 @@ class RabiaPerformanceTest {
 
             // Check if any node can make a decision
             if (!phaseData.isDecided() && phaseData.hasRound2MajorityVotes(quorumSize)) {
-                var decision = phaseData.processRound2Completion(nodeIds.getFirst(), fPlusOne, quorumSize);
-                if (phaseData.tryMarkDecided()) {
-                    decisions.incrementAndGet();
-                    messagesSent.addAndGet(nodeIds.size());
-                    pendingMessages.add(decision);
+                var outcome = phaseData.processRound2Completion(nodeIds.getFirst(), fPlusOne, quorumSize);
+                if (outcome instanceof Round2Outcome.Decided<TestCommand> decided) {
+                    if (phaseData.tryMarkDecided()) {
+                        decisions.incrementAndGet();
+                        messagesSent.addAndGet(nodeIds.size());
+                        pendingMessages.add(decided.decision());
+                    }
                 }
+                // CarryForward case: no decision message, just move to next phase
             }
         }
 

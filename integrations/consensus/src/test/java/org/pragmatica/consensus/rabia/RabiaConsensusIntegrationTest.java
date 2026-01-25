@@ -171,13 +171,15 @@ class RabiaConsensusIntegrationTest {
             phaseData.registerProposal(NODE_2, batch);
             phaseData.registerProposal(NODE_3, batch);
 
-            // Register V1 votes
+            // Register V1 votes (f+1=2)
             phaseData.registerRound2Vote(NODE_1, StateValue.V1);
             phaseData.registerRound2Vote(NODE_2, StateValue.V1);
             phaseData.registerRound2Vote(NODE_3, StateValue.V1);
 
-            var decision = phaseData.processRound2Completion(NODE_1, 2, 2);
+            var outcome = phaseData.processRound2Completion(NODE_1, 2, 2);
 
+            assertThat(outcome).isInstanceOf(Round2Outcome.Decided.class);
+            var decision = ((Round2Outcome.Decided<TestCommand>) outcome).decision();
             assertThat(decision.stateValue()).isEqualTo(StateValue.V1);
             assertThat(decision.value().correlationId()).isEqualTo(batch.correlationId());
         }
@@ -186,30 +188,50 @@ class RabiaConsensusIntegrationTest {
         void v0_decision_returns_empty_batch() {
             var phaseData = new PhaseData<TestCommand>(new Phase(1));
 
-            // Register V0 votes
+            // Register V0 votes (f+1=2)
             phaseData.registerRound2Vote(NODE_1, StateValue.V0);
             phaseData.registerRound2Vote(NODE_2, StateValue.V0);
             phaseData.registerRound2Vote(NODE_3, StateValue.V0);
 
-            var decision = phaseData.processRound2Completion(NODE_1, 2, 2);
+            var outcome = phaseData.processRound2Completion(NODE_1, 2, 2);
 
+            assertThat(outcome).isInstanceOf(Round2Outcome.Decided.class);
+            var decision = ((Round2Outcome.Decided<TestCommand>) outcome).decision();
             assertThat(decision.stateValue()).isEqualTo(StateValue.V0);
             assertThat(decision.value().isNotEmpty()).isFalse();
         }
 
         @Test
-        void coin_flip_when_no_f_plus_one_agreement() {
+        void coin_flip_when_all_votes_are_vquestion() {
             var phaseData = new PhaseData<TestCommand>(new Phase(1));
 
-            // Split votes across V0, V1, VQUESTION (no f+1 for any)
+            // All VQUESTION votes -> coin flip
+            phaseData.registerRound2Vote(NODE_1, StateValue.VQUESTION);
+            phaseData.registerRound2Vote(NODE_2, StateValue.VQUESTION);
+            phaseData.registerRound2Vote(NODE_3, StateValue.VQUESTION);
+
+            var outcome = phaseData.processRound2Completion(NODE_1, 2, 2);
+
+            assertThat(outcome).isInstanceOf(Round2Outcome.Decided.class);
+            var decision = ((Round2Outcome.Decided<TestCommand>) outcome).decision();
+            // Phase 1 is odd, so coin flip should be V1
+            assertThat(decision.stateValue()).isEqualTo(StateValue.V1);
+        }
+
+        @Test
+        void carries_forward_when_non_question_vote_but_less_than_f_plus_one() {
+            var phaseData = new PhaseData<TestCommand>(new Phase(1));
+
+            // One V0, rest VQUESTION (< f+1=2) -> CarryForward
             phaseData.registerRound2Vote(NODE_1, StateValue.V0);
             phaseData.registerRound2Vote(NODE_2, StateValue.VQUESTION);
             phaseData.registerRound2Vote(NODE_3, StateValue.VQUESTION);
 
-            var decision = phaseData.processRound2Completion(NODE_1, 2, 2);
+            var outcome = phaseData.processRound2Completion(NODE_1, 2, 2);
 
-            // Phase 1 is odd, so coin flip should be V1
-            assertThat(decision.stateValue()).isEqualTo(StateValue.V1);
+            // Per spec Case 2: any non-question vote but < f+1 -> CarryForward
+            assertThat(outcome).isInstanceOf(Round2Outcome.CarryForward.class);
+            assertThat(outcome.lockedValue()).isEqualTo(StateValue.V0);
         }
     }
 
