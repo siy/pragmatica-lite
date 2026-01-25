@@ -18,6 +18,7 @@ package org.pragmatica.lang;
 
 import org.pragmatica.lang.Functions.Fn1;
 
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /// Deferred computation with memoization.
@@ -65,6 +66,7 @@ public interface Lazy<T> {
     ///
     /// @return a new Lazy instance
     static <T> Lazy<T> lazy(Supplier<T> supplier) {
+        Objects.requireNonNull(supplier, "supplier must not be null");
         return new DeferredLazy<>(supplier);
     }
 
@@ -84,7 +86,7 @@ public interface Lazy<T> {
 final class DeferredLazy<T> implements Lazy<T> {
     private final Supplier<T> supplier;
     private volatile boolean computed;
-    private T value;
+    private volatile T value;
 
     DeferredLazy(Supplier<T> supplier) {
         this.supplier = supplier;
@@ -111,11 +113,13 @@ final class DeferredLazy<T> implements Lazy<T> {
 
     @Override
     public <R> Lazy<R> map(Fn1<R, ? super T> fn) {
+        Objects.requireNonNull(fn, "fn must not be null");
         return Lazy.lazy(() -> fn.apply(get()));
     }
 
     @Override
     public <R> Lazy<R> flatMap(Fn1<Lazy<R>, ? super T> fn) {
+        Objects.requireNonNull(fn, "fn must not be null");
         return Lazy.lazy(() -> fn.apply(get())
                                  .get());
     }
@@ -148,11 +152,13 @@ final class EvaluatedLazy<T> implements Lazy<T> {
 
     @Override
     public <R> Lazy<R> map(Fn1<R, ? super T> fn) {
+        Objects.requireNonNull(fn, "fn must not be null");
         return Lazy.lazy(() -> fn.apply(value));
     }
 
     @Override
     public <R> Lazy<R> flatMap(Fn1<Lazy<R>, ? super T> fn) {
+        Objects.requireNonNull(fn, "fn must not be null");
         return Lazy.lazy(() -> fn.apply(value)
                                  .get());
     }

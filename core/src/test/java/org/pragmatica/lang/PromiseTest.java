@@ -20,6 +20,7 @@ package org.pragmatica.lang;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.pragmatica.lang.io.CoreError;
 import org.pragmatica.lang.utils.Causes;
 
@@ -35,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.pragmatica.lang.Unit.unit;
 import static org.pragmatica.lang.io.TimeSpan.timeSpan;
 
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 public class PromiseTest {
     private static final Cause FAULT_CAUSE = new CoreError.Fault("Test fault");
     private static final Result<Integer> FAULT = FAULT_CAUSE.result();

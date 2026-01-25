@@ -12,6 +12,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
+import static org.pragmatica.lang.utils.MemoPromiseTest.TestUtils.awaitCondition;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @Timeout(value = 5, unit = TimeUnit.SECONDS)
@@ -58,11 +60,11 @@ class MemoPromiseTest {
             // First two calls fail
             cache.get("key1").await().onSuccessRun(Assertions::fail);
             // Wait for async failure handler to remove entry
-            Thread.sleep(50);
+            awaitCondition(() -> cache.size() == 0, 1000);
 
             cache.get("key1").await().onSuccessRun(Assertions::fail);
             // Wait for async failure handler to remove entry
-            Thread.sleep(50);
+            awaitCondition(() -> cache.size() == 0, 1000);
 
             // Third call succeeds
             cache.get("key1")
@@ -146,86 +148,104 @@ class MemoPromiseTest {
 
         @Test
         void get_evictsLeastRecentlyUsed() {
-            var cache = MemoPromise.memoPromise(key -> Promise.success("value-" + key), 2);
+            MemoPromise.memoPromise(key -> Promise.success("value-" + key), 2)
+                .onFailureRun(Assertions::fail)
+                .onSuccess(cache -> {
+                    cache.get("key1").await();
+                    cache.get("key2").await();
+                    assertEquals(2, cache.size());
 
-            cache.get("key1").await();
-            cache.get("key2").await();
-            assertEquals(2, cache.size());
-
-            // Adding key3 should evict key1 (LRU)
-            cache.get("key3").await();
-            assertEquals(2, cache.size());
+                    // Adding key3 should evict key1 (LRU)
+                    cache.get("key3").await();
+                    assertEquals(2, cache.size());
+                });
 
             // key1 should be recomputed (was evicted)
             var computeCount = new AtomicInteger(0);
-            var trackedCache = MemoPromise.memoPromise(key -> {
+            MemoPromise.memoPromise(key -> {
                 computeCount.incrementAndGet();
                 return Promise.success("value-" + key);
-            }, 2);
+            }, 2)
+                .onFailureRun(Assertions::fail)
+                .onSuccess(trackedCache -> {
+                    trackedCache.get("key1").await();
+                    trackedCache.get("key2").await();
+                    trackedCache.get("key3").await();  // evicts key1
+                    trackedCache.get("key1").await();  // recomputes
 
-            trackedCache.get("key1").await();
-            trackedCache.get("key2").await();
-            trackedCache.get("key3").await();  // evicts key1
-            trackedCache.get("key1").await();  // recomputes
-
-            assertEquals(4, computeCount.get());
+                    assertEquals(4, computeCount.get());
+                });
         }
 
         @Test
         void get_accessUpdatesRecency() {
             var computeCount = new AtomicInteger(0);
-            var cache = MemoPromise.memoPromise(key -> {
+            MemoPromise.memoPromise(key -> {
                 computeCount.incrementAndGet();
                 return Promise.success("value-" + key);
-            }, 2);
+            }, 2)
+                .onFailureRun(Assertions::fail)
+                .onSuccess(cache -> {
+                    cache.get("key1").await();
+                    cache.get("key2").await();
+                    cache.get("key1").await();  // Access key1, making key2 the LRU
+                    cache.get("key3").await();  // Should evict key2
 
-            cache.get("key1").await();
-            cache.get("key2").await();
-            cache.get("key1").await();  // Access key1, making key2 the LRU
-            cache.get("key3").await();  // Should evict key2
+                    // key1 should still be cached
+                    cache.get("key1").await();
+                    assertEquals(3, computeCount.get(), "key1 should not be recomputed");
 
-            // key1 should still be cached
-            cache.get("key1").await();
-            assertEquals(3, computeCount.get(), "key1 should not be recomputed");
-
-            // key2 was evicted
-            cache.get("key2").await();
-            assertEquals(4, computeCount.get(), "key2 should be recomputed");
+                    // key2 was evicted
+                    cache.get("key2").await();
+                    assertEquals(4, computeCount.get(), "key2 should be recomputed");
+                });
         }
 
         @Test
         void create_rejectsNonPositiveMaxSize() {
-            assertThrows(IllegalArgumentException.class,
-                         () -> MemoPromise.memoPromise(key -> Promise.success(key), 0));
-            assertThrows(IllegalArgumentException.class,
-                         () -> MemoPromise.memoPromise(key -> Promise.success(key), -1));
+            MemoPromise.memoPromise(key -> Promise.success(key), 0)
+                .onSuccessRun(Assertions::fail)
+                .onFailure(cause -> assertEquals("maxSize must be positive", cause.message()));
+
+            MemoPromise.memoPromise(key -> Promise.success(key), -1)
+                .onSuccessRun(Assertions::fail)
+                .onFailure(cause -> assertEquals("maxSize must be positive", cause.message()));
         }
 
         @Test
         void get_doesNotCacheFailures() throws InterruptedException {
             var computeCount = new AtomicInteger(0);
-            var cache = MemoPromise.<String, String>memoPromise(key -> {
+            MemoPromise.<String, String>memoPromise(key -> {
                 int count = computeCount.incrementAndGet();
                 if (count < 3) {
                     return TEST_ERROR.promise();
                 }
                 return Promise.success("value-" + key);
-            }, 10);
+            }, 10)
+                .onFailureRun(Assertions::fail)
+                .onSuccess(cache -> {
+                    try {
+                        cache.get("key1").await().onSuccessRun(Assertions::fail);
+                        // Wait for async failure handler to remove entry
+                        awaitCondition(() -> cache.size() == 0, 1000);
 
-            cache.get("key1").await().onSuccessRun(Assertions::fail);
-            // Wait for async failure handler to remove entry
-            Thread.sleep(50);
+                        cache.get("key1").await().onSuccessRun(Assertions::fail);
+                        // Wait for async failure handler to remove entry
+                        awaitCondition(() -> cache.size() == 0, 1000);
 
-            cache.get("key1").await().onSuccessRun(Assertions::fail);
-            // Wait for async failure handler to remove entry
-            Thread.sleep(50);
+                        cache.get("key1")
+                             .await()
+                             .onFailureRun(Assertions::fail)
+                             .onSuccess(value -> assertEquals("value-key1", value));
 
-            cache.get("key1")
-                 .await()
-                 .onFailureRun(Assertions::fail)
-                 .onSuccess(value -> assertEquals("value-key1", value));
-
-            assertEquals(3, computeCount.get());
+                        assertEquals(3, computeCount.get());
+                    } catch (InterruptedException | AssertionError e) {
+                        if (e instanceof InterruptedException) {
+                            Thread.currentThread().interrupt();
+                        }
+                        fail("Test failed: " + e.getMessage());
+                    }
+                });
         }
     }
 
@@ -302,11 +322,8 @@ class MemoPromiseTest {
             // First call fails
             cache.get("key1").await().onSuccessRun(Assertions::fail);
 
-            // Wait a bit for failure handler to run
-            Thread.sleep(50);
-
-            // Entry should be removed
-            assertEquals(0, cache.size());
+            // Wait for failure handler to remove entry
+            awaitCondition(() -> cache.size() == 0, 1000);
 
             // Second call succeeds
             cache.get("key1")
@@ -387,60 +404,74 @@ class MemoPromiseTest {
         @Test
         void bounded_handlesConvergentAccess() throws InterruptedException {
             var computeCount = new AtomicInteger(0);
-            var cache = MemoPromise.memoPromise(key -> {
+            MemoPromise.memoPromise(key -> {
                 computeCount.incrementAndGet();
                 return Promise.success("value-" + key);
-            }, 100);
+            }, 100)
+                .onFailureRun(Assertions::fail)
+                .onSuccess(cache -> {
+                    var startLatch = new CountDownLatch(1);
+                    var completionLatch = new CountDownLatch(10);
 
-            var startLatch = new CountDownLatch(1);
-            var completionLatch = new CountDownLatch(10);
+                    var threads = IntStream.range(0, 10)
+                                           .mapToObj(_ -> new Thread(() -> {
+                                               try {
+                                                   startLatch.await();
+                                               } catch (InterruptedException e) {
+                                                   Thread.currentThread().interrupt();
+                                                   return;
+                                               }
+                                               cache.get("shared-key")
+                                                    .await()
+                                                    .onFailureRun(Assertions::fail)
+                                                    .onSuccess(value -> assertEquals("value-shared-key", value));
+                                               completionLatch.countDown();
+                                           }))
+                                           .toList();
 
-            var threads = IntStream.range(0, 10)
-                                   .mapToObj(_ -> new Thread(() -> {
-                                       try {
-                                           startLatch.await();
-                                       } catch (InterruptedException e) {
-                                           Thread.currentThread().interrupt();
-                                           return;
-                                       }
-                                       cache.get("shared-key")
-                                            .await()
-                                            .onFailureRun(Assertions::fail)
-                                            .onSuccess(value -> assertEquals("value-shared-key", value));
-                                       completionLatch.countDown();
-                                   }))
-                                   .toList();
+                    threads.forEach(Thread::start);
+                    startLatch.countDown();
 
-            threads.forEach(Thread::start);
-            startLatch.countDown();
-
-            assertTrue(completionLatch.await(2, TimeUnit.SECONDS));
-            assertTrue(computeCount.get() >= 1);
-            assertEquals(1, cache.size());
+                    try {
+                        assertTrue(completionLatch.await(2, TimeUnit.SECONDS));
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        fail("Interrupted");
+                    }
+                    assertTrue(computeCount.get() >= 1);
+                    assertEquals(1, cache.size());
+                });
         }
 
         @Test
         void bounded_handlesDivergentAccessWithEviction() throws InterruptedException {
-            var cache = MemoPromise.memoPromise(
+            MemoPromise.memoPromise(
                 key -> Promise.success("value-" + key),
                 10
-            );
+            )
+                .onFailureRun(Assertions::fail)
+                .onSuccess(cache -> {
+                    var completionLatch = new CountDownLatch(50);
 
-            var completionLatch = new CountDownLatch(50);
+                    var threads = IntStream.range(0, 50)
+                                           .mapToObj(i -> new Thread(() -> {
+                                               cache.get("key-" + i)
+                                                    .await()
+                                                    .onFailureRun(Assertions::fail);
+                                               completionLatch.countDown();
+                                           }))
+                                           .toList();
 
-            var threads = IntStream.range(0, 50)
-                                   .mapToObj(i -> new Thread(() -> {
-                                       cache.get("key-" + i)
-                                            .await()
-                                            .onFailureRun(Assertions::fail);
-                                       completionLatch.countDown();
-                                   }))
-                                   .toList();
+                    threads.forEach(Thread::start);
 
-            threads.forEach(Thread::start);
-
-            assertTrue(completionLatch.await(2, TimeUnit.SECONDS));
-            assertTrue(cache.size() <= 10, "Size should not exceed maxSize");
+                    try {
+                        assertTrue(completionLatch.await(2, TimeUnit.SECONDS));
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        fail("Interrupted");
+                    }
+                    assertTrue(cache.size() <= 10, "Size should not exceed maxSize");
+                });
         }
     }
 
@@ -471,6 +502,20 @@ class MemoPromiseTest {
             assertEquals(100, cache.hitCount() + cache.missCount());
             assertTrue(cache.missCount() >= 10);
             assertEquals(10, cache.size());
+        }
+    }
+
+    /// Test utilities to avoid Thread.sleep in tests.
+    static class TestUtils {
+        /// Await a condition with timeout, polling at fixed intervals.
+        static void awaitCondition(java.util.function.BooleanSupplier condition, long timeoutMs) throws InterruptedException {
+            long deadline = System.currentTimeMillis() + timeoutMs;
+            while (!condition.getAsBoolean()) {
+                if (System.currentTimeMillis() >= deadline) {
+                    throw new AssertionError("Condition not met within " + timeoutMs + "ms");
+                }
+                Thread.sleep(5);
+            }
         }
     }
 }

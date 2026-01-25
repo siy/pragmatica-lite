@@ -17,12 +17,15 @@
 
 package org.pragmatica.lang.utils;
 
+import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Unit;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -34,6 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
 ///   <li><b>Thread-safe</b> - Safe for concurrent access from multiple threads</li>
 ///   <li><b>LRU eviction</b> - Optional size limit with least-recently-used eviction policy</li>
 ///   <li><b>Observability</b> - Hit/miss counters for monitoring cache effectiveness</li>
+///   <li><b>Null-safe</b> - Properly handles null success values</li>
 /// </ul>
 ///
 /// <h2>Usage Example</h2>
@@ -44,7 +48,8 @@ import java.util.concurrent.atomic.AtomicLong;
 /// cache.get("user-123");  // Returns cached value
 ///
 /// // Bounded cache with LRU eviction
-/// var boundedCache = MemoResult.memoResult(key -> expensiveComputation(key), 100);
+/// MemoResult.memoResult(key -> expensiveComputation(key), 100)
+///           .onSuccess(cache -> cache.get("key"));
 /// }</pre>
 ///
 /// <h2>Failure Semantics</h2>
@@ -54,6 +59,9 @@ import java.util.concurrent.atomic.AtomicLong;
 /// @param <K> the type of keys
 /// @param <V> the type of cached values
 public interface MemoResult<K, V> {
+    /// Error cause for invalid maxSize parameter.
+    Cause INVALID_MAX_SIZE = () -> "maxSize must be positive";
+
     /// Retrieves the cached value for the key, or computes it if not present.
     ///
     /// <p>If the computation fails, the failure is returned but NOT cached,
@@ -66,10 +74,13 @@ public interface MemoResult<K, V> {
     /// Removes the cached value for the specified key.
     ///
     /// @param key the key to invalidate
-    void invalidate(K key);
+    /// @return Unit for composition
+    Unit invalidate(K key);
 
     /// Removes all cached values.
-    void invalidateAll();
+    ///
+    /// @return Unit for composition
+    Unit invalidateAll();
 
     /// Returns the number of cache hits since creation.
     ///
@@ -95,6 +106,7 @@ public interface MemoResult<K, V> {
     /// @param <V> the value type
     /// @return a new unbounded MemoResult instance
     static <K, V> MemoResult<K, V> memoResult(Fn1<Result<V>, K> computation) {
+        Objects.requireNonNull(computation, "computation must not be null");
         return new UnboundedMemoResult<>(computation);
     }
 
@@ -107,18 +119,25 @@ public interface MemoResult<K, V> {
     /// @param maxSize the maximum number of entries to cache (must be positive)
     /// @param <K> the key type
     /// @param <V> the value type
-    /// @return a new bounded MemoResult instance
-    /// @throws IllegalArgumentException if maxSize is not positive
-    static <K, V> MemoResult<K, V> memoResult(Fn1<Result<V>, K> computation, int maxSize) {
+    /// @return Result containing the MemoResult instance or failure if maxSize is invalid
+    static <K, V> Result<MemoResult<K, V>> memoResult(Fn1<Result<V>, K> computation, int maxSize) {
+        Objects.requireNonNull(computation, "computation must not be null");
         if (maxSize <= 0) {
-            throw new IllegalArgumentException("maxSize must be positive, got: " + maxSize);
+            return INVALID_MAX_SIZE.result();
         }
-        return new BoundedMemoResult<>(computation, maxSize);
+        return Result.success(new BoundedMemoResult<>(computation, maxSize));
+    }
+}
+
+/// Wrapper to distinguish null values from absent entries.
+record ResultCacheEntry<V>(V value) {
+    static <V> ResultCacheEntry<V> resultCacheEntry(V value) {
+        return new ResultCacheEntry<>(value);
     }
 }
 
 final class UnboundedMemoResult<K, V> implements MemoResult<K, V> {
-    private final ConcurrentHashMap<K, V> cache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<K, ResultCacheEntry<V>> cache = new ConcurrentHashMap<>();
     private final Fn1<Result<V>, K> computation;
     private final AtomicLong hits = new AtomicLong();
     private final AtomicLong misses = new AtomicLong();
@@ -129,24 +148,28 @@ final class UnboundedMemoResult<K, V> implements MemoResult<K, V> {
 
     @Override
     public Result<V> get(K key) {
+        Objects.requireNonNull(key, "key must not be null");
         var cached = cache.get(key);
         if (cached != null) {
             hits.incrementAndGet();
-            return Result.success(cached);
+            return Result.success(cached.value());
         }
         misses.incrementAndGet();
         return computation.apply(key)
-                          .onSuccess(value -> cache.put(key, value));
+                          .onSuccess(value -> cache.put(key,
+                                                        ResultCacheEntry.resultCacheEntry(value)));
     }
 
     @Override
-    public void invalidate(K key) {
+    public Unit invalidate(K key) {
         cache.remove(key);
+        return Unit.unit();
     }
 
     @Override
-    public void invalidateAll() {
+    public Unit invalidateAll() {
         cache.clear();
+        return Unit.unit();
     }
 
     @Override
@@ -166,7 +189,7 @@ final class UnboundedMemoResult<K, V> implements MemoResult<K, V> {
 }
 
 final class BoundedMemoResult<K, V> implements MemoResult<K, V> {
-    private final Map<K, V> cache;
+    private final Map<K, ResultCacheEntry<V>> cache;
     private final Fn1<Result<V>, K> computation;
     private final AtomicLong hits = new AtomicLong();
     private final AtomicLong misses = new AtomicLong();
@@ -176,7 +199,7 @@ final class BoundedMemoResult<K, V> implements MemoResult<K, V> {
         // LinkedHashMap with access-order for LRU, wrapped for thread safety
         this.cache = Collections.synchronizedMap(new LinkedHashMap<>(16, 0.75f, true) {
             @Override
-            protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+            protected boolean removeEldestEntry(Map.Entry<K, ResultCacheEntry<V>> eldest) {
                                                      return size() > maxSize;
                                                  }
         });
@@ -184,35 +207,39 @@ final class BoundedMemoResult<K, V> implements MemoResult<K, V> {
 
     @Override
     public Result<V> get(K key) {
-        V cached;
+        Objects.requireNonNull(key, "key must not be null");
+        ResultCacheEntry<V> cached;
         synchronized (cache) {
             cached = cache.get(key);
         }
         if (cached != null) {
             hits.incrementAndGet();
-            return Result.success(cached);
+            return Result.success(cached.value());
         }
         misses.incrementAndGet();
         return computation.apply(key)
                           .onSuccess(value -> {
-                              synchronized (cache) {
-                                  cache.put(key, value);
-                              }
-                          });
+                                         synchronized (cache) {
+                                             cache.put(key,
+                                                       ResultCacheEntry.resultCacheEntry(value));
+                                         }
+                                     });
     }
 
     @Override
-    public void invalidate(K key) {
+    public Unit invalidate(K key) {
         synchronized (cache) {
             cache.remove(key);
         }
+        return Unit.unit();
     }
 
     @Override
-    public void invalidateAll() {
+    public Unit invalidateAll() {
         synchronized (cache) {
             cache.clear();
         }
+        return Unit.unit();
     }
 
     @Override

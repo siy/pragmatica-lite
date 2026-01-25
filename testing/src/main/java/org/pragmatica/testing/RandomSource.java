@@ -53,6 +53,8 @@ public interface RandomSource {
     }
 }
 
+/// Thread-safe seeded random source. All methods are synchronized to ensure
+/// reproducible results even when accessed from multiple threads.
 final class SeededRandomSource implements RandomSource {
     private final Random random;
 
@@ -61,37 +63,37 @@ final class SeededRandomSource implements RandomSource {
     }
 
     @Override
-    public int nextInt() {
+    public synchronized int nextInt() {
         return random.nextInt();
     }
 
     @Override
-    public int nextInt(int bound) {
+    public synchronized int nextInt(int bound) {
         return random.nextInt(bound);
     }
 
     @Override
-    public int nextInt(int min, int max) {
+    public synchronized int nextInt(int min, int max) {
         return random.nextInt(min, max + 1);
     }
 
     @Override
-    public long nextLong() {
+    public synchronized long nextLong() {
         return random.nextLong();
     }
 
     @Override
-    public long nextLong(long min, long max) {
+    public synchronized long nextLong(long min, long max) {
         return random.nextLong(min, max + 1);
     }
 
     @Override
-    public double nextDouble() {
+    public synchronized double nextDouble() {
         return random.nextDouble();
     }
 
     @Override
-    public boolean nextBoolean() {
+    public synchronized boolean nextBoolean() {
         return random.nextBoolean();
     }
 }

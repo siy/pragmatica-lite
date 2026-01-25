@@ -16,6 +16,7 @@
 
 package org.pragmatica.testing;
 
+import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -29,6 +30,7 @@ public interface Shrinkable<T> {
 
     /// Create a shrinkable with a custom shrinking function.
     static <T> Shrinkable<T> shrinkable(T value, Supplier<Stream<Shrinkable<T>>> shrinker) {
+        Objects.requireNonNull(shrinker, "shrinker must not be null");
         return new ShrinkableImpl<>(value, shrinker);
     }
 

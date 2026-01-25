@@ -29,41 +29,62 @@ import org.pragmatica.lang.Tuple.Tuple3;
 import org.pragmatica.lang.Tuple.Tuple4;
 import org.pragmatica.lang.Tuple.Tuple5;
 
+import java.util.Objects;
+
 /// Property-based test runner with shrinking support.
-public sealed interface PropertyTest {
+public final class PropertyTest {
+    private PropertyTest() {}
+
     /// Create a property test builder for a single arbitrary.
-    static <T> PropertyTestBuilder<T> forAll(Arbitrary<T> arbitrary) {
+    public static <T> PropertyTestBuilder<T> forAll(Arbitrary<T> arbitrary) {
+        Objects.requireNonNull(arbitrary, "arbitrary must not be null");
         return new PropertyTestBuilderImpl<>(arbitrary);
     }
 
     /// Create a property test builder for two arbitraries.
-    static <T1, T2> PropertyTestBuilder2<T1, T2> forAll(Arbitrary<T1> a1, Arbitrary<T2> a2) {
+    public static <T1, T2> PropertyTestBuilder2<T1, T2> forAll(Arbitrary<T1> a1, Arbitrary<T2> a2) {
+        Objects.requireNonNull(a1, "a1 must not be null");
+        Objects.requireNonNull(a2, "a2 must not be null");
         return new PropertyTestBuilder2Impl<>(a1, a2);
     }
 
     /// Create a property test builder for three arbitraries.
-    static <T1, T2, T3> PropertyTestBuilder3<T1, T2, T3> forAll(Arbitrary<T1> a1, Arbitrary<T2> a2, Arbitrary<T3> a3) {
+    public static <T1, T2, T3> PropertyTestBuilder3<T1, T2, T3> forAll(Arbitrary<T1> a1,
+                                                                       Arbitrary<T2> a2,
+                                                                       Arbitrary<T3> a3) {
+        Objects.requireNonNull(a1, "a1 must not be null");
+        Objects.requireNonNull(a2, "a2 must not be null");
+        Objects.requireNonNull(a3, "a3 must not be null");
         return new PropertyTestBuilder3Impl<>(a1, a2, a3);
     }
 
     /// Create a property test builder for four arbitraries.
-    static <T1, T2, T3, T4> PropertyTestBuilder4<T1, T2, T3, T4> forAll(Arbitrary<T1> a1,
-                                                                        Arbitrary<T2> a2,
-                                                                        Arbitrary<T3> a3,
-                                                                        Arbitrary<T4> a4) {
+    public static <T1, T2, T3, T4> PropertyTestBuilder4<T1, T2, T3, T4> forAll(Arbitrary<T1> a1,
+                                                                               Arbitrary<T2> a2,
+                                                                               Arbitrary<T3> a3,
+                                                                               Arbitrary<T4> a4) {
+        Objects.requireNonNull(a1, "a1 must not be null");
+        Objects.requireNonNull(a2, "a2 must not be null");
+        Objects.requireNonNull(a3, "a3 must not be null");
+        Objects.requireNonNull(a4, "a4 must not be null");
         return new PropertyTestBuilder4Impl<>(a1, a2, a3, a4);
     }
 
     /// Create a property test builder for five arbitraries.
-    static <T1, T2, T3, T4, T5> PropertyTestBuilder5<T1, T2, T3, T4, T5> forAll(Arbitrary<T1> a1,
-                                                                                Arbitrary<T2> a2,
-                                                                                Arbitrary<T3> a3,
-                                                                                Arbitrary<T4> a4,
-                                                                                Arbitrary<T5> a5) {
+    public static <T1, T2, T3, T4, T5> PropertyTestBuilder5<T1, T2, T3, T4, T5> forAll(Arbitrary<T1> a1,
+                                                                                       Arbitrary<T2> a2,
+                                                                                       Arbitrary<T3> a3,
+                                                                                       Arbitrary<T4> a4,
+                                                                                       Arbitrary<T5> a5) {
+        Objects.requireNonNull(a1, "a1 must not be null");
+        Objects.requireNonNull(a2, "a2 must not be null");
+        Objects.requireNonNull(a3, "a3 must not be null");
+        Objects.requireNonNull(a4, "a4 must not be null");
+        Objects.requireNonNull(a5, "a5 must not be null");
         return new PropertyTestBuilder5Impl<>(a1, a2, a3, a4, a5);
     }
 
-    interface PropertyTestBuilder<T> {
+    public interface PropertyTestBuilder<T> {
         PropertyTestBuilder<T> tries(int count);
         PropertyTestBuilder<T> seed(long seed);
         PropertyTestBuilder<T> shrinkingDepth(int depth);
@@ -72,7 +93,7 @@ public sealed interface PropertyTest {
         Result<PropertyResult> checkResult(Fn1<Result<?>, T> property);
     }
 
-    interface PropertyTestBuilder2<T1, T2> {
+    public interface PropertyTestBuilder2<T1, T2> {
         PropertyTestBuilder2<T1, T2> tries(int count);
         PropertyTestBuilder2<T1, T2> seed(long seed);
         PropertyTestBuilder2<T1, T2> shrinkingDepth(int depth);
@@ -81,7 +102,7 @@ public sealed interface PropertyTest {
         Result<PropertyResult> checkResult(Fn2<Result<?>, T1, T2> property);
     }
 
-    interface PropertyTestBuilder3<T1, T2, T3> {
+    public interface PropertyTestBuilder3<T1, T2, T3> {
         PropertyTestBuilder3<T1, T2, T3> tries(int count);
         PropertyTestBuilder3<T1, T2, T3> seed(long seed);
         PropertyTestBuilder3<T1, T2, T3> shrinkingDepth(int depth);
@@ -90,7 +111,7 @@ public sealed interface PropertyTest {
         Result<PropertyResult> checkResult(Fn3<Result<?>, T1, T2, T3> property);
     }
 
-    interface PropertyTestBuilder4<T1, T2, T3, T4> {
+    public interface PropertyTestBuilder4<T1, T2, T3, T4> {
         PropertyTestBuilder4<T1, T2, T3, T4> tries(int count);
         PropertyTestBuilder4<T1, T2, T3, T4> seed(long seed);
         PropertyTestBuilder4<T1, T2, T3, T4> shrinkingDepth(int depth);
@@ -99,7 +120,7 @@ public sealed interface PropertyTest {
         Result<PropertyResult> checkResult(Fn4<Result<?>, T1, T2, T3, T4> property);
     }
 
-    interface PropertyTestBuilder5<T1, T2, T3, T4, T5> {
+    public interface PropertyTestBuilder5<T1, T2, T3, T4, T5> {
         PropertyTestBuilder5<T1, T2, T3, T4, T5> tries(int count);
         PropertyTestBuilder5<T1, T2, T3, T4, T5> seed(long seed);
         PropertyTestBuilder5<T1, T2, T3, T4, T5> shrinkingDepth(int depth);
@@ -107,8 +128,6 @@ public sealed interface PropertyTest {
         Result<PropertyResult> check(Fn5<Boolean, T1, T2, T3, T4, T5> property);
         Result<PropertyResult> checkResult(Fn5<Result<?>, T1, T2, T3, T4, T5> property);
     }
-
-    record unused() implements PropertyTest {}
 }
 
 final class PropertyTestBuilderImpl<T> implements PropertyTest.PropertyTestBuilder<T> {
@@ -167,9 +186,10 @@ final class PropertyTestBuilderImpl<T> implements PropertyTest.PropertyTestBuild
 
     private PropertyCheckResult checkProperty(Fn1<Result<?>, T> property, T value) {
         try{
-            Result<?> result = property.apply(value);
-            return result.fold(_ -> new PropertyCheckResult(false, Option.none()),
-                               _ -> new PropertyCheckResult(true, Option.none()));
+            return switch (property.apply(value)) {
+                case Result.Failure<?> _ -> new PropertyCheckResult(false, Option.none());
+                case Result.Success<?> _ -> new PropertyCheckResult(true, Option.none());
+            };
         } catch (Throwable t) {
             return new PropertyCheckResult(false, Option.option(t));
         }

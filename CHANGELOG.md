@@ -5,7 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.10.1] - 2026-01-23
+## [0.10.1] - 2026-01-25
+
+### Added
+- **Memoization utilities** for caching computation results:
+  - `Memo<K,V>` - pure synchronous memoization with optional LRU eviction
+  - `MemoResult<K,V>` - Result-returning computation caching (failures not cached)
+  - `MemoPromise<K,V>` - Promise-returning computation caching with request deduplication
+  - All variants support: hit/miss counters, invalidation, size limits
+- **`Lazy<T>`** - deferred computation with thread-safe memoization
+  - `lazy(Supplier)` / `value(T)` factory methods
+  - `map()` / `flatMap()` combinators (lazily evaluated)
+  - `isComputed()` for inspection without triggering evaluation
+- **Property-based testing module** (`testing`):
+  - `Arbitrary<T>` - composable value generators with shrinking
+  - `Shrinkable<T>` - values with shrink streams for failure minimization
+  - `Shrinkers` - shrinking strategies for integers, longs, strings, lists
+  - `PropertyTest` - test runner with configurable tries, seed, shrinking depth
+  - `PropertyResult` sealed interface (Passed/Failed) with shrunk counterexamples
+  - Generators: `integers`, `longs`, `doubles`, `booleans`, `strings`, `lists`, `sets`, `oneOf`, `frequency`, `constant`
+  - Combinators: `map`, `flatMap`, `filter` (returns `Result`), `tryGenerate`
+  - Multi-arbitrary support: `forAll(a1, a2, ...)` up to 5 arbitraries
+
+### Changed
+- **JBCT compliance improvements:**
+  - `Arbitrary.filter()` now returns `Arbitrary<Result<T>>` instead of throwing on exhaustion
+  - `Arbitrary.fromFactory()` now returns `Arbitrary<Result<T>>` instead of throwing
+  - `Arbitrary.oneOf()` / `frequency()` now return `Result<Arbitrary<T>>` instead of throwing
+  - `Memo.invalidate()` / `invalidateAll()` return `Unit` instead of `void`
+  - `MemoResult.invalidate()` / `invalidateAll()` return `Unit` instead of `void`
+  - `MemoPromise.invalidate()` / `invalidateAll()` return `Unit` instead of `void`
+  - `PropertyTest` uses pattern matching instead of `fold()` for Result handling
+  - Added null validation to `Lazy`, `Arbitrary`, `PropertyTest`, `Shrinkable` factory methods
+- **Merged `Arbitraries` utility class into `Arbitrary` interface** - all generator factory methods now accessed via `Arbitrary.integers()`, `Arbitrary.strings()`, etc.
+- Factory method naming: `CacheEntry.of()` → `cacheEntry()`, `ResultCacheEntry.of()` → `resultCacheEntry()`
+- Test improvements: replaced `Thread.sleep` with condition polling, added `@Timeout` to `PromiseTest`, organized `LazyTest` with `@Nested`
+
+### Removed
+- `Arbitraries` class - merged into `Arbitrary` interface
+
+---
+
+## [0.10.0] - 2026-01-23
 
 ### Added
 - **Super-majority fast path optimization for Rabia consensus:**

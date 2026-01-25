@@ -138,79 +138,90 @@ class MemoResultTest {
 
         @Test
         void get_evictsLeastRecentlyUsed() {
-            var cache = MemoResult.memoResult(key -> Result.success("value-" + key), 2);
+            MemoResult.memoResult(key -> Result.success("value-" + key), 2)
+                .onFailureRun(Assertions::fail)
+                .onSuccess(cache -> {
+                    cache.get("key1");
+                    cache.get("key2");
+                    assertEquals(2, cache.size());
 
-            cache.get("key1");
-            cache.get("key2");
-            assertEquals(2, cache.size());
-
-            // Adding key3 should evict key1 (LRU)
-            cache.get("key3");
-            assertEquals(2, cache.size());
+                    // Adding key3 should evict key1 (LRU)
+                    cache.get("key3");
+                    assertEquals(2, cache.size());
+                });
 
             // key1 should be recomputed (was evicted)
             var computeCount = new AtomicInteger(0);
-            var trackedCache = MemoResult.memoResult(key -> {
+            MemoResult.memoResult(key -> {
                 computeCount.incrementAndGet();
                 return Result.success("value-" + key);
-            }, 2);
+            }, 2)
+                .onFailureRun(Assertions::fail)
+                .onSuccess(trackedCache -> {
+                    trackedCache.get("key1");
+                    trackedCache.get("key2");
+                    trackedCache.get("key3");  // evicts key1
+                    trackedCache.get("key1");  // recomputes
 
-            trackedCache.get("key1");
-            trackedCache.get("key2");
-            trackedCache.get("key3");  // evicts key1
-            trackedCache.get("key1");  // recomputes
-
-            assertEquals(4, computeCount.get());
+                    assertEquals(4, computeCount.get());
+                });
         }
 
         @Test
         void get_accessUpdatesRecency() {
             var computeCount = new AtomicInteger(0);
-            var cache = MemoResult.memoResult(key -> {
+            MemoResult.memoResult(key -> {
                 computeCount.incrementAndGet();
                 return Result.success("value-" + key);
-            }, 2);
+            }, 2)
+                .onFailureRun(Assertions::fail)
+                .onSuccess(cache -> {
+                    cache.get("key1");
+                    cache.get("key2");
+                    cache.get("key1");  // Access key1, making key2 the LRU
+                    cache.get("key3");  // Should evict key2
 
-            cache.get("key1");
-            cache.get("key2");
-            cache.get("key1");  // Access key1, making key2 the LRU
-            cache.get("key3");  // Should evict key2
+                    // key1 should still be cached
+                    cache.get("key1");
+                    assertEquals(3, computeCount.get(), "key1 should not be recomputed");
 
-            // key1 should still be cached
-            cache.get("key1");
-            assertEquals(3, computeCount.get(), "key1 should not be recomputed");
-
-            // key2 was evicted
-            cache.get("key2");
-            assertEquals(4, computeCount.get(), "key2 should be recomputed");
+                    // key2 was evicted
+                    cache.get("key2");
+                    assertEquals(4, computeCount.get(), "key2 should be recomputed");
+                });
         }
 
         @Test
         void create_rejectsNonPositiveMaxSize() {
-            assertThrows(IllegalArgumentException.class,
-                         () -> MemoResult.memoResult(key -> Result.success(key), 0));
-            assertThrows(IllegalArgumentException.class,
-                         () -> MemoResult.memoResult(key -> Result.success(key), -1));
+            MemoResult.memoResult(key -> Result.success(key), 0)
+                .onSuccessRun(Assertions::fail)
+                .onFailure(cause -> assertEquals("maxSize must be positive", cause.message()));
+
+            MemoResult.memoResult(key -> Result.success(key), -1)
+                .onSuccessRun(Assertions::fail)
+                .onFailure(cause -> assertEquals("maxSize must be positive", cause.message()));
         }
 
         @Test
         void get_doesNotCacheFailures() {
             var computeCount = new AtomicInteger(0);
-            var cache = MemoResult.<String, String>memoResult(key -> {
+            MemoResult.<String, String>memoResult(key -> {
                 int count = computeCount.incrementAndGet();
                 if (count < 3) {
                     return TEST_ERROR.result();
                 }
                 return Result.success("value-" + key);
-            }, 10);
+            }, 10)
+                .onFailureRun(Assertions::fail)
+                .onSuccess(cache -> {
+                    cache.get("key1").onSuccessRun(Assertions::fail);
+                    cache.get("key1").onSuccessRun(Assertions::fail);
+                    cache.get("key1")
+                         .onFailureRun(Assertions::fail)
+                         .onSuccess(value -> assertEquals("value-key1", value));
 
-            cache.get("key1").onSuccessRun(Assertions::fail);
-            cache.get("key1").onSuccessRun(Assertions::fail);
-            cache.get("key1")
-                 .onFailureRun(Assertions::fail)
-                 .onSuccess(value -> assertEquals("value-key1", value));
-
-            assertEquals(3, computeCount.get());
+                    assertEquals(3, computeCount.get());
+                });
         }
     }
 
@@ -281,58 +292,72 @@ class MemoResultTest {
         @Test
         void bounded_handlesConvergentAccess() throws InterruptedException {
             var computeCount = new AtomicInteger(0);
-            var cache = MemoResult.memoResult(key -> {
+            MemoResult.memoResult(key -> {
                 computeCount.incrementAndGet();
                 return Result.success("value-" + key);
-            }, 100);
+            }, 100)
+                .onFailureRun(Assertions::fail)
+                .onSuccess(cache -> {
+                    var startLatch = new CountDownLatch(1);
+                    var completionLatch = new CountDownLatch(10);
 
-            var startLatch = new CountDownLatch(1);
-            var completionLatch = new CountDownLatch(10);
+                    var threads = IntStream.range(0, 10)
+                                           .mapToObj(_ -> new Thread(() -> {
+                                               try {
+                                                   startLatch.await();
+                                               } catch (InterruptedException e) {
+                                                   Thread.currentThread().interrupt();
+                                                   return;
+                                               }
+                                               cache.get("shared-key")
+                                                    .onFailureRun(Assertions::fail)
+                                                    .onSuccess(value -> assertEquals("value-shared-key", value));
+                                               completionLatch.countDown();
+                                           }))
+                                           .toList();
 
-            var threads = IntStream.range(0, 10)
-                                   .mapToObj(_ -> new Thread(() -> {
-                                       try {
-                                           startLatch.await();
-                                       } catch (InterruptedException e) {
-                                           Thread.currentThread().interrupt();
-                                           return;
-                                       }
-                                       cache.get("shared-key")
-                                            .onFailureRun(Assertions::fail)
-                                            .onSuccess(value -> assertEquals("value-shared-key", value));
-                                       completionLatch.countDown();
-                                   }))
-                                   .toList();
+                    threads.forEach(Thread::start);
+                    startLatch.countDown();
 
-            threads.forEach(Thread::start);
-            startLatch.countDown();
-
-            assertTrue(completionLatch.await(2, TimeUnit.SECONDS));
-            assertTrue(computeCount.get() >= 1);
-            assertEquals(1, cache.size());
+                    try {
+                        assertTrue(completionLatch.await(2, TimeUnit.SECONDS));
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        fail("Interrupted");
+                    }
+                    assertTrue(computeCount.get() >= 1);
+                    assertEquals(1, cache.size());
+                });
         }
 
         @Test
         void bounded_handlesDivergentAccessWithEviction() throws InterruptedException {
-            var cache = MemoResult.memoResult(
+            MemoResult.memoResult(
                 key -> Result.success("value-" + key),
                 10
-            );
+            )
+                .onFailureRun(Assertions::fail)
+                .onSuccess(cache -> {
+                    var completionLatch = new CountDownLatch(50);
 
-            var completionLatch = new CountDownLatch(50);
+                    var threads = IntStream.range(0, 50)
+                                           .mapToObj(i -> new Thread(() -> {
+                                               cache.get("key-" + i)
+                                                    .onFailureRun(Assertions::fail);
+                                               completionLatch.countDown();
+                                           }))
+                                           .toList();
 
-            var threads = IntStream.range(0, 50)
-                                   .mapToObj(i -> new Thread(() -> {
-                                       cache.get("key-" + i)
-                                            .onFailureRun(Assertions::fail);
-                                       completionLatch.countDown();
-                                   }))
-                                   .toList();
+                    threads.forEach(Thread::start);
 
-            threads.forEach(Thread::start);
-
-            assertTrue(completionLatch.await(2, TimeUnit.SECONDS));
-            assertTrue(cache.size() <= 10, "Size should not exceed maxSize");
+                    try {
+                        assertTrue(completionLatch.await(2, TimeUnit.SECONDS));
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        fail("Interrupted");
+                    }
+                    assertTrue(cache.size() <= 10, "Size should not exceed maxSize");
+                });
         }
     }
 

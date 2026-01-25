@@ -18,11 +18,14 @@ package org.pragmatica.testing;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Timeout(value = 5, unit = TimeUnit.SECONDS)
 class ShrinkerTest {
 
     @Nested

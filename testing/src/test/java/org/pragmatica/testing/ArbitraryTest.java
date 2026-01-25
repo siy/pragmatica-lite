@@ -18,12 +18,15 @@ package org.pragmatica.testing;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Timeout(value = 5, unit = TimeUnit.SECONDS)
 class ArbitraryTest {
 
     @Nested
@@ -31,7 +34,7 @@ class ArbitraryTest {
         @Test
         void integers_generates_differentValues() {
             RandomSource random = RandomSource.seeded(42);
-            Arbitrary<Integer> ints = Arbitraries.integers();
+            Arbitrary<Integer> ints = Arbitrary.integers();
 
             Set<Integer> values = new HashSet<>();
             for (int i = 0; i < 100; i++) {
@@ -44,7 +47,7 @@ class ArbitraryTest {
         @Test
         void integers_withRange_respectsBounds() {
             RandomSource random = RandomSource.seeded(42);
-            Arbitrary<Integer> ints = Arbitraries.integers(10, 20);
+            Arbitrary<Integer> ints = Arbitrary.integers(10, 20);
 
             for (int i = 0; i < 100; i++) {
                 int value = ints.generate(random).value();
@@ -59,7 +62,7 @@ class ArbitraryTest {
         @Test
         void longs_withRange_respectsBounds() {
             RandomSource random = RandomSource.seeded(42);
-            Arbitrary<Long> longs = Arbitraries.longs(1000L, 2000L);
+            Arbitrary<Long> longs = Arbitrary.longs(1000L, 2000L);
 
             for (int i = 0; i < 100; i++) {
                 long value = longs.generate(random).value();
@@ -74,7 +77,7 @@ class ArbitraryTest {
         @Test
         void strings_withLengthRange_respectsBounds() {
             RandomSource random = RandomSource.seeded(42);
-            Arbitrary<String> strings = Arbitraries.strings(5, 10);
+            Arbitrary<String> strings = Arbitrary.strings(5, 10);
 
             for (int i = 0; i < 100; i++) {
                 String value = strings.generate(random).value();
@@ -86,7 +89,7 @@ class ArbitraryTest {
         @Test
         void alphanumeric_usesCorrectCharacters() {
             RandomSource random = RandomSource.seeded(42);
-            Arbitrary<String> alphanumeric = Arbitraries.alphanumeric(10, 20);
+            Arbitrary<String> alphanumeric = Arbitrary.alphanumeric(10, 20);
 
             for (int i = 0; i < 100; i++) {
                 String value = alphanumeric.generate(random).value();
@@ -103,7 +106,7 @@ class ArbitraryTest {
         @Test
         void lists_withSizeRange_respectsBounds() {
             RandomSource random = RandomSource.seeded(42);
-            Arbitrary<java.util.List<Integer>> lists = Arbitraries.lists(Arbitraries.integers(), 3, 7);
+            Arbitrary<java.util.List<Integer>> lists = Arbitrary.lists(Arbitrary.integers(), 3, 7);
 
             for (int i = 0; i < 100; i++) {
                 int size = lists.generate(random).value().size();
@@ -118,7 +121,7 @@ class ArbitraryTest {
         @Test
         void map_transformsValues() {
             RandomSource random = RandomSource.seeded(42);
-            Arbitrary<Integer> doubled = Arbitraries.integers(1, 10).map(n -> n * 2);
+            Arbitrary<Integer> doubled = Arbitrary.integers(1, 10).map(n -> n * 2);
 
             for (int i = 0; i < 100; i++) {
                 int value = doubled.generate(random).value();
@@ -130,8 +133,8 @@ class ArbitraryTest {
         @Test
         void flatMap_chainsGenerators() {
             RandomSource random = RandomSource.seeded(42);
-            Arbitrary<String> sized = Arbitraries.integers(1, 5)
-                .flatMap(n -> Arbitraries.alphanumeric(n, n));
+            Arbitrary<String> sized = Arbitrary.integers(1, 5)
+                .flatMap(n -> Arbitrary.alphanumeric(n, n));
 
             for (int i = 0; i < 100; i++) {
                 String value = sized.generate(random).value();
@@ -143,18 +146,20 @@ class ArbitraryTest {
         @Test
         void filter_rejectsInvalidValues() {
             RandomSource random = RandomSource.seeded(42);
-            Arbitrary<Integer> evens = Arbitraries.integers(1, 100).filter(n -> n % 2 == 0);
+            Arbitrary<org.pragmatica.lang.Result<Integer>> evens = Arbitrary.integers(1, 100).filter(n -> n % 2 == 0);
 
             for (int i = 0; i < 100; i++) {
-                int value = evens.generate(random).value();
-                assertEquals(0, value % 2, "Value " + value + " should be even");
+                var result = evens.generate(random).value();
+                result.onFailure(c -> fail("Filter should succeed"))
+                      .onSuccess(value -> assertEquals(0, value % 2, "Value " + value + " should be even"));
             }
         }
 
         @Test
         void oneOf_selectsFromValues() {
             RandomSource random = RandomSource.seeded(42);
-            Arbitrary<String> colors = Arbitraries.oneOf("red", "green", "blue");
+            Arbitrary<String> colors = Arbitrary.oneOf("red", "green", "blue")
+                .fold(_ -> fail("oneOf should succeed"), a -> a);
 
             Set<String> seen = new HashSet<>();
             for (int i = 0; i < 100; i++) {
@@ -167,7 +172,7 @@ class ArbitraryTest {
         @Test
         void constant_alwaysReturnsSameValue() {
             RandomSource random = RandomSource.seeded(42);
-            Arbitrary<String> constant = Arbitraries.constant("always");
+            Arbitrary<String> constant = Arbitrary.constant("always");
 
             for (int i = 0; i < 10; i++) {
                 assertEquals("always", constant.generate(random).value());
@@ -179,7 +184,7 @@ class ArbitraryTest {
     class Reproducibility {
         @Test
         void sameSeed_producesSameSequence() {
-            Arbitrary<Integer> ints = Arbitraries.integers();
+            Arbitrary<Integer> ints = Arbitrary.integers();
 
             RandomSource random1 = RandomSource.seeded(12345);
             RandomSource random2 = RandomSource.seeded(12345);
@@ -195,7 +200,7 @@ class ArbitraryTest {
 
         @Test
         void differentSeeds_produceDifferentSequences() {
-            Arbitrary<Integer> ints = Arbitraries.integers();
+            Arbitrary<Integer> ints = Arbitrary.integers();
 
             RandomSource random1 = RandomSource.seeded(12345);
             RandomSource random2 = RandomSource.seeded(54321);

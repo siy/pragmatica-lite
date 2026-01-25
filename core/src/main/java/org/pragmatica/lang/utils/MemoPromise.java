@@ -17,12 +17,16 @@
 
 package org.pragmatica.lang.utils;
 
+import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Functions.Fn1;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Result;
+import org.pragmatica.lang.Unit;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -45,7 +49,8 @@ import java.util.concurrent.atomic.AtomicLong;
 /// cache.get("user-123");  // Returns cached Promise
 ///
 /// // Bounded cache with LRU eviction
-/// var boundedCache = MemoPromise.memoPromise(key -> expensiveAsyncComputation(key), 100);
+/// MemoPromise.memoPromise(key -> expensiveAsyncComputation(key), 100)
+///            .onSuccess(cache -> cache.get("key"));
 /// }</pre>
 ///
 /// <h2>Failure Semantics</h2>
@@ -60,6 +65,9 @@ import java.util.concurrent.atomic.AtomicLong;
 /// @param <K> the type of keys
 /// @param <V> the type of cached values
 public interface MemoPromise<K, V> {
+    /// Error cause for invalid maxSize parameter.
+    Cause INVALID_MAX_SIZE = () -> "maxSize must be positive";
+
     /// Retrieves the cached Promise for the key, or computes it if not present.
     ///
     /// <p>Concurrent requests for the same key receive the same Promise instance.
@@ -73,10 +81,13 @@ public interface MemoPromise<K, V> {
     /// Removes the cached entry for the specified key.
     ///
     /// @param key the key to invalidate
-    void invalidate(K key);
+    /// @return Unit for composition
+    Unit invalidate(K key);
 
     /// Removes all cached entries.
-    void invalidateAll();
+    ///
+    /// @return Unit for composition
+    Unit invalidateAll();
 
     /// Returns the number of cache hits since creation.
     ///
@@ -102,6 +113,7 @@ public interface MemoPromise<K, V> {
     /// @param <V> the value type
     /// @return a new unbounded MemoPromise instance
     static <K, V> MemoPromise<K, V> memoPromise(Fn1<Promise<V>, K> computation) {
+        Objects.requireNonNull(computation, "computation must not be null");
         return new UnboundedMemoPromise<>(computation);
     }
 
@@ -114,13 +126,13 @@ public interface MemoPromise<K, V> {
     /// @param maxSize the maximum number of entries to cache (must be positive)
     /// @param <K> the key type
     /// @param <V> the value type
-    /// @return a new bounded MemoPromise instance
-    /// @throws IllegalArgumentException if maxSize is not positive
-    static <K, V> MemoPromise<K, V> memoPromise(Fn1<Promise<V>, K> computation, int maxSize) {
+    /// @return Result containing the MemoPromise instance or failure if maxSize is invalid
+    static <K, V> Result<MemoPromise<K, V>> memoPromise(Fn1<Promise<V>, K> computation, int maxSize) {
+        Objects.requireNonNull(computation, "computation must not be null");
         if (maxSize <= 0) {
-            throw new IllegalArgumentException("maxSize must be positive, got: " + maxSize);
+            return INVALID_MAX_SIZE.result();
         }
-        return new BoundedMemoPromise<>(computation, maxSize);
+        return Result.success(new BoundedMemoPromise<>(computation, maxSize));
     }
 }
 
@@ -136,6 +148,7 @@ final class UnboundedMemoPromise<K, V> implements MemoPromise<K, V> {
 
     @Override
     public Promise<V> get(K key) {
+        Objects.requireNonNull(key, "key must not be null");
         var cached = cache.get(key);
         if (cached != null) {
             hits.incrementAndGet();
@@ -158,13 +171,15 @@ final class UnboundedMemoPromise<K, V> implements MemoPromise<K, V> {
     }
 
     @Override
-    public void invalidate(K key) {
+    public Unit invalidate(K key) {
         cache.remove(key);
+        return Unit.unit();
     }
 
     @Override
-    public void invalidateAll() {
+    public Unit invalidateAll() {
         cache.clear();
+        return Unit.unit();
     }
 
     @Override
@@ -202,6 +217,7 @@ final class BoundedMemoPromise<K, V> implements MemoPromise<K, V> {
 
     @Override
     public Promise<V> get(K key) {
+        Objects.requireNonNull(key, "key must not be null");
         Promise<V> cached;
         synchronized (cache) {
             cached = cache.get(key);
@@ -233,17 +249,19 @@ final class BoundedMemoPromise<K, V> implements MemoPromise<K, V> {
     }
 
     @Override
-    public void invalidate(K key) {
+    public Unit invalidate(K key) {
         synchronized (cache) {
             cache.remove(key);
         }
+        return Unit.unit();
     }
 
     @Override
-    public void invalidateAll() {
+    public Unit invalidateAll() {
         synchronized (cache) {
             cache.clear();
         }
+        return Unit.unit();
     }
 
     @Override

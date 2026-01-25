@@ -18,11 +18,15 @@ package org.pragmatica.testing;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Result;
 
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.jupiter.api.Assertions.*;
 
+@Timeout(value = 5, unit = TimeUnit.SECONDS)
 class PropertyTestTest {
 
     private static void failOnCause(Cause cause) {
@@ -33,7 +37,7 @@ class PropertyTestTest {
     class PassingProperties {
         @Test
         void check_passes_forAlwaysTrueProperty() {
-            PropertyTest.forAll(Arbitraries.integers())
+            PropertyTest.forAll(Arbitrary.integers())
                 .tries(100)
                 .seed(42)
                 .check(_ -> true)
@@ -46,7 +50,7 @@ class PropertyTestTest {
 
         @Test
         void check_passes_forValidProperty() {
-            PropertyTest.forAll(Arbitraries.integers(1, 100))
+            PropertyTest.forAll(Arbitrary.integers(1, 100))
                 .tries(100)
                 .seed(42)
                 .check(n -> n >= 1 && n <= 100)
@@ -56,7 +60,7 @@ class PropertyTestTest {
 
         @Test
         void checkResult_passes_forSuccessfulProperty() {
-            PropertyTest.forAll(Arbitraries.integers())
+            PropertyTest.forAll(Arbitrary.integers())
                 .tries(50)
                 .seed(42)
                 .checkResult(_ -> Result.unitResult())
@@ -72,7 +76,7 @@ class PropertyTestTest {
     class FailingProperties {
         @Test
         void check_fails_forAlwaysFalseProperty() {
-            PropertyTest.forAll(Arbitraries.integers())
+            PropertyTest.forAll(Arbitrary.integers())
                 .tries(100)
                 .seed(42)
                 .check(_ -> false)
@@ -85,7 +89,7 @@ class PropertyTestTest {
 
         @Test
         void check_fails_withCorrectFailureInfo() {
-            PropertyTest.forAll(Arbitraries.integers(10, 100))
+            PropertyTest.forAll(Arbitrary.integers(10, 100))
                 .tries(100)
                 .seed(42)
                 .check(n -> n < 50)
@@ -101,7 +105,7 @@ class PropertyTestTest {
 
         @Test
         void checkResult_fails_forFailingResult() {
-            PropertyTest.forAll(Arbitraries.integers())
+            PropertyTest.forAll(Arbitrary.integers())
                 .tries(100)
                 .seed(42)
                 .checkResult(_ -> TestError.INSTANCE.result())
@@ -114,7 +118,7 @@ class PropertyTestTest {
     class Shrinking {
         @Test
         void shrinking_findsMinimalCase() {
-            PropertyTest.forAll(Arbitraries.integers(0, 1000))
+            PropertyTest.forAll(Arbitrary.integers(0, 1000))
                 .tries(100)
                 .seed(42)
                 .shrinkingDepth(100)
@@ -130,7 +134,7 @@ class PropertyTestTest {
 
         @Test
         void shrinking_recordsSteps() {
-            PropertyTest.forAll(Arbitraries.integers(0, 1000))
+            PropertyTest.forAll(Arbitrary.integers(0, 1000))
                 .tries(100)
                 .seed(42)
                 .check(n -> n < 500)
@@ -147,12 +151,12 @@ class PropertyTestTest {
     class Reproducibility {
         @Test
         void sameSeed_producesIdenticalResults() {
-            var result1 = PropertyTest.forAll(Arbitraries.integers())
+            var result1 = PropertyTest.forAll(Arbitrary.integers())
                 .tries(100)
                 .seed(12345)
                 .check(n -> n > 0);
 
-            var result2 = PropertyTest.forAll(Arbitraries.integers())
+            var result2 = PropertyTest.forAll(Arbitrary.integers())
                 .tries(100)
                 .seed(12345)
                 .check(n -> n > 0);
@@ -178,7 +182,7 @@ class PropertyTestTest {
     class MultipleArbitraries {
         @Test
         void forAll2_testsTwoValues() {
-            PropertyTest.forAll(Arbitraries.integers(1, 100), Arbitraries.integers(1, 100))
+            PropertyTest.forAll(Arbitrary.integers(1, 100), Arbitrary.integers(1, 100))
                 .tries(100)
                 .seed(42)
                 .check((a, b) -> a + b >= 2)
@@ -189,9 +193,9 @@ class PropertyTestTest {
         @Test
         void forAll3_testsThreeValues() {
             PropertyTest.forAll(
-                Arbitraries.integers(1, 10),
-                Arbitraries.integers(1, 10),
-                Arbitraries.integers(1, 10)
+                Arbitrary.integers(1, 10),
+                Arbitrary.integers(1, 10),
+                Arbitrary.integers(1, 10)
             )
                 .tries(100)
                 .seed(42)
@@ -202,7 +206,7 @@ class PropertyTestTest {
 
         @Test
         void forAll2_fails_correctly() {
-            PropertyTest.forAll(Arbitraries.integers(0, 100), Arbitraries.integers(0, 100))
+            PropertyTest.forAll(Arbitrary.integers(0, 100), Arbitrary.integers(0, 100))
                 .tries(100)
                 .seed(42)
                 .check((a, b) -> a + b < 50)
@@ -215,7 +219,7 @@ class PropertyTestTest {
     class TriesConfiguration {
         @Test
         void customTries_runsSpecifiedNumber() {
-            PropertyTest.forAll(Arbitraries.integers())
+            PropertyTest.forAll(Arbitrary.integers())
                 .tries(25)
                 .seed(42)
                 .check(_ -> true)
