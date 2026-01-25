@@ -180,6 +180,7 @@ Explore comprehensive examples in the [examples](examples) directory:
 | Module | Description |
 |--------|-------------|
 | **core** | Core monadic types: Result, Option, Promise |
+| **testing** | Property-based testing: generators, shrinking, PropertyTest |
 | **examples** | Sample applications and usage patterns |
 
 ### Integration Modules
