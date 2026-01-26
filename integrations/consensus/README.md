@@ -44,21 +44,29 @@ class CounterStateMachine implements StateMachine<CounterCommand> {
     public void configure(MessageRouter.MutableRouter router) {}
 }
 
-// 2. Implement network layer
-class MyConsensusNetwork implements ConsensusNetwork {
-    @Override
-    public <M extends ProtocolMessage> void broadcast(M message) { /* broadcast */ }
+// 2. Create topology configuration
+var nodeId = NodeId.nodeId("node-1");
+var coreNodes = List.of(
+    new NodeInfo(NodeId.nodeId("node-1"), NodeAddress.nodeAddress("localhost", 5580).expect("valid")),
+    new NodeInfo(NodeId.nodeId("node-2"), NodeAddress.nodeAddress("localhost", 5581).expect("valid")),
+    new NodeInfo(NodeId.nodeId("node-3"), NodeAddress.nodeAddress("localhost", 5582).expect("valid"))
+);
+var topologyConfig = new TopologyConfig(
+    nodeId,
+    coreNodes.size(),           // Fixed cluster size for quorum calculations
+    timeSpan(1).seconds(),      // Reconciliation interval
+    timeSpan(10).seconds(),     // Ping interval
+    coreNodes
+);
 
-    @Override
-    public <M extends ProtocolMessage> void send(NodeId nodeId, M message) { /* send */ }
-}
-
-// 3. Create topology info
-var topology = TopologyInfo.topologyInfo(NodeId.nodeId("node-1"), 3);
+// 3. Create message router and components
+var router = MessageRouter.mutable();
+var topologyManager = TcpTopologyManager.tcpTopologyManager(topologyConfig, router)
+                                        .expect("valid topology config");
+var network = new NettyClusterNetwork(topologyManager, router);
 
 // 4. Create and configure the engine
-var engine = new RabiaEngine<>(topology, network, stateMachine, ProtocolConfig.defaultConfig());
-var router = MessageRouter.mutable();
+var engine = new RabiaEngine<>(topologyManager, network, stateMachine, ProtocolConfig.defaultConfig());
 engine.configure(router);
 
 // 5. Start and use
@@ -89,8 +97,9 @@ var custom = new ProtocolConfig(
 
 - **RabiaEngine** - Main consensus engine coordinating the protocol
 - **StateMachine** - User-provided replicated state machine
-- **ConsensusNetwork** - Abstraction for node-to-node communication
-- **TopologyInfo** - Cluster size and quorum calculations
+- **ClusterNetwork** - Abstraction for node-to-node communication
+- **TopologyManager** - Cluster topology and quorum calculations
+- **TopologyConfig** - Configuration including fixed cluster size
 - **RabiaPersistence** - State persistence for recovery
 
 ### Protocol Flow

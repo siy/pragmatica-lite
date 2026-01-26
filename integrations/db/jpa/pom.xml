@@ -5,7 +5,7 @@
     <parent>
         <artifactId>db</artifactId>
         <groupId>org.pragmatica-lite</groupId>
-        <version>0.10.0</version>
+        <version>0.11.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -70,6 +70,16 @@
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <version>2.4.240</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.tinylog</groupId>
+            <artifactId>slf4j-tinylog</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.tinylog</groupId>
+            <artifactId>tinylog-impl</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

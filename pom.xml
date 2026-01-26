@@ -4,9 +4,10 @@
 
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>pragmatica-lite</artifactId>
-    <version>0.10.0</version>
+    <version>0.11.0</version>
     <modules>
         <module>core</module>
+        <module>testing</module>
         <module>examples</module>
         <module>integrations</module>
     </modules>

@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.pragmatica.consensus.Command;
 import org.pragmatica.consensus.NodeId;
 import org.pragmatica.consensus.StateMachine;
-import org.pragmatica.consensus.net.NetworkManagementOperation;
+import org.pragmatica.consensus.net.NetworkServiceMessage;
 import org.pragmatica.consensus.net.NetworkMessage;
 import org.pragmatica.consensus.net.NodeInfo;
 import org.pragmatica.consensus.net.netty.NettyClusterNetwork;
@@ -80,7 +80,7 @@ class RabiaNetworkPerformanceTest {
         for (int i = 0; i < CLUSTER_SIZE; i++) {
             var id = nodeId("node-" + i).unwrap();
             var port = basePort + i;
-            nodeInfos.add(NodeInfo.nodeInfo(id, NodeAddress.nodeAddress("127.0.0.1", port).unwrap()));
+            nodeInfos.add(new NodeInfo(id, NodeAddress.nodeAddress("127.0.0.1", port).unwrap()));
         }
 
         // Create all nodes
@@ -250,6 +250,10 @@ class RabiaNetworkPerformanceTest {
             register.accept(NetworkMessage.Hello.class);
             register.accept(NetworkMessage.Ping.class);
             register.accept(NetworkMessage.Pong.class);
+            register.accept(NetworkMessage.DiscoverNodes.class);
+            register.accept(NetworkMessage.DiscoveredNodes.class);
+            register.accept(NodeInfo.class);
+            register.accept(NodeAddress.class);
             register.accept(SavedState.class);
             register.accept(Batch.class);
             register.accept(BatchId.class);
@@ -266,28 +270,34 @@ class RabiaNetworkPerformanceTest {
             // Create topology config
             var config = new TopologyConfig(
                 nodeId,
+                allNodes.size(),        // Cluster size
                 timeSpan(100).hours(),  // Long reconciliation interval for tests
                 timeSpan(10).seconds(), // Ping interval
                 allNodes
             );
 
             // Create topology manager and wire up routes
-            topologyManager = TcpTopologyManager.tcpTopologyManager(config, router);
+            topologyManager = TcpTopologyManager.tcpTopologyManager(config, router)
+                                                .expect("valid topology config");
 
             // Wire up topology manager message routes
             router.addRoute(TopologyManagementMessage.AddNode.class, topologyManager::handleAddNodeMessage);
             router.addRoute(TopologyManagementMessage.RemoveNode.class, topologyManager::handleRemoveNodeMessage);
-            router.addRoute(TopologyManagementMessage.DiscoverNodes.class, topologyManager::handleDiscoverNodesMessage);
-            router.addRoute(TopologyManagementMessage.DiscoveredNodes.class, topologyManager::handleMergeNodesMessage);
-            router.addRoute(NetworkManagementOperation.ConnectedNodesList.class, topologyManager::reconcile);
+            router.addRoute(NetworkMessage.DiscoverNodes.class, topologyManager::handleDiscoverNodes);
+            router.addRoute(NetworkMessage.DiscoveredNodes.class, topologyManager::handleDiscoveredNodes);
+            router.addRoute(NetworkServiceMessage.ConnectedNodesList.class, topologyManager::reconcile);
+            router.addRoute(NetworkServiceMessage.ConnectionEstablished.class, topologyManager::handleConnectionEstablished);
+            router.addRoute(NetworkServiceMessage.ConnectionFailed.class, topologyManager::handleConnectionFailed);
 
             // Create network
             network = new NettyClusterNetwork(topologyManager, serializer, deserializer, router);
 
             // Wire up network message routes
-            router.addRoute(NetworkManagementOperation.ConnectNode.class, network::connect);
-            router.addRoute(NetworkManagementOperation.DisconnectNode.class, network::disconnect);
-            router.addRoute(NetworkManagementOperation.ListConnectedNodes.class, network::listNodes);
+            router.addRoute(NetworkServiceMessage.ConnectNode.class, network::connect);
+            router.addRoute(NetworkServiceMessage.DisconnectNode.class, network::disconnect);
+            router.addRoute(NetworkServiceMessage.ListConnectedNodes.class, network::listNodes);
+            router.addRoute(NetworkServiceMessage.Send.class, network::handleSend);
+            router.addRoute(NetworkServiceMessage.Broadcast.class, network::handleBroadcast);
             router.addRoute(NetworkMessage.Ping.class, network::handlePing);
             router.addRoute(NetworkMessage.Pong.class, network::handlePong);
 

@@ -387,8 +387,10 @@ class PhaseDataTest {
             phaseData.registerRound2Vote(NODE_2, StateValue.V1);
             phaseData.registerRound2Vote(NODE_3, StateValue.V1);
 
-            var decision = phaseData.processRound2Completion(NODE_1, F_PLUS_ONE, QUORUM_SIZE);
+            var outcome = phaseData.processRound2Completion(NODE_1, F_PLUS_ONE, QUORUM_SIZE);
 
+            assertThat(outcome).isInstanceOf(Round2Outcome.Decided.class);
+            var decision = ((Round2Outcome.Decided<TestCommand>) outcome).decision();
             assertThat(decision.stateValue()).isEqualTo(StateValue.V1);
             assertThat(decision.value().isNotEmpty()).isTrue();
         }
@@ -399,23 +401,42 @@ class PhaseDataTest {
             phaseData.registerRound2Vote(NODE_2, StateValue.V0);
             phaseData.registerRound2Vote(NODE_3, StateValue.V0);
 
-            var decision = phaseData.processRound2Completion(NODE_1, F_PLUS_ONE, QUORUM_SIZE);
+            var outcome = phaseData.processRound2Completion(NODE_1, F_PLUS_ONE, QUORUM_SIZE);
 
+            assertThat(outcome).isInstanceOf(Round2Outcome.Decided.class);
+            var decision = ((Round2Outcome.Decided<TestCommand>) outcome).decision();
             assertThat(decision.stateValue()).isEqualTo(StateValue.V0);
             assertThat(decision.value().isNotEmpty()).isFalse();
         }
 
         @Test
-        void uses_coin_flip_when_no_f_plus_one_agreement() {
+        void uses_coin_flip_when_all_votes_are_vquestion() {
+            phaseData.registerRound2Vote(NODE_1, StateValue.VQUESTION);
+            phaseData.registerRound2Vote(NODE_2, StateValue.VQUESTION);
+            phaseData.registerRound2Vote(NODE_3, StateValue.VQUESTION);
+
+            var outcome = phaseData.processRound2Completion(NODE_1, F_PLUS_ONE, QUORUM_SIZE);
+
+            // Coin flip only happens when ALL votes are VQUESTION
+            assertThat(outcome).isInstanceOf(Round2Outcome.Decided.class);
+            var decision = ((Round2Outcome.Decided<TestCommand>) outcome).decision();
+            // Phase 1 has value 1, which is odd -> V1
+            assertThat(decision.stateValue()).isEqualTo(StateValue.V1);
+        }
+
+        @Test
+        void carries_forward_when_non_question_vote_but_less_than_f_plus_one() {
+            // Any non-question vote seen but < f+1 -> CarryForward per Rabia spec
             phaseData.registerRound2Vote(NODE_1, StateValue.V0);
             phaseData.registerRound2Vote(NODE_2, StateValue.V1);
             phaseData.registerRound2Vote(NODE_3, StateValue.VQUESTION);
             phaseData.registerRound2Vote(NODE_4, StateValue.VQUESTION);
 
-            var decision = phaseData.processRound2Completion(NODE_1, F_PLUS_ONE, QUORUM_SIZE);
+            var outcome = phaseData.processRound2Completion(NODE_1, F_PLUS_ONE, QUORUM_SIZE);
 
-            // Phase 1 has value 1, which is odd -> V1
-            assertThat(decision.stateValue()).isEqualTo(StateValue.V1);
+            // Per spec Case 2: non-question vote seen but < f+1 -> CarryForward (V1 has priority)
+            assertThat(outcome).isInstanceOf(Round2Outcome.CarryForward.class);
+            assertThat(outcome.lockedValue()).isEqualTo(StateValue.V1);
         }
 
         @Test
@@ -429,8 +450,10 @@ class PhaseDataTest {
             phaseData.registerRound2Vote(NODE_2, StateValue.V1);
             phaseData.registerRound2Vote(NODE_3, StateValue.V1);
 
-            var decision = phaseData.processRound2Completion(NODE_1, F_PLUS_ONE, QUORUM_SIZE);
+            var outcome = phaseData.processRound2Completion(NODE_1, F_PLUS_ONE, QUORUM_SIZE);
 
+            assertThat(outcome).isInstanceOf(Round2Outcome.Decided.class);
+            var decision = ((Round2Outcome.Decided<TestCommand>) outcome).decision();
             assertThat(decision.stateValue()).isEqualTo(StateValue.V1);
         }
     }
@@ -564,22 +587,25 @@ class PhaseDataTest {
             phaseData.registerProposal(NODE_3, batch);
 
             // For 5-node cluster: f=2, f+1=3
-            // With exactly f votes (2), decision should use coin flip
+            // With exactly f votes (2), should CarryForward per spec Case 2
             phaseData.registerRound2Vote(NODE_1, StateValue.V1);
             phaseData.registerRound2Vote(NODE_2, StateValue.V1);
             phaseData.registerRound2Vote(NODE_3, StateValue.VQUESTION);
 
-            var decisionWithF = phaseData.processRound2Completion(NODE_1, F_PLUS_ONE, QUORUM_SIZE);
-            // Phase 1 coin flip is V1, and we only have 2 V1 votes (< f+1=3)
-            // So coin flip is used, which returns V1 for odd phase
+            var outcomeWithF = phaseData.processRound2Completion(NODE_1, F_PLUS_ONE, QUORUM_SIZE);
+            // 2 V1 votes (< f+1=3), any non-question vote -> CarryForward
+            assertThat(outcomeWithF).isInstanceOf(Round2Outcome.CarryForward.class);
+            assertThat(outcomeWithF.lockedValue()).isEqualTo(StateValue.V1);
 
             // Add one more V1 vote to reach f+1
             phaseData.registerRound2Vote(NODE_4, StateValue.V1);
 
-            var decisionWithFPlusOne = phaseData.processRound2Completion(NODE_1, F_PLUS_ONE, QUORUM_SIZE);
-            // Now we have 3 V1 votes (== f+1), decision should be V1 from vote count
+            var outcomeWithFPlusOne = phaseData.processRound2Completion(NODE_1, F_PLUS_ONE, QUORUM_SIZE);
+            // Now we have 3 V1 votes (== f+1), should Decide
 
-            assertThat(decisionWithFPlusOne.stateValue()).isEqualTo(StateValue.V1);
+            assertThat(outcomeWithFPlusOne).isInstanceOf(Round2Outcome.Decided.class);
+            var decision = ((Round2Outcome.Decided<TestCommand>) outcomeWithFPlusOne).decision();
+            assertThat(decision.stateValue()).isEqualTo(StateValue.V1);
             assertThat(F_PLUS_ONE).isGreaterThan(2); // f+1 > f boundary
         }
 

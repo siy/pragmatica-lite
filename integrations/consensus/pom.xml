@@ -5,7 +5,7 @@
     <parent>
         <artifactId>integrations</artifactId>
         <groupId>org.pragmatica-lite</groupId>
-        <version>0.10.0</version>
+        <version>0.11.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -75,6 +75,16 @@
             <groupId>org.pragmatica-lite</groupId>
             <artifactId>serialization-fury</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.tinylog</groupId>
+            <artifactId>slf4j-tinylog</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.tinylog</groupId>
+            <artifactId>tinylog-impl</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

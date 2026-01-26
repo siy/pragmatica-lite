@@ -24,25 +24,21 @@ import org.pragmatica.lang.utils.Causes;
 import java.net.InetSocketAddress;
 
 /// Network node address (host and port).
-public interface NodeAddress {
-    Cause BLANK_HOST = Causes.cause("Host must not be blank");
-    Cause INVALID_PORT = Causes.cause("Port must be between 1 and 65535");
+public record NodeAddress(String host, int port) {
+    private static final Cause BLANK_HOST = Causes.cause("Host must not be blank");
+    private static final Cause INVALID_PORT = Causes.cause("Port must be between 1 and 65535");
 
-    String host();
-
-    int port();
-
-    default String asString() {
-        return host() + ":" + port();
+    public String asString() {
+        return host + ":" + port;
     }
 
-    static Result<NodeAddress> nodeAddress(String host, int port) {
+    public static Result<NodeAddress> nodeAddress(String host, int port) {
         return Result.all(Verify.ensure(host, Verify.Is::notBlank, BLANK_HOST),
                           Verify.ensure(port, Verify.Is::between, 1, 65535, INVALID_PORT))
-                     .map(NodeAddress::create);
+                     .map(NodeAddress::new);
     }
 
-    static Result<NodeAddress> nodeAddress(InetSocketAddress socketAddress) {
+    public static Result<NodeAddress> nodeAddress(InetSocketAddress socketAddress) {
         if (socketAddress == null) {
             return BLANK_HOST.result();
         }
@@ -52,10 +48,5 @@ public interface NodeAddress {
                    ? address.getHostAddress()
                    : socketAddress.getHostString();
         return nodeAddress(host, socketAddress.getPort());
-    }
-
-    private static NodeAddress create(String host, int port) {
-        record nodeAddress(String host, int port) implements NodeAddress {}
-        return new nodeAddress(host, port);
     }
 }

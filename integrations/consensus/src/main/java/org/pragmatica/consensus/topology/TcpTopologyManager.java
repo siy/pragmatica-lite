@@ -1,13 +1,17 @@
 package org.pragmatica.consensus.topology;
 
 import org.pragmatica.consensus.NodeId;
-import org.pragmatica.consensus.net.NetworkManagementOperation;
+import org.pragmatica.consensus.net.NetworkMessage;
+import org.pragmatica.consensus.net.NetworkServiceMessage;
 import org.pragmatica.consensus.net.NodeInfo;
+import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.io.TimeSpan;
 import org.pragmatica.lang.utils.SharedScheduler;
+import org.pragmatica.lang.utils.TimeSource;
 import org.pragmatica.messaging.MessageReceiver;
 import org.pragmatica.messaging.MessageRouter;
 import org.pragmatica.net.tcp.NodeAddress;
@@ -15,19 +19,31 @@ import org.pragmatica.net.tcp.TlsConfig;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /// Topology manager for TCP/IP networks.
 public interface TcpTopologyManager extends TopologyManager {
+    /// Errors that can occur during topology manager creation.
+    sealed interface TopologyError extends Cause {
+        record SelfNodeNotInCoreNodes(NodeId self) implements TopologyError {
+            @Override
+            public String message() {
+                return "Self node " + self + " must be in coreNodes";
+            }
+        }
+    }
+
     @MessageReceiver
-    void reconcile(NetworkManagementOperation.ConnectedNodesList connectedNodesList);
+    void reconcile(NetworkServiceMessage.ConnectedNodesList connectedNodesList);
 
     @MessageReceiver
     void handleAddNodeMessage(TopologyManagementMessage.AddNode message);
@@ -36,50 +52,94 @@ public interface TcpTopologyManager extends TopologyManager {
     void handleRemoveNodeMessage(TopologyManagementMessage.RemoveNode removeNode);
 
     @MessageReceiver
-    void handleDiscoverNodesMessage(TopologyManagementMessage.DiscoverNodes discoverNodes);
+    void handleDiscoverNodes(NetworkMessage.DiscoverNodes discoverNodes);
 
     @MessageReceiver
-    void handleMergeNodesMessage(TopologyManagementMessage.DiscoveredNodes discoveredNodes);
+    void handleDiscoveredNodes(NetworkMessage.DiscoveredNodes discoveredNodes);
 
-    static TcpTopologyManager tcpTopologyManager(TopologyConfig config, MessageRouter router) {
-        record Manager(Map<NodeId, NodeInfo> nodesById,
+    @MessageReceiver
+    void handleConnectionFailed(NetworkServiceMessage.ConnectionFailed connectionFailed);
+
+    @MessageReceiver
+    void handleConnectionEstablished(NetworkServiceMessage.ConnectionEstablished connectionEstablished);
+
+    @MessageReceiver
+    void handleSetClusterSize(TopologyManagementMessage.SetClusterSize message);
+
+    static Result<TcpTopologyManager> tcpTopologyManager(TopologyConfig config, MessageRouter router) {
+        return tcpTopologyManager(config, router, TimeSource.system());
+    }
+
+    static Result<TcpTopologyManager> tcpTopologyManager(TopologyConfig config,
+                                                         MessageRouter router,
+                                                         TimeSource timeSource) {
+        // Validate that self node is in coreNodes - required for self() to work
+        var selfInCoreNodes = config.coreNodes()
+                                    .stream()
+                                    .anyMatch(info -> info.id()
+                                                          .equals(config.self()));
+        if (!selfInCoreNodes) {
+            return new TopologyError.SelfNodeNotInCoreNodes(config.self()).result();
+        }
+        record Manager(Map<NodeId, NodeState> nodeStatesById,
                        Map<NodeAddress, NodeId> nodeIdsByAddress,
                        MessageRouter router,
                        TopologyConfig config,
-                       AtomicBoolean active) implements TcpTopologyManager {
+                       TimeSource timeSource,
+                       AtomicBoolean active,
+                       AtomicInteger effectiveClusterSize) implements TcpTopologyManager {
             private static final Logger log = LoggerFactory.getLogger(TcpTopologyManager.class);
 
-            Manager(Map<NodeId, NodeInfo> nodesById,
+            Manager(Map<NodeId, NodeState> nodeStatesById,
                     Map<NodeAddress, NodeId> nodeIdsByAddress,
                     MessageRouter router,
                     TopologyConfig config,
-                    AtomicBoolean active) {
+                    TimeSource timeSource,
+                    AtomicBoolean active,
+                    AtomicInteger effectiveClusterSize) {
                 this.config = config;
                 this.router = router;
-                this.nodesById = nodesById;
+                this.nodeStatesById = nodeStatesById;
                 this.nodeIdsByAddress = nodeIdsByAddress;
+                this.timeSource = timeSource;
                 this.active = active;
+                this.effectiveClusterSize = effectiveClusterSize;
+                this.effectiveClusterSize.set(config.clusterSize());
                 config().coreNodes()
                       .forEach(this::addNode);
-                log.trace("Topology manager {} initialized with {} nodes", config.self(), config.coreNodes());
+                // Self node validation is done in the factory method before construction
+                log.trace("Topology manager {} initialized with {} nodes, cluster size {}",
+                          config.self(),
+                          config.coreNodes(),
+                          config.clusterSize());
                 SharedScheduler.scheduleAtFixedRate(this::initReconcile, config.reconciliationInterval());
+            }
+
+            private Instant now() {
+                return Instant.ofEpochSecond(0, timeSource.nanoTime());
             }
 
             private void initReconcile() {
                 if (active.get()) {
-                    router().route(new NetworkManagementOperation.ListConnectedNodes());
-                } else if (nodesById().isEmpty()) {
+                    router().route(new NetworkServiceMessage.ListConnectedNodes());
+                } else if (nodeStatesById().isEmpty()) {
                     config().coreNodes()
                           .forEach(this::addNode);
                 }
             }
 
             @Override
-            public void reconcile(NetworkManagementOperation.ConnectedNodesList connectedNodesList) {
-                var snapshot = new HashSet<>(nodesById.keySet());
+            public void reconcile(NetworkServiceMessage.ConnectedNodesList connectedNodesList) {
+                var snapshot = new HashSet<>(nodeStatesById.keySet());
                 connectedNodesList.connected()
                                   .forEach(snapshot::remove);
-                snapshot.forEach(this::requestConnection);
+                snapshot.forEach(this::requestConnectionIfEligible);
+            }
+
+            private void requestConnectionIfEligible(NodeId id) {
+                Option.option(nodeStatesById.get(id))
+                      .filter(state -> state.canAttemptConnection(now()))
+                      .onPresent(_ -> requestConnection(id));
             }
 
             @Override
@@ -93,21 +153,77 @@ public interface TcpTopologyManager extends TopologyManager {
             }
 
             @Override
-            public void handleDiscoverNodesMessage(TopologyManagementMessage.DiscoverNodes discoverNodes) {
-                router().route(new TopologyManagementMessage.DiscoveredNodes(List.copyOf(nodesById.values())));
+            public void handleDiscoverNodes(NetworkMessage.DiscoverNodes discoverNodes) {
+                var nodeInfos = nodeStatesById.values()
+                                              .stream()
+                                              .map(NodeState::info)
+                                              .toList();
+                router().route(new NetworkServiceMessage.Send(discoverNodes.self(),
+                                                              new NetworkMessage.DiscoveredNodes(discoverNodes.self(),
+                                                                                                 nodeInfos)));
             }
 
             @Override
-            public void handleMergeNodesMessage(TopologyManagementMessage.DiscoveredNodes discoveredNodes) {
-                discoveredNodes.nodeInfos()
+            public void handleDiscoveredNodes(NetworkMessage.DiscoveredNodes discoveredNodes) {
+                discoveredNodes.nodes()
                                .forEach(this::addNode);
             }
 
+            @Override
+            public void handleConnectionFailed(NetworkServiceMessage.ConnectionFailed connectionFailed) {
+                var nodeId = connectionFailed.nodeId();
+                Option.option(nodeStatesById.get(nodeId))
+                      .onPresent(state -> processConnectionFailure(state,
+                                                                   connectionFailed.cause()));
+            }
+
+            private void processConnectionFailure(NodeState state, Cause cause) {
+                var nodeId = state.info()
+                                  .id();
+                var newAttempts = state.failedAttempts() + 1;
+                var backoff = config.backoff();
+                var now = now();
+                if (backoff.shouldDisable(newAttempts)) {
+                    log.warn("Node {} removed after {} failed attempts: {}", nodeId, newAttempts, cause.message());
+                    router.route(new TopologyManagementMessage.RemoveNode(nodeId));
+                } else {
+                    var delay = backoff.backoffStrategy()
+                                       .nextTimeout(newAttempts);
+                    var nextAttempt = now.plusNanos(delay.nanos());
+                    var suspectedState = NodeState.suspected(state.info(), newAttempts, now, nextAttempt);
+                    nodeStatesById.put(nodeId, suspectedState);
+                    log.debug("Node {} connection failed (attempt {}), next attempt after {}: {}",
+                              nodeId,
+                              newAttempts,
+                              delay,
+                              cause.message());
+                }
+            }
+
+            @Override
+            public void handleConnectionEstablished(NetworkServiceMessage.ConnectionEstablished connectionEstablished) {
+                var nodeId = connectionEstablished.nodeId();
+                Option.option(nodeStatesById.get(nodeId))
+                      .onPresent(this::processConnectionEstablished);
+            }
+
+            private void processConnectionEstablished(NodeState state) {
+                var nodeId = state.info()
+                                  .id();
+                var healthyState = NodeState.healthy(state.info(), now());
+                nodeStatesById.put(nodeId, healthyState);
+                if (state.health() == NodeHealth.SUSPECTED) {
+                    log.debug("Node {} recovered from suspected state", nodeId);
+                }
+            }
+
             private void addNode(NodeInfo nodeInfo) {
+                var now = now();
+                var initialState = NodeState.healthy(nodeInfo, now);
                 // To avoid reliance on the networking layer behavior, adding is done
                 // atomically and the command to establish the connection is sent only once.
-                Option.option(nodesById().putIfAbsent(nodeInfo.id(),
-                                                      nodeInfo))
+                Option.option(nodeStatesById().putIfAbsent(nodeInfo.id(),
+                                                           initialState))
                       .onEmpty(() -> {
                                    nodeIdsByAddress().putIfAbsent(nodeInfo.address(),
                                                                   nodeInfo.id());
@@ -119,27 +235,91 @@ public interface TcpTopologyManager extends TopologyManager {
             }
 
             private void requestConnection(NodeId id) {
-                router().route(new NetworkManagementOperation.ConnectNode(id));
+                router().route(new NetworkServiceMessage.ConnectNode(id));
             }
 
             private void removeNode(NodeId nodeId) {
+                // Never remove self node - would cause NPE in self() method
+                if (nodeId.equals(config.self())) {
+                    log.warn("Ignoring removal of self node {}", nodeId);
+                    return;
+                }
                 // To avoid reliance on the networking layer behavior, removing is done
                 // atomically and command to drop the connection is sent only once.
-                Option.option(nodesById().remove(nodeId))
-                      .onPresent(nodeInfo -> {
-                                     nodeIdsByAddress.remove(nodeInfo.address());
-                                     router().route(new NetworkManagementOperation.DisconnectNode(nodeId));
+                Option.option(nodeStatesById().remove(nodeId))
+                      .onPresent(state -> {
+                                     nodeIdsByAddress.remove(state.info()
+                                                                  .address());
+                                     router().route(new NetworkServiceMessage.DisconnectNode(nodeId));
                                  });
             }
 
             @Override
             public Option<NodeInfo> get(NodeId id) {
-                return Option.option(nodesById.get(id));
+                return Option.option(nodeStatesById.get(id))
+                             .map(NodeState::info);
+            }
+
+            @Override
+            public Option<NodeState> getState(NodeId id) {
+                return Option.option(nodeStatesById.get(id));
+            }
+
+            @Override
+            public List<NodeId> topology() {
+                return nodeStatesById.keySet()
+                                     .stream()
+                                     .sorted()
+                                     .toList();
             }
 
             @Override
             public int clusterSize() {
-                return nodesById.size();
+                return effectiveClusterSize.get();
+            }
+
+            private int activeTopologySize() {
+                return (int) nodeStatesById.values()
+                                          .stream()
+                                          .filter(state -> state.health() == NodeHealth.HEALTHY)
+                                          .count();
+            }
+
+            @Override
+            public void handleSetClusterSize(TopologyManagementMessage.SetClusterSize message) {
+                int newSize = message.clusterSize();
+                int currentSize = effectiveClusterSize.get();
+                if (newSize < 3) {
+                    log.warn("Rejecting cluster size change to {}: minimum is 3 for Byzantine fault tolerance", newSize);
+                    return;
+                }
+                if (newSize > currentSize) {
+                    int newQuorum = newSize / 2 + 1;
+                    int activeNodes = activeTopologySize();
+                    if (activeNodes < newQuorum) {
+                        log.warn("Rejecting cluster size increase from {} to {}: only {} active nodes, need {} for new quorum",
+                                 currentSize,
+                                 newSize,
+                                 activeNodes,
+                                 newQuorum);
+                        return;
+                    }
+                }
+                int oldQuorum = currentSize / 2 + 1;
+                int newQuorum = newSize / 2 + 1;
+                int activeNodes = activeTopologySize();
+                boolean wasBelow = activeNodes < oldQuorum;
+                boolean nowAbove = activeNodes >= newQuorum;
+                effectiveClusterSize.set(newSize);
+                log.info("Cluster size changed from {} to {} (quorum: {} -> {})",
+                         currentSize,
+                         newSize,
+                         oldQuorum,
+                         newQuorum);
+                if (wasBelow && nowAbove) {
+                    log.info("Quorum re-established after cluster size change");
+                    router.route(QuorumStateNotification.ESTABLISHED);
+                }
             }
 
             @Override
@@ -168,7 +348,10 @@ public interface TcpTopologyManager extends TopologyManager {
 
             @Override
             public NodeInfo self() {
-                return nodesById().get(config.self());
+                // Self node is guaranteed to be in topology after constructor completes
+                // (added via config.coreNodes().forEach(this::addNode))
+                return nodeStatesById().get(config.self())
+                                     .info();
             }
 
             @Override
@@ -186,10 +369,12 @@ public interface TcpTopologyManager extends TopologyManager {
                 return config().tls();
             }
         }
-        return new Manager(new ConcurrentHashMap<>(),
-                           new ConcurrentHashMap<>(),
-                           router,
-                           config,
-                           new AtomicBoolean(false));
+        return Result.success(new Manager(new ConcurrentHashMap<>(),
+                                          new ConcurrentHashMap<>(),
+                                          router,
+                                          config,
+                                          timeSource,
+                                          new AtomicBoolean(false),
+                                          new AtomicInteger(config.clusterSize())));
     }
 }

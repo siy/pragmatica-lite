@@ -31,6 +31,26 @@ import java.util.stream.Collectors;
 
 import static org.pragmatica.consensus.rabia.Batch.emptyBatch;
 
+/// Represents the outcome of Round 2 completion per Rabia specification.
+/// Three possible outcomes:
+/// 1. Decided - f+1 threshold met, commit the value
+/// 2. CarryForward - any non-question vote seen but < f+1, carry value to next phase without decision
+sealed interface Round2Outcome<C extends Command> {
+    StateValue lockedValue();
+
+    record Decided<C extends Command>(Decision<C> decision) implements Round2Outcome<C> {
+        public StateValue lockedValue() {
+            return decision.stateValue();
+        }
+    }
+
+    record CarryForward<C extends Command>(StateValue value) implements Round2Outcome<C> {
+        public StateValue lockedValue() {
+            return value;
+        }
+    }
+}
+
 /// Data structure to hold all state related to a specific consensus phase.
 ///
 /// This class tracks proposals, round 1 votes, round 2 votes, and decision state
@@ -56,6 +76,11 @@ final class PhaseData<C extends Command> {
     /// Registers a proposal from a node. Idempotent - first proposal wins.
     void registerProposal(NodeId node, Batch<C> batch) {
         proposals.putIfAbsent(node, batch);
+    }
+
+    /// Checks if a node has already proposed in this phase.
+    boolean hasProposal(NodeId node) {
+        return proposals.containsKey(node);
     }
 
     /// Checks if a node has already voted in round 1.
@@ -197,23 +222,31 @@ final class PhaseData<C extends Command> {
                                .count();
     }
 
-    /// Processes round 2 completion and determines the decision.
-    /// Per Rabia spec:
-    /// 1. If f+1 nodes voted V1, decide V1
-    /// 2. If f+1 nodes voted V0, decide V0
-    /// 3. Otherwise, use deterministic coin flip
-    Decision<C> processRound2Completion(NodeId self, int fPlusOneSize, int quorumSize) {
+    /// Processes round 2 completion and determines the outcome.
+    /// Per Rabia spec (weak_mvc.ivy lines 163-171):
+    /// 1. If f+1 nodes voted V1 or V0, decide that value
+    /// 2. If any non-question vote seen (but < f+1), carry that value forward WITHOUT decision
+    /// 3. If all votes are VQUESTION, use coin flip to decide
+    Round2Outcome<C> processRound2Completion(NodeId self, int fPlusOneSize, int quorumSize) {
+        // Case 1: f+1 threshold met - DECIDE
         if (countRound2VotesForValue(StateValue.V1) >= fPlusOneSize) {
-            return new Decision<>(self, phase, StateValue.V1, findAgreedProposal(quorumSize));
+            return new Round2Outcome.Decided<>(new Decision<>(self, phase, StateValue.V1, findAgreedProposal(quorumSize)));
         }
         if (countRound2VotesForValue(StateValue.V0) >= fPlusOneSize) {
-            return new Decision<>(self, phase, StateValue.V0, emptyBatch());
+            return new Round2Outcome.Decided<>(new Decision<>(self, phase, StateValue.V0, emptyBatch()));
         }
-        var decision = coinFlip();
-        var batch = decision == StateValue.V1
+        // Case 2: Any non-question vote seen (but < f+1) - carry forward WITHOUT decision
+        for (var value : List.of(StateValue.V1, StateValue.V0)) {
+            if (countRound2VotesForValue(value) > 0) {
+                return new Round2Outcome.CarryForward<>(value);
+            }
+        }
+        // Case 3: All VQUESTION - coin flip and DECIDE
+        var coinValue = coinFlip();
+        var batch = coinValue == StateValue.V1
                     ? findAgreedProposal(quorumSize)
                     : Batch.<C>emptyBatch();
-        return new Decision<>(self, phase, decision, batch);
+        return new Round2Outcome.Decided<>(new Decision<>(self, phase, coinValue, batch));
     }
 
     /// Gets a deterministic coin flip value for a phase.

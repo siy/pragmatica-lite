@@ -25,6 +25,7 @@ import org.pragmatica.lang.io.TimeSpan;
 import org.pragmatica.net.tcp.TlsConfig;
 
 import java.net.SocketAddress;
+import java.util.List;
 
 /// Representation of our knowledge about the cluster structure: known nodes and cluster/quorum size.
 /// Note that this is not a representation of the actual cluster topology.
@@ -35,7 +36,9 @@ public interface TopologyManager {
     /// Retrieve information about the node.
     Option<NodeInfo> get(NodeId id);
 
-    /// Configured cluster size.
+    /// Returns the configured fixed cluster size used for quorum calculations.
+    /// This value is set at startup and can be dynamically updated via SetClusterSize message.
+    /// Using a fixed cluster size prevents split-brain resurrection scenarios.
     int clusterSize();
 
     /// The quorum size (majority) for the cluster.
@@ -75,4 +78,10 @@ public interface TopologyManager {
     default Option<TlsConfig> tls() {
         return Option.empty();
     }
+
+    /// Retrieve the state of a node by ID.
+    Option<NodeState> getState(NodeId id);
+
+    /// Returns the list of all node IDs in the topology.
+    List<NodeId> topology();
 }

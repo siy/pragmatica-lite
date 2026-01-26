@@ -14,19 +14,14 @@
  *  limitations under the License.
  */
 
-package org.pragmatica.consensus.net;
+package org.pragmatica.testing;
+/// Exception thrown when value generation fails.
+public class GenerationException extends RuntimeException {
+    public GenerationException(String message) {
+        super(message);
+    }
 
-import org.pragmatica.consensus.NodeId;
-import org.pragmatica.messaging.Message;
-
-import java.util.List;
-
-public sealed interface NetworkManagementOperation extends Message.Local {
-    record ConnectNode(NodeId node) implements NetworkManagementOperation {}
-
-    record DisconnectNode(NodeId nodeId) implements NetworkManagementOperation {}
-
-    record ListConnectedNodes() implements NetworkManagementOperation {}
-
-    record ConnectedNodesList(List<NodeId> connected) implements NetworkManagementOperation {}
+    public GenerationException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

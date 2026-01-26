@@ -105,7 +105,7 @@ class SocketOptionsTest {
 
     @Test
     void validated_factory_succeeds_for_valid_values() {
-        SocketOptions.socketOptions(256, false, false)
+        SocketOptions.socketOptions(256, false, false, true)
             .onFailure(_ -> fail("Should succeed"))
             .onSuccess(options -> {
                 assertThat(options.soBacklog()).isEqualTo(256);
@@ -116,10 +116,10 @@ class SocketOptionsTest {
 
     @Test
     void validated_factory_fails_for_invalid_backlog() {
-        SocketOptions.socketOptions(0, true, true)
+        SocketOptions.socketOptions(0, true, true, true)
             .onSuccess(_ -> fail("Should fail for zero backlog"));
 
-        SocketOptions.socketOptions(-5, true, true)
+        SocketOptions.socketOptions(-5, true, true, true)
             .onSuccess(_ -> fail("Should fail for negative backlog"));
     }
 }

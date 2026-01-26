@@ -25,7 +25,6 @@ import org.pragmatica.consensus.NodeId;
 import org.pragmatica.consensus.ProtocolMessage;
 import org.pragmatica.consensus.StateMachine;
 import org.pragmatica.consensus.net.ClusterNetwork;
-import org.pragmatica.consensus.net.NetworkManagementOperation;
 import org.pragmatica.consensus.net.NetworkMessage;
 import org.pragmatica.consensus.net.NodeInfo;
 import org.pragmatica.consensus.rabia.RabiaPersistence.SavedState;
@@ -295,12 +294,15 @@ class RabiaPerformanceTest {
 
             // Check if any node can make a decision
             if (!phaseData.isDecided() && phaseData.hasRound2MajorityVotes(quorumSize)) {
-                var decision = phaseData.processRound2Completion(nodeIds.getFirst(), fPlusOne, quorumSize);
-                if (phaseData.tryMarkDecided()) {
-                    decisions.incrementAndGet();
-                    messagesSent.addAndGet(nodeIds.size());
-                    pendingMessages.add(decision);
+                var outcome = phaseData.processRound2Completion(nodeIds.getFirst(), fPlusOne, quorumSize);
+                if (outcome instanceof Round2Outcome.Decided<TestCommand> decided) {
+                    if (phaseData.tryMarkDecided()) {
+                        decisions.incrementAndGet();
+                        messagesSent.addAndGet(nodeIds.size());
+                        pendingMessages.add(decided.decision());
+                    }
                 }
+                // CarryForward case: no decision message, just move to next phase
             }
         }
 

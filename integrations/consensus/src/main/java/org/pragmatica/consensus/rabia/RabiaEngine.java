@@ -96,6 +96,7 @@ public class RabiaEngine<C extends Command> {
     private final AtomicBoolean isInPhase = new AtomicBoolean(false);
     private final AtomicReference<Promise<Unit>> startPromise = new AtomicReference<>(Promise.promise());
     private final AtomicReference<Phase> lastCommittedPhase = new AtomicReference<>(Phase.ZERO);
+    private final AtomicReference<ScheduledFuture<?>> pendingSyncTask = new AtomicReference<>();
 
     // Per Rabia spec: after a decision, the next phase inherits this value for round 1 vote
     private final AtomicReference<Option<StateValue>> lockedValue = new AtomicReference<>(Option.none());
@@ -152,9 +153,10 @@ public class RabiaEngine<C extends Command> {
 
     private void clusterConnected() {
         log.info("Node {}: quorum connected. Starting synchronization attempts", self);
-        SharedScheduler.schedule(this::synchronize,
-                                 config.syncRetryInterval()
-                                       .randomize(SCALE));
+        var task = SharedScheduler.schedule(this::synchronize,
+                                            config.syncRetryInterval()
+                                                  .randomize(SCALE));
+        pendingSyncTask.set(task);
     }
 
     private void clusterDisconnected() {
@@ -165,6 +167,9 @@ public class RabiaEngine<C extends Command> {
         if (!active.compareAndSet(true, false)) {
             return;
         }
+        // Cancel any pending sync task
+        Option.option(pendingSyncTask.getAndSet(null))
+              .onPresent(task -> task.cancel(false));
         persistence.save(stateMachine,
                          lastCommittedPhase.get(),
                          pendingBatches.values())
@@ -288,8 +293,27 @@ public class RabiaEngine<C extends Command> {
                              pendingBatches.put(newBatch.batch()
                                                         .correlationId(),
                                                 (Batch<C>) newBatch.batch());
-                             triggerPhaseIfNeeded();
+                             if (isInPhase.get() && active.get()) {
+                                 // Already in phase - broadcast our proposal for this batch if not already proposed
+        broadcastOwnProposalIfNeeded();
+                             } else {
+                                 triggerPhaseIfNeeded();
+                             }
                          });
+    }
+
+    /// Broadcasts own proposal for pending batch if not already proposed in current phase.
+    private void broadcastOwnProposalIfNeeded() {
+        var phase = currentPhase.get();
+        var phaseData = getOrCreatePhaseData(phase);
+        if (phaseData.hasProposal(self)) {
+            return;
+        }
+        pendingBatches.values()
+                      .stream()
+                      .sorted()
+                      .findFirst()
+                      .ifPresent(batch -> broadcastOwnProposal(phase, phaseData, batch));
     }
 
     /// Starts a new phase with pending commands.
@@ -335,15 +359,34 @@ public class RabiaEngine<C extends Command> {
 
     private void doSynchronize() {
         if (active.get()) {
+            pendingSyncTask.set(null);
             return;
         }
+        // Check if we already have enough responses from previous attempt
+        if (syncResponses.size() >= syncQuorumSize()) {
+            // Process immediately instead of clearing
+            processAccumulatedSyncResponses();
+            return;
+        }
+        // Only clear and restart if we don't have enough responses
         syncResponses.clear();
         var request = new SyncRequest(self);
         log.trace("Node {}: requesting phase synchronization {}", self, request);
         network.broadcast(request);
-        SharedScheduler.schedule(this::synchronize,
-                                 config.syncRetryInterval()
-                                       .randomize(SCALE));
+        var task = SharedScheduler.schedule(this::synchronize,
+                                            config.syncRetryInterval()
+                                                  .randomize(SCALE));
+        pendingSyncTask.set(task);
+    }
+
+    private void processAccumulatedSyncResponses() {
+        var candidate = syncResponses.values()
+                                     .stream()
+                                     .sorted(Comparator.comparing(SavedState::lastCommittedPhase))
+                                     .toList()
+                                     .getLast();
+        log.trace("Node {} uses {} as synchronization candidate out of {}", self, candidate, syncResponses.size());
+        restoreState(candidate);
     }
 
     /// Handles a synchronization response from another node.
@@ -353,12 +396,12 @@ public class RabiaEngine<C extends Command> {
             return;
         }
         syncResponses.put(response.sender(), response.state());
-        if (syncResponses.size() < topologyManager.quorumSize()) {
+        if (syncResponses.size() < syncQuorumSize()) {
             log.trace("Node {} received {} responses {}, not enough to proceed (quorum size = {})",
                       self,
                       syncResponses.size(),
                       syncResponses.keySet(),
-                      topologyManager.quorumSize());
+                      syncQuorumSize());
             return;
         }
         log.trace("Node {} received {} responses, collected: {}", self, syncResponses.size(), syncResponses);
@@ -428,6 +471,12 @@ public class RabiaEngine<C extends Command> {
                                                          .or(SavedState.empty()));
             network.send(request.sender(), response);
         }
+    }
+
+    /// Calculates quorum size for sync based on currently connected peers.
+    /// Unlike consensus quorum (fixed cluster size), sync quorum adapts to actual connectivity.
+    private int syncQuorumSize() {
+        return network.connectedNodeCount() / 2 + 1;
     }
 
     /// Cleans up old phase data to prevent memory leaks.
@@ -650,9 +699,37 @@ public class RabiaEngine<C extends Command> {
     }
 
     private void makeAndBroadcastDecision(PhaseData<C> phaseData, int quorumSize) {
-        var decision = phaseData.processRound2Completion(self, topologyManager.fPlusOne(), quorumSize);
-        network.broadcast(decision);
-        processDecision(decision);
+        var outcome = phaseData.processRound2Completion(self, topologyManager.fPlusOne(), quorumSize);
+        switch (outcome) {
+            case Round2Outcome.Decided<C> decided -> {
+                network.broadcast(decided.decision());
+                processDecision(decided.decision());
+            }
+            case Round2Outcome.CarryForward<C> carryForward -> {
+                // No decision, just move to next phase with locked value
+                moveToNextPhaseWithoutDecision(phaseData, carryForward.value());
+            }
+        }
+    }
+
+    /// Moves to next phase without making a decision (Case 2: non-question vote seen but < f+1).
+    /// Per Rabia spec: carry the value forward but don't commit anything.
+    private void moveToNextPhaseWithoutDecision(PhaseData<C> phaseData, StateValue carryForwardValue) {
+        if (!phaseData.tryMarkDecided()) {
+            return;
+        }
+        var nextPhase = phaseData.phase()
+                                 .successor();
+        currentPhase.set(nextPhase);
+        isInPhase.set(false);
+        lockedValue.set(Option.some(carryForwardValue));
+        log.trace("Node {} moving to phase {} with carry-forward value {} (no decision)",
+                  self,
+                  nextPhase,
+                  carryForwardValue);
+        if (!pendingBatches.isEmpty()) {
+            executor.execute(this::startPhase);
+        }
     }
 
     private void commitDecision(PhaseData<C> phaseData, Decision<C> decision) {

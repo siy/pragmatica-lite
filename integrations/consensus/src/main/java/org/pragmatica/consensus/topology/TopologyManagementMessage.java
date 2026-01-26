@@ -20,15 +20,11 @@ import org.pragmatica.consensus.NodeId;
 import org.pragmatica.consensus.net.NodeInfo;
 import org.pragmatica.messaging.Message;
 
-import java.util.List;
-
-/// Notification related to topology change and discovery.
+/// Notification related to topology change.
 sealed public interface TopologyManagementMessage extends Message.Local {
     record AddNode(NodeInfo nodeInfo) implements TopologyManagementMessage {}
 
     record RemoveNode(NodeId nodeId) implements TopologyManagementMessage {}
 
-    record DiscoverNodes(NodeId sender) implements TopologyManagementMessage {}
-
-    record DiscoveredNodes(List<NodeInfo> nodeInfos) implements TopologyManagementMessage {}
+    record SetClusterSize(int clusterSize) implements TopologyManagementMessage {}
 }
