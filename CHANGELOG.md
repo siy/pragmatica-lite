@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.1] - 2026-01-26
+
+### Security
+- Updated assertj-core from 3.27.3 to 3.27.7 to fix XXE vulnerability (GitHub Dependabot alert)
+
 ## [0.11.0] - 2026-01-26
 
 ### Fixed
