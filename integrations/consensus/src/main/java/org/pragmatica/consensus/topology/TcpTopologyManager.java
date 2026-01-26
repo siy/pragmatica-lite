@@ -7,6 +7,7 @@ import org.pragmatica.consensus.net.NodeInfo;
 import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Option;
 import org.pragmatica.lang.Promise;
+import org.pragmatica.lang.Result;
 import org.pragmatica.lang.Unit;
 import org.pragmatica.lang.io.TimeSpan;
 import org.pragmatica.lang.utils.SharedScheduler;
@@ -31,6 +32,16 @@ import org.slf4j.LoggerFactory;
 
 /// Topology manager for TCP/IP networks.
 public interface TcpTopologyManager extends TopologyManager {
+    /// Errors that can occur during topology manager creation.
+    sealed interface TopologyError extends Cause {
+        record SelfNodeNotInCoreNodes(NodeId self) implements TopologyError {
+            @Override
+            public String message() {
+                return "Self node " + self + " must be in coreNodes";
+            }
+        }
+    }
+
     @MessageReceiver
     void reconcile(NetworkServiceMessage.ConnectedNodesList connectedNodesList);
 
@@ -55,11 +66,21 @@ public interface TcpTopologyManager extends TopologyManager {
     @MessageReceiver
     void handleSetClusterSize(TopologyManagementMessage.SetClusterSize message);
 
-    static TcpTopologyManager tcpTopologyManager(TopologyConfig config, MessageRouter router) {
+    static Result<TcpTopologyManager> tcpTopologyManager(TopologyConfig config, MessageRouter router) {
         return tcpTopologyManager(config, router, TimeSource.system());
     }
 
-    static TcpTopologyManager tcpTopologyManager(TopologyConfig config, MessageRouter router, TimeSource timeSource) {
+    static Result<TcpTopologyManager> tcpTopologyManager(TopologyConfig config,
+                                                         MessageRouter router,
+                                                         TimeSource timeSource) {
+        // Validate that self node is in coreNodes - required for self() to work
+        var selfInCoreNodes = config.coreNodes()
+                                    .stream()
+                                    .anyMatch(info -> info.id()
+                                                          .equals(config.self()));
+        if (!selfInCoreNodes) {
+            return new TopologyError.SelfNodeNotInCoreNodes(config.self()).result();
+        }
         record Manager(Map<NodeId, NodeState> nodeStatesById,
                        Map<NodeAddress, NodeId> nodeIdsByAddress,
                        MessageRouter router,
@@ -86,6 +107,7 @@ public interface TcpTopologyManager extends TopologyManager {
                 this.effectiveClusterSize.set(config.clusterSize());
                 config().coreNodes()
                       .forEach(this::addNode);
+                // Self node validation is done in the factory method before construction
                 log.trace("Topology manager {} initialized with {} nodes, cluster size {}",
                           config.self(),
                           config.coreNodes(),
@@ -217,6 +239,11 @@ public interface TcpTopologyManager extends TopologyManager {
             }
 
             private void removeNode(NodeId nodeId) {
+                // Never remove self node - would cause NPE in self() method
+                if (nodeId.equals(config.self())) {
+                    log.warn("Ignoring removal of self node {}", nodeId);
+                    return;
+                }
                 // To avoid reliance on the networking layer behavior, removing is done
                 // atomically and command to drop the connection is sent only once.
                 Option.option(nodeStatesById().remove(nodeId))
@@ -342,12 +369,12 @@ public interface TcpTopologyManager extends TopologyManager {
                 return config().tls();
             }
         }
-        return new Manager(new ConcurrentHashMap<>(),
-                           new ConcurrentHashMap<>(),
-                           router,
-                           config,
-                           timeSource,
-                           new AtomicBoolean(false),
-                           new AtomicInteger(config.clusterSize()));
+        return Result.success(new Manager(new ConcurrentHashMap<>(),
+                                          new ConcurrentHashMap<>(),
+                                          router,
+                                          config,
+                                          timeSource,
+                                          new AtomicBoolean(false),
+                                          new AtomicInteger(config.clusterSize())));
     }
 }

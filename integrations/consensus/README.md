@@ -61,7 +61,8 @@ var topologyConfig = new TopologyConfig(
 
 // 3. Create message router and components
 var router = MessageRouter.mutable();
-var topologyManager = TcpTopologyManager.tcpTopologyManager(topologyConfig, router);
+var topologyManager = TcpTopologyManager.tcpTopologyManager(topologyConfig, router)
+                                        .expect("valid topology config");
 var network = new NettyClusterNetwork(topologyManager, router);
 
 // 4. Create and configure the engine

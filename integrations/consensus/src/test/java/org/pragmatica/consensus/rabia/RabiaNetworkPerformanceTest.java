@@ -277,7 +277,8 @@ class RabiaNetworkPerformanceTest {
             );
 
             // Create topology manager and wire up routes
-            topologyManager = TcpTopologyManager.tcpTopologyManager(config, router);
+            topologyManager = TcpTopologyManager.tcpTopologyManager(config, router)
+                                                .expect("valid topology config");
 
             // Wire up topology manager message routes
             router.addRoute(TopologyManagementMessage.AddNode.class, topologyManager::handleAddNodeMessage);

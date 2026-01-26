@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.10.1] - 2026-01-25
+## [0.11.0] - 2026-01-26
 
 ### Fixed
 - **Split-brain resurrection vulnerability in consensus topology:**
@@ -42,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **JBCT compliance improvements:**
+  - `TcpTopologyManager.tcpTopologyManager()` now returns `Result<TcpTopologyManager>` instead of throwing on invalid config
+  - Added `TcpTopologyManager.TopologyError` sealed interface with `SelfNodeNotInCoreNodes` variant
   - `Arbitrary.filter()` now returns `Arbitrary<Result<T>>` instead of throwing on exhaustion
   - `Arbitrary.fromFactory()` now returns `Arbitrary<Result<T>>` instead of throwing
   - `Arbitrary.oneOf()` / `frequency()` now return `Result<Arbitrary<T>>` instead of throwing
