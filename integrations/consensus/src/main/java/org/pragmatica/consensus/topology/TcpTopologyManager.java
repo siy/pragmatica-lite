@@ -169,6 +169,27 @@ public interface TcpTopologyManager extends TopologyManager {
                                .forEach(this::addNode);
             }
 
+            // TODO [LOW PRIORITY]: Race condition - node resurrection after removal
+            //
+            // Current pattern: get() then put() is not atomic. If a node is removed between
+            // the get() and put(), the put() will resurrect the removed node.
+            //
+            // Timeline:
+            //   Thread A (connection failed): get(nodeId) -> returns state
+            //   Thread B (remove node):       remove(nodeId) -> node gone
+            //   Thread A (connection failed): put(nodeId, newState) -> resurrects removed node
+            //
+            // Fix: Use computeIfPresent() for atomic read-modify-write:
+            //   nodeStatesById.computeIfPresent(nodeId, (id, state) ->
+            //       processConnectionFailure(state, cause));
+            //
+            // Required changes:
+            //   1. processConnectionFailure() must return NodeState instead of void
+            //   2. Same fix needed for handleConnectionEstablished/processConnectionEstablished
+            //   3. RemoveNode path also routes DisconnectNode which could interact unexpectedly
+            //   4. Needs careful testing of all node lifecycle scenarios
+            //
+            // Low probability in practice - removal and connection events rarely overlap.
             @Override
             public void handleConnectionFailed(NetworkServiceMessage.ConnectionFailed connectionFailed) {
                 var nodeId = connectionFailed.nodeId();
