@@ -86,6 +86,17 @@ public interface Route<T> extends RouteSource {
         return () -> path;
     }
 
+    /**
+     * Creates a route source for serving static files from the classpath.
+     *
+     * @param urlPrefix       the URL prefix to match (e.g., "/static")
+     * @param classpathPrefix the classpath prefix where files are located (e.g., "/web")
+     * @return a route source that serves static files
+     */
+    static RouteSource staticFiles(String urlPrefix, String classpathPrefix) {
+        return StaticFileRouteSource.staticFiles(urlPrefix, classpathPrefix);
+    }
+
     interface Subroutes {
         String path();
 

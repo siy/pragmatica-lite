@@ -8,7 +8,7 @@ Promise-based HTTP client wrapper around JDK HttpClient with typed error handlin
 <dependency>
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>http-client</artifactId>
-    <version>0.11.1</version>
+    <version>0.11.2</version>
 </dependency>
 ```
 

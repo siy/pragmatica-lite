@@ -8,7 +8,7 @@ Zero-dependency TOML parser with Result-based error handling and Option-based ac
 <dependency>
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>toml</artifactId>
-    <version>0.11.1</version>
+    <version>0.11.2</version>
 </dependency>
 ```
 
