@@ -34,14 +34,27 @@ public interface PathParameter<T> {
     /**
      * Creates a spacer that matches a literal path segment.
      * Used for fixed path components like "/api" or "/users".
+     * <p>
+     * Spacers extend the route's registered path, allowing multiple routes
+     * with different trailing spacers to coexist (e.g., /api/foo/{id}/edit vs /api/foo/{id}/delete).
      *
      * @param text the expected literal value
      * @return parser that succeeds only if value matches exactly
      */
     static PathParameter<String> spacer(String text) {
-        return value -> text.equals(value)
-                        ? Result.success(value)
-                        : new PathMismatch(text, value).result();
+        return new Spacer(text);
+    }
+
+    /**
+     * Spacer implementation that tracks the literal text for path registration.
+     */
+    record Spacer(String text) implements PathParameter<String> {
+        @Override
+        public Result<String> parse(String value) {
+            return text.equals(value)
+                   ? Result.success(value)
+                   : new PathMismatch(text, value).result();
+        }
     }
 
     /**
