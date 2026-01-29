@@ -125,14 +125,23 @@ public interface PathParameter<T> {
      * Accepts "true"/"false" and "yes"/"no" (case-insensitive).
      */
     static PathParameter<Boolean> aBoolean() {
-        return value -> {
-            if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("yes")) {
-                return Result.success(true);
-            } else if (value.equalsIgnoreCase("false") || value.equalsIgnoreCase("no")) {
-                return Result.success(false);
-            }
-            return new InvalidParameter("Invalid boolean value: " + value + " (expected true/false or yes/no)").result();
-        };
+        return PathParameter::parseBooleanValue;
+    }
+
+    private static Result<Boolean> parseBooleanValue(String value) {
+        return isTrueValue(value)
+               ? Result.success(true)
+               : isFalseValue(value)
+                 ? Result.success(false)
+                 : new InvalidParameter("Invalid boolean value: " + value + " (expected true/false or yes/no)").result();
+    }
+
+    private static boolean isTrueValue(String value) {
+        return value.equalsIgnoreCase("true") || value.equalsIgnoreCase("yes");
+    }
+
+    private static boolean isFalseValue(String value) {
+        return value.equalsIgnoreCase("false") || value.equalsIgnoreCase("no");
     }
 
     /**

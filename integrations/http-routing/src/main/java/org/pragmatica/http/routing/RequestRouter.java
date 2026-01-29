@@ -3,6 +3,7 @@ package org.pragmatica.http.routing;
 import org.pragmatica.lang.Option;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,55 +71,66 @@ public final class RequestRouter {
         if (candidates.size() == 1) {
             return Option.some(candidates.getFirst());
         }
-        // Multiple routes - find the one whose spacers match the input path
-        // First try routes with spacers (more specific), then fallback to routes without spacers
-        Route<?> fallback = null;
-        for (var route : candidates) {
-            if (route.spacers()
-                     .isEmpty()) {
-                fallback = route;
-            } else if (routeMatchesPath(route, inputPath)) {
-                return Option.some(route);
-            }
-        }
-        // No spacer match - return fallback (route without spacers) or first candidate
-        return Option.some(fallback != null
-                           ? fallback
-                           : candidates.getFirst());
+        // First try routes with spacers (more specific), then fallback
+        var spacerMatch = findMatchingSpacerRoute(candidates, inputPath);
+        return spacerMatch.isPresent()
+               ? spacerMatch
+               : findFallbackRoute(candidates);
+    }
+
+    private Option<Route<?>> findMatchingSpacerRoute(List<Route<?>> candidates, String inputPath) {
+        return option(candidates.stream()
+                                .filter(route -> !route.spacers()
+                                                       .isEmpty())
+                                .filter(route -> routeMatchesPath(route, inputPath))
+                                .findFirst()
+                                .orElse(null));
+    }
+
+    private Option<Route<?>> findFallbackRoute(List<Route<?>> candidates) {
+        return option(candidates.stream()
+                                .filter(route -> route.spacers()
+                                                      .isEmpty())
+                                .findFirst()
+                                .orElse(candidates.getFirst()));
     }
 
     /**
      * Check if a route matches the input path by verifying all spacers are present.
      */
     private boolean routeMatchesPath(Route<?> route, String inputPath) {
-        // Extract path elements after the route's base path
         var basePath = route.path();
         if (inputPath.length() <= basePath.length()) {
             return route.spacers()
                         .isEmpty();
         }
+        var pathElements = extractPathElements(inputPath, basePath);
+        return allSpacersPresent(route.spacers(), pathElements);
+    }
+
+    private static String[] extractPathElements(String inputPath, String basePath) {
         var remainder = inputPath.substring(basePath.length());
-        if (remainder.startsWith("/")) {
-            remainder = remainder.substring(1);
-        }
-        var pathElements = remainder.split("/");
-        // Check if all spacers are present in the path elements
-        for (var spacer : route.spacers()) {
-            boolean found = false;
-            for (var element : pathElements) {
-                if (element.equals(spacer)) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                return false;
-            }
-        }
-        return true;
+        return remainder.startsWith("/")
+               ? remainder.substring(1)
+                          .split("/")
+               : remainder.split("/");
+    }
+
+    private static boolean allSpacersPresent(List<String> spacers, String[] pathElements) {
+        return spacers.stream()
+                      .allMatch(spacer -> Arrays.stream(pathElements)
+                                                .anyMatch(spacer::equals));
     }
 
     private boolean isSameOrStartOfPath(String inputPath, String routePath) {
-        return ( inputPath.length() == routePath.length() && inputPath.equals(routePath)) || (inputPath.length() > routePath.length() && inputPath.charAt(routePath.length() - 1) == '/');
+        return isExactMatch(inputPath, routePath) || isPrefixMatch(inputPath, routePath);
+    }
+
+    private static boolean isExactMatch(String inputPath, String routePath) {
+        return inputPath.length() == routePath.length() && inputPath.equals(routePath);
+    }
+
+    private static boolean isPrefixMatch(String inputPath, String routePath) {
+        return inputPath.length() > routePath.length() && inputPath.charAt(routePath.length() - 1) == '/';
     }
 }
