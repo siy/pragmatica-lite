@@ -20,6 +20,7 @@ public interface RequestContext {
     Result<String> NOT_FOUND = HttpStatus.NOT_FOUND.with("Unknown request path")
                                         .result();
     Route<?> route();
+    String requestPath();
     String requestId();
     ByteBuf body();
     String bodyAsString();

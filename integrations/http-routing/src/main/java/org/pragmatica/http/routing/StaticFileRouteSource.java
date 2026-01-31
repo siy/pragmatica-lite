@@ -3,6 +3,7 @@ package org.pragmatica.http.routing;
 import org.pragmatica.lang.Cause;
 import org.pragmatica.lang.Promise;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -87,11 +88,10 @@ public interface StaticFileRouteSource extends RouteSource {
 
     private static Handler<byte[]> createHandler(String urlPrefix, String classpathPrefix) {
         return ctx -> {
-            var requestPath = ctx.route()
-                                 .path();
+            var requestPath = ctx.requestPath();
             var relativePath = extractRelativePath(requestPath, urlPrefix);
             return validatePath(relativePath)
-            .fold(cause -> cause.promise(), validPath -> loadResource(classpathPrefix, validPath, ctx));
+            .fold(Cause::promise, validPath -> loadResource(classpathPrefix, validPath, ctx));
         };
     }
 
@@ -119,7 +119,13 @@ public interface StaticFileRouteSource extends RouteSource {
                 contentType.headerText());
         ctx.responseHeaders()
            .set("Cache-Control", "no-cache");
-        return Promise.lift(StaticFileError.ReadFailed::new, () -> readResource(resourcePath));
+        return Promise.lift(StaticFileRouteSource::mapException, () -> readResource(resourcePath));
+    }
+
+    private static StaticFileError mapException(Throwable ex) {
+        return ex instanceof FileNotFoundException
+               ? StaticFileError.NOT_FOUND
+               : new StaticFileError.ReadFailed(ex);
     }
 
     private static String resolveResourcePath(String classpathPrefix, String relativePath) {
@@ -134,7 +140,7 @@ public interface StaticFileRouteSource extends RouteSource {
     private static byte[] readResource(String resourcePath) throws IOException {
         try (InputStream is = StaticFileRouteSource.class.getResourceAsStream(resourcePath)) {
             if (is == null) {
-                throw new IOException("Resource not found: " + resourcePath);
+                throw new FileNotFoundException("Resource not found: " + resourcePath);
             }
             return is.readAllBytes();
         }
@@ -168,6 +174,7 @@ public interface StaticFileRouteSource extends RouteSource {
         }
 
         StaticFileError DIRECTORY_TRAVERSAL = General.DIRECTORY_TRAVERSAL;
+        StaticFileError NOT_FOUND = General.NOT_FOUND;
 
         record ReadFailed(Throwable cause) implements StaticFileError {
             @Override

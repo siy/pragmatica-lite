@@ -131,6 +131,6 @@ public final class RequestRouter {
     }
 
     private static boolean isPrefixMatch(String inputPath, String routePath) {
-        return inputPath.length() > routePath.length() && inputPath.charAt(routePath.length() - 1) == '/';
+        return inputPath.length() > routePath.length() && inputPath.startsWith(routePath) && inputPath.charAt(routePath.length() - 1) == '/';
     }
 }

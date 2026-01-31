@@ -57,6 +57,11 @@ public final class RequestContextImpl implements RequestContext {
     }
 
     @Override
+    public String requestPath() {
+        return PathUtils.normalize(request.uri());
+    }
+
+    @Override
     public String requestId() {
         return requestId;
     }
