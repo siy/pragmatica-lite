@@ -57,6 +57,11 @@ public final class RequestContextImpl implements RequestContext {
     }
 
     @Override
+    public String requestPath() {
+        return PathUtils.normalize(request.uri());
+    }
+
+    @Override
     public String requestId() {
         return requestId;
     }
@@ -97,12 +102,23 @@ public final class RequestContextImpl implements RequestContext {
     }
 
     private List<String> initPathParams() {
-        var elements = PathUtils.normalize(request.uri())
-                                .substring(route.path()
-                                                .length())
-                                .split("/", PATH_PARAM_LIMIT);
-        return List.of(elements)
-                   .subList(0, elements.length - 1);
+        var remainder = PathUtils.normalize(request.uri())
+                                 .substring(route.path()
+                                                 .length());
+        // Strip leading slash before splitting
+        if (remainder.startsWith("/")) {
+            remainder = remainder.substring(1);
+        }
+        if (remainder.isEmpty()) {
+            return List.of();
+        }
+        var elements = remainder.split("/", PATH_PARAM_LIMIT);
+        // Remove trailing empty element if path ends with /
+        if (elements[elements.length - 1].isEmpty()) {
+            return List.of(elements)
+                       .subList(0, elements.length - 1);
+        }
+        return List.of(elements);
     }
 
     private Map<String, List<String>> initQueryParams() {

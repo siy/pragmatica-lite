@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.2] - 2026-01-27
+
+### Added
+- **Spacer-based route disambiguation** in HTTP routing:
+  - `PathParameter.spacer(String)` creates literal path segment matchers
+  - Routes with same base path but different spacers can coexist (e.g., `/users/{id}/edit` vs `/users/{id}/delete`)
+  - `Route.spacers()` returns list of literal segments for route matching
+  - `RequestRouter` selects routes by matching spacers, with fallback to routes without spacers
+
+### Changed
+- **jbct-maven-plugin** updated to 0.5.0
+
+### Fixed
+- **Path parameter parsing edge cases** in `RequestContextImpl`:
+  - Properly handles paths with/without leading slashes after base path
+  - Correctly handles empty remainders and trailing slashes
+
 ## [0.11.1] - 2026-01-26
 
 ### Security

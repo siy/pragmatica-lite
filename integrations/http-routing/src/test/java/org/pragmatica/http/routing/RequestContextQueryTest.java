@@ -35,6 +35,11 @@ class RequestContextQueryTest {
         }
 
         @Override
+        public String requestPath() {
+            return "/test/";
+        }
+
+        @Override
         public String requestId() {
             return "test-request-id";
         }

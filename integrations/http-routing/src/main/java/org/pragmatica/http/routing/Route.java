@@ -6,6 +6,8 @@ import org.pragmatica.lang.Promise;
 import org.pragmatica.lang.Result;
 import org.pragmatica.lang.type.TypeToken;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -59,6 +61,15 @@ public interface Route<T> extends RouteSource {
 
     ContentType contentType();
 
+    /**
+     * Returns the spacer patterns for this route.
+     * Spacers are literal path segments that must appear in the URL.
+     * Used for distinguishing routes with the same base path but different trailing segments.
+     */
+    default List<String> spacers() {
+        return List.of();
+    }
+
     @Override
     default Stream<Route<?>> routes() {
         return Stream.of(this);
@@ -68,22 +79,48 @@ public interface Route<T> extends RouteSource {
     RouteSource withPrefix(String prefix);
 
     static <T> Route<T> route(HttpMethod method, String path, Handler<T> handler, ContentType contentType) {
-        record route<T>(HttpMethod method, String path, Handler<T> handler, ContentType contentType) implements Route<T> {
+        return route(method, path, handler, contentType, List.of());
+    }
+
+    static <T> Route<T> route(HttpMethod method,
+                              String path,
+                              Handler<T> handler,
+                              ContentType contentType,
+                              List<String> spacers) {
+        record route<T>(HttpMethod method,
+                        String path,
+                        Handler<T> handler,
+                        ContentType contentType,
+                        List<String> spacers) implements Route<T> {
             @Override
             public RouteSource withPrefix(String prefix) {
-                return new route<>(method, PathUtils.normalize(prefix + path), handler, contentType);
+                return new route<>(method, PathUtils.normalize(prefix + path), handler, contentType, spacers);
             }
 
             @Override
             public String toString() {
-                return "Route: " + method + " " + path + ", " + contentType;
+                var spacerStr = spacers.isEmpty()
+                                ? ""
+                                : " [spacers: " + String.join(", ", spacers) + "]";
+                return "Route: " + method + " " + path + spacerStr + ", " + contentType;
             }
         }
-        return new route<>(method, PathUtils.normalize(path), handler, contentType);
+        return new route<>(method, PathUtils.normalize(path), handler, contentType, spacers);
     }
 
     static Subroutes in(String path) {
         return () -> path;
+    }
+
+    /**
+     * Creates a route source for serving static files from the classpath.
+     *
+     * @param urlPrefix       the URL prefix to match (e.g., "/static")
+     * @param classpathPrefix the classpath prefix where files are located (e.g., "/web")
+     * @return a route source that serves static files
+     */
+    static RouteSource staticFiles(String urlPrefix, String classpathPrefix) {
+        return StaticFileRouteSource.staticFiles(urlPrefix, classpathPrefix);
     }
 
     interface Subroutes {
@@ -750,28 +787,35 @@ public interface Route<T> extends RouteSource {
     // ===================================================================================
     // Implementation
     // ===================================================================================
-    record ParameterBuilderImpl<R>(HttpMethod method, String path) implements ParameterBuilder<R> {
-        @Override
-        public ContentTypeBuilder<R> to(Handler<R> handler) {
-            return contentType -> route(method, path, handler, contentType);
+    record ParameterBuilderImpl<R>(HttpMethod method, String path, List<String> spacers) implements ParameterBuilder<R> {
+        ParameterBuilderImpl(HttpMethod method, String path) {
+            this(method, path, List.of());
         }
 
-        // Path parameters
+        @Override
+        public ContentTypeBuilder<R> to(Handler<R> handler) {
+            return contentType -> route(method, path, handler, contentType, spacers);
+        }
+
+        // Path parameters - collect spacers from path parameter definitions
         @Override
         public <P1> PathBuilder1<R, P1> withPath(PathParameter<P1> p1) {
-            return new PathBuilder1Impl<>(this, p1);
+            var collected = collectSpacers(p1);
+            return new PathBuilder1Impl<>(new ParameterBuilderImpl<>(method, path, collected), p1);
         }
 
         @Override
         public <P1, P2> PathBuilder2<R, P1, P2> withPath(PathParameter<P1> p1, PathParameter<P2> p2) {
-            return new PathBuilder2Impl<>(this, p1, p2);
+            var collected = collectSpacers(p1, p2);
+            return new PathBuilder2Impl<>(new ParameterBuilderImpl<>(method, path, collected), p1, p2);
         }
 
         @Override
         public <P1, P2, P3> PathBuilder3<R, P1, P2, P3> withPath(PathParameter<P1> p1,
                                                                  PathParameter<P2> p2,
                                                                  PathParameter<P3> p3) {
-            return new PathBuilder3Impl<>(this, p1, p2, p3);
+            var collected = collectSpacers(p1, p2, p3);
+            return new PathBuilder3Impl<>(new ParameterBuilderImpl<>(method, path, collected), p1, p2, p3);
         }
 
         @Override
@@ -779,7 +823,8 @@ public interface Route<T> extends RouteSource {
                                                                          PathParameter<P2> p2,
                                                                          PathParameter<P3> p3,
                                                                          PathParameter<P4> p4) {
-            return new PathBuilder4Impl<>(this, p1, p2, p3, p4);
+            var collected = collectSpacers(p1, p2, p3, p4);
+            return new PathBuilder4Impl<>(new ParameterBuilderImpl<>(method, path, collected), p1, p2, p3, p4);
         }
 
         @Override
@@ -788,7 +833,20 @@ public interface Route<T> extends RouteSource {
                                                                                  PathParameter<P3> p3,
                                                                                  PathParameter<P4> p4,
                                                                                  PathParameter<P5> p5) {
-            return new PathBuilder5Impl<>(this, p1, p2, p3, p4, p5);
+            var collected = collectSpacers(p1, p2, p3, p4, p5);
+            return new PathBuilder5Impl<>(new ParameterBuilderImpl<>(method, path, collected), p1, p2, p3, p4, p5);
+        }
+
+        // Helper to collect spacer text from path parameters
+        @SafeVarargs
+        private static List<String> collectSpacers(PathParameter<?>... params) {
+            var spacers = new ArrayList<String>();
+            for (var param : params) {
+                if (param instanceof PathParameter.Spacer s) {
+                    spacers.add(s.text());
+                }
+            }
+            return List.copyOf(spacers);
         }
 
         // Body only
