@@ -83,7 +83,7 @@ public class RabiaEngine<C extends Command> {
                                                                     TimeUnit.MILLISECONDS,
                                                                     new LinkedBlockingQueue<>(),
                                                                     new ThreadPoolExecutor.DiscardPolicy());
-    private final Map<CorrelationId, Batch<C>> pendingBatches = new ConcurrentHashMap<>();
+    private final Map<BatchId, Batch<C>> pendingBatches = new ConcurrentHashMap<>();
     private final Map<NodeId, SavedState<C>> syncResponses = new ConcurrentHashMap<>();
     private final RabiaPersistence<C> persistence = RabiaPersistence.inMemory();
     @SuppressWarnings("rawtypes")
@@ -153,6 +153,7 @@ public class RabiaEngine<C extends Command> {
 
     private void clusterConnected() {
         log.info("Node {}: quorum connected. Starting synchronization attempts", self);
+        syncResponses.clear();
         var task = SharedScheduler.schedule(this::synchronize,
                                             config.syncRetryInterval()
                                                   .randomize(SCALE));
@@ -193,7 +194,8 @@ public class RabiaEngine<C extends Command> {
     public <R> Promise<List<R>> apply(List<C> commands) {
         var pendingAnswer = Promise.<List<R>>promise();
         return submitCommands(commands,
-                              batch -> correlationMap.put(batch.correlationId(),
+                              batch -> correlationMap.put(batch.correlationIds()
+                                                               .getFirst(),
                                                           pendingAnswer)).async()
                              .flatMap(_ -> pendingAnswer);
     }
@@ -205,6 +207,14 @@ public class RabiaEngine<C extends Command> {
     }
 
     private Result<Batch<C>> submitCommands(List<C> commands, Consumer<Batch<C>> onBatchPrepared) {
+        if (log.isDebugEnabled()) {
+            var caller = Thread.currentThread()
+                               .getStackTrace();
+            var callerInfo = caller.length > 3
+                             ? caller[3].toString()
+                             : "unknown";
+            log.debug("Node {} submitting {} command(s): {} [caller: {}]", self, commands.size(), commands, callerInfo);
+        }
         return validateSubmission(commands).map(_ -> prepareBatch(commands))
                                  .onSuccess(batch -> executor.execute(() -> registerBatch(batch, onBatchPrepared)))
                                  .onSuccess(batch -> executor.execute(() -> broadcastBatch(batch)));
@@ -229,7 +239,7 @@ public class RabiaEngine<C extends Command> {
     }
 
     private void registerBatch(Batch<C> batch, Consumer<Batch<C>> onBatchPrepared) {
-        pendingBatches.put(batch.correlationId(), batch);
+        pendingBatches.put(batch.id(), batch);
         metrics.updatePendingBatches(self, pendingBatches.size());
         onBatchPrepared.accept(batch);
         triggerPhaseIfNeeded();
@@ -290,9 +300,20 @@ public class RabiaEngine<C extends Command> {
     @MessageReceiver
     public void handleNewBatch(NewBatch<?> newBatch) {
         executor.execute(() -> {
-                             pendingBatches.put(newBatch.batch()
-                                                        .correlationId(),
-                                                (Batch<C>) newBatch.batch());
+                             var incoming = (Batch<C>) newBatch.batch();
+                             var existing = pendingBatches.get(incoming.id());
+                             if (existing != null) {
+                                 if (existing.commands()
+                                             .equals(incoming.commands())) {
+                                     // Same content - merge correlationIds
+        pendingBatches.put(incoming.id(), existing.mergeWith(incoming));
+                                 } else {
+                                     // Hash collision (should never happen) - log and ignore
+        log.error("BatchId collision: {} has different content", incoming.id());
+                                 }
+                             } else {
+                                 pendingBatches.put(incoming.id(), incoming);
+                             }
                              if (isInPhase.get() && active.get()) {
                                  // Already in phase - broadcast our proposal for this batch if not already proposed
         broadcastOwnProposalIfNeeded();
@@ -431,7 +452,7 @@ public class RabiaEngine<C extends Command> {
         currentPhase.set(state.lastCommittedPhase());
         lastCommittedPhase.set(state.lastCommittedPhase());
         state.pendingBatches()
-             .forEach(batch -> pendingBatches.put(batch.correlationId(),
+             .forEach(batch -> pendingBatches.put(batch.id(),
                                                   batch));
         persistence.save(stateMachine, currentPhase.get(), pendingBatches.values());
         log.info("Node {} restored state from persistence. Current phase {}", self, currentPhase.get());
@@ -475,8 +496,12 @@ public class RabiaEngine<C extends Command> {
 
     /// Calculates quorum size for sync based on currently connected peers.
     /// Unlike consensus quorum (fixed cluster size), sync quorum adapts to actual connectivity.
+    /// Uses minimum of connected count and expected cluster size for robustness.
     private int syncQuorumSize() {
-        return network.connectedNodeCount() / 2 + 1;
+        var connectedCount = network.connectedNodeCount();
+        var clusterSize = topologyManager.clusterSize();
+        var effectiveSize = Math.min(connectedCount, clusterSize);
+        return effectiveSize / 2 + 1;
     }
 
     /// Cleans up old phase data to prevent memory leaks.
@@ -510,10 +535,13 @@ public class RabiaEngine<C extends Command> {
             return;
         }
         if (isFarFuturePhase(propose.phase(), currentPhaseValue)) {
-            log.warn("Node {} rejecting proposal for far-future phase {} (current: {})",
+            log.warn("Node {} behind by {} phases (current: {}, received: {}). Triggering resync.",
                      self,
-                     propose.phase(),
-                     currentPhaseValue);
+                     propose.phase()
+                            .value() - currentPhaseValue.value(),
+                     currentPhaseValue,
+                     propose.phase());
+            triggerResync();
             return;
         }
         var phaseData = getOrCreatePhaseData(propose.phase());
@@ -526,6 +554,12 @@ public class RabiaEngine<C extends Command> {
 
     private boolean isFarFuturePhase(Phase proposalPhase, Phase current) {
         return proposalPhase.value() - current.value() > MAX_PHASE_AHEAD;
+    }
+
+    /// Triggers a resync when the node detects it's significantly behind.
+    private void triggerResync() {
+        active.set(false);
+        clusterConnected();
     }
 
     private boolean isPastPhase(Phase proposalPhase, Phase current) {
@@ -752,11 +786,14 @@ public class RabiaEngine<C extends Command> {
                                                    .commands());
         lastCommittedPhase.set(phaseData.phase());
         pendingBatches.remove(decision.value()
-                                      .correlationId());
+                                      .id());
         metrics.updatePendingBatches(self, pendingBatches.size());
-        Option.option(correlationMap.remove(decision.value()
-                                                    .correlationId()))
-              .onPresent(promise -> promise.succeed(results));
+        // Resolve ALL promises (not just one) - batch may have multiple correlationIds from consolidation
+        for (var correlationId : decision.value()
+                                         .correlationIds()) {
+            Option.option(correlationMap.remove(correlationId))
+                  .onPresent(promise -> promise.succeed(results));
+        }
     }
 
     /// Handles a decision message from another node.

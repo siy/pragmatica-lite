@@ -181,7 +181,7 @@ class RabiaConsensusIntegrationTest {
             assertThat(outcome).isInstanceOf(Round2Outcome.Decided.class);
             var decision = ((Round2Outcome.Decided<TestCommand>) outcome).decision();
             assertThat(decision.stateValue()).isEqualTo(StateValue.V1);
-            assertThat(decision.value().correlationId()).isEqualTo(batch.correlationId());
+            assertThat(decision.value().id()).isEqualTo(batch.id());
         }
 
         @Test
@@ -257,7 +257,7 @@ class RabiaConsensusIntegrationTest {
             var result1 = phaseData1.findAgreedProposal(2);
             var result2 = phaseData2.findAgreedProposal(2);
 
-            assertThat(result1.correlationId()).isEqualTo(result2.correlationId());
+            assertThat(result1.id()).isEqualTo(result2.id());
         }
 
         @Test

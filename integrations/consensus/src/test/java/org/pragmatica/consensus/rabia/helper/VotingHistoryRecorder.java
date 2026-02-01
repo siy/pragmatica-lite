@@ -57,7 +57,7 @@ public final class VotingHistoryRecorder<C extends Command> {
     private long eventCounter = 0;
 
     public void recordProposal(NodeId node, Batch<C> batch) {
-        events.add(new HistoryEvent.ProposalEvent(eventCounter++, node, batch.correlationId()));
+        events.add(new HistoryEvent.ProposalEvent(eventCounter++, node, batch.correlationIds().getFirst()));
     }
 
     public void recordRound1Vote(NodeId node, Phase phase, StateValue value) {

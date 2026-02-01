@@ -137,27 +137,27 @@ final class PhaseData<C extends Command> {
 
     /// Finds the agreed proposal when a V1 decision is made.
     /// Returns the batch that has the most proposals (quorum support expected),
-    /// with deterministic tiebreaker by correlationId for consistency across nodes.
+    /// with deterministic tiebreaker by BatchId for consistency across nodes.
     Batch<C> findAgreedProposal(int quorumSize) {
         if (proposals.isEmpty()) {
             return emptyBatch();
         }
-        // Group batches by correlationId and count
-        var batchesByCorrelationId = proposals.values()
-                                              .stream()
-                                              .filter(Batch::isNotEmpty)
-                                              .collect(Collectors.groupingBy(Batch::correlationId));
-        // Find the correlationId with most proposals (should have quorum for V1 decision)
-        // Use correlationId as tiebreaker for determinism across nodes
-        return batchesByCorrelationId.entrySet()
-                                     .stream()
-                                     .max(Comparator.<Map.Entry<CorrelationId, List<Batch<C>>>> comparingInt(e -> e.getValue()
-                                                                                                                   .size())
-                                                    .thenComparing(e -> e.getKey()
-                                                                         .id()))
-                                     .map(e -> e.getValue()
-                                                .getFirst())
-                                     .orElse(emptyBatch());
+        // Group batches by BatchId and count
+        var batchesById = proposals.values()
+                                   .stream()
+                                   .filter(Batch::isNotEmpty)
+                                   .collect(Collectors.groupingBy(Batch::id));
+        // Find the BatchId with most proposals (should have quorum for V1 decision)
+        // Use BatchId as tiebreaker for determinism across nodes
+        return batchesById.entrySet()
+                          .stream()
+                          .max(Comparator.<Map.Entry<BatchId, List<Batch<C>>>> comparingInt(e -> e.getValue()
+                                                                                                  .size())
+                                         .thenComparing(e -> e.getKey()
+                                                              .id()))
+                          .map(e -> e.getValue()
+                                     .getFirst())
+                          .orElse(emptyBatch());
     }
 
     /// Evaluates the initial round 1 vote based on collected proposals.
@@ -165,16 +165,16 @@ final class PhaseData<C extends Command> {
     ///
     /// This should only be called after hasQuorumProposals() returns true.
     VoteRound1 evaluateInitialVote(NodeId self, int quorumSize) {
-        // Count proposals by correlationId to find if any batch has quorum support
-        var countByCorrelationId = proposals.values()
-                                            .stream()
-                                            .filter(Batch::isNotEmpty)
-                                            .collect(Collectors.groupingBy(Batch::correlationId,
-                                                                           Collectors.counting()));
-        // Check if any correlationId has quorum support
-        boolean hasQuorumAgreement = countByCorrelationId.values()
-                                                         .stream()
-                                                         .anyMatch(count -> count >= quorumSize);
+        // Count proposals by BatchId to find if any batch has quorum support
+        var countByBatchId = proposals.values()
+                                      .stream()
+                                      .filter(Batch::isNotEmpty)
+                                      .collect(Collectors.groupingBy(Batch::id,
+                                                                     Collectors.counting()));
+        // Check if any BatchId has quorum support
+        boolean hasQuorumAgreement = countByBatchId.values()
+                                                   .stream()
+                                                   .anyMatch(count -> count >= quorumSize);
         var stateValue = hasQuorumAgreement
                          ? StateValue.V1
                          : StateValue.V0;

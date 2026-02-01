@@ -332,11 +332,11 @@ class PhaseDataTest {
 
             var batch = phaseData.findAgreedProposal(QUORUM_SIZE);
 
-            assertThat(batch.correlationId()).isEqualTo(winningBatch.correlationId());
+            assertThat(batch.id()).isEqualTo(winningBatch.id());
         }
 
         @Test
-        void uses_correlationId_as_tiebreaker() {
+        void uses_batchId_as_tiebreaker() {
             var batch1 = createBatch("batch1");
             var batch2 = createBatch("batch2");
             phaseData.registerProposal(NODE_1, batch1);
@@ -346,7 +346,7 @@ class PhaseDataTest {
 
             var batch = phaseData.findAgreedProposal(QUORUM_SIZE);
 
-            // Should choose deterministically based on correlationId
+            // Should choose deterministically based on BatchId
             assertThat(batch.isNotEmpty()).isTrue();
         }
 
@@ -359,7 +359,7 @@ class PhaseDataTest {
 
             var batch = phaseData.findAgreedProposal(QUORUM_SIZE);
 
-            assertThat(batch.correlationId()).isEqualTo(realBatch.correlationId());
+            assertThat(batch.id()).isEqualTo(realBatch.id());
         }
 
         @Test
