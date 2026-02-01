@@ -8,7 +8,7 @@ Promise-based reactive database access with typed error handling.
 <dependency>
     <groupId>org.pragmatica-lite</groupId>
     <artifactId>r2dbc</artifactId>
-    <version>0.11.2</version>
+    <version>0.11.3</version>
 </dependency>
 ```
 
