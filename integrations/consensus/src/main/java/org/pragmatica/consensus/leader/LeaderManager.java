@@ -166,7 +166,8 @@ public interface LeaderManager {
                              AtomicReference<Option<NodeId>> currentLeader,
                              AtomicReference<List<NodeId>> currentTopology,
                              AtomicBoolean proposalInFlight,
-                             AtomicBoolean needsReactivation) implements LeaderManager {
+                             AtomicBoolean needsReactivation,
+                             AtomicBoolean hasEverHadLeader) implements LeaderManager {
             @Override
             public Option<NodeId> leader() {
                 return currentLeader.get();
@@ -185,6 +186,8 @@ public interface LeaderManager {
                           self,
                           leader,
                           needsReactivation.get());
+                // Mark that we've successfully elected a leader (used for re-election logic)
+                hasEverHadLeader.set(true);
                 // Clear in-flight flag - proposal has committed through consensus
                 proposalInFlight.set(false);
                 var oldLeader = currentLeader.get();
@@ -223,34 +226,44 @@ public interface LeaderManager {
                                                   LOG.debug("Skipping election trigger: topology is empty");
                                                   return;
                                               }
-                                              // Deterministic candidate selection: use expectedCluster filtered by live topology.
-                // This ensures we only consider nodes that are BOTH expected AND currently connected.
-                // After a node dies, it's removed from topology but remains in expectedCluster.
-                // Without filtering, dead nodes would still be candidates, blocking re-election.
-                var candidatePool = expectedCluster.isEmpty()
-                                    ? topology
-                                    : expectedCluster.stream()
-                                                     .filter(topology::contains)
-                                                     .toList();
-                                              // If all expected nodes are down, fall back to topology
-                if (candidatePool.isEmpty()) {
+                                              // Deterministic candidate selection:
+                // - Initial election: use expectedCluster UNFILTERED to ensure all nodes agree
+                //   (different nodes may have different topology views during startup)
+                // - Re-election: filter by topology to exclude known dead nodes
+                var isInitialElection = !hasEverHadLeader.get();
+                                              List<NodeId> candidatePool;
+                                              if (expectedCluster.isEmpty()) {
                                                   candidatePool = topology;
+                                              } else if (isInitialElection) {
+                                                  // Initial election: use expectedCluster directly for determinism
+                // All nodes MUST agree on the same candidate regardless of local topology view
+                candidatePool = expectedCluster;
+                                              } else {
+                                                  // Re-election: filter out dead nodes
+                candidatePool = expectedCluster.stream()
+                                               .filter(topology::contains)
+                                               .toList();
+                                                  if (candidatePool.isEmpty()) {
+                                                      candidatePool = topology;
+                                                  }
                                               }
                                               var candidate = candidatePool.stream()
                                                                            .min(Comparator.naturalOrder())
                                                                            .orElse(self);
                                               if (!self.equals(candidate)) {
-                                                  LOG.debug("Skipping election trigger: self={} is not min node {} in candidatePool {}",
+                                                  LOG.debug("Skipping election trigger: self={} is not min node {} in candidatePool {} (initial={})",
                                                             self,
                                                             candidate,
-                                                            candidatePool);
+                                                            candidatePool,
+                                                            isInitialElection);
                                                   return;
                                               }
-                                              LOG.debug("Submitting leader proposal: self={} (min node in {})",
+                                              LOG.debug("Submitting leader proposal: self={} (min node in {}, initial={})",
                                                         self,
                                                         expectedCluster.isEmpty()
                                                         ? "topology"
-                                                        : "expectedCluster");
+                                                        : "expectedCluster",
+                                                        isInitialElection);
                                               // DON'T clear currentLeader here - let consensus decide.
                 // The leader will be updated via onLeaderCommitted().
                 submitProposal(handler, candidate);
@@ -461,6 +474,7 @@ public interface LeaderManager {
                                  new AtomicLong(0),
                                  new AtomicReference<>(Option.none()),
                                  new AtomicReference<>(List.of()),
+                                 new AtomicBoolean(false),
                                  new AtomicBoolean(false),
                                  new AtomicBoolean(false));
     }
