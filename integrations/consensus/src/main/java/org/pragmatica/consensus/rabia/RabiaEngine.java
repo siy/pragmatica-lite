@@ -785,12 +785,18 @@ public class RabiaEngine<C extends Command> {
         var results = stateMachine.process(decision.value()
                                                    .commands());
         lastCommittedPhase.set(phaseData.phase());
-        pendingBatches.remove(decision.value()
-                                      .id());
+        // Get the batch from pendingBatches BEFORE removing - this has all merged correlationIds.
+        // The decision.value() may have partial IDs if the proposer hadn't received all batches yet.
+        var localBatch = pendingBatches.remove(decision.value()
+                                                       .id());
         metrics.updatePendingBatches(self, pendingBatches.size());
-        // Resolve ALL promises (not just one) - batch may have multiple correlationIds from consolidation
-        for (var correlationId : decision.value()
-                                         .correlationIds()) {
+        // Use correlationIds from our local pendingBatches (fully merged) rather than
+        // from decision.value() (which may have partial IDs from early proposals)
+        var correlationIds = localBatch != null
+                             ? localBatch.correlationIds()
+                             : decision.value()
+                                       .correlationIds();
+        for (var correlationId : correlationIds) {
             Option.option(correlationMap.remove(correlationId))
                   .onPresent(promise -> promise.succeed(results));
         }
