@@ -225,9 +225,9 @@ public class NettyClusterNetwork implements ClusterNetwork {
         Option.option(channelToNodeId.remove(channel))
               .filter(nodeId -> peerLinks.remove(nodeId, channel))
               .onPresent(nodeId -> {
-                  processViewChange(REMOVE, nodeId);
-                  log.debug("Node {} disconnected", nodeId);
-              });
+                             processViewChange(REMOVE, nodeId);
+                             log.info("Node {} disconnected, triggering topology change", nodeId);
+                         });
     }
 
     @Override
@@ -387,6 +387,7 @@ public class NettyClusterNetwork implements ClusterNetwork {
                 yield TopologyChangeNotification.nodeDown(peerId);
             }
         };
+        log.info("Routing topology change: {}", viewChange);
         router.route(viewChange);
     }
 

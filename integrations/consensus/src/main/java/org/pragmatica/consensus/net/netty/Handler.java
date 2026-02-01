@@ -53,9 +53,9 @@ public class Handler extends SimpleChannelInboundHandler<Message.Wired> {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        log.debug("Channel deactivated: {}",
-                  ctx.channel()
-                     .remoteAddress());
+        log.info("Channel deactivated: {}",
+                 ctx.channel()
+                    .remoteAddress());
         peerDisconnected.accept(ctx.channel());
     }
 
