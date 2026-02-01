@@ -95,10 +95,10 @@ public interface LeaderManager {
 
     /// Called when leader election is committed through consensus.
     /// Updates local state and sends async notification.
+    /// ViewSequence is tracked internally - no need to pass from external source.
     ///
     /// @param leader the committed leader node ID
-    /// @param viewSequence the view sequence number for consistency checking
-    void onLeaderCommitted(NodeId leader, long viewSequence);
+    void onLeaderCommitted(NodeId leader);
 
     /// Trigger leader election manually. Call this after consensus is ready.
     /// In consensus mode, submits a proposal for the tracked candidate.
@@ -180,18 +180,11 @@ public interface LeaderManager {
             }
 
             @Override
-            public void onLeaderCommitted(NodeId leader, long committedViewSequence) {
-                LOG.debug("onLeaderCommitted: self={}, leader={}, viewSequence={}, currentViewSequence={}, needsReactivation={}",
+            public void onLeaderCommitted(NodeId leader) {
+                LOG.debug("onLeaderCommitted: self={}, leader={}, needsReactivation={}",
                           self,
                           leader,
-                          committedViewSequence,
-                          viewSequence.get(),
                           needsReactivation.get());
-                // Reject stale proposals
-                if (committedViewSequence < viewSequence.get()) {
-                    LOG.debug("Rejecting stale leader proposal: {} < {}", committedViewSequence, viewSequence.get());
-                    return;
-                }
                 // Clear in-flight flag - proposal has committed through consensus
                 proposalInFlight.set(false);
                 var oldLeader = currentLeader.get();
@@ -199,7 +192,8 @@ public interface LeaderManager {
                 // Check if we need reactivation (after quorum flap where stop() was called)
                 var forceNotify = needsReactivation.compareAndSet(true, false);
                 if (currentLeader.compareAndSet(oldLeader, newLeader)) {
-                    viewSequence.set(committedViewSequence);
+                    // Increment viewSequence on each commit to track local state progression
+                    viewSequence.incrementAndGet();
                     if (forceNotify || !newLeader.equals(oldLeader)) {
                         LOG.debug("Leader committed: {} (forceNotify={}, changed={}), notifying",
                                   newLeader,
@@ -287,7 +281,17 @@ public interface LeaderManager {
                     // Leader was removed while we still have quorum - trigger re-election
                     LOG.debug("Leader {} was removed, triggering re-election", removedNode);
                     currentLeader.set(Option.none());
-                    proposalHandler.onPresent(_ -> triggerElection());
+                    proposalHandler.fold(() -> {
+                                             // Local mode: immediate election
+                    tryElect(nodeRemoved.topology()
+                                        .getFirst());
+                                             return Unit.unit();
+                                         },
+                                         _ -> {
+                                             // Consensus mode: submit proposal
+                    triggerElection();
+                                             return Unit.unit();
+                                         });
                 } else {
                     tryElect(nodeRemoved.topology()
                                         .getFirst());
