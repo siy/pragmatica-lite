@@ -322,7 +322,12 @@ public interface LeaderManager {
 
             private void tryElect(NodeId candidate) {
                 if (!active.get()) {
-                    // Not active yet, just track the candidate locally
+                    // In consensus mode, don't pre-cache leader - wait for onLeaderCommitted()
+                    // Pre-caching causes "Leader unchanged" in onLeaderCommitted, skipping notification
+                    if (proposalHandler.isPresent()) {
+                        return;
+                    }
+                    // Local mode only: track the candidate locally
                     var oldLeader = currentLeader.get();
                     var newLeader = Option.some(candidate);
                     currentLeader.compareAndSet(oldLeader, newLeader);
