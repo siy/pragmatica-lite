@@ -29,6 +29,7 @@ import org.pragmatica.lang.utils.SharedScheduler;
 import org.pragmatica.messaging.MessageReceiver;
 import org.pragmatica.messaging.MessageRouter;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -119,7 +120,7 @@ public interface LeaderManager {
     /// Create a leader manager with local election (backward compatible).
     /// Leader is computed locally on view change and notifications are sent immediately.
     static LeaderManager leaderManager(NodeId self, MessageRouter router) {
-        return leaderManager(self, router, Option.none());
+        return leaderManager(self, router, Option.none(), List.of());
     }
 
     /// Create a leader manager with consensus-based election.
@@ -129,7 +130,22 @@ public interface LeaderManager {
     /// @param router message router for notifications
     /// @param proposalHandler handler for submitting proposals through consensus
     static LeaderManager leaderManager(NodeId self, MessageRouter router, LeaderProposalHandler proposalHandler) {
-        return leaderManager(self, router, Option.some(proposalHandler));
+        return leaderManager(self, router, Option.some(proposalHandler), List.of());
+    }
+
+    /// Create a leader manager with consensus-based election and expected cluster membership.
+    /// The expected cluster is used for deterministic leader candidate selection to prevent
+    /// flapping when nodes have different views during startup.
+    ///
+    /// @param self this node's ID
+    /// @param router message router for notifications
+    /// @param proposalHandler handler for submitting proposals through consensus
+    /// @param expectedCluster expected cluster members for deterministic min calculation
+    static LeaderManager leaderManager(NodeId self,
+                                       MessageRouter router,
+                                       LeaderProposalHandler proposalHandler,
+                                       List<NodeId> expectedCluster) {
+        return leaderManager(self, router, Option.some(proposalHandler), expectedCluster);
     }
 
     Logger LOG = LoggerFactory.getLogger(LeaderManager.class);
@@ -139,14 +155,18 @@ public interface LeaderManager {
 
     private static LeaderManager leaderManager(NodeId self,
                                                MessageRouter router,
-                                               Option<LeaderProposalHandler> proposalHandler) {
+                                               Option<LeaderProposalHandler> proposalHandler,
+                                               List<NodeId> expectedCluster) {
         record leaderManager(NodeId self,
                              MessageRouter router,
                              Option<LeaderProposalHandler> proposalHandler,
+                             List<NodeId> expectedCluster,
                              AtomicBoolean active,
                              AtomicLong viewSequence,
                              AtomicReference<Option<NodeId>> currentLeader,
-                             AtomicReference<List<NodeId>> currentTopology) implements LeaderManager {
+                             AtomicReference<List<NodeId>> currentTopology,
+                             AtomicBoolean proposalInFlight,
+                             AtomicBoolean needsReactivation) implements LeaderManager {
             @Override
             public Option<NodeId> leader() {
                 return currentLeader.get();
@@ -161,37 +181,85 @@ public interface LeaderManager {
 
             @Override
             public void onLeaderCommitted(NodeId leader, long committedViewSequence) {
+                LOG.debug("onLeaderCommitted: self={}, leader={}, viewSequence={}, currentViewSequence={}, needsReactivation={}",
+                          self,
+                          leader,
+                          committedViewSequence,
+                          viewSequence.get(),
+                          needsReactivation.get());
                 // Reject stale proposals
                 if (committedViewSequence < viewSequence.get()) {
+                    LOG.debug("Rejecting stale leader proposal: {} < {}", committedViewSequence, viewSequence.get());
                     return;
                 }
+                // Clear in-flight flag - proposal has committed through consensus
+                proposalInFlight.set(false);
                 var oldLeader = currentLeader.get();
                 var newLeader = Option.some(leader);
+                // Check if we need reactivation (after quorum flap where stop() was called)
+                var forceNotify = needsReactivation.compareAndSet(true, false);
                 if (currentLeader.compareAndSet(oldLeader, newLeader)) {
                     viewSequence.set(committedViewSequence);
-                    if (!newLeader.equals(oldLeader)) {
+                    if (forceNotify || !newLeader.equals(oldLeader)) {
+                        LOG.debug("Leader committed: {} (forceNotify={}, changed={}), notifying",
+                                  newLeader,
+                                  forceNotify,
+                                  !newLeader.equals(oldLeader));
                         notifyLeaderChangeAsync();
+                    } else {
+                        LOG.debug("Leader unchanged ({}), skipping notification", newLeader);
                     }
                 }
             }
 
             @Override
             public void triggerElection() {
+                LOG.debug("triggerElection called: self={}, active={}, topology={}, expectedCluster={}",
+                          self,
+                          active.get(),
+                          currentTopology.get(),
+                          expectedCluster);
                 if (!active.get()) {
+                    LOG.debug("triggerElection skipped: not active");
                     return;
                 }
                 proposalHandler.onPresent(handler -> {
                                               var topology = currentTopology.get();
-                                              // Only the first node in topology should submit the proposal
-                // This prevents multiple nodes from submitting when they all call triggerElection
-                if (topology.isEmpty() || !self.equals(topology.getFirst())) {
-                                                  LOG.debug("Skipping election trigger: self={} is not first in topology {}",
-                                                            self,
-                                                            topology);
+                                              if (topology.isEmpty()) {
+                                                  LOG.debug("Skipping election trigger: topology is empty");
                                                   return;
                                               }
-                                              currentLeader.set(Option.none());
-                                              submitProposal(handler, self);
+                                              // Deterministic candidate selection: use expectedCluster filtered by live topology.
+                // This ensures we only consider nodes that are BOTH expected AND currently connected.
+                // After a node dies, it's removed from topology but remains in expectedCluster.
+                // Without filtering, dead nodes would still be candidates, blocking re-election.
+                var candidatePool = expectedCluster.isEmpty()
+                                    ? topology
+                                    : expectedCluster.stream()
+                                                     .filter(topology::contains)
+                                                     .toList();
+                                              // If all expected nodes are down, fall back to topology
+                if (candidatePool.isEmpty()) {
+                                                  candidatePool = topology;
+                                              }
+                                              var candidate = candidatePool.stream()
+                                                                           .min(Comparator.naturalOrder())
+                                                                           .orElse(self);
+                                              if (!self.equals(candidate)) {
+                                                  LOG.debug("Skipping election trigger: self={} is not min node {} in candidatePool {}",
+                                                            self,
+                                                            candidate,
+                                                            candidatePool);
+                                                  return;
+                                              }
+                                              LOG.debug("Submitting leader proposal: self={} (min node in {})",
+                                                        self,
+                                                        expectedCluster.isEmpty()
+                                                        ? "topology"
+                                                        : "expectedCluster");
+                                              // DON'T clear currentLeader here - let consensus decide.
+                // The leader will be updated via onLeaderCommitted().
+                submitProposal(handler, candidate);
                                           });
             }
 
@@ -210,14 +278,46 @@ public interface LeaderManager {
                     return;
                 }
                 currentTopology.set(nodeRemoved.topology());
-                tryElect(nodeRemoved.topology()
-                                    .getFirst());
+                // Check if the removed node was the leader
+                var removedNode = nodeRemoved.nodeId();
+                var leaderRemoved = currentLeader.get()
+                                                 .filter(removedNode::equals)
+                                                 .isPresent();
+                if (leaderRemoved && active.get()) {
+                    // Leader was removed while we still have quorum - trigger re-election
+                    LOG.debug("Leader {} was removed, triggering re-election", removedNode);
+                    currentLeader.set(Option.none());
+                    proposalHandler.onPresent(_ -> triggerElection());
+                } else {
+                    tryElect(nodeRemoved.topology()
+                                        .getFirst());
+                }
             }
 
             @Override
             public void nodeDown(NodeDown nodeDown) {
-                currentLeader.set(Option.none());
-                stop();
+                // If no nodes remain or no quorum, stop
+                if (nodeDown.topology()
+                            .isEmpty() || !active.get()) {
+                    currentLeader.set(Option.none());
+                    stop();
+                    return;
+                }
+                // Node went down but we still have quorum - trigger re-election
+                currentTopology.set(nodeDown.topology());
+                // Check if current leader is the one that went down
+                var downNode = nodeDown.nodeId();
+                var leaderIsDown = currentLeader.get()
+                                                .filter(downNode::equals)
+                                                .isPresent();
+                if (leaderIsDown) {
+                    // Only clear leader if it's the one that went down
+                    // New leader will be set via onLeaderCommitted() after consensus
+                    currentLeader.set(Option.none());
+                }
+                // In consensus mode, trigger election submission if we're the candidate
+                // tryElect is not needed - triggerElection handles everything
+                proposalHandler.onPresent(_ -> triggerElection());
             }
 
             private void tryElect(NodeId candidate) {
@@ -233,21 +333,26 @@ public interface LeaderManager {
                 electLocally(candidate);
                                          return Unit.unit();
                                      },
-                                     handler -> {
-                                         // Consensus mode: DON'T submit here - consensus may not be ready yet.
-                // Just track the candidate. Submission happens via triggerElection()
-                // which is called after consensus is fully synchronized.
-                var oldLeader = currentLeader.get();
-                                         var newLeader = Option.some(candidate);
-                                         currentLeader.compareAndSet(oldLeader, newLeader);
-                                         return Unit.unit();
+                                     _ -> {
+                                         // Consensus mode when active: DON'T update currentLeader here!
+                // The leader will be set via onLeaderCommitted() after consensus.
+                // If we set it here, onLeaderCommitted will see no change and skip notification.
+                // Topology is already tracked via currentTopology for triggerElection().
+                return Unit.unit();
                                      });
             }
 
             private void submitProposal(LeaderProposalHandler handler, NodeId candidate) {
+                // Prevent duplicate submissions while a proposal is in flight
+                if (!proposalInFlight.compareAndSet(false, true)) {
+                    LOG.debug("Skipping proposal submission - another proposal is in flight");
+                    return;
+                }
                 var nextViewSequence = viewSequence.incrementAndGet();
                 handler.propose(candidate, nextViewSequence)
                        .onFailure(cause -> {
+                                      // Clear in-flight flag on failure to allow retry
+                proposalInFlight.set(false);
                                       LOG.debug("Leader proposal failed ({}), scheduling retry in {}ms",
                                                 cause.message(),
                                                 PROPOSAL_RETRY_DELAY.millis());
@@ -308,26 +413,33 @@ public interface LeaderManager {
 
             private void start() {
                 active.set(true);
-                // In consensus mode, don't submit proposal here - consensus may not be ready yet.
-                // Proposal will be triggered manually via triggerElection() after consensus activates.
-                // In local mode, notify immediately.
-                var candidate = currentLeader.get();
-                candidate.onPresent(leader -> proposalHandler.fold(() -> {
-                                                                       notifyLeaderChange();
-                                                                       return Unit.unit();
-                                                                   },
-                                                                   handler -> {
-                                                                       // Don't submit here - consensus may not be ready yet.
-                // Proposal will be triggered manually after consensus activates.
-                // Just track the candidate for later.
-                return Unit.unit();
-                                                                   }));
+                // In local mode, notify immediately if we have a candidate.
+                // In consensus mode, trigger election - notification comes only from onLeaderCommitted().
+                proposalHandler.fold(() -> {
+                                         // Local mode: notify if we have a candidate
+                currentLeader.get()
+                             .onPresent(_ -> notifyLeaderChange());
+                                         return Unit.unit();
+                                     },
+                                     _ -> {
+                                         // Consensus mode: only schedule election trigger.
+                // DO NOT re-notify here - it causes flapping when nodes have different partial views.
+                // Notification will come from onLeaderCommitted() with forceNotify if this is re-establishment.
+                LOG.debug("Quorum established, scheduling leader election trigger");
+                                         SharedScheduler.schedule(this::triggerElection, PROPOSAL_RETRY_DELAY);
+                                         return Unit.unit();
+                                     });
             }
 
             private void stop() {
                 // Set inactive first to prevent new elections during shutdown
                 active.set(false);
                 currentLeader.set(Option.none());
+                // Clear in-flight flag to reset state
+                proposalInFlight.set(false);
+                // Mark that we need reactivation when leader is committed again
+                // This ensures notification even if the same leader is re-committed
+                needsReactivation.set(true);
                 // Always send stop notification synchronously for immediate effect
                 router.route(leaderChange(Option.none(), false));
             }
@@ -335,10 +447,13 @@ public interface LeaderManager {
         return new leaderManager(self,
                                  router,
                                  proposalHandler,
+                                 List.copyOf(expectedCluster),
                                  new AtomicBoolean(false),
                                  new AtomicLong(0),
                                  new AtomicReference<>(Option.none()),
-                                 new AtomicReference<>(List.of()));
+                                 new AtomicReference<>(List.of()),
+                                 new AtomicBoolean(false),
+                                 new AtomicBoolean(false));
     }
 
     @MessageReceiver
