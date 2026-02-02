@@ -36,6 +36,13 @@ public class Handler extends SimpleChannelInboundHandler<Message.Wired> {
             if (msg instanceof Hello hello) {
                 helloHandler.accept(hello, ctx.channel());
             } else {
+                if (msg.getClass()
+                       .getSimpleName()
+                       .contains("Invoke")) {
+                    log.info("Handler routing InvokeMessage: {}",
+                             msg.getClass()
+                                .getName());
+                }
                 messageHandler.accept(msg);
             }
         } catch (Exception e) {

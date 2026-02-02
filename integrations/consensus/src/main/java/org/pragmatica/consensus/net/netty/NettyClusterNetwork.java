@@ -417,6 +417,11 @@ public class NettyClusterNetwork implements ClusterNetwork {
     }
 
     @Override
+    public Set<NodeId> connectedPeers() {
+        return Set.copyOf(peerLinks.keySet());
+    }
+
+    @Override
     public Option<Server> server() {
         return Option.option(server.get());
     }

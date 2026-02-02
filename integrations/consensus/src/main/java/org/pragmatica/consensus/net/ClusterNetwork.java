@@ -24,6 +24,8 @@ import org.pragmatica.lang.Unit;
 import org.pragmatica.messaging.MessageReceiver;
 import org.pragmatica.net.tcp.Server;
 
+import java.util.Set;
+
 import static org.pragmatica.consensus.net.NetworkServiceMessage.*;
 
 /// Generalized Network API for cluster communication.
@@ -77,6 +79,10 @@ public interface ClusterNetwork {
     /// Get the number of currently connected peer nodes.
     /// This count does NOT include self - only remote peers with active connections.
     int connectedNodeCount();
+
+    /// Get the IDs of currently connected peer nodes.
+    /// This set does NOT include self - only remote peers with active connections.
+    Set<NodeId> connectedPeers();
 
     /// Get the underlying server instance for metrics collection.
     /// Returns empty if the network has not been started yet.
