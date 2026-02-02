@@ -35,7 +35,7 @@ class BatchTest {
 
         assertThat(batch.commands()).hasSize(2);
         assertThat(batch.id().id()).startsWith("batch-");
-        assertThat(batch.correlationId().id()).startsWith("xref-");
+        assertThat(batch.correlationIds().getFirst().id()).startsWith("xref-");
         assertThat(batch.isNotEmpty()).isTrue();
     }
 

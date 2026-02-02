@@ -129,6 +129,60 @@ When `n - f` nodes vote the same value in Round 1, the protocol skips Round 2 an
 | 5     | 3      | 3   | 4              | 2            |
 | 7     | 4      | 4   | 5              | 3            |
 
+## Leader Election
+
+The consensus module supports optional leader election for cluster management tasks. Two modes:
+
+### Local Election (Default)
+Leader is computed locally based on topology - the node with the smallest ID wins.
+
+```java
+var leaderManager = LeaderManager.leaderManager(nodeId, router);
+```
+
+### Consensus-Based Election
+Leader proposals go through consensus for stronger consistency guarantees.
+
+```java
+// With consensus-based election
+var leaderManager = LeaderManager.leaderManager(
+    nodeId,
+    router,
+    (candidate, viewSequence) -> engine.apply(List.of(new ElectLeader(candidate, viewSequence)))
+                                        .map(_ -> Unit.unit())
+);
+
+// With expected cluster for deterministic candidate selection during startup
+var leaderManager = LeaderManager.leaderManager(
+    nodeId,
+    router,
+    proposalHandler,
+    List.of(nodeId1, nodeId2, nodeId3)  // Expected cluster members
+);
+
+// Query current leader
+Option<NodeId> leader = leaderManager.leader();
+boolean isLeader = leaderManager.isLeader();
+
+// Trigger manual election after consensus is ready
+leaderManager.triggerElection();
+```
+
+### Leader Notifications
+
+Subscribe to leader changes via `LeaderNotification` messages:
+
+```java
+@MessageReceiver
+void onLeaderChange(LeaderNotification notification) {
+    notification.leader()
+                .onPresent(leader -> log.info("New leader: {}", leader));
+    if (notification.isSelf()) {
+        // This node is now the leader
+    }
+}
+```
+
 ## Message Types
 
 ### Synchronous (Consensus Rounds)
@@ -141,3 +195,13 @@ When `n - f` nodes vote the same value in Round 1, the protocol skips Round 2 an
 ### Asynchronous
 - `SyncRequest` - Request state from other nodes
 - `NewBatch` - Distribute new command batch
+
+## Batch Deduplication
+
+When multiple nodes submit identical commands concurrently, the consensus module automatically deduplicates them:
+
+- Batches are identified by content hash (not random IDs)
+- When a node receives a batch with the same content, it merges the correlationIds
+- All clients receive responses when the batch commits, regardless of which node's batch "won"
+
+This ensures correctness in scenarios where clients might retry or connect to different nodes.

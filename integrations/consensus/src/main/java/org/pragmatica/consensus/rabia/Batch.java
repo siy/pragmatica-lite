@@ -18,15 +18,18 @@ package org.pragmatica.consensus.rabia;
 
 import org.pragmatica.consensus.Command;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /// Represents a proposal value (batch of commands) in the Rabia protocol.
+/// BatchId is content-based (hash of commands) to enable consolidation of identical batches.
 public record Batch<C extends Command>(BatchId id,
-                                       CorrelationId correlationId,
+                                       List<CorrelationId> correlationIds,
                                        long timestamp,
                                        List<C> commands) implements Comparable<Batch<C>> {
     public Batch {
         commands = List.copyOf(commands);
+        correlationIds = List.copyOf(correlationIds);
     }
 
     @Override
@@ -35,20 +38,37 @@ public record Batch<C extends Command>(BatchId id,
         if (timestampCompare != 0) {
             return timestampCompare;
         }
-        var idCompare = Integer.compare(id.hashCode(), o.id.hashCode());
-        if (idCompare != 0) {
-            return idCompare;
-        }
-        return correlationId.id()
-                            .compareTo(o.correlationId.id());
+        return id.id()
+                 .compareTo(o.id.id());
     }
 
     public static <C extends Command> Batch<C> batch(List<C> commands) {
-        return new Batch<>(BatchId.randomBatchId(), CorrelationId.randomCorrelationId(), System.nanoTime(), commands);
+        var contentHash = computeContentHash(commands);
+        var batchId = new BatchId("batch-" + contentHash);
+        return new Batch<>(batchId,
+                           List.of(CorrelationId.randomCorrelationId()),
+                           System.nanoTime(),
+                           commands);
+    }
+
+    private static <C extends Command> String computeContentHash(List<C> commands) {
+        return Integer.toHexString(commands.hashCode());
     }
 
     public static <C extends Command> Batch<C> emptyBatch() {
-        return new Batch<>(BatchId.emptyBatchId(), CorrelationId.emptyCorrelationId(), System.nanoTime(), List.of());
+        return new Batch<>(BatchId.emptyBatchId(),
+                           List.of(CorrelationId.emptyCorrelationId()),
+                           System.nanoTime(),
+                           List.of());
+    }
+
+    /// Merges this batch with another batch that has the same content.
+    /// Combines correlationIds and uses the earliest timestamp.
+    public Batch<C> mergeWith(Batch<C> other) {
+        var merged = new ArrayList<>(correlationIds);
+        merged.addAll(other.correlationIds);
+        var earliestTimestamp = Math.min(timestamp, other.timestamp);
+        return new Batch<>(id, List.copyOf(merged), earliestTimestamp, commands);
     }
 
     @Override

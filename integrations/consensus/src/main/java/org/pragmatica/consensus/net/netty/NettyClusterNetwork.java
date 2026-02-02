@@ -225,9 +225,9 @@ public class NettyClusterNetwork implements ClusterNetwork {
         Option.option(channelToNodeId.remove(channel))
               .filter(nodeId -> peerLinks.remove(nodeId, channel))
               .onPresent(nodeId -> {
-                  processViewChange(REMOVE, nodeId);
-                  log.debug("Node {} disconnected", nodeId);
-              });
+                             processViewChange(REMOVE, nodeId);
+                             log.info("Node {} disconnected, triggering topology change", nodeId);
+                         });
     }
 
     @Override
@@ -365,7 +365,18 @@ public class NettyClusterNetwork implements ClusterNetwork {
     }
 
     private void processViewChange(ViewChangeOperation operation, NodeId peerId) {
-        var currentlyHaveQuorum = (peerLinks.size() + 1) >= topologyManager.quorumSize();
+        var peerCount = peerLinks.size();
+        var quorumSize = topologyManager.quorumSize();
+        var clusterSize = topologyManager.clusterSize();
+        var currentlyHaveQuorum = (peerCount + 1) >= quorumSize;
+        log.info("processViewChange: op={}, peer={}, peerCount={}, clusterSize={}, quorumSize={}, haveQuorum={}, wasEstablished={}",
+                 operation,
+                 peerId,
+                 peerCount,
+                 clusterSize,
+                 quorumSize,
+                 currentlyHaveQuorum,
+                 quorumEstablished.get());
         var viewChange = switch (operation) {
             case ADD -> {
                 // Only notify on transition from below to at/above quorum
@@ -387,6 +398,7 @@ public class NettyClusterNetwork implements ClusterNetwork {
                 yield TopologyChangeNotification.nodeDown(peerId);
             }
         };
+        log.info("Routing topology change: {}", viewChange);
         router.route(viewChange);
     }
 
@@ -402,6 +414,11 @@ public class NettyClusterNetwork implements ClusterNetwork {
     @Override
     public int connectedNodeCount() {
         return peerLinks.size();
+    }
+
+    @Override
+    public Set<NodeId> connectedPeers() {
+        return Set.copyOf(peerLinks.keySet());
     }
 
     @Override

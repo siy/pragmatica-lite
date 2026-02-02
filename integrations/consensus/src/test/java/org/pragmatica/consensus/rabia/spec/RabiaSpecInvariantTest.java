@@ -67,7 +67,7 @@ class RabiaSpecInvariantTest {
             // (In implementation, first proposal wins)
             var firstProposal = state.getProposal(node);
             assertThat(firstProposal.isPresent()).isTrue();
-            assertThat(firstProposal.unwrap().correlationId()).isEqualTo(batch1.correlationId());
+            assertThat(firstProposal.unwrap().id()).isEqualTo(batch1.id());
 
             // The invariant states that if a node proposes V1 and V2, they must be equal
             // This is enforced by only allowing one proposal per node
@@ -113,7 +113,7 @@ class RabiaSpecInvariantTest {
             // Verify majority proposed the same value
             long sameProposals = config.nodeIds().stream()
                                        .filter(n -> state.getProposal(n).isPresent())
-                                       .filter(n -> state.getProposal(n).unwrap().correlationId().equals(batch.correlationId()))
+                                       .filter(n -> state.getProposal(n).unwrap().id().equals(batch.id()))
                                        .count();
 
             assertThat(sameProposals).isGreaterThanOrEqualTo(config.quorumSize());
@@ -145,7 +145,7 @@ class RabiaSpecInvariantTest {
 
             var decidedBatch = state.getDecisionsFullVal(decider).get(phase);
             assertThat(proposedBatches.stream()
-                                      .anyMatch(b -> b.correlationId().equals(decidedBatch.correlationId()))).isTrue();
+                                      .anyMatch(b -> b.id().equals(decidedBatch.id()))).isTrue();
         }
 
         // [5] decision_full_val agreement
@@ -166,7 +166,7 @@ class RabiaSpecInvariantTest {
             var decisions = config.nodeIds().stream()
                                   .map(n -> state.getDecisionsFullVal(n).get(phase))
                                   .filter(Objects::nonNull)
-                                  .map(b -> b.correlationId())
+                                  .map(b -> b.id())
                                   .distinct()
                                   .toList();
 

@@ -25,6 +25,13 @@ public class Decoder extends ByteToMessageDecoder {
         try{
             var object = deserializer.read(in);
             if (object instanceof Message.Wired) {
+                if (object.getClass()
+                          .getSimpleName()
+                          .contains("Invoke")) {
+                    log.info("Decoder decoded InvokeMessage: {}",
+                             object.getClass()
+                                   .getName());
+                }
                 out.add(object);
             } else {
                 log.error("Attempt to decode non-Wired object: {}", object);

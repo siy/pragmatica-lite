@@ -268,7 +268,7 @@ public final class SpecClusterSimulator<C extends Command> {
         sb.append("\n  Proposals:\n");
         for (var node : config.nodeIds()) {
             state.getProposal(node).onPresent(b ->
-                sb.append("    ").append(node.id()).append(": ").append(b.correlationId().id()).append("\n")
+                sb.append("    ").append(node.id()).append(": ").append(b.id().id()).append("\n")
             );
         }
 

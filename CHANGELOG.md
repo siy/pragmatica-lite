@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.3] - 2026-02-02
+
+### Added
+- **Consensus-based leader election mode** in cluster networking
+  - `LeaderManager.leaderManager(self, router, proposalHandler)` - consensus-based election
+  - `LeaderManager.leaderManager(self, router, proposalHandler, expectedCluster)` - with deterministic candidate selection
+  - `onLeaderCommitted(NodeId)` callback for committed leader proposals
+  - `triggerElection()` for manual election triggering after consensus ready
+- **Content-based batch IDs with deduplication** in Rabia consensus
+  - Batches with identical commands share the same BatchId (content hash)
+  - Multiple correlationIds merged when duplicate batches arrive from different nodes
+  - Ensures all clients receive responses even when multiple nodes submit identical commands
+- **Route naming for service discovery** in HTTP routing
+  - `ContentTypeBuilder.named(String)` - set route identifier for discovery
+  - `Route.name()` - retrieve route name (default empty string)
+- **ClusterNetwork.connectedPeers()** - get set of currently connected peer node IDs
+
+### Fixed
+- **Race condition in `LeaderManager.onLeaderCommitted`** - forceNotify flag now consumed only after CAS succeeds
+- **Non-atomic batch merge in `RabiaEngine.handleNewBatch`** - uses `compute()` for atomic merge
+- **Phase trigger dropped in `RabiaEngine.startPhase`** - re-checks after reset if batches added during window
+- **Non-atomic leader clearing in `nodeRemoved`/`nodeDown`** - uses `getAndUpdate()` for atomic operations
+- **Double syncTask scheduling in RabiaEngine** - removed constructor syncTask, uses only pendingSyncTask
+- **Empty list access in `processAccumulatedSyncResponses`** - added empty check before `getLast()`
+- **Empty topology access in `nodeAdded`** - added empty check before `getFirst()`
+- **fold() abuse replaced with proper conditionals** in LeaderManager for clearer control flow
+- **Complex lambda in `triggerElection`** extracted to `handleConsensusElection()` + `selectCandidatePool()`
+
+### Changed
+- `Batch.correlationId` changed to `List<CorrelationId> correlationIds` to support batch consolidation
+- `Batch.mergeWith(Batch)` combines correlationIds and uses earliest timestamp
+- Simplified `onLeaderCommitted` API - viewSequence tracked internally
+
 ## [0.11.2] - 2026-01-27
 
 ### Added

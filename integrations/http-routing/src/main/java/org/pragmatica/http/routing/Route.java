@@ -70,6 +70,16 @@ public interface Route<T> extends RouteSource {
         return List.of();
     }
 
+    /**
+     * Returns the optional name/identifier for this route.
+     * Used for service discovery and remote invocation.
+     *
+     * @return the route name, or empty string if not specified
+     */
+    default String name() {
+        return "";
+    }
+
     @Override
     default Stream<Route<?>> routes() {
         return Stream.of(this);
@@ -79,7 +89,7 @@ public interface Route<T> extends RouteSource {
     RouteSource withPrefix(String prefix);
 
     static <T> Route<T> route(HttpMethod method, String path, Handler<T> handler, ContentType contentType) {
-        return route(method, path, handler, contentType, List.of());
+        return route(method, path, handler, contentType, List.of(), "");
     }
 
     static <T> Route<T> route(HttpMethod method,
@@ -87,14 +97,24 @@ public interface Route<T> extends RouteSource {
                               Handler<T> handler,
                               ContentType contentType,
                               List<String> spacers) {
+        return route(method, path, handler, contentType, spacers, "");
+    }
+
+    static <T> Route<T> route(HttpMethod method,
+                              String path,
+                              Handler<T> handler,
+                              ContentType contentType,
+                              List<String> spacers,
+                              String name) {
         record route<T>(HttpMethod method,
                         String path,
                         Handler<T> handler,
                         ContentType contentType,
-                        List<String> spacers) implements Route<T> {
+                        List<String> spacers,
+                        String name) implements Route<T> {
             @Override
             public RouteSource withPrefix(String prefix) {
-                return new route<>(method, PathUtils.normalize(prefix + path), handler, contentType, spacers);
+                return new route<>(method, PathUtils.normalize(prefix + path), handler, contentType, spacers, name);
             }
 
             @Override
@@ -102,10 +122,13 @@ public interface Route<T> extends RouteSource {
                 var spacerStr = spacers.isEmpty()
                                 ? ""
                                 : " [spacers: " + String.join(", ", spacers) + "]";
-                return "Route: " + method + " " + path + spacerStr + ", " + contentType;
+                var nameStr = name.isEmpty()
+                              ? ""
+                              : " [name: " + name + "]";
+                return "Route: " + method + " " + path + spacerStr + nameStr + ", " + contentType;
             }
         }
-        return new route<>(method, PathUtils.normalize(path), handler, contentType, spacers);
+        return new route<>(method, PathUtils.normalize(path), handler, contentType, spacers, name);
     }
 
     static Subroutes in(String path) {
@@ -775,6 +798,15 @@ public interface Route<T> extends RouteSource {
     interface ContentTypeBuilder<T> {
         Route<T> as(ContentType contentType);
 
+        /**
+         * Sets a name/identifier for this route.
+         * Used for service discovery and remote invocation.
+         *
+         * @param name the route name
+         * @return a new builder with the name set
+         */
+        ContentTypeBuilder<T> named(String name);
+
         default Route<T> asText() {
             return as(CommonContentTypes.TEXT_PLAIN);
         }
@@ -787,6 +819,22 @@ public interface Route<T> extends RouteSource {
     // ===================================================================================
     // Implementation
     // ===================================================================================
+    record ContentTypeBuilderImpl<T>(HttpMethod method,
+                                     String path,
+                                     Handler<T> handler,
+                                     List<String> spacers,
+                                     String name) implements ContentTypeBuilder<T> {
+        @Override
+        public Route<T> as(ContentType contentType) {
+            return route(method, path, handler, contentType, spacers, name);
+        }
+
+        @Override
+        public ContentTypeBuilder<T> named(String name) {
+            return new ContentTypeBuilderImpl<>(method, path, handler, spacers, name);
+        }
+    }
+
     record ParameterBuilderImpl<R>(HttpMethod method, String path, List<String> spacers) implements ParameterBuilder<R> {
         ParameterBuilderImpl(HttpMethod method, String path) {
             this(method, path, List.of());
@@ -794,7 +842,7 @@ public interface Route<T> extends RouteSource {
 
         @Override
         public ContentTypeBuilder<R> to(Handler<R> handler) {
-            return contentType -> route(method, path, handler, contentType, spacers);
+            return new ContentTypeBuilderImpl<>(method, path, handler, spacers, "");
         }
 
         // Path parameters - collect spacers from path parameter definitions
