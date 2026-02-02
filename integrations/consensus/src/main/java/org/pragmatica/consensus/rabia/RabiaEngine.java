@@ -101,7 +101,6 @@ public class RabiaEngine<C extends Command> {
     // Per Rabia spec: after a decision, the next phase inherits this value for round 1 vote
     private final AtomicReference<Option<StateValue>> lockedValue = new AtomicReference<>(Option.none());
     private final Option<ScheduledFuture<?>> cleanupTask;
-    private final Option<ScheduledFuture<?>> syncTask;
 
     //--------------------------------- Node State End
     /// Creates a new Rabia consensus engine without metrics.
@@ -139,7 +138,6 @@ public class RabiaEngine<C extends Command> {
                              .or(ConsensusMetrics.noop());
         this.cleanupTask = Option.some(SharedScheduler.scheduleAtFixedRate(this::cleanupOldPhases,
                                                                            config.cleanupInterval()));
-        this.syncTask = Option.some(SharedScheduler.schedule(this::synchronize, config.syncRetryInterval()));
     }
 
     @MessageReceiver
@@ -265,7 +263,8 @@ public class RabiaEngine<C extends Command> {
 
     private void performStop(Promise<Unit> promise) {
         cleanupTask.onPresent(task -> task.cancel(false));
-        syncTask.onPresent(task -> task.cancel(false));
+        Option.option(pendingSyncTask.getAndSet(null))
+              .onPresent(task -> task.cancel(false));
         clusterDisconnected();
         executor.shutdown();
         promise.succeed(Unit.unit());
@@ -299,28 +298,31 @@ public class RabiaEngine<C extends Command> {
     @SuppressWarnings("unchecked")
     @MessageReceiver
     public void handleNewBatch(NewBatch<?> newBatch) {
-        executor.execute(() -> {
-                             var incoming = (Batch<C>) newBatch.batch();
-                             var existing = pendingBatches.get(incoming.id());
-                             if (existing != null) {
-                                 if (existing.commands()
-                                             .equals(incoming.commands())) {
-                                     // Same content - merge correlationIds
-        pendingBatches.put(incoming.id(), existing.mergeWith(incoming));
-                                 } else {
-                                     // Hash collision (should never happen) - log and ignore
+        executor.execute(() -> doHandleNewBatch((Batch<C>) newBatch.batch()));
+    }
+
+    private void doHandleNewBatch(Batch<C> incoming) {
+        // Use compute() for atomic merge to avoid race conditions
+        pendingBatches.compute(incoming.id(),
+                               (_, existing) -> {
+                                   if (existing == null) {
+                                       return incoming;
+                                   }
+                                   if (existing.commands()
+                                               .equals(incoming.commands())) {
+                                       // Same content - merge correlationIds
+        return existing.mergeWith(incoming);
+                                   }
+                                   // Hash collision (should never happen) - log and keep existing
         log.error("BatchId collision: {} has different content", incoming.id());
-                                 }
-                             } else {
-                                 pendingBatches.put(incoming.id(), incoming);
-                             }
-                             if (isInPhase.get() && active.get()) {
-                                 // Already in phase - broadcast our proposal for this batch if not already proposed
-        broadcastOwnProposalIfNeeded();
-                             } else {
-                                 triggerPhaseIfNeeded();
-                             }
-                         });
+                                   return existing;
+                               });
+        if (isInPhase.get() && active.get()) {
+            // Already in phase - broadcast our proposal for this batch if not already proposed
+            broadcastOwnProposalIfNeeded();
+        } else {
+            triggerPhaseIfNeeded();
+        }
     }
 
     /// Broadcasts own proposal for pending batch if not already proposed in current phase.
@@ -343,17 +345,20 @@ public class RabiaEngine<C extends Command> {
         if (!isInPhase.compareAndSet(false, true)) {
             return;
         }
-        if (pendingBatches.isEmpty()) {
+        var batchOpt = pendingBatches.values()
+                                     .stream()
+                                     .sorted()
+                                     .findFirst();
+        if (batchOpt.isEmpty()) {
             isInPhase.set(false);
-            // Reset since we won't actually start
+            // Re-check after reset - a batch may have been added during the window
+            if (!pendingBatches.isEmpty()) {
+                executor.execute(this::startPhase);
+            }
             return;
         }
+        var batch = batchOpt.get();
         var phase = currentPhase.get();
-        var batch = pendingBatches.values()
-                                  .stream()
-                                  .sorted()
-                                  .findFirst()
-                                  .orElse(emptyBatch());
         log.trace("Node {} starting phase {} with batch {}", self, phase, batch.id());
         var phaseData = getOrCreatePhaseData(phase);
         phaseData.registerProposal(self, batch);
@@ -401,11 +406,15 @@ public class RabiaEngine<C extends Command> {
     }
 
     private void processAccumulatedSyncResponses() {
-        var candidate = syncResponses.values()
+        var responses = syncResponses.values()
                                      .stream()
                                      .sorted(Comparator.comparing(SavedState::lastCommittedPhase))
-                                     .toList()
-                                     .getLast();
+                                     .toList();
+        if (responses.isEmpty()) {
+            log.warn("Node {} has no sync responses to process", self);
+            return;
+        }
+        var candidate = responses.getLast();
         log.trace("Node {} uses {} as synchronization candidate out of {}", self, candidate, syncResponses.size());
         restoreState(candidate);
     }

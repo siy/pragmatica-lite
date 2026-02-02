@@ -192,9 +192,9 @@ public interface LeaderManager {
                 proposalInFlight.set(false);
                 var oldLeader = currentLeader.get();
                 var newLeader = Option.some(leader);
-                // Check if we need reactivation (after quorum flap where stop() was called)
-                var forceNotify = needsReactivation.compareAndSet(true, false);
                 if (currentLeader.compareAndSet(oldLeader, newLeader)) {
+                    // Only consume forceNotify AFTER CAS succeeds to avoid losing reactivation signal
+                    var forceNotify = needsReactivation.compareAndSet(true, false);
                     // Increment viewSequence on each commit to track local state progression
                     viewSequence.incrementAndGet();
                     if (forceNotify || !newLeader.equals(oldLeader)) {
@@ -220,118 +220,118 @@ public interface LeaderManager {
                     LOG.debug("triggerElection skipped: not active");
                     return;
                 }
-                proposalHandler.onPresent(handler -> {
-                                              var topology = currentTopology.get();
-                                              if (topology.isEmpty()) {
-                                                  LOG.debug("Skipping election trigger: topology is empty");
-                                                  return;
-                                              }
-                                              // Deterministic candidate selection:
-                // - Initial election: use expectedCluster UNFILTERED to ensure all nodes agree
-                //   (different nodes may have different topology views during startup)
-                // - Re-election: filter by topology to exclude known dead nodes
+                proposalHandler.onPresent(this::handleConsensusElection);
+            }
+
+            private void handleConsensusElection(LeaderProposalHandler handler) {
+                var topology = currentTopology.get();
+                if (topology.isEmpty()) {
+                    LOG.debug("Skipping election trigger: topology is empty");
+                    return;
+                }
+                var candidatePool = selectCandidatePool(topology);
+                var candidate = candidatePool.stream()
+                                             .min(Comparator.naturalOrder())
+                                             .orElse(self);
                 var isInitialElection = !hasEverHadLeader.get();
-                                              List<NodeId> candidatePool;
-                                              if (expectedCluster.isEmpty()) {
-                                                  candidatePool = topology;
-                                              } else if (isInitialElection) {
-                                                  // Initial election: use expectedCluster directly for determinism
-                // All nodes MUST agree on the same candidate regardless of local topology view
-                candidatePool = expectedCluster;
-                                              } else {
-                                                  // Re-election: filter out dead nodes
-                candidatePool = expectedCluster.stream()
-                                               .filter(topology::contains)
-                                               .toList();
-                                                  if (candidatePool.isEmpty()) {
-                                                      candidatePool = topology;
-                                                  }
-                                              }
-                                              var candidate = candidatePool.stream()
-                                                                           .min(Comparator.naturalOrder())
-                                                                           .orElse(self);
-                                              if (!self.equals(candidate)) {
-                                                  LOG.debug("Skipping election trigger: self={} is not min node {} in candidatePool {} (initial={})",
-                                                            self,
-                                                            candidate,
-                                                            candidatePool,
-                                                            isInitialElection);
-                                                  return;
-                                              }
-                                              LOG.debug("Submitting leader proposal: self={} (min node in {}, initial={})",
-                                                        self,
-                                                        expectedCluster.isEmpty()
-                                                        ? "topology"
-                                                        : "expectedCluster",
-                                                        isInitialElection);
-                                              // DON'T clear currentLeader here - let consensus decide.
+                if (!self.equals(candidate)) {
+                    LOG.debug("Skipping election trigger: self={} is not min node {} in candidatePool {} (initial={})",
+                              self,
+                              candidate,
+                              candidatePool,
+                              isInitialElection);
+                    return;
+                }
+                LOG.debug("Submitting leader proposal: self={} (min node in {}, initial={})",
+                          self,
+                          expectedCluster.isEmpty()
+                          ? "topology"
+                          : "expectedCluster",
+                          isInitialElection);
+                // DON'T clear currentLeader here - let consensus decide.
                 // The leader will be updated via onLeaderCommitted().
                 submitProposal(handler, candidate);
-                                          });
+            }
+
+            /// Selects the candidate pool for leader election.
+            /// - Initial election: use expectedCluster UNFILTERED to ensure all nodes agree
+            /// - Re-election: filter by topology to exclude known dead nodes
+            private List<NodeId> selectCandidatePool(List<NodeId> topology) {
+                if (expectedCluster.isEmpty()) {
+                    return topology;
+                }
+                var isInitialElection = !hasEverHadLeader.get();
+                if (isInitialElection) {
+                    // All nodes MUST agree on the same candidate regardless of local topology view
+                    return expectedCluster;
+                }
+                // Re-election: filter out dead nodes
+                var filtered = expectedCluster.stream()
+                                              .filter(topology::contains)
+                                              .toList();
+                return filtered.isEmpty()
+                       ? topology
+                       : filtered;
             }
 
             @Override
             public void nodeAdded(NodeAdded nodeAdded) {
-                currentTopology.set(nodeAdded.topology());
-                tryElect(nodeAdded.topology()
-                                  .getFirst());
+                var topology = nodeAdded.topology();
+                currentTopology.set(topology);
+                if (!topology.isEmpty()) {
+                    tryElect(topology.getFirst());
+                }
             }
 
             @Override
             public void nodeRemoved(NodeRemoved nodeRemoved) {
+                var topology = nodeRemoved.topology();
                 // Should not happen, but better be safe than sorry.
-                if (nodeRemoved.topology()
-                               .isEmpty()) {
+                if (topology.isEmpty()) {
                     return;
                 }
-                currentTopology.set(nodeRemoved.topology());
-                // Check if the removed node was the leader
+                currentTopology.set(topology);
+                // Check if the removed node was the leader - use atomic update to avoid race
                 var removedNode = nodeRemoved.nodeId();
-                var leaderRemoved = currentLeader.get()
-                                                 .filter(removedNode::equals)
-                                                 .isPresent();
-                if (leaderRemoved && active.get()) {
+                // Atomically clear leader only if it matches the removed node
+                var leaderWasRemoved = currentLeader.getAndUpdate(current -> current.filter(removedNode::equals)
+                                                                                    .isPresent()
+                                                                             ? Option.none()
+                                                                             : current)
+                                                    .filter(removedNode::equals)
+                                                    .isPresent();
+                if (leaderWasRemoved && active.get()) {
                     // Leader was removed while we still have quorum - trigger re-election
                     LOG.debug("Leader {} was removed, triggering re-election", removedNode);
-                    currentLeader.set(Option.none());
-                    proposalHandler.fold(() -> {
-                                             // Local mode: immediate election
-                    tryElect(nodeRemoved.topology()
-                                        .getFirst());
-                                             return Unit.unit();
-                                         },
-                                         _ -> {
-                                             // Consensus mode: submit proposal
-                    triggerElection();
-                                             return Unit.unit();
-                                         });
+                    if (proposalHandler.isPresent()) {
+                        // Consensus mode: submit proposal
+                        triggerElection();
+                    } else {
+                        // Local mode: immediate election
+                        tryElect(topology.getFirst());
+                    }
                 } else {
-                    tryElect(nodeRemoved.topology()
-                                        .getFirst());
+                    tryElect(topology.getFirst());
                 }
             }
 
             @Override
             public void nodeDown(NodeDown nodeDown) {
+                var topology = nodeDown.topology();
                 // If no nodes remain or no quorum, stop
-                if (nodeDown.topology()
-                            .isEmpty() || !active.get()) {
+                if (topology.isEmpty() || !active.get()) {
                     currentLeader.set(Option.none());
                     stop();
                     return;
                 }
                 // Node went down but we still have quorum - trigger re-election
-                currentTopology.set(nodeDown.topology());
-                // Check if current leader is the one that went down
+                currentTopology.set(topology);
+                // Atomically clear leader only if it matches the down node
                 var downNode = nodeDown.nodeId();
-                var leaderIsDown = currentLeader.get()
-                                                .filter(downNode::equals)
-                                                .isPresent();
-                if (leaderIsDown) {
-                    // Only clear leader if it's the one that went down
-                    // New leader will be set via onLeaderCommitted() after consensus
-                    currentLeader.set(Option.none());
-                }
+                currentLeader.getAndUpdate(current -> current.filter(downNode::equals)
+                                                             .isPresent()
+                                                      ? Option.none()
+                                                      : current);
                 // In consensus mode, trigger election submission if we're the candidate
                 // tryElect is not needed - triggerElection handles everything
                 proposalHandler.onPresent(_ -> triggerElection());
@@ -350,18 +350,12 @@ public interface LeaderManager {
                     currentLeader.compareAndSet(oldLeader, newLeader);
                     return;
                 }
-                proposalHandler.fold(() -> {
-                                         // Local election mode: immediate update and sync notification
-                electLocally(candidate);
-                                         return Unit.unit();
-                                     },
-                                     _ -> {
-                                         // Consensus mode when active: DON'T update currentLeader here!
+                // Local election mode: immediate update and sync notification
+                // Consensus mode when active: DON'T update currentLeader here!
                 // The leader will be set via onLeaderCommitted() after consensus.
-                // If we set it here, onLeaderCommitted will see no change and skip notification.
-                // Topology is already tracked via currentTopology for triggerElection().
-                return Unit.unit();
-                                     });
+                if (proposalHandler.isEmpty()) {
+                    electLocally(candidate);
+                }
             }
 
             private void submitProposal(LeaderProposalHandler handler, NodeId candidate) {
@@ -437,20 +431,17 @@ public interface LeaderManager {
                 active.set(true);
                 // In local mode, notify immediately if we have a candidate.
                 // In consensus mode, trigger election - notification comes only from onLeaderCommitted().
-                proposalHandler.fold(() -> {
-                                         // Local mode: notify if we have a candidate
-                currentLeader.get()
-                             .onPresent(_ -> notifyLeaderChange());
-                                         return Unit.unit();
-                                     },
-                                     _ -> {
-                                         // Consensus mode: only schedule election trigger.
-                // DO NOT re-notify here - it causes flapping when nodes have different partial views.
-                // Notification will come from onLeaderCommitted() with forceNotify if this is re-establishment.
-                LOG.debug("Quorum established, scheduling leader election trigger");
-                                         SharedScheduler.schedule(this::triggerElection, PROPOSAL_RETRY_DELAY);
-                                         return Unit.unit();
-                                     });
+                if (proposalHandler.isPresent()) {
+                    // Consensus mode: only schedule election trigger.
+                    // DO NOT re-notify here - it causes flapping when nodes have different partial views.
+                    // Notification will come from onLeaderCommitted() with forceNotify if this is re-establishment.
+                    LOG.debug("Quorum established, scheduling leader election trigger");
+                    SharedScheduler.schedule(this::triggerElection, PROPOSAL_RETRY_DELAY);
+                } else {
+                    // Local mode: notify if we have a candidate
+                    currentLeader.get()
+                                 .onPresent(_ -> notifyLeaderChange());
+                }
             }
 
             private void stop() {
